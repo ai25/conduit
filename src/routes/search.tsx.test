@@ -1,0 +1,183 @@
+
+import { useLocation } from "solid-start";
+import VideoCard from "~/components/VideoCard";
+import { createSignal, onCleanup, onMount, useContext } from 'solid-js';
+import { InstanceContext } from "~/root";
+import { z } from "zod";
+
+export default function Search() {
+    const [instance] = useContext(InstanceContext);
+  const router = useLocation();
+  const page = router.query.page ? parseInt(router.query.page.toString()) : 1;
+  const query = router.query.q;
+
+  const sort_by =
+    z
+      .enum(["relevance", "rating", "upload_date", "view_count"])
+      .safeParse(router.query.sort_by).success ? router.query.sort_by : "relevance";
+
+  const date =
+    z
+      .enum(["hour", "today", "week", "month", "year"])
+      .optional()
+      .safeParse(router.query.date).success ? router.query.date : undefined;
+
+  const duration =
+    z.enum(["short", "long"]).optional().safeParse(router.query.duration)
+      .success ? router.query.duration : undefined;
+
+  const type =
+    z
+      .enum(["video", "playlist", "channel", "all"])
+      .optional()
+      .safeParse(router.query.type).success ? router.query.type : undefined;
+
+  console.log(sort_by);
+
+  const { data: results, fetchNextPage } = trpc.useInfiniteQuery(
+    [
+      "invidious.search",
+      {
+        query: query as string,
+        instance: currentInstance,
+        sort_by: sort_by,
+        page: page,
+        date: date,
+        duration: duration,
+        type: type,
+      },
+    ],
+    {
+      enabled: query !== undefined,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      getNextPageParam: (lastPage) => {
+        if (lastPage.nextCursor) {
+          return lastPage.nextCursor;
+        }
+        return undefined;
+      },
+    }
+  );
+
+  const [bannedKeywords, setBannedKeywords] = createSignal<string[]>([]);
+
+  const [includeKeywords, setIncludeKeywords] = createSignal<string[]>([]);
+
+  const [includeKeywordsInput, setIncludeKeywordsInput] = createSignal<string[]>(
+    []
+  );
+
+  const kw = bannedKeywords()
+    .map((kw) => kw.toLowerCase())
+    .map((kw) => kw.trim())
+    .map((kw) => (kw.length > 0 ? kw : undefined))
+    .filter((kw) => kw !== undefined);
+
+  const ikw = includeKeywords()
+    .map((kw) => kw.toLowerCase())
+    .map((kw) => kw.trim())
+    .map((kw) => (kw.length > 0 ? kw : undefined))
+    .filter((kw) => kw !== undefined);
+
+//   const [keywords, setKeywords] = useState<string[]>([]);
+//   useDebouncedCallback((value) => {
+//     console.log(value);
+//     setBannedKeywords(value);
+//   }, 1000)(keywords);
+
+//   useDebouncedCallback((value) => {
+//     console.log(value);
+//     setIncludeKeywords(value);
+//   }, 1000)(includeKeywordsInput);
+
+//   const [includeWatched, setIncludeWatched] = useState<boolean>(true);
+
+  const videos = results?.pages
+    .map((page) => page.data)
+    .flat()
+    .filter(
+      (video) =>
+        !kw.some(
+          (keyword) =>
+            video.title.toLowerCase().includes(keyword) ||
+            video.author.toLowerCase().includes(keyword)
+        )
+    )
+    .filter((video) => {
+      if (ikw.length === 0) return true;
+      return ikw.some(
+        (keyword) =>
+          video.title.toLowerCase().includes(keyword) ||
+          video.author.toLowerCase().includes(keyword)
+      );
+    })
+    .filter((video) => {
+      if (includeWatched) return true;
+      return !video.watched;
+    });
+
+  console.log(videos);
+
+  //remove duplicates
+  const uniqueVideos = videos?.filter(
+    (video, index, self) =>
+      index === self.findIndex((t) => t.videoId === video.videoId)
+  );
+
+  return (
+    <>
+      <div class="text-text mx-2 flex flex-col sm:flex-row gap-2">
+        <label class="flex gap-2 items-center">
+          Include watched videos
+          <input
+            type="checkbox"
+            checked={includeWatched}
+            onChange={(e) => setIncludeWatched(e.target.checked)}
+            class="mr-2 w-4 h-4"
+          />
+        </label>
+        <input
+          placeholder="Banned Keywords"
+          class="bg-highlight border-2 border-stone-700 text-text my-2 p-2 rounded"
+          type="text"
+          value={keywords.join(",")}
+          onChange={(e) => {
+            console.log(bannedKeywords, "banned");
+            setKeywords(e.target.value.split(","));
+          }}
+        />
+        <input
+          placeholder="Include Keywords"
+          class="bg-highlight border-2 border-stone-700 text-text my-2 p-2 rounded"
+          type="text"
+          value={includeKeywordsInput.join(",")}
+          onChange={(e) => {
+            setIncludeKeywordsInput(e.target.value.split(","));
+          }}
+        />
+      </div>
+      <div class="flex flex-col items-center">
+        {!results && (
+          <div class="fixed text-text w-full justify-center flex text-5xl">
+            <CgSpinnerTwoAlt class="animate-spin" />
+          </div>
+        )}
+        <div class="text-text grid lg:grid-cols-4 sm:grid-cols-2">
+          {uniqueVideos &&
+            uniqueVideos.map((video) => {
+              if (video && video.videoId)
+                return <Video video={video} key={video.videoId} />;
+            })}
+        </div>
+        <button
+          onClick={() => fetchNextPage()}
+          class="bg-gray-800 text-text p-2 rounded-md mt-10 mb-20 self-center"
+        >
+          Load More
+        </button>
+      </div>
+    </>
+  );
+}
