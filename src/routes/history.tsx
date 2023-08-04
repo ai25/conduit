@@ -2,6 +2,7 @@ import { Show, createSignal, useContext } from "solid-js";
 import { DBContext } from "~/root";
 import { extractVideoId } from "./watch";
         export const videoId = (item:any) => {
+            if (!item) return undefined;
             if (item.videoId) return item.videoId;
             else if (item.id) return item.id;
             else if (item.url) return extractVideoId(item.url);

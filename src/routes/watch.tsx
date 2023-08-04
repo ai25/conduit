@@ -19,6 +19,7 @@ import {
   lazy,
   onCleanup,
   onMount,
+  untrack,
   useContext,
 } from "solid-js";
 import {
@@ -34,6 +35,7 @@ import { Portal, isServer } from "solid-js/web";
 // const Description = lazy(() => import("~/components/Description"));
 // const VideoCard = lazy(() => import("~/components/VideoCard"));
 import VideoCard from "~/components/VideoCard";
+import { videoId } from "./history";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
@@ -103,6 +105,10 @@ export default function Watch() {
     const v = route.query.v;
     console.log(v, "v");
     if (!v) return;
+    if (untrack(() => videoId(video.value)) === v) {
+      console.log("video already loaded");
+      return;
+    }
     console.log(
       new Date().toISOString().split("T")[1],
       "visible task in watch page fetching video"
@@ -119,6 +125,7 @@ export default function Watch() {
       });
       console.log(res.status, res.statusText, "status");
       data = await res.json();
+      if (data.error) throw new Error(data.error);
       console.log(data, "data");
       setVideo({ value: data, error: undefined });
       // onResolved(data);
@@ -160,35 +167,8 @@ export default function Watch() {
   //   refetch();
   // });
 
-  // useTask$(async ({ track }) => {
-  //   if (!v.value) return;
-  //   track(() => v.value);
-  //   track(() =>preferences.value.instanceUrl);
+  // createEffect(async () => {
 
-  //   error.value = { name: "", message: "" };
-  //   let data;
-
-  //   console.log("fetching video", v.value);
-  //   try {
-  //     const res = await fetchWithTimeout(`${preferences.value.instanceUrl}/streams/${v.value}`, {timeout: 5000});
-  //     console.log(res.status, res.statusText, "status");
-  //     data = await res.json();
-  //     console.log(data, "piped video");
-  //   } catch (err) {
-  //     console.log(err);
-  //     error.value = {
-  //       name: (err as Error).name,
-  //       message: (err as Error).message,
-  //     };
-  //   }
-  //   if (data?.error) {
-  //     error.value = {
-  //       name: data.error,
-  //       message: data.message,
-  //     };
-  //     return;
-  //   }
-  //   video.value = data;
   //   console.log(video.value?.title, "title1", data?.title);
   //   console.log(data, "video", playerContext.value);
   //   const persistedVideo = getStorageValue(

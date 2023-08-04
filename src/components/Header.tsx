@@ -52,9 +52,17 @@ export default () => {
       <div class="text-text1 flex gap-2 items-center m-2">
         {!instance() && <></>}
         {!theme() && <></>}
-        <div>
-          <A href="/trending">Trending</A>
-        </div>
+        <ul class="flex items-center gap-2">
+          <li>
+            <A href="/trending">Trending</A>
+          </li>
+          <li>
+            <A href="/subscriptions">Feed</A>
+          </li>
+          <li>
+            <A href="/history">History</A>
+          </li>
+        </ul>
         <Select
           name="theme"
           value={theme() ?? ""}
@@ -82,7 +90,7 @@ export default () => {
               })?.name ?? `DOWN - ${instance()}`
             }
             onChange={(v) => {
-              console.log("SETTING INSTANCE", v)
+              console.log("SETTING INSTANCE", v);
               setInstance(v);
               setInstanceContext(v);
             }}

@@ -6,8 +6,12 @@ import { A } from "solid-start";
 import { createRenderEffect, createSignal, useContext } from "solid-js";
 import { DBContext } from "~/root";
 import { videoId } from "~/routes/history";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
-export default ({ v }: { v: RelatedStream & { progress?: number } }) => {
+dayjs.extend(relativeTime);
+
+export default ({ v }: { v?: RelatedStream & { progress?: number } | undefined }) => {
   const [db] = useContext(DBContext);
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
 
@@ -24,7 +28,16 @@ export default ({ v }: { v: RelatedStream & { progress?: number } }) => {
     }
   );
 
-  if (!v) return null;
+  if (!v) return (
+    <div class={` flex w-72 max-w-[18rem] flex-col items-start rounded-xl bg-bg1 p-4`}>
+      <div class="animate-pulse w-64 h-32 bg-bg2 flex aspect-video max-w-fit flex-col overflow-hidden rounded text-text1">
+        <div class="bg-bg2 w-full h-full"></div>
+      </div>
+      <div class="animate-pulse w-3/4 h-4 bg-bg2 rounded mt-2"></div>
+      <div class="animate-pulse w-1/2 h-4 bg-bg2 rounded mt-2"></div>
+      <div class="animate-pulse w-1/4 h-4 bg-bg2 rounded mt-2"></div>
+
+  </div>)
 
   return (
     <div class={` flex w-72 max-w-[18rem] flex-col items-center rounded-xl bg-bg1 p-4`}>
@@ -88,7 +101,7 @@ export default ({ v }: { v: RelatedStream & { progress?: number } }) => {
                 <div class="w-fit text-sm "> {numeral(v.views).format("0a").toUpperCase()} views</div>
 
                 <div class="group w-fit pl-1 text-sm">
-                  <div class=""> • {v.uploadedDate} </div>
+                  <div class=""> • {dayjs(v.uploaded).fromNow()} </div>
                 </div>
               </div>
             </div>

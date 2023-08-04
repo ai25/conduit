@@ -297,36 +297,57 @@ export default function Player() {
   // </media-player>
 
   //   )
-  let floating = false;
   let outlet: any;
-  let floatContainer: any;
+  function toggleFloating(floating: boolean) {
+    const container = document.getElementById("pip-container");
+    if (!container) return;
+    if (floating) {
+      container.append(outlet);
+      if (container.classList.contains("hidden")) {
+        container.classList.remove("hidden");
+      }
+    } else {
+      if (!container.classList.contains("hidden")) {
+        container.classList.add("hidden");
+      }
+      mediaPlayer?.prepend(outlet);
+    }
+  }
 
   onMount(() => {
     console.log("mount", mediaPlayer);
     document.addEventListener("beforeunload", updateProgress);
     document.addEventListener("visibilitychange", updateProgress);
-    mediaPlayer?.addEventListener("drag", (e:any) => {
-        console.log("dragstart", e);
+    mediaPlayer?.addEventListener("drag", (e: any) => {
+      console.log("dragstart", e);
     });
-
   });
   onCleanup(() => {
     document.removeEventListener("beforeunload", updateProgress);
     document.removeEventListener("visibilitychange", updateProgress);
-    mediaPlayer?.removeEventListener("drag", (e:any) => {
-        console.log("dragstart", e);
+    mediaPlayer?.removeEventListener("drag", (e: any) => {
+      console.log("dragstart", e);
     });
   });
   const isRouting = useIsRouting();
   createEffect(() => {
     if (isRouting()) {
-        console.log("routing");
+      console.log("routing");
       updateProgress();
+    }
+    if (route.pathname !== "/watch") {
+      toggleFloating(true);
+    } else {
+      toggleFloating(false);
     }
   });
 
   return (
-    <div class="flex">
+    <div
+      class="flex sticky md:static top-0 z-50 md:z-0"
+      classList={{
+        hidden: route.pathname !== "/watch",
+      }}>
       <media-player
         class="w-full h-full aspect-video"
         current-time={currentTime()}

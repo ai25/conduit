@@ -25,27 +25,43 @@ export function routeData() {
 export default function Trending() {
   const trending = useRouteData<typeof routeData>();
   return (
-    <div class="flex min-h-full flex-wrap justify-center gap-4 bg-bg1">
+    <div class="flex min-h-full flex-wrap justify-center bg-bg1">
       {/* {loading.value && (
           <div class="absolute left-0 top-0 flex h-full w-full items-center justify-center bg-black bg-opacity-50">
             <div class="text-2xl text-white">Loading...</div>
           </div>
         )} */}
-      {!trending() && <div>Loading...</div>}
-      <Switch fallback={<div>Loading...</div>}>
-        <Match when={trending.loading}>
-          <div>Loading...</div>
+      <Switch
+        fallback={
+          <For each={Array(10).fill(0)}>
+            {() => <VideoCard v={undefined} />}
+          </For>
+        }>
+        <Match when={trending.loading} keyed>
+          {(loading) =>
+            loading && (
+              <For each={Array(10).fill(0)}>
+                {() => <VideoCard v={undefined} />}
+              </For>
+            )
+          }
         </Match>
-        <Match when={trending.error}>
+        <Match when={trending.error} keyed>
           <div>Error: {trending.error.message}</div>
         </Match>
-        <Match when={trending() instanceof Error}>
-          <div>Error: {(trending() as Error).message}</div>
+        <Match when={trending() instanceof Error} keyed>
+          {(error) =>
+            error && <div>Error: {(trending() as Error).message}</div>
+          }
         </Match>
-        <Match when={(trending() as TrendingStream[]).length > 0}>
-          <For each={trending() as TrendingStream[]}>
-            {(video) => <VideoCard v={video} />}
-          </For>
+        <Match when={(trending() as TrendingStream[]).length > 0} keyed>
+          {(videos) =>
+            videos && (
+              <For each={trending() as TrendingStream[]}>
+                {(video) => <VideoCard v={video} />}
+              </For>
+            )
+          }
         </Match>
       </Switch>
     </div>

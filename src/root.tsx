@@ -39,6 +39,7 @@ import { PipedVideo } from "./types";
 import { defineCustomElements } from "vidstack/elements";
 import { IDBPDatabase, openDB } from "idb";
 import Header from "./components/Header";
+import PlayerSkin from "./components/PlayerSkin";
 
 const theme = createSignal("monokai");
 export const ThemeContext = createContext(theme);
@@ -81,10 +82,11 @@ export default function Root() {
   const isRouting = useIsRouting();
   const event = useServerContext();
   createRenderEffect(() => {
-    const cookie = () =>{
+    const cookie = () => {
       return parseCookie(
         isServer ? event.request.headers.get("cookie") ?? "" : document.cookie
-      );}
+      );
+    };
     const t = cookie().theme ?? "monokai";
     const i = cookie().instance ?? "https://pipedapi.kavin.rocks";
     theme[1](t);
@@ -107,8 +109,8 @@ export default function Root() {
   });
   const [progress, setProgress] = createSignal(0);
   createEffect(() => {
-    console.log(isRouting(), "isRouting")
-    setProgress(0)
+    console.log(isRouting(), "isRouting");
+    setProgress(0);
     if (isRouting()) {
       const interval = setInterval(() => {
         setProgress((p) => Math.min(p + 5, 90));
@@ -154,11 +156,11 @@ export default function Root() {
                       />
                     </ul>
                   </nav> */}
-                  <Show when={isRouting()}>
-                    <div class="fixed h-1 w-full top-0 z-50">
-                      <div class={`h-1 bg-primary w-[${progress()}%]`} />
-                    </div>
-                  </Show>
+                    <Show when={isRouting()}>
+                      <div class="fixed h-1 w-full top-0 z-50">
+                        <div class={`h-1 bg-primary w-[${progress()}%]`} />
+                      </div>
+                    </Show>
                     <Header />
                     {/* <div class="md:grid md:grid-cols-3 gap-4 p-4 md:p-0">
                   <div class="relative flex justify-center items-center aspect-video max-h-full w-full col-span-2"> */}
@@ -172,10 +174,11 @@ export default function Root() {
                       <Match when={video[0].value} keyed>
                         {(video) => {
                           console.log("video changed", video.title);
-                        return <Player />}}
+                          return <Player />;
+                        }}
                       </Match>
                     </Switch>
-
+                    <PipContainer />
                     {/* </div> */}
                     <Routes>
                       <FileRoutes />
@@ -192,43 +195,116 @@ export default function Root() {
     </Html>
   );
 }
+const PipContainer = () => {
+  const [userIdle, setUserIdle] = createSignal(false);
+  let timeout = 0;
+  const handlePointerEvent = () => {
+    clearTimeout(timeout);
+    setUserIdle(false);
+    timeout = setTimeout(() => {
+      setUserIdle(true);
+    }, 2000);
+  }
+  let pipContainer: HTMLDivElement | undefined
+   = undefined
+  const hideContainer = () => {
+    pipContainer?.classList.add("hidden")
 
+  }
 
-const LoadingState = () => (
-  <div class="grid grid-cols-1 md:grid-cols-4">
-    <div class="pointer-events-none col-span-3 md:max-w-[calc(100vw-20rem)] aspect-video bg-black  flex h-full w-full items-center justify-center">
-      <svg
-        class="h-24 w-24 text-white  transition-opacity duration-200 ease-linear animate-spin"
-        fill="none"
-        viewBox="0 0 120 120"
-        aria-hidden="true">
-        <circle
-          class="opacity-25"
-          cx="60"
-          cy="60"
-          r="54"
-          stroke="currentColor"
-          stroke-width="8"
-        />
-        <circle
-          class="opacity-75"
-          cx="60"
-          cy="60"
-          r="54"
-          stroke="currentColor"
-          stroke-width="10"
-          pathLength="100"
-          style={{
-            "stroke-dasharray": 50,
-            "stroke-dashoffset": "50",
+  return (
+    <div
+      ref={pipContainer}
+      id="pip-container"
+      class="w-72 z-[999] hidden justify-center items-center aspect-video sticky top-14 left-2 rounded-lg overflow-hidden bg-black">
+      <div
+        id="pip-controls"
+        onPointerDown={handlePointerEvent}
+        onPointerUp={handlePointerEvent}
+        onMouseOver={handlePointerEvent}
+        onMouseMove={handlePointerEvent}
+        classList={{ "opacity-0": userIdle() }}
+       class="absolute inset-0 w-full h-full p-2 z-[9999] transition-opacity duration-200">
+        <button
+          onClick={() => {
+            const player = document.querySelector("media-player")
+            const outlet = document.querySelector("media-outlet")
+            if (player && outlet) {
+              player.prepend(outlet)
+              hideContainer()
+            } else {
+              console.log("no player or outlet")
+            }
           }}
-        />
-      </svg>
+          id="pip-close"
+          class="bg-white text-black rounded-full p-2 hover:bg-gray-200">
+          <svg
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+          </button>
+
+
+      </div>
     </div>
-  </div>
+  );
+};
+
+export const Spinner = () => (
+  <svg
+    class="h-24 w-24 text-white  transition-opacity duration-200 ease-linear animate-spin"
+    fill="none"
+    viewBox="0 0 120 120"
+    aria-hidden="true">
+    <circle
+      class="opacity-25"
+      cx="60"
+      cy="60"
+      r="54"
+      stroke="currentColor"
+      stroke-width="8"
+    />
+    <circle
+      class="opacity-75"
+      cx="60"
+      cy="60"
+      r="54"
+      stroke="currentColor"
+      stroke-width="10"
+      pathLength="100"
+      style={{
+        "stroke-dasharray": 50,
+        "stroke-dashoffset": "50",
+      }}
+    />
+  </svg>
 );
 
+const LoadingState = () => {
+  const route = useLocation();
+  console.log("loading state", route);
+  if (route.pathname !== "/watch") return null;
+  return (
+    <div class="flex">
+      <div class="pointer-events-none col-span-3 md:max-w-[calc(100vw-20rem)] aspect-video bg-black  flex h-full w-full items-center justify-center">
+        <Spinner />
+      </div>
+    </div>
+  );
+};
+
 function ErrorState(error: Error) {
+  const route = useLocation();
+  console.log("loading state", route);
+  if (route.pathname !== "/watch") return null;
   return (
     <div class="grid grid-cols-1 md:grid-cols-4">
       <div class="pointer-events-none flex-col text-center gap-2 col-span-3 md:max-w-[calc(100vw-20rem)] aspect-video bg-black  flex h-full w-full items-center justify-center">
