@@ -10,6 +10,6 @@ export default defineConfig({
       autoname: true, // e.g. enable autoname
       locator: true, // enables DOM locator tab
     }),
-    solid({ adapter: vercel({ edge: true }) }),
+    solid({ adapter: vercel() }),
   ],
 });
