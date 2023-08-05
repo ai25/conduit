@@ -349,7 +349,7 @@ export default function Player() {
         hidden: route.pathname !== "/watch",
       }}>
       <media-player
-        class="w-full h-full aspect-video"
+        class="peer w-full h-full aspect-video"
         current-time={currentTime()}
         // onTextTrackChange={handleTextTrackChange}
         load="eager"
@@ -450,7 +450,7 @@ export default function Player() {
         <PlayerSkin video={video.value} isMiniPlayer={false} />
         {/* <media-community-skin></media-community-skin> */}
       </media-player>
-      <div class="w-[28rem] hidden relative h-1 md:flex self-start justify-start">
+      <div class="w-[28rem] hidden peer-[fullscreen]:hidden relative h-1 md:flex  self-start justify-start">
         <div class="absolute top-0 flex w-full justify-start items-center flex-col h-full">
           <For each={video.value?.relatedStreams}>
             {(stream) => {

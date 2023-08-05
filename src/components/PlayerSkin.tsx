@@ -1,8 +1,7 @@
 import type { Chapter, PipedVideo, RelatedStream } from "~/types";
 import "vidstack/icons";
-import { For } from "solid-js";
+import { For, createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import { A } from "solid-start";
-import { MediaGestureElement } from "vidstack";
 
 declare module "solid-js" {
   namespace JSX {
@@ -46,9 +45,35 @@ interface PlayerSkinProps {
   isMiniPlayer: boolean;
 }
 export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
+  const [currentChapter, setCurrentChapter] = createSignal("");
+  const player = document.querySelector("media-player");
+  let interval: number;
+  onMount(() => {
+    interval = setInterval(() => {
+      if (!player) return;
+      const currentTime = player.state.currentTime;
+      if (video?.chapters) {
+        const chapter = video.chapters.find((chapter, index) => {
+          if (
+            chapter.start <= currentTime &&
+            currentTime <= video.chapters[index + 1]?.start
+          ) {
+            return true;
+          }
+        });
+        if (chapter) {
+          setCurrentChapter(chapter.title);
+        }
+      }
+    }, 1000);
+  });
+  onCleanup(() => {
+    clearInterval(interval);
+  });
+
   return (
     <div
-        tabIndex={0}
+      tabIndex={0}
       class="pointer-events-none absolute inset-0 z-10 flex h-full flex-col justify-between text-text1 opacity-0 transition-opacity duration-200 ease-linear not-can-play:opacity-100 can-control:opacity-100"
       role="group"
       aria-label="Media Controls">
@@ -137,25 +162,21 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             chapters-class="relative flex items-center w-full h-full"
             chapter-container-class="flex items-center w-[var(--width)] h-full mr-0.5 last:mr-0"
             chapter-class="relative flex items-center w-full h-1">
-            <div
-              slot="preview"
-              class="absolute left-[var(--preview-left)] z-10 -translate-x-1/2 rounded px-4 pb-8 text-white/80 opacity-0 transition-opacity duration-200 ease-out group-data-[interactive]:opacity-100 group-data-[interactive]:ease-in">
-              <div class="relative flex flex-col items-center justify-center">
-                <div class="absolute bottom-[-1.6rem] z-50 flex flex-col items-center justify-center gap-1 ">
-                  <media-slider-value
-                    type="pointer"
-                    format="time"
-                    class="z-50 rounded shadow-sm "
-                  />
-                  <div class="truncate rounded px-2 text-sm shadow-sm">
-                    <span part="chapter-title" />
-                  </div>
-                </div>
-                <media-slider-video
-                  src={video?.videoStreams.find((s) => s.bitrate < 400000)?.url}
-                  onError={console.error}
-                />
+            <div slot="preview">
+              <media-slider-value
+                type="pointer"
+                format="time"
+                class="z-50 rounded-t bg-bg1/80"
+              />
+              <div class="bg-bg1/80 rounded-t px-2">
+                <span part="chapter-title" />
               </div>
+              {/* </div> */}
+              <media-slider-video
+                src={video?.videoStreams.find((s) => s.bitrate < 400000)?.url}
+                onError={console.error}
+              />
+              {/* </div> */}
             </div>
           </media-time-slider>
         </div>
@@ -232,7 +253,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             <span
               part="chapter-title"
               class="z-10 truncate pl-1 font-sans text-sm font-normal text-white ">
-              {video?.title}
+              {currentChapter() ?? video?.title}
             </span>
           </div>
           <media-caption-button
@@ -455,6 +476,8 @@ const RecommendedVideosMenu = ({ videos }: { videos?: RelatedStream[] }) => {
         <For each={videos}>
           {(video) => (
             <A
+              role="menuitem"
+              tabIndex={-1}
               href={video.url}
               class="flex items-center p-2.5 data-[hocus]:bg-white/10 data-[focus]:ring-2 data-[focus]:ring-primary">
               <div

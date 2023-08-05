@@ -1,8 +1,10 @@
 import numeral from "numeral";
 import type { PipedVideo } from "../types";
-import { createSignal } from "solid-js";
+import { createEffect, createSignal } from "solid-js";
 import { A } from "solid-start";
 import { MediaPlayerElement } from "vidstack";
+import { getStorageValue, setStorageValue } from "~/utils/storage";
+import dayjs from "dayjs";
 
 function handleTimestamp(videoId:string, t: string) {
   console.log(t);
@@ -39,6 +41,20 @@ export default ({ video }: { video: PipedVideo }) => {
     return t;
   }
   const [expanded, setExpanded] = createSignal(false);
+  createEffect(() => {
+    const channels = getStorageValue("localSubscriptions", [], "json", "localStorage") as string[];
+    setIsSubscribed(channels.find((channel) => channel === video.uploaderUrl.split("/channel/")[1]) ? true : false);
+  });
+  const toggleSubscribed = () => {
+    const channels = getStorageValue("localSubscriptions", [], "json", "localStorage") as string[];
+    if (!isSubscribed()) {
+        setStorageValue("localSubscriptions", JSON.stringify([...channels, video.uploaderUrl.split("/channel/")[1]]), "localStorage");
+        setIsSubscribed(true);
+    } else {
+        setStorageValue("localSubscriptions", JSON.stringify(channels.filter((channel) => channel !== video.uploaderUrl.split("/channel/")[1])), "localStorage");
+        setIsSubscribed(false);
+    }
+}
 
   return (
     <div class="mb-2 w-full break-before-auto overflow-hidden bg-bg1 p-4">
@@ -80,10 +96,10 @@ export default ({ video }: { video: PipedVideo }) => {
               </div>
             </div>
             <button
-              onClick={() => setIsSubscribed(!isSubscribed())}
+              onClick={toggleSubscribed}
               class={`btn ${
                 isSubscribed()
-                  ? "!bg-bg3 shadow-lg ring-1 ring-inset !ring-navFooter"
+                  ? "!bg-bg3 !text-text1"
                   : ""
               } `}>
               Subscribe{isSubscribed() && "d"}
@@ -91,8 +107,11 @@ export default ({ video }: { video: PipedVideo }) => {
           </div>
         </div>
         <div class="flex items-center justify-between lg:flex-col lg:items-start lg:justify-start">
-          <p class="break-words text-sm text-text2">
-            Published {video.uploadDate}
+          <p class="break-words font-bold text-text2">
+            Published {() => {
+                const substr = dayjs(video.uploadDate).toString().split(":")[0]
+                return substr.slice(0, substr.length - 3)
+            }}
           </p>
           <p class="font-bold text-text2">
             {numeral(video.views).format("0,0")} views

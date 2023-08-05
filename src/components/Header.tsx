@@ -49,7 +49,16 @@ export default () => {
 
   return (
     <header>
-      <div class="text-text1 flex gap-2 items-center m-2">
+      <div class="text-text1 sm:flex gap-2 items-center m-2 max-w-full">
+        {/* skip to main content */}
+        <button
+          class="sr-only focus:not-sr-only"
+          onClick={() => {
+            document.querySelector("media-player")?.focus();
+          }}
+        >
+          Skip to main content
+        </button>
         {!instance() && <></>}
         {!theme() && <></>}
         <ul class="flex items-center gap-2">
