@@ -2,7 +2,12 @@
 module.exports = {
   content: ["./src/**/*.{html,js,jsx,ts,tsx}"],
   theme: {
-    extend: {}
+    extend: {
+      
+    }
+  },
+  experimental: {
+    optimizeUniversalDefaults: true,
   },
   plugins: [
      require("vidstack/tailwind.cjs"),

@@ -30,6 +30,7 @@
     "solid-start-vercel": "^0.2.30",
     "undici": "^5.15.1",
     "vidstack": "^0.6.13",
+    "vite-plugin-pwa": "^0.16.4",
     "zod": "^3.21.4"
   },
   "engines": {
