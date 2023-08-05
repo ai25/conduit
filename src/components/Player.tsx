@@ -142,9 +142,56 @@ export default function Player() {
     setTracks(newTracks.filter((track) => track !== null) as any);
   };
 
+  const initMediaSession = () => {
+    if (!navigator.mediaSession) return;
+    if (!video.value) return;
+    if (!mediaPlayer) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: video.value.title,
+      artist: video.value.uploader,
+      artwork: [
+        {
+          src: video.value?.thumbnailUrl,
+          sizes: "128x128",
+          type: "image/png",
+        },
+      ],
+    });
+    navigator.mediaSession.setActionHandler("play", () => {
+      mediaPlayer?.play();
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      mediaPlayer?.pause();
+    });
+    navigator.mediaSession.setActionHandler("seekbackward", () => {
+      mediaPlayer!.currentTime -= 10;
+    });
+    navigator.mediaSession.setActionHandler("seekforward", () => {
+      mediaPlayer!.currentTime += 10;
+    });
+    navigator.mediaSession.setActionHandler("previoustrack", () => {
+      console.log("previous track");
+    });
+    navigator.mediaSession.setActionHandler("nexttrack", () => {
+      console.log("next track");
+    });
+    navigator.mediaSession.setActionHandler("stop", () => {
+      console.log("stop");
+    });
+  };
+
+  const setMediaState = () => {
+    navigator.mediaSession.setPositionState({
+      duration: video.value!.duration,
+      playbackRate: mediaPlayer!.playbackRate,
+      position: mediaPlayer!.currentTime,
+    });
+  };
+
   const init = () => {
     if (!video.value) return;
     console.time("init");
+    initMediaSession();
     fetchSubtitles(video.value.subtitles);
     if (!video.value?.subtitles) return;
     const subs = new Map<string, string>();
@@ -364,10 +411,6 @@ export default function Player() {
           volumeUp: "ArrowUp",
           volumeDown: "ArrowDown",
         }}
-        // class={
-        //   isMiniPlayer ?  `fixed z-[99999] ${pos.tl} scale-[0.4]` : ""
-        // }
-        // on:media-player-connect={() => console.log("connected")}
         on:can-play={onCanPlay}
         on:provider-change={onProviderChange}
         on:hls-error={handleHlsError}
@@ -386,14 +429,6 @@ export default function Player() {
         crossorigin="anonymous">
         <media-outlet ref={outlet}>
           <media-poster alt={video.value?.title ?? ""} />
-          {/* <track
-          id="track-transcript"
-          kind="subtitles"
-          src="subs.srt"
-          srcLang="en"
-          label="Transcript"
-          data-type="srt"
-        /> */}
           {tracks().map((track) => {
             return (
               <track
@@ -450,7 +485,7 @@ export default function Player() {
         <PlayerSkin video={video.value} isMiniPlayer={false} />
         {/* <media-community-skin></media-community-skin> */}
       </media-player>
-      <div class="w-[28rem] hidden peer-[fullscreen]:hidden relative h-1 md:flex  self-start justify-start">
+      <div class="w-[28rem] hidden relative h-1 md:flex  self-start justify-start">
         <div class="absolute top-0 flex w-full justify-start items-center flex-col h-full">
           <For each={video.value?.relatedStreams}>
             {(stream) => {

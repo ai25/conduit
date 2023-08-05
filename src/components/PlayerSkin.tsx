@@ -2,6 +2,7 @@ import type { Chapter, PipedVideo, RelatedStream } from "~/types";
 import "vidstack/icons";
 import { For, createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import { A } from "solid-start";
+import { MediaPlayerElement } from "vidstack";
 
 declare module "solid-js" {
   namespace JSX {
@@ -46,24 +47,24 @@ interface PlayerSkinProps {
 }
 export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
   const [currentChapter, setCurrentChapter] = createSignal("");
-  const player = document.querySelector("media-player");
-  let interval: number;
-  onMount(() => {
+  const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
+  let interval: any;
+  createEffect(() => {
+    if (!video?.chapters) return;
+    setPlayer(document.querySelector("media-player"));
+    if (!player()) return;
     interval = setInterval(() => {
-      if (!player) return;
-      const currentTime = player.state.currentTime;
-      if (video?.chapters) {
-        const chapter = video.chapters.find((chapter, index) => {
-          if (
-            chapter.start <= currentTime &&
-            currentTime <= video.chapters[index + 1]?.start
-          ) {
-            return true;
-          }
-        });
-        if (chapter) {
-          setCurrentChapter(chapter.title);
+      const currentTime = player()!.state.currentTime;
+      const chapter = video.chapters.find((chapter, index) => {
+        if (
+          chapter.start <= currentTime &&
+          currentTime <= video.chapters[index + 1]?.start
+        ) {
+          return true;
         }
+      });
+      if (chapter) {
+        setCurrentChapter(chapter.title);
       }
     }, 1000);
   });
@@ -249,12 +250,16 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
           </div>
 
           <div class="inline-flex flex-1 truncate items-center">
-            •{" "}
-            <span
-              part="chapter-title"
-              class="z-10 truncate pl-1 font-sans text-sm font-normal text-white ">
-              {currentChapter() ?? video?.title}
-            </span>
+            <div
+            class="text-white z-10"
+             classList={{ hidden: !currentChapter() }}>
+              •{" "}
+              <span
+                part="chapter-title"
+                class="z-10 truncate pl-1 font-sans text-sm font-normal text-white ">
+                {currentChapter() ?? video?.title}
+              </span>
+            </div>
           </div>
           <media-caption-button
             aria-keyshortcuts="c"

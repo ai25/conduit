@@ -133,37 +133,15 @@ export default function Root() {
           <InstanceContext.Provider value={instance}>
             <PlayerContext.Provider value={video}>
               <Body
-                class={`${theme[0]()} bg-bg1 scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2`}>
+                class={`${theme[0]()} bg-bg1 font-poppins scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2`}>
                 <Suspense>
                   <ErrorBoundary>
-                    {/* <nav class="bg-sky-800 -mx-2">
-                    <ul class="container flex items-center p-3 text-gray-200">
-                      <li class={`border-b-2 ${active("/")} mx-1.5 sm:mx-6`}>
-                        <A href="/">Home</A>
-                      </li>
-                      <li
-                        class={`border-b-2 ${active("/about")} mx-1.5 sm:mx-6`}>
-                        <A href="/about">About</A>
-                      </li>
-                      <Select
-                        name="theme"
-                        value={theme[0]()}
-                        onChange={(e) => theme[1](e)}
-                        options={[
-                          { value: "monokai", label: "Monokai" },
-                          { value: "github", label: "Github" },
-                        ]}
-                      />
-                    </ul>
-                  </nav> */}
                     <Show when={isRouting()}>
                       <div class="fixed h-1 w-full top-0 z-50">
                         <div class={`h-1 bg-primary w-[${progress()}%]`} />
                       </div>
                     </Show>
                     <Header />
-                    {/* <div class="md:grid md:grid-cols-3 gap-4 p-4 md:p-0">
-                  <div class="relative flex justify-center items-center aspect-video max-h-full w-full col-span-2"> */}
                     <Switch fallback={<LoadingState />}>
                       <Match when={video[0].error} keyed>
                         <ErrorState
@@ -179,11 +157,9 @@ export default function Root() {
                       </Match>
                     </Switch>
                     <PipContainer />
-                    {/* </div> */}
                     <Routes>
                       <FileRoutes />
                     </Routes>
-                    {/* </div> */}
                   </ErrorBoundary>
                 </Suspense>
                 <Scripts />
@@ -197,20 +173,18 @@ export default function Root() {
 }
 const PipContainer = () => {
   const [userIdle, setUserIdle] = createSignal(false);
-  let timeout = 0;
+  let timeout:any;
   const handlePointerEvent = () => {
     clearTimeout(timeout);
     setUserIdle(false);
     timeout = setTimeout(() => {
       setUserIdle(true);
     }, 2000);
-  }
-  let pipContainer: HTMLDivElement | undefined
-   = undefined
+  };
+  let pipContainer: HTMLDivElement | undefined = undefined;
   const hideContainer = () => {
-    pipContainer?.classList.add("hidden")
-
-  }
+    pipContainer?.classList.add("hidden");
+  };
 
   return (
     <div
@@ -224,16 +198,16 @@ const PipContainer = () => {
         onMouseOver={handlePointerEvent}
         onMouseMove={handlePointerEvent}
         classList={{ "opacity-0": userIdle() }}
-       class="absolute inset-0 w-full h-full p-2 z-[9999] transition-opacity duration-200">
+        class="absolute inset-0 w-full h-full p-2 z-[9999] transition-opacity duration-200">
         <button
           onClick={() => {
-            const player = document.querySelector("media-player")
-            const outlet = document.querySelector("media-outlet")
+            const player = document.querySelector("media-player");
+            const outlet = document.querySelector("media-outlet");
             if (player && outlet) {
-              player.prepend(outlet)
-              hideContainer()
+              player.prepend(outlet);
+              hideContainer();
             } else {
-              console.log("no player or outlet")
+              console.log("no player or outlet");
             }
           }}
           id="pip-close"
@@ -250,9 +224,7 @@ const PipContainer = () => {
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-          </button>
-
-
+        </button>
       </div>
     </div>
   );

@@ -6,15 +6,14 @@ import { MediaPlayerElement } from "vidstack";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import dayjs from "dayjs";
 
-function handleTimestamp(videoId:string, t: string) {
+function handleTimestamp(videoId: string, t: string) {
   console.log(t);
   const player = document.querySelector("media-player") as MediaPlayerElement;
   player.currentTime = parseInt(t);
   // push state to history
-  history.pushState({}, "", `/watch?v=${videoId}&t=${t}`)
+  history.pushState({}, "", `/watch?v=${videoId}&t=${t}`);
 }
 (globalThis as any).handleTimestamp = handleTimestamp;
-
 
 export default ({ video }: { video: PipedVideo }) => {
   const [isSubscribed, setIsSubscribed] = createSignal(false);
@@ -37,24 +36,55 @@ export default ({ video }: { video: PipedVideo }) => {
         class="text-primary hover:text-highlight hover:underline" onclick="handleTimestamp('$1','$2')">$3</button>`
       )
       // add a class to all <a> tags
-        .replaceAll(/<a href/gm, '<a class="text-primary hover:text-highlight hover:underline" href')
+      .replaceAll(
+        /<a href/gm,
+        '<a class="text-primary hover:text-highlight hover:underline" href'
+      );
     return t;
   }
   const [expanded, setExpanded] = createSignal(false);
   createEffect(() => {
-    const channels = getStorageValue("localSubscriptions", [], "json", "localStorage") as string[];
-    setIsSubscribed(channels.find((channel) => channel === video.uploaderUrl.split("/channel/")[1]) ? true : false);
+    const channels = getStorageValue(
+      "localSubscriptions",
+      [],
+      "json",
+      "localStorage"
+    ) as string[];
+    setIsSubscribed(
+      channels.find(
+        (channel) => channel === video.uploaderUrl.split("/channel/")[1]
+      )
+        ? true
+        : false
+    );
   });
   const toggleSubscribed = () => {
-    const channels = getStorageValue("localSubscriptions", [], "json", "localStorage") as string[];
+    const channels = getStorageValue(
+      "localSubscriptions",
+      [],
+      "json",
+      "localStorage"
+    ) as string[];
     if (!isSubscribed()) {
-        setStorageValue("localSubscriptions", JSON.stringify([...channels, video.uploaderUrl.split("/channel/")[1]]), "localStorage");
-        setIsSubscribed(true);
+      setStorageValue(
+        "localSubscriptions",
+        JSON.stringify([...channels, video.uploaderUrl.split("/channel/")[1]]),
+        "localStorage"
+      );
+      setIsSubscribed(true);
     } else {
-        setStorageValue("localSubscriptions", JSON.stringify(channels.filter((channel) => channel !== video.uploaderUrl.split("/channel/")[1])), "localStorage");
-        setIsSubscribed(false);
+      setStorageValue(
+        "localSubscriptions",
+        JSON.stringify(
+          channels.filter(
+            (channel) => channel !== video.uploaderUrl.split("/channel/")[1]
+          )
+        ),
+        "localStorage"
+      );
+      setIsSubscribed(false);
     }
-}
+  };
 
   return (
     <div class="mb-2 w-full break-before-auto overflow-hidden bg-bg1 p-4">
@@ -97,23 +127,20 @@ export default ({ video }: { video: PipedVideo }) => {
             </div>
             <button
               onClick={toggleSubscribed}
-              class={`btn ${
-                isSubscribed()
-                  ? "!bg-bg3 !text-text1"
-                  : ""
-              } `}>
+              class={`btn ${isSubscribed() ? "!bg-bg3 !text-text1" : ""} `}>
               Subscribe{isSubscribed() && "d"}
             </button>
           </div>
         </div>
         <div class="flex items-center justify-between lg:flex-col lg:items-start lg:justify-start">
-          <p class="break-words font-bold text-text2">
-            Published {() => {
-                const substr = dayjs(video.uploadDate).toString().split(":")[0]
-                return substr.slice(0, substr.length - 3)
-            }}
+          <p class="break-words">
+            Published{" "}
+            {(() => {
+              const substr = dayjs(video.uploadDate).toString().split(":")[0];
+              return substr.slice(0, substr.length - 3);
+            })()}
           </p>
-          <p class="font-bold text-text2">
+          <p class="">
             {numeral(video.views).format("0,0")} views
           </p>
         </div>

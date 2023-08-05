@@ -156,7 +156,7 @@ export interface Channel {
   avatarUrl: string;
   bannerUrl: string;
   description: string;
-  nextpage: string;
+  nextpage: string | null;
   subscriberCount: number;
   verified: boolean;
   relatedStreams: RelatedStream[];
