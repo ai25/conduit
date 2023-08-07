@@ -90,12 +90,11 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
       class="pointer-events-none absolute inset-0 z-10 h-full "
       role="group"
       aria-label="Media Controls">
-      <div class="pointer-events-none absolute inset-0 z-0 h-full w-full bg-gradient-to-t from-black/50 from-5% via-transparent via-50% to-black/20 to-100%" />
-      {/* <media-gesture
+      <media-gesture
         class="left-0 top-0 z-10 h-full w-full bg-green-500/50"
         event="pointerup"
         action="toggle:user-idle"></media-gesture>
-      <media-gesture
+      {/* <media-gesture
         class="left-0 top-0 h-full w-full"
         event="dblpointerup"
         action="toggle:paused"
@@ -126,7 +125,11 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
           }}
         />
         <RightGesture
-        playerHeight={parseInt(player()?.style.getPropertyValue("--media-height") ?? "")|| 0}
+          playerHeight={
+            parseInt(
+              player()?.style.getPropertyValue("--media-height") ?? ""
+            ) || 0
+          }
           volume={player()?.volume || 0}
           setVolume={(v: number) => {
             if (!player()) return;
@@ -146,6 +149,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
         <ActionDisplay action={currentAction()} />
       </div>
       <div class="pointer-events-none absolute inset-0 z-10 flex h-full flex-col justify-between text-text1 opacity-0 transition-opacity duration-200 ease-linear not-can-play:opacity-100 can-control:opacity-100">
+        <div class="pointer-events-none absolute inset-0 z-0 h-full w-full bg-gradient-to-t from-black/50 from-5% via-transparent via-50% to-black/20 to-100%" />
         <MediaControlGroup>
           <div class="z-10 flex w-full items-center justify-start truncate font-sans text-lg font-normal text-white not-can-play:opacity-0">
             <p class="truncate">{video?.title}</p>
@@ -164,7 +168,10 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
                 type="volume-high"
                 class="hidden group-data-[volume=high]:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
               />
-              <media-tooltip class="" style={{ transformOrigin: "50% 100%" }}>
+              <media-tooltip
+                position="bottom center"
+                class=""
+                style={{ transformOrigin: "50% 100%" }}>
                 <span class="hidden not-muted:inline">Mute</span>
                 <span class="hidden muted:inline">Unmute</span>
               </media-tooltip>
@@ -173,7 +180,21 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             <SettingsMenu />
           </div>
         </MediaControlGroup>
-        <div class="pointer-events-none flex min-h-[48px] w-full p-2 "></div>
+        <div class="pointer-events-auto flex min-h-[48px] w-full p-2 items-center justify-center">
+          <media-play-button
+            aria-keyshortcuts="k"
+            class="group text-white rounded-full bg-black/30 outline-none flex sm:hidden justify-center items-center transition-all relative h-20 w-20"
+            aria-label="Play">
+            <media-icon
+              type="play"
+              class="hidden ring-0 paused:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary  "
+            />
+            <media-icon
+              type="pause"
+              class="hidden ring-0 not-paused:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
+            />
+          </media-play-button>
+        </div>
         {/* <div
         aria-hidden
         class="absolute inset-0 z-50 flex flex-col justify-center w-full h-full text-white transition-opacity duration-200 ease-linear ">
@@ -228,10 +249,10 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             </media-time-slider>
           </div>
 
-          <div class="flex items-center px-2 w-full">
+          <div class="flex items-center px-2 w-full z-10">
             <media-play-button
               aria-keyshortcuts="k"
-              class="group rounded-sm text-white outline-none inline-flex justify-center items-center transition-all relative h-10 w-10 mr-1 -ml-1"
+              class="group rounded-sm text-white outline-none hidden sm:inline-flex justify-center items-center transition-all relative h-10 w-10 mr-1 -ml-1"
               aria-label="Play">
               <media-icon
                 type="play"
@@ -245,7 +266,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
                   type="replay"
                   class="hidden ring-0 ended:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
                 /> */}
-              <media-tooltip class="" style={{ transformOrigin: "50% 100%" }}>
+              <media-tooltip style={{ transformOrigin: "50% 100%" }}>
                 <span class="hidden paused:inline">Play (k)</span>
                 <span class="hidden not-paused:inline">Pause (k)</span>
               </media-tooltip>
@@ -274,7 +295,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
               aria-keyshortcuts="ArrowUp ArrowDown"
               key-step="5"
               shift-key-multiplier="2"
-              class="group inline-block relative h-8 w-full transition-all duration-200 max-w-0 mr-2 data-[hocus]:max-w-[5rem] peer-data-[hocus]:max-w-[5rem] "
+              class="group hidden sm:inline-block relative h-8 w-full transition-all duration-200 max-w-0 mr-2 data-[hocus]:max-w-[5rem] peer-data-[hocus]:max-w-[5rem] "
               track-class="absolute top-1/2 left-0 block h-1 w-20 hidden bg-[#5a595a] outline-none group-data-[hocus]:block group-data-[hocus]:ring-4 group-data-[hocus]:ring-primary"
               track-fill-class="absolute top-1/2 left-0 z-20 h-1 w-[var(--slider-fill-percent)] -translate-y-1/2 bg-white will-change-[width]"
               thumb-container-class="absolute top-0 left-[var(--slider-fill-percent)] z-20 h-full w-5 -translate-x-1/2 group-data-[dragging]:left-[var(--slider-pointer-percent)]"
@@ -367,7 +388,7 @@ const ActionDisplay = (props: { action: { name: string; value: string } }) => {
           "opacity-0 scale-0": name() == "",
           "opacity-100 scale-100": !!name(),
         }}
-        class="flex items-center origin-bottom flex-col justify-center transition-all duration-200 ease-in-out w-32 h-32 bg-black rounded-full bg-opacity-50">
+        class="flex items-center flex-col justify-center transition-all duration-200 ease-in-out w-32 h-32 bg-black rounded-full bg-opacity-50">
         <div class="w-16 h-16 font-bold text-white">
           <media-icon
             class="absolute w-16 h-16"
@@ -415,9 +436,7 @@ const ActionDisplay = (props: { action: { name: string; value: string } }) => {
   );
 };
 
-const LeftGesture = (props: {
-    onDblClick: (e: MouseEvent) => void;
-}) => {
+const LeftGesture = (props: { onDblClick: (e: MouseEvent) => void }) => {
   return (
     <div
       class="left-0 z-0 absolute top-0 h-full w-1/5"
@@ -427,10 +446,10 @@ const LeftGesture = (props: {
 };
 
 const RightGesture = (props: {
-    onDblClick: (e: MouseEvent) => void;
-    volume: number;
-    setVolume: (v: number) => void;
-    playerHeight: number;
+  onDblClick: (e: MouseEvent) => void;
+  volume: number;
+  setVolume: (v: number) => void;
+  playerHeight: number;
 }) => {
   let startY = 0;
   let startVolume = 0;
@@ -447,7 +466,7 @@ const RightGesture = (props: {
         }
       }}
       onTouchMove={(e) => {
-        console.log(props.playerHeight)
+        console.log(props.playerHeight);
         if (e.touches.length == 1) {
           const deltaY = startY - e.touches[0].clientY;
           let newVolume = startVolume + deltaY / props.playerHeight;
@@ -460,8 +479,8 @@ const RightGesture = (props: {
   );
 };
 const CenterGesture = (props: {
-    onDblClick: (e: MouseEvent) => void;
-    onPointerDown: (e: PointerEvent) => void;
+  onDblClick: (e: MouseEvent) => void;
+  onPointerDown: (e: PointerEvent) => void;
 }) => {
   return (
     <div
@@ -548,6 +567,12 @@ function ChaptersMenu({ chapters }: { chapters?: Chapter[] | null }) {
           type="chapters"
           class="h-8 w-8 rounded-sm transition-transform duration-200 ease-out group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
         />
+        <media-tooltip
+          position="bottom center"
+          class=""
+          style={{ transformOrigin: "50% 100%" }}>
+          <span class="inline">Chapters</span>
+        </media-tooltip>
       </media-menu-button>
       {/* Menu Items */}
       <media-chapters-menu-items

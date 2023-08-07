@@ -1,16 +1,18 @@
-import { Show, createSignal, useContext } from "solid-js";
-import { DBContext } from "~/root";
+import { For, Show, createEffect, createSignal, useContext } from "solid-js";
+import { DBContext, InstanceContext } from "~/root";
 import { extractVideoId } from "./watch";
-        export const videoId = (item:any) => {
-            console.log("videoId function, item:",item)
-            if (!item) return undefined;
-            if (item.videoId) return item.videoId;
-            else if (item.id) return item.id;
-            else if (item.url) return extractVideoId(item.url);
-            else if (item.thumbnailUrl) return extractVideoId(item.thumbnailUrl);
-            else if (item.thumbnail) return extractVideoId(item.thumbnail);
-            else return undefined;
-        }
+import VideoCard from "~/components/VideoCard";
+import { RelatedStream } from "~/types";
+export const videoId = (item: any) => {
+  console.log("videoId function, item:", item);
+  if (!item) return undefined;
+  if (item.videoId) return item.videoId;
+  else if (item.id) return item.id;
+  else if (item.url) return extractVideoId(item.url);
+  else if (item.thumbnailUrl) return extractVideoId(item.thumbnailUrl);
+  else if (item.thumbnail) return extractVideoId(item.thumbnail);
+  else return undefined;
+};
 
 export default function History() {
   const [items, setItems] = createSignal([]);
@@ -21,11 +23,28 @@ export default function History() {
   let fileSelector: HTMLInputElement | undefined = undefined;
   const itemsLength = () => items().length;
   const [db] = useContext(DBContext);
+  const [historyItems, setHistoryItems] = createSignal<RelatedStream[]>([]);
+  const [limit, setLimit] = createSignal(100);
+  const [instance] = useContext(InstanceContext);
   function fileChange() {
     if (!fileSelector?.files?.[0]) return;
     const file = fileSelector.files[0];
     file.text().then((text) => {
       setItems([]);
+      // Piped
+
+      if (text.includes("watchHistory")) {
+        const json = JSON.parse(text);
+        const items = json.watchHistory.map((video: any) => {
+          return {
+            ...video,
+            watchedAt: video.watchedAt ?? 0,
+            currentTime: video.currentTime ?? 0,
+          };
+        });
+        setItems(items.sort((a: any, b: any) => b.watchedAt - a.watchedAt));
+      }
+
       // LibreTube
       if (text.includes("watchPositions")) {
         const json = JSON.parse(text);
@@ -110,9 +129,10 @@ export default function History() {
       console.log(items());
     });
   }
-  async function handleImport() {
+  async function handleImport(e: any) {
+    e.preventDefault();
     if (db()) {
-        console.log("Importing");
+      console.log("Importing");
       const tx = db()?.transaction("watch_history", "readwrite");
       const store = tx?.objectStore("watch_history");
       console.log(store);
@@ -147,8 +167,20 @@ export default function History() {
       });
     }
   }
+
+  createEffect(async () => {
+    if (db()) {
+      const tx = db()?.transaction("watch_history", "readwrite");
+      const store = tx?.objectStore("watch_history");
+      const items = await store?.getAll();
+      if (!items || items.length === 0) return;
+      setHistoryItems(items)
+    }
+  });
+
+
   return (
-    <div class="text-center">
+    <div class="">
       <form>
         <br />
         <div>
@@ -170,46 +202,20 @@ export default function History() {
           </button>
         </div>
       </form>
-      <br />
-      <strong>Importing Subscriptions from YouTube</strong>
-      <br />
-      <div>
-        Open
-        <a href="https://takeout.google.com/takeout/custom/youtube">
-          takeout.google.com/takeout/custom/youtube
-        </a>
-        <br />
-        In "Select data to include", click on "All YouTube data included" and
-        select only "subscriptions".
-        <br />
-        Create the export and download the zip file.
-        <br />
-        Extract subscriptions.csv from the zip file.
-        <br />
-        Select and import the file above.
-      </div>
-      <br />
-      <strong>Importing Subscriptions from Invidious</strong>
-      <br />
-      <div>
-        Open
-        <a href="https://invidio.us/data_control">invidiou.us/data_control</a>
-        <br />
-        Click on any of the export options.
-        <br />
-        Select and import the file above.
-      </div>
-      <br />
-      <strong>Importing Subscriptions from NewPipe</strong>
-      <br />
-      <div>
-        Go to the Feed tab.
-        <br />
-        Click on the arrow on where it says "Subscriptions".
-        <br />
-        Save the file somewhere.
-        <br />
-        Select and import the file above.
+      <div class="flex flex-wrap justify-center">
+        <For each={historyItems()}>
+          {(item) => (
+            <VideoCard
+              v={{
+                ...item,
+                url: `/watch?v=${videoId(item)}}`,
+                thumbnail: `${instance().replace("api", "proxy")}/vi/${videoId(
+                  item
+                )}/mqdefault.jpg?host=i.ytimg.com`,
+              }}
+            />
+          )}
+        </For>
       </div>
     </div>
   );

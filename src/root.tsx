@@ -127,7 +127,10 @@ export default function Root() {
       <Head>
         <Title>SolidStart - With TailwindCSS</Title>
         <Meta charset="utf-8" />
-        <Meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+        <Meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
+        />
 
         <Link rel="manifest" href="manifest.json" />
       </Head>
@@ -203,9 +206,6 @@ const PipContainer = () => {
       player()!.addEventListener("pause", () => {
         setPlaying(false);
       });
-      player()!.addEventListener("volumechange", () => {
-        setMuted(player()!.muted);
-      });
     }
   });
   const hideContainer = () => {
@@ -243,9 +243,9 @@ const PipContainer = () => {
                 console.log("no player or outlet");
               }
             }}
-            class="bg-white z-10 text-black rounded-full p-2 hover:bg-gray-200">
+            class=" w-10 h-10 z-10 text-white hover:text-gray-200">
             <svg
-              class="h-6 w-6"
+              // class="h-6 w-6"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor">
@@ -272,9 +272,9 @@ const PipContainer = () => {
                 console.log("no player or outlet");
               }
             }}
-            class="bg-white z-10 text-black rounded-full p-2 hover:bg-gray-200">
+            class=" w-10 h-10 z-10 text-white hover:text-gray-200">
             <svg
-              class="h-6 w-6"
+              // class="h-6 w-6"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor">
@@ -300,34 +300,14 @@ const PipContainer = () => {
                 }
               }
             }}>
-            {/* big play button */}
-            <svg
+            <media-icon
+              type="play"
               class="h-12 w-12"
-              classList={{ hidden: playing() }}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 5v14l11-7z"
-              />
-            </svg>
-            {/* pause button */}
-            <svg
+              classList={{ hidden: playing() }}></media-icon>
+            <media-icon
+              type="pause"
               class="h-12 w-12"
-              classList={{ hidden: !playing() }}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 4h3v16H6zM15 4h3v16h-3z"
-              />
-            </svg>
+              classList={{ hidden: !playing() }}></media-icon>
           </button>
         </div>
         <div class="flex items-center justify-between w-full">
@@ -335,11 +315,12 @@ const PipContainer = () => {
             onClick={() => {
               if (player()) {
                 player()!.muted = !player()!.muted;
+                setMuted(player()!.muted);
               }
             }}
-            class="bg-white w-10 h-10 z-10 text-black rounded-full p-2 hover:bg-gray-200">
+            class=" w-10 h-10 z-10 text-white hover:text-gray-200">
             <media-icon type="volume-high" classList={{ hidden: muted() }} />
-            <media-icon type="volume-muted" classList={{ hidden: !muted() }} />
+            <media-icon type="mute" classList={{ hidden: !muted() }} />
           </button>
           {/* <button
             onClick={() => {

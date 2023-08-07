@@ -4,55 +4,77 @@ import numeral from "numeral";
 import { extractVideoId } from "~/routes/watch";
 import { A } from "solid-start";
 import { createRenderEffect, createSignal, useContext } from "solid-js";
-import { DBContext } from "~/root";
+import { DBContext, InstanceContext } from "~/root";
 import { videoId } from "~/routes/history";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
-export default ({ v }: { v?: RelatedStream & { progress?: number } | undefined }) => {
+export default ({
+  v,
+}: {
+  v?: (RelatedStream & { progress?: number }) | undefined;
+}) => {
   const [db] = useContext(DBContext);
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
+  const [instance] = useContext(InstanceContext);
+  const [thumbnail, setThumbnail] = createSignal<string | undefined>(undefined);
 
-  createRenderEffect(
-    async () => {
-      if (!db()) return;
-      const tx = db()!.transaction("watch_history", "readwrite");
-      const store = tx.objectStore("watch_history");
-      const id = videoId(v);
-      if (!id) return;
-      const val = await store.get(id);
-      console.log(val, "val");
-      setProgress(val?.progress || val?.currentTime);
-    }
-  );
+  createRenderEffect(async () => {
+    if (!db()) return;
+    const tx = db()!.transaction("watch_history", "readwrite");
+    const store = tx.objectStore("watch_history");
+    const id = videoId(v);
+    if (!id) return;
+    const val = await store.get(id);
+    console.log(val, "val");
+    setThumbnail(
+      v?.thumbnail?.replace("hqdefault", "mqdefault") ??
+        `${instance().replace(
+          "api",
+          "proxy"
+        )}/vi/${id}/mqdefault.jpg?host=i.ytimg.com`
+    );
+    setProgress(val?.progress || val?.currentTime);
+  });
 
-  if (!v) return (
-    <div class={` flex w-72 max-w-[18rem] flex-col items-start rounded-xl bg-bg1 p-4`}>
-      <div class="animate-pulse w-64 h-32 bg-bg2 flex aspect-video max-w-fit flex-col overflow-hidden rounded text-text1">
-        <div class="bg-bg2 w-full h-full"></div>
+  if (!v)
+    return (
+      <div
+        class={` flex w-72 max-w-[18rem] flex-col items-start rounded-xl bg-bg1 p-4`}>
+        <div class="animate-pulse w-64 h-32 bg-bg2 flex aspect-video max-w-fit flex-col overflow-hidden rounded text-text1">
+          <div class="bg-bg2 w-full h-full"></div>
+        </div>
+        <div class="animate-pulse w-3/4 h-4 bg-bg2 rounded mt-2"></div>
+        <div class="animate-pulse w-1/2 h-4 bg-bg2 rounded mt-2"></div>
+        <div class="animate-pulse w-1/4 h-4 bg-bg2 rounded mt-2"></div>
       </div>
-      <div class="animate-pulse w-3/4 h-4 bg-bg2 rounded mt-2"></div>
-      <div class="animate-pulse w-1/2 h-4 bg-bg2 rounded mt-2"></div>
-      <div class="animate-pulse w-1/4 h-4 bg-bg2 rounded mt-2"></div>
-
-  </div>)
+    );
 
   return (
-    <div class={` flex w-72 max-w-[18rem] flex-col items-center rounded-xl bg-bg1 p-4`}>
-      <A href={`${v.url}`} class=" flex aspect-video max-w-fit flex-col overflow-hidden rounded text-text1">
+    <div
+      class={` flex w-72 max-w-[18rem] flex-col items-center rounded-xl bg-bg1 p-4`}>
+      <A
+        href={v.url ?? `/watch?v=${videoId(v)}`}
+        class=" flex aspect-video max-w-fit flex-col overflow-hidden rounded text-text1">
         {progress() !== undefined && (
           <div class="relative h-0 w-0 bg-blue-400">
-            <div class="absolute left-0 top-0 z-[1] bg-bg1/80 rounded-br px-2 uppercase">Watched</div>
+            <div class="absolute left-0 top-0 z-[1] bg-bg1/80 rounded-br px-2 uppercase">
+              Watched
+            </div>
           </div>
         )}
         <img
-          class={`cursor-pointer max-w-full break-words ${progress() ? "saturate-[0.35]" : ""} `}
-          src={v.thumbnail.replace("hqdefault", "mqdefault")}
+          class={`cursor-pointer max-w-full break-words ${
+            progress() ? "saturate-[0.35]" : ""
+          } `}
+          // src={v.thumbnail?.replace("hqdefault", "mqdefault")}
+          src={thumbnail()}
+          // onError={() => setThumbnail("https://via.placeholder.com/352x198")}
           // placeholder="blur"
-          width={352}
-          height={198}
+          width={256}
+          height={144}
           alt={v.title}
           loading="lazy"
         />
@@ -67,20 +89,23 @@ export default ({ v }: { v?: RelatedStream & { progress?: number } | undefined }
               style={{
                 width: `clamp(0%, ${(progress()! / v.duration) * 100}%, 100%`,
               }}
-              class="absolute bottom-0 h-1 bg-highlight"
-            ></div>
+              class="absolute bottom-0 h-1 bg-highlight"></div>
           </div>
         )}
       </A>
       <div class="mt-2 flex w-full flex-col ">
         <div class="flex flex-col gap-2 pr-2 ">
-          <A href={v.url} class="break-words text-lg leading-tight">
+          <A
+            href={v.url ?? `/watch?v=${videoId(v)}`}
+            class="break-words text-lg leading-tight">
             {v.title}
           </A>
 
           <div class="flex gap-2 text-text2">
             <div class="group mb-1 w-max underline ">
-              <A href={v.uploaderUrl || ""} class="flex max-w-max items-center gap-2">
+              <A
+                href={v.uploaderUrl || ""}
+                class="flex max-w-max items-center gap-2">
                 {v.uploaderAvatar && (
                   <img
                     src={v.uploaderAvatar}
@@ -98,7 +123,10 @@ export default ({ v }: { v?: RelatedStream & { progress?: number } | undefined }
                 <div class="peer w-fit text-sm">{v.uploaderName}</div>
               </A>
               <div class="flex ">
-                <div class="w-fit text-sm "> {numeral(v.views).format("0a").toUpperCase()} views</div>
+                <div class="w-fit text-sm ">
+                  {" "}
+                  {numeral(v.views).format("0a").toUpperCase()} views
+                </div>
 
                 <div class="group w-fit pl-1 text-sm">
                   <div class=""> • {dayjs(v.uploaded).fromNow()} </div>
