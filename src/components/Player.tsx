@@ -396,6 +396,7 @@ export default function Player() {
         hidden: route.pathname !== "/watch",
       }}>
       <media-player
+      id="player"
         class="peer w-full h-full aspect-video"
         current-time={currentTime()}
         // onTextTrackChange={handleTextTrackChange}

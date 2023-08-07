@@ -29,6 +29,7 @@ import {
   useServerContext,
   parseCookie,
   Link,
+  useNavigate,
 } from "solid-start";
 import "./root.css";
 import { isServer } from "solid-js/web";
@@ -40,6 +41,8 @@ import { defineCustomElements } from "vidstack/elements";
 import { IDBPDatabase, openDB } from "idb";
 import Header from "./components/Header";
 import PlayerSkin from "./components/PlayerSkin";
+import { MediaOutletElement, MediaPlayerElement } from "vidstack";
+import { videoId } from "./routes/history";
 
 const theme = createSignal("monokai");
 export const ThemeContext = createContext(theme);
@@ -124,7 +127,7 @@ export default function Root() {
       <Head>
         <Title>SolidStart - With TailwindCSS</Title>
         <Meta charset="utf-8" />
-        <Meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
 
         <Link rel="manifest" href="manifest.json" />
       </Head>
@@ -172,8 +175,12 @@ export default function Root() {
   );
 }
 const PipContainer = () => {
-  const [userIdle, setUserIdle] = createSignal(false);
-  let timeout:any;
+  const [userIdle, setUserIdle] = createSignal(true);
+  const [playing, setPlaying] = createSignal(false);
+  const [outlet, setOutlet] = createSignal<MediaOutletElement | null>();
+  const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
+  const [muted, setMuted] = createSignal(false);
+  let timeout: any;
   const handlePointerEvent = () => {
     clearTimeout(timeout);
     setUserIdle(false);
@@ -182,49 +189,187 @@ const PipContainer = () => {
     }, 2000);
   };
   let pipContainer: HTMLDivElement | undefined = undefined;
+
+  createEffect(() => {
+    if (!video[0].value) return;
+    console.log("setting player and outlet", videoId(video[0].value));
+    setPlayer(document.querySelector("media-player"));
+    setOutlet(document.querySelector("media-outlet"));
+    if (player()) {
+      player()!.addEventListener("play", () => {
+        console.log("playing");
+        setPlaying(true);
+      });
+      player()!.addEventListener("pause", () => {
+        setPlaying(false);
+      });
+      player()!.addEventListener("volumechange", () => {
+        setMuted(player()!.muted);
+      });
+    }
+  });
   const hideContainer = () => {
     pipContainer?.classList.add("hidden");
   };
+  const navigate = useNavigate();
 
   return (
     <div
       ref={pipContainer}
       id="pip-container"
-      class="w-72 z-[999] hidden justify-center items-center aspect-video sticky top-14 left-2 rounded-lg overflow-hidden bg-black">
+      style={{
+        "aspect-ratio": video[0].value
+          ? video[0].value.videoStreams[0].width /
+            video[0].value.videoStreams[0].height
+          : "16/9",
+      }}
+      class="w-full sm:w-96 z-[999] hidden justify-center items-center aspect-video sticky top-2 inset-x-0 sm:left-2 rounded-lg overflow-hidden bg-black">
       <div
-        id="pip-controls"
         onPointerDown={handlePointerEvent}
         onPointerUp={handlePointerEvent}
         onMouseOver={handlePointerEvent}
         onMouseMove={handlePointerEvent}
+        onFocusIn={handlePointerEvent}
         classList={{ "opacity-0": userIdle() }}
-        class="absolute inset-0 w-full h-full p-2 z-[9999] transition-opacity duration-200">
-        <button
-          onClick={() => {
-            const player = document.querySelector("media-player");
-            const outlet = document.querySelector("media-outlet");
-            if (player && outlet) {
-              player.prepend(outlet);
-              hideContainer();
-            } else {
-              console.log("no player or outlet");
-            }
-          }}
-          id="pip-close"
-          class="bg-white text-black rounded-full p-2 hover:bg-gray-200">
-          <svg
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+        class="absolute bg-black/50 flex flex-col items-center justify-between inset-0 w-full h-full p-2 z-[9999] transition-opacity duration-200">
+        <div class="flex items-center justify-between w-full">
+          <button
+            onClick={() => {
+              if (player() && outlet()) {
+                player()!.prepend(outlet()!);
+                player()!.pause();
+                hideContainer();
+              } else {
+                console.log("no player or outlet");
+              }
+            }}
+            class="bg-white z-10 text-black rounded-full p-2 hover:bg-gray-200">
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={() => {
+              if (player() && outlet()) {
+                player()!.prepend(outlet()!);
+                hideContainer();
+                const id = videoId(video[0].value);
+                if (!id) {
+                  console.log("no id", id);
+                  return;
+                }
+                navigate(`/watch?v=${id}`);
+              } else {
+                console.log("no player or outlet");
+              }
+            }}
+            class="bg-white z-10 text-black rounded-full p-2 hover:bg-gray-200">
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="absolute inset-0 flex justify-center items-center">
+          <button
+            class="m-auto"
+            onClick={() => {
+              console.log("play", player());
+              if (player()) {
+                if (playing()) {
+                  player()!.pause();
+                } else {
+                  player()!.play();
+                }
+              }
+            }}>
+            {/* big play button */}
+            <svg
+              class="h-12 w-12"
+              classList={{ hidden: playing() }}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 5v14l11-7z"
+              />
+            </svg>
+            {/* pause button */}
+            <svg
+              class="h-12 w-12"
+              classList={{ hidden: !playing() }}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 4h3v16H6zM15 4h3v16h-3z"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="flex items-center justify-between w-full">
+          <button
+            onClick={() => {
+              if (player()) {
+                player()!.muted = !player()!.muted;
+              }
+            }}
+            class="bg-white w-10 h-10 z-10 text-black rounded-full p-2 hover:bg-gray-200">
+            <media-icon type="volume-high" classList={{ hidden: muted() }} />
+            <media-icon type="volume-muted" classList={{ hidden: !muted() }} />
+          </button>
+          {/* <button
+            onClick={() => {
+              if (player()) {
+                player()!.requestFullscreen();
+              }
+            }}
+            class="bg-white z-10 text-black rounded-full p-2 hover:bg-gray-200">
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                classList={{ hidden: document.fullscreenElement }}
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 11l3-3 3 3m-3 3v6m0 0H6m0 0h12M6 5h12m-6 6V5m0 0H6m0 0h12"
+              />
+              <path
+                classList={{ hidden: !document.fullscreenElement }}
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 7H7v6h6V7z"
+              />
+            </svg>
+          </button> */}
+        </div>
       </div>
     </div>
   );

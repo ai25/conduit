@@ -1,8 +1,16 @@
 import { useLocation } from "solid-start";
 import VideoCard from "~/components/VideoCard";
-import { For, createRenderEffect, createSignal, onCleanup, onMount, useContext } from "solid-js";
+import {
+  For,
+  createRenderEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+  useContext,
+} from "solid-js";
 import { InstanceContext } from "~/root";
 import { z } from "zod";
+import { getStorageValue } from "~/utils/storage";
 
 export default function Search() {
   const [results, setResults] = createSignal();
@@ -21,7 +29,7 @@ export default function Search() {
   const [instance] = useContext(InstanceContext);
   createRenderEffect(() => {
     console.log(route, "route");
-  })
+  });
   onMount(() => {
     console.log(route);
     handleRedirect();
@@ -43,7 +51,7 @@ export default function Search() {
     ).json();
   }
   async function updateResults() {
-    document.title = route.query.q+ " - Conduit";
+    document.title = route.query.q + " - Conduit";
     setResults(await fetchResults());
   }
   // function updateFilter() {
@@ -85,8 +93,12 @@ export default function Search() {
   function saveQueryToHistory() {
     const query = route.query.q;
     if (!query) return;
-    const searchHistory =
-      JSON.parse(localStorage.getItem("search_history")) ?? [];
+    const searchHistory = getStorageValue(
+      "search_history",
+      [],
+      "json",
+      "localStorage"
+    );
     if (searchHistory.includes(query)) {
       const index = searchHistory.indexOf(query);
       searchHistory.splice(index, 1);

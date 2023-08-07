@@ -39,10 +39,12 @@ import { videoId } from "./history";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
+  console.log(`extracting id from: ${url}`)
   if (url?.includes("/watch?v=")) {
     id = url.split("/watch?v=")[1];
   } else {
-    id = url?.match("(?<=\/)([^\/]{11})(?=\/)")?.[0];
+    id = url?.match("(?<=/)([^/]{11})(?=[/.])")?.[0];
+    console.log(url?.match("(?<=/)([^/]{11})(?=[/.])"), "id")
   }
   return id ?? undefined;
 }

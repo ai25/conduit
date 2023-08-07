@@ -1,4 +1,4 @@
-import { For, createEffect, createSignal, useContext } from "solid-js";
+import { For, Show, createEffect, createSignal, useContext } from "solid-js";
 import VideoCard from "~/components/VideoCard";
 import { InstanceContext, Spinner } from "~/root";
 import { RelatedStream } from "~/types";
@@ -52,7 +52,7 @@ export default function Subscriptions() {
     }
 
     try {
-        console.log("cache was stale, refetching");
+      console.log("cache was stale, refetching");
       const res = await fetch(`${instance()}/feed/unauthenticated`, {
         method: "POST",
         body: JSON.stringify(channels),
@@ -66,7 +66,7 @@ export default function Subscriptions() {
             headers: {
               "Cache-Control": "max-age=60",
               "Content-Type": "application/json",
-              "date": new Date().toISOString(),
+              date: new Date().toISOString(),
             },
           })
         );
@@ -91,23 +91,29 @@ export default function Subscriptions() {
     <>
       {/* {isLoading&&<div class="fixed flex justify-center w-full text-5xl text-text"><ImSpinner2 class="animate-spin"/></div>} */}
       <div class="mx-2 flex flex-wrap justify-center">
-        {videos() ? (
-          <>
-            <For each={videos()!.slice(0, limit())}>
-              {(video) => <VideoCard v={video} />}
-            </For>
-          </>
-        ) : isLoading() ? (
-          <>
-            {Array(44)
-              .fill(0)
-              .map((_, index) => {
-                return <VideoCard v={undefined} />;
-              })}
-          </>
-        ) : (
-          <>{error()?.message}</>
-        )}
+        <Show when={videos()} keyed>
+          {(video) => (
+            <>
+              <For each={videos()!.slice(0, limit())}>
+                {(video) => <VideoCard v={video} />}
+              </For>
+            </>
+          )}
+        </Show>
+        <Show when={isLoading()} keyed>
+          {
+            <>
+              {Array(44)
+                .fill(0)
+                .map((_, index) => {
+                  return <VideoCard v={undefined} />;
+                })}
+            </>
+          }
+        </Show>
+        <Show when={error()} keyed>
+          {(error) => <>{error?.message}</>}
+        </Show>
       </div>
       <div class="w-full flex items-center justify-center">
         <button class="btn" onClick={() => setLimit(limit() + 100)}>

@@ -96,11 +96,11 @@ const Header = () => {
           <div class="sm:flex-grow sm:flex-row sm:text-center">
             <For each={links}>
               {(link) => (
-                <a
+                <A
                   href={link.href}
                   class="mr-4 mt-4 block hover:text-highlight sm:mt-0 sm:inline-block">
                   {link.label}
-                </a>
+                </A>
               )}
             </For>
           </div>
@@ -175,7 +175,7 @@ const Search = () => {
     setSuggestions([]);
     setSearch(null);
     console.log(input);
-    navigate(`/search/${input}`, { replace: false });
+    navigate(`/search?q=${input}`, { replace: false });
   }
 
   return (

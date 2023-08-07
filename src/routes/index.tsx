@@ -1,8 +1,11 @@
-import { onCleanup, onMount } from "solid-js";
+import { createSignal, onCleanup, onMount } from "solid-js";
 import { A } from "solid-start";
 import Counter from "~/components/Counter";
 
 export default function Home() {
+  let startY=0 
+  let startVolume=0
+  const [volume, setVolume] = createSignal(0);
   return (
     <main class="text-center mx-auto text-gray-700 p-4">
       <h1 class="max-6-xs text-6xl text-sky-700 font-thin uppercase my-16">

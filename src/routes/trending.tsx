@@ -31,13 +31,15 @@ export default function Trending() {
             <div class="text-2xl text-white">Loading...</div>
           </div>
         )} */}
+        {/* {trending() && <></>} */}
+
       <Switch
         fallback={
           <For each={Array(10).fill(0)}>
             {() => <VideoCard v={undefined} />}
           </For>
         }>
-        <Match when={trending.loading} keyed>
+        <Match when={!trending()} keyed>
           {(loading) =>
             loading && (
               <For each={Array(10).fill(0)}>
@@ -54,7 +56,7 @@ export default function Trending() {
             error && <div>Error: {(trending() as Error).message}</div>
           }
         </Match>
-        <Match when={(trending() as TrendingStream[]).length > 0} keyed>
+        <Match when={(trending() as TrendingStream[])} keyed>
           {(videos) =>
             videos && (
               <For each={trending() as TrendingStream[]}>
