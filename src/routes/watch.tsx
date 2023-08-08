@@ -204,10 +204,10 @@ export default function Watch() {
   return (
     <div
       classList={{
-        "lg:ml-[20rem]": !preferences.theatreMode,
+        "lg:-mr-[20rem]": !preferences.theatreMode,
         "lg:ml-0": preferences.theatreMode,
       }}
-      class="flex flex-col md:flex-row w-full ">
+      class="flex flex-col lg:flex-row w-full ">
       <div class="lg:min-h-[5540px] w-full">
         <div class="min-h-full w-full">
           <Switch fallback={<div>loading</div>}>
