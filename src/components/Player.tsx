@@ -40,7 +40,7 @@ import {
 import { PlayerContext, PreferencesContext } from "~/root";
 import { PipedVideo, Subtitle } from "~/types";
 import { chaptersVtt } from "~/utils/chapters";
-import { useIsRouting, useLocation } from "solid-start";
+import { useIsRouting, useLocation, useNavigate } from "solid-start";
 // import { extractVideoId } from "~/routes/watch";
 // import { RouteLocation, useLocation } from "@builder.io/qwik-city";
 // import { IDBPDatabase } from "idb";
@@ -379,9 +379,16 @@ export default function Player() {
     });
   });
   const isRouting = useIsRouting();
+  const navigate = useNavigate();
   createEffect(() => {
     if (isRouting()) {
       console.log("routing");
+      if ("window" in globalThis) {
+        // add fullscreen parameter
+        const url = new URL(window.location.href);
+        url.searchParams.set("fullscreen", "true");
+        navigate(url.href.replace(url.origin, "").toString(), { replace: false});
+      }
       updateProgress();
     }
     if (route.pathname !== "/watch") {

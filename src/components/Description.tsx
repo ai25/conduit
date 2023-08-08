@@ -1,10 +1,21 @@
 import numeral from "numeral";
 import type { PipedVideo } from "../types";
-import { createEffect, createSignal } from "solid-js";
+import {
+  For,
+  Match,
+  Show,
+  Switch,
+  createEffect,
+  createSignal,
+  useContext,
+} from "solid-js";
 import { A } from "solid-start";
 import { MediaPlayerElement } from "vidstack";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import dayjs from "dayjs";
+import Comment, { PipedCommentResponse } from "./Comment";
+import { InstanceContext } from "~/root";
+import { videoId } from "~/routes/history";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -17,6 +28,9 @@ function handleTimestamp(videoId: string, t: string) {
 
 export default ({ video }: { video: PipedVideo }) => {
   const [isSubscribed, setIsSubscribed] = createSignal(false);
+
+  const [comments, setComments] = createSignal<PipedCommentResponse>();
+  const [instance, setInstance] = useContext(InstanceContext);
 
   function rewriteDescription(text: string) {
     const t = text
@@ -86,9 +100,25 @@ export default ({ video }: { video: PipedVideo }) => {
     }
   };
 
+  async function loadComments() {
+    const res = await fetch(`${instance()}/comments/${videoId(video)}`);
+    const data = await res.json();
+    console.log(data, "comments");
+    setComments(data);
+  }
+  async function loadMoreComments() {
+    if (!comments()?.nextpage) return;
+    const res = await fetch(
+      `${instance()}/nextpage/comments/${videoId(video)}?nextpage=${
+        comments()!.nextpage
+      }`
+    );
+    const data = await res.json();
+    console.log(data, "comments");
+    setComments({...data, comments: [...comments()!.comments, ...data.comments]});
+  }
   return (
-    <div
-     class="mb-2 w-full break-before-auto overflow-hidden bg-bg1 p-4">
+    <div class="mb-2 w-full break-before-auto overflow-hidden bg-bg1 p-4">
       <div class="flex flex-col justify-between gap-2 lg:flex-row">
         <div class="flex flex-col gap-2 ">
           <h1 class="text-xl font-bold sm:text-2xl ">{video.title}</h1>
@@ -141,9 +171,7 @@ export default ({ video }: { video: PipedVideo }) => {
               return substr.slice(0, substr.length - 3);
             })()}
           </p>
-          <p class="">
-            {numeral(video.views).format("0,0")} views
-          </p>
+          <p class="">{numeral(video.views).format("0,0")} views</p>
         </div>
       </div>
       <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
@@ -165,6 +193,42 @@ export default ({ video }: { video: PipedVideo }) => {
           Show {expanded() ? "less" : "more"}
         </button>
       </div>
+      <Show
+        when={comments()}
+        fallback={
+          <button onClick={loadComments} class="btn">
+            Load Comments
+          </button>
+        }
+        keyed>
+        {(c) => (
+          <Switch>
+            <Match when={c.comments.length === 0}>
+              <div class="text-center text-text2">No comments</div>
+            </Match>
+            <Match when={c.disabled}>
+              <div class="text-center text-text2">Comments disabled</div>
+            </Match>
+            <Match when={c.comments.length > 0}>
+              <For each={c.comments}>
+                {(comment) => (
+                  <Comment
+                    comment={comment}
+                    nextpage={c.nextpage}
+                    uploader={video.uploader}
+                    videoId={videoId(video)}
+                  />
+                )}
+              </For>
+              <Show when={c.nextpage}>
+                <button class="btn" onClick={loadMoreComments}>
+                  Load More
+                </button>
+              </Show>
+            </Match>
+          </Switch>
+        )}
+      </Show>
     </div>
   );
 };

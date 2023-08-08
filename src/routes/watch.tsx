@@ -36,6 +36,7 @@ import { Portal, isServer } from "solid-js/web";
 // const VideoCard = lazy(() => import("~/components/VideoCard"));
 import VideoCard from "~/components/VideoCard";
 import { videoId } from "./history";
+import { PipedCommentResponse } from "~/components/Comment";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
@@ -138,6 +139,13 @@ export default function Watch() {
       console.log(err, "error while fetching video");
     }
   });
+  createEffect(() => {
+    if(!video.value) return;
+    if ("window" in globalThis) {
+      console.log("setting title");
+      document.title = `${video.value?.title} - Conduit`;
+    }
+  });
   // const fetcher = async (
   //   sourceOutput: any,
   //   info: { value: PipedVideo | undefined; refetching: any | boolean }
@@ -236,6 +244,7 @@ export default function Watch() {
           }}
         </For>
       </div>
+
     </div>
   );
 }

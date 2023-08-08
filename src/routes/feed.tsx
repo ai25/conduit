@@ -95,7 +95,7 @@ export default function Subscriptions() {
           {(video) => (
             <>
               <For each={videos()!.slice(0, limit())}>
-                {(video) => <VideoCard v={video} />}
+                {(video) => <div class="md:w-72"><VideoCard v={video} /></div>}
               </For>
             </>
           )}

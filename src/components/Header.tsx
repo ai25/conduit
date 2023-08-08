@@ -67,33 +67,22 @@ const Header = () => {
         }}>
         Skip to main content
       </button>
-      <div class="flex flex-wrap items-center justify-start">
-        <div class="mr-6 flex items-center">
+      <div class="flex items-center justify-between">
+        <A href="/feed" class="mr-2 flex items-center">
           <div class="relative h-8">
             <img
-              src="favicon.ico"
-              class="object-contain"
+              src="img/icons/mstile-150x150.png"
+              class="object-contain max-w-full max-h-full"
               alt="logo"
               sizes="(max-width: 640px) 100vw, 640px"
             />
           </div>
-        </div>
-        <button
-          class="inline sm:hidden items-center rounded border px-3 py-2 hover:border-black"
-          onClick={toggleMenu}>
-          <svg
-            class="h-3 w-3 fill-current"
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg">
-            <title>Menu</title>
-            <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
-          </svg>
-        </button>
+        </A>
         <nav
           class={`${
-            isOpen() ? "block" : "hidden"
-          } block w-full flex-grow sm:flex sm:w-auto sm:items-center`}>
-          <div class="sm:flex-grow sm:flex-row sm:text-center">
+            isOpen() ? "visible" : "invisible"
+          } relative w-full flex-grow sm:visible sm:flex sm:w-auto sm:items-center`}>
+          <div class="absolute bg-bg1 z-[99999] sm:flex-grow sm:flex-row sm:text-center">
             <For each={links}>
               {(link) => (
                 <A
@@ -106,7 +95,18 @@ const Header = () => {
           </div>
         </nav>
         <Search />
-        <Select
+        <button
+          class="inline sm:hidden items-center rounded border px-3 py-2 hover:border-black"
+          onClick={toggleMenu}>
+          <svg
+            class="h-3 w-3 fill-current"
+            viewBox="0 0 20 20"
+            xmlns="http://www.w3.org/2000/svg">
+            <title>Menu</title>
+            <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
+          </svg>
+        </button>
+        {/* <Select
           name="theme"
           value={theme() ?? ""}
           onChange={(v) => {
@@ -120,7 +120,7 @@ const Header = () => {
             { value: "discord", label: "Discord" },
             { value: "github", label: "Github" },
           ]}
-        />
+        /> */}
 
         <Select
           name="instance"
@@ -196,7 +196,7 @@ const Search = () => {
           z-10 h-12 w-12 focus:pl-14 rounded-full border border-text2 transition-all origin-right duration-200 
           bg-transparent outline-none 
           focus:w-full focus:cursor-text focus:ring-highlight focus:ring-4 
-          ring-inset focus:pr-4"
+          ring-inset focus:pr-4 peer-focus:w-full"
         />
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -213,11 +213,11 @@ const Search = () => {
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           />
         </svg>
-        <div class="absolute shadow bg-bg2 z-40 w-full left-0 rounded max-h-select overflow-y-auto svelte-5uyqqj">
+        <div class="absolute peer shadow bg-bg2 z-40 w-full left-0 rounded max-h-select overflow-y-auto ">
           <div class="flex flex-col w-full">
             <For each={suggestions()}>
               {(suggestion) => (
-                <div
+                <button
                   onClick={() => handleSearch(suggestion)}
                   class="cursor-pointer w-full border-bg3 rounded-t border-b hover:bg-bg3">
                   <div class="flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative ">
@@ -225,7 +225,7 @@ const Search = () => {
                       <div class="mx-2">{suggestion}</div>
                     </div>
                   </div>
-                </div>
+                </button>
               )}
             </For>
           </div>

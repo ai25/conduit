@@ -146,8 +146,19 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
       <div class="pointer-events-none absolute inset-0 z-10 flex h-full flex-col justify-between text-text1 opacity-0 transition-opacity duration-200 ease-linear not-can-play:opacity-100 can-control:opacity-100">
         <div class="pointer-events-none absolute inset-0 z-0 h-full w-full bg-gradient-to-t from-black/50 from-5% via-transparent via-50% to-black/20 to-100%" />
         <MediaControlGroup>
-          <div class="z-10 flex w-full items-center justify-start truncate font-sans text-lg font-normal text-white not-can-play:opacity-0">
-            <p class="truncate">{video?.title}</p>
+          <div class="z-10 flex w-24 justify-between rounded-full bg-black/30 items-center truncate font-sans text-lg font-normal text-white not-can-play:opacity-0">
+            <button role="button" aria-label="Previous Video"
+            disabled
+            class="h-10 w-10 disabled:text-white/50"
+            >
+              <media-icon type="chevron-left" />
+            </button>
+            <div class="w-px h-8 bg-white/50" />
+            <button role="button" aria-label="Next Video"
+            class="h-10 w-10 disabled:text-white/50"
+            >
+              <media-icon type="chevron-right" />
+            </button>
           </div>
           <div class="flex w-max items-center justify-end">
             <media-mute-button class="group peer flex h-10 w-10 items-center justify-center rounded-sm text-white outline-none sm:hidden">
@@ -343,7 +354,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
               onClick={()=>setPreferences({theatreMode:!preferences.theatreMode})}
               aria-keyshortcuts="t"
               aria-label="Theatre Mode"
-              class="group z-10 inline-flex h-10 w-10 items-center justify-center rounded-sm text-white outline-none ">
+              class="group z-10 hidden lg:inline-flex h-10 w-10 items-center justify-center rounded-sm text-white outline-none ">
               <media-icon
                 classList={{
                   hidden: !preferences.theatreMode,
