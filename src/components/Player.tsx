@@ -383,12 +383,12 @@ export default function Player() {
   createEffect(() => {
     if (isRouting()) {
       console.log("routing");
-      if ("window" in globalThis) {
-        // add fullscreen parameter
-        const url = new URL(window.location.href);
-        url.searchParams.set("fullscreen", "true");
-        navigate(url.href.replace(url.origin, "").toString(), { replace: false});
-      }
+      // if ("window" in globalThis) {
+      //   // add fullscreen parameter
+      //   const url = new URL(window.location.href);
+      //   url.searchParams.set("fullscreen", "true");
+      //   navigate(url.href.replace(url.origin, "").toString(), { replace: false});
+      // }
       updateProgress();
     }
     if (route.pathname !== "/watch") {
