@@ -30,7 +30,7 @@ import {
 } from "solid-start";
 import { For } from "solid-js";
 import { reconcile } from "solid-js/store";
-import { InstanceContext, PlayerContext } from "~/root";
+import { InstanceContext, PlayerContext, PreferencesContext } from "~/root";
 import { Portal, isServer } from "solid-js/web";
 // const Description = lazy(() => import("~/components/Description"));
 // const VideoCard = lazy(() => import("~/components/VideoCard"));
@@ -39,12 +39,12 @@ import { videoId } from "./history";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
-  console.log(`extracting id from: ${url}`)
+  console.log(`extracting id from: ${url}`);
   if (url?.includes("/watch?v=")) {
     id = url.split("/watch?v=")[1];
   } else {
     id = url?.match("(?<=/)([^/]{11})(?=[/.])")?.[0];
-    console.log(url?.match("(?<=/)([^/]{11})(?=[/.])"), "id")
+    console.log(url?.match("(?<=/)([^/]{11})(?=[/.])"), "id");
   }
   return id ?? undefined;
 }
@@ -97,6 +97,7 @@ export default function Watch() {
 
   const [video, setVideo] = useContext(PlayerContext);
   const [instance] = useContext(InstanceContext);
+  const [preferences] = useContext(PreferencesContext);
   const route = useLocation();
   // const videoLoaded = useSignal(false);
   // const preferences = useContext(PreferencesContext);
@@ -201,8 +202,13 @@ export default function Watch() {
   // });
 
   return (
-    <div class="flex flex-col md:flex-row w-full md:w-[calc(100%-20rem)]">
-      <div class="md:min-h-[5540px] w-full">
+    <div
+      classList={{
+        "lg:ml-[20rem]": !preferences.theatreMode,
+        "lg:ml-0": preferences.theatreMode,
+      }}
+      class="flex flex-col md:flex-row w-full ">
+      <div class="lg:min-h-[5540px] w-full">
         <div class="min-h-full w-full">
           <Switch fallback={<div>loading</div>}>
             {/* <Match when={resource.loading}>
@@ -221,7 +227,9 @@ export default function Watch() {
           {/* {video.value?.title} */}
         </div>
       </div>
-      <div class="flex flex-col items-center gap-2 md:hidden">
+      <div
+        classList={{ "lg:hidden": !preferences.theatreMode }}
+        class="flex flex-col items-center gap-2">
         <For each={video.value?.relatedStreams}>
           {(stream) => {
             return <VideoCard v={stream} />;

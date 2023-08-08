@@ -7,15 +7,17 @@ import {
   on,
   onCleanup,
   onMount,
+  useContext,
 } from "solid-js";
 import { A } from "solid-start";
 import { MediaGestureElement, MediaPlayerElement } from "vidstack";
 import { MediaIconElement } from "vidstack/icons";
+import { PreferencesContext } from "~/root";
 
 declare module "solid-js" {
   namespace JSX {
     interface IntrinsicElements {
-      "media-gesture": MediaGestureElement;
+      "media-gesture": any;
       "media-mute-button": any;
       "media-icon": MediaIconElement;
       "media-tooltip": any;
@@ -45,6 +47,7 @@ declare module "solid-js" {
       "media-caption-button": any;
       "media-audio-menu-button": any;
       "media-audio-menu-items": any;
+      "media-toggle-button": any;
     }
   }
 }
@@ -56,6 +59,7 @@ interface PlayerSkinProps {
 export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
   const [currentChapter, setCurrentChapter] = createSignal("");
   const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
+  const [preferences, setPreferences] = useContext(PreferencesContext);
   let interval: any;
   createEffect(() => {
     if (!video?.chapters) return;
@@ -90,20 +94,6 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
       class="pointer-events-none absolute inset-0 z-10 h-full "
       role="group"
       aria-label="Media Controls">
-      <media-gesture
-        class="left-0 top-0 z-10 h-full w-full bg-green-500/50"
-        event="pointerup"
-        action="toggle:user-idle"></media-gesture>
-      {/* <media-gesture
-        class="left-0 top-0 h-full w-full"
-        event="dblpointerup"
-        action="toggle:paused"
-      />
-      <media-gesture
-        class="left-0 top-0 z-10 h-full w-1/5"
-        event="dblpointerup"
-        action="seek:-10"
-      /> */}
       <div class="absolute top-0 left-0 z-0 pointer-events-auto w-full h-full">
         <CenterGesture
           onDblClick={() => {
@@ -113,6 +103,11 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
               name: player()!.paused ? "play" : "pause",
               value: "",
             });
+          }}
+          onPointerDown={() => {
+            if (!player()) return;
+            // console.log(player()!.user.idling, "idling");
+            // player()!.user.idle(!player()!.user.idling, 5000);
           }}
         />
         <BufferingIndicator />
@@ -180,10 +175,10 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             <SettingsMenu />
           </div>
         </MediaControlGroup>
-        <div class="pointer-events-auto flex min-h-[48px] w-full p-2 items-center justify-center">
+        <div class="flex min-h-[48px] w-full p-2 items-center justify-center">
           <media-play-button
-            aria-keyshortcuts="k"
-            class="group text-white rounded-full bg-black/30 outline-none flex sm:hidden justify-center items-center transition-all relative h-20 w-20"
+            aria-keyshortcuts="k Space"
+            class="group pointer-events-auto buffering:opacity-0 duration-500 text-white rounded-full bg-black/30 outline-none flex sm:hidden justify-center items-center transition-all relative h-20 w-20"
             aria-label="Play">
             <media-icon
               type="play"
@@ -251,7 +246,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
 
           <div class="flex items-center px-2 w-full z-10">
             <media-play-button
-              aria-keyshortcuts="k"
+              aria-keyshortcuts="k Space"
               class="group rounded-sm text-white outline-none hidden sm:inline-flex justify-center items-center transition-all relative h-10 w-10 mr-1 -ml-1"
               aria-label="Play">
               <media-icon
@@ -344,6 +339,30 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
               </media-tooltip>
             </media-caption-button>
             <RecommendedVideosMenu videos={video?.relatedStreams} />
+            <media-toggle-button
+              onClick={()=>setPreferences({theatreMode:!preferences.theatreMode})}
+              aria-keyshortcuts="t"
+              aria-label="Theatre Mode"
+              class="group z-10 inline-flex h-10 w-10 items-center justify-center rounded-sm text-white outline-none ">
+              <media-icon
+                classList={{
+                  hidden: !preferences.theatreMode,
+                  block: preferences.theatreMode,
+                }}
+                class="group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
+                type="theatre-mode"></media-icon>
+              <media-icon
+                classList={{
+                  hidden: preferences.theatreMode,
+                  block: !preferences.theatreMode,
+                }}
+                class="group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
+                type="theatre-mode-exit"></media-icon>
+              <media-tooltip position="top center">
+                <span slot="on">Theatre Mode On</span>
+                <span slot="off">Theatre Mode Off</span>
+              </media-tooltip>
+            </media-toggle-button>
             <FullscreenButton />
           </div>
         </div>

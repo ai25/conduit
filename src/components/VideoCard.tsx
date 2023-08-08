@@ -29,13 +29,13 @@ export default ({
     if (!id) return;
     const val = await store.get(id);
     console.log(val, "val");
-    setThumbnail(
-      v?.thumbnail?.replace("hqdefault", "mqdefault") ??
-        `${instance().replace(
-          "api",
-          "proxy"
-        )}/vi/${id}/mqdefault.jpg?host=i.ytimg.com`
-    );
+    // setThumbnail(
+    //   v?.thumbnail?.replace("hqdefault", "mqdefault") ??
+    //     `${instance().replace(
+    //       "api",
+    //       "proxy"
+    //     )}/vi/${id}/mqdefault.jpg?host=i.ytimg.com`
+    // );
     setProgress(val?.progress || val?.currentTime);
   });
 
@@ -54,27 +54,27 @@ export default ({
 
   return (
     <div
-      class={` flex w-72 max-w-[18rem] flex-col items-center rounded-xl bg-bg1 p-4`}>
+      class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-center rounded-xl bg-bg1 p-4`}>
       <A
         href={v.url ?? `/watch?v=${videoId(v)}`}
-        class=" flex aspect-video max-w-fit flex-col overflow-hidden rounded text-text1">
+        class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1">
         {progress() !== undefined && (
-          <div class="relative h-0 w-0 bg-blue-400">
+          <div class="relative h-0 w-0 ">
             <div class="absolute left-0 top-0 z-[1] bg-bg1/80 rounded-br px-2 uppercase">
               Watched
             </div>
           </div>
         )}
         <img
-          class={`cursor-pointer max-w-full break-words ${
-            progress() ? "saturate-[0.35]" : ""
+          class={`cursor-pointer w-full aspect-video max-w-md break-words ${
+            progress() !== undefined ? "saturate-[0.35] opacity-75" : ""
           } `}
           // src={v.thumbnail?.replace("hqdefault", "mqdefault")}
-          src={thumbnail()}
+          src={v.thumbnail?.replace("hqdefault", "mqdefault")}
           // onError={() => setThumbnail("https://via.placeholder.com/352x198")}
           // placeholder="blur"
-          width={256}
-          height={144}
+          width={2560}
+          height={1440}
           alt={v.title}
           loading="lazy"
         />

@@ -43,6 +43,7 @@ import Header from "./components/Header";
 import PlayerSkin from "./components/PlayerSkin";
 import { MediaOutletElement, MediaPlayerElement } from "vidstack";
 import { videoId } from "./routes/history";
+import { getStorageValue } from "./utils/storage";
 
 const theme = createSignal("monokai");
 export const ThemeContext = createContext(theme);
@@ -73,6 +74,17 @@ export const DBContext =
 
 const instance = createSignal("https://pipedapi.kavin.rocks");
 export const InstanceContext = createContext(instance);
+
+const preferences = createStore({
+  autoplay: false,
+  pip: false,
+  muted: false,
+  volume: 1,
+  speed: 1,
+  quality: "auto",
+  theatreMode: false,
+});
+export const PreferencesContext = createContext(preferences);
 
 defineCustomElements();
 
@@ -120,6 +132,25 @@ export default function Root() {
       }, 100);
       return () => clearInterval(interval);
     }
+  });
+
+  createEffect(() => {
+    preferences[1](
+      getStorageValue(
+        "preferences",
+        {
+          autoplay: false,
+          pip: false,
+          muted: false,
+          volume: 1,
+          speed: 1,
+          quality: "auto",
+          theatreMode: false,
+        },
+        "json",
+        "localStorage"
+      )
+    );
   });
 
   return (

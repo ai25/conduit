@@ -13,6 +13,7 @@ module.exports = {
   },
   plugins: [
      require("vidstack/tailwind.cjs"),
+     require('@tailwindcss/container-queries'),
     require("tailwindcss-themer")({
       defaultTheme: {
         // put the default values of any config you want themed

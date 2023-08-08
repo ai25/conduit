@@ -37,7 +37,7 @@ import {
   onMount,
   useContext,
 } from "solid-js";
-import { PlayerContext } from "~/root";
+import { PlayerContext, PreferencesContext } from "~/root";
 import { PipedVideo, Subtitle } from "~/types";
 import { chaptersVtt } from "~/utils/chapters";
 import { useIsRouting, useLocation } from "solid-start";
@@ -84,6 +84,8 @@ export default function Player() {
     store.put(val, videoId);
     console.log(`updated progress for ${video.value.title} to ${currentTime}`);
   };
+
+  const [preferences, setPreferences] = useContext(PreferencesContext)
 
   const [vtt, setVtt] = createSignal<string | undefined>(undefined);
 
@@ -396,13 +398,13 @@ export default function Player() {
         hidden: route.pathname !== "/watch",
       }}>
       <media-player
-      id="player"
+        id="player"
         class="peer w-full h-full aspect-video"
         current-time={currentTime()}
         // onTextTrackChange={handleTextTrackChange}
         load="eager"
         key-shortcuts={{
-          togglePaused: "k",
+          togglePaused: "k Space",
           toggleMuted: "m",
           toggleFullscreen: "f",
           togglePictureInPicture: "i",
@@ -486,7 +488,9 @@ export default function Player() {
         <PlayerSkin video={video.value} isMiniPlayer={false} />
         {/* <media-community-skin></media-community-skin> */}
       </media-player>
-      <div class="w-[28rem] hidden relative h-1 md:flex  self-start justify-start">
+      <div
+      classList={{"lg:flex": preferences.theatreMode}}
+       class="w-[28rem] hidden relative h-1 self-start justify-start">
         <div class="absolute top-0 flex w-full justify-start items-center flex-col h-full">
           <For each={video.value?.relatedStreams}>
             {(stream) => {
@@ -495,22 +499,6 @@ export default function Player() {
           </For>
         </div>
       </div>
-      {/* <button
-        class=""
-        onPointerUp={() => {
-          if (!floating) {
-            floatContainer?.append(outlet);
-          } else {
-            mediaPlayer?.prepend(outlet);
-          }
-          floating = !floating;
-        }}>
-        PiP
-      </button>
-      <div
-        ref={floatContainer}
-        class="fixed z-[99999] top-0 left-0 w-72 h-full aspect-video pointer-events-none"
-      /> */}
     </div>
   );
 }

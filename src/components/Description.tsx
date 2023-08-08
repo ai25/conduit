@@ -87,7 +87,8 @@ export default ({ video }: { video: PipedVideo }) => {
   };
 
   return (
-    <div class="mb-2 w-full break-before-auto overflow-hidden bg-bg1 p-4">
+    <div
+     class="mb-2 w-full break-before-auto overflow-hidden bg-bg1 p-4">
       <div class="flex flex-col justify-between gap-2 lg:flex-row">
         <div class="flex flex-col gap-2 ">
           <h1 class="text-xl font-bold sm:text-2xl ">{video.title}</h1>
