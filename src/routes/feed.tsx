@@ -1,6 +1,7 @@
 import { For, Show, createEffect, createSignal, useContext } from "solid-js";
 import VideoCard from "~/components/VideoCard";
-import { InstanceContext, Spinner } from "~/root";
+import { InstanceContext} from "~/root";
+import { Spinner } from "~/components/PlayerContainer";
 import { RelatedStream } from "~/types";
 import { getStorageValue } from "~/utils/storage";
 

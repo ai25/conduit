@@ -60,6 +60,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
   const [currentChapter, setCurrentChapter] = createSignal("");
   const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
   const [preferences, setPreferences] = useContext(PreferencesContext);
+
   let interval: any;
   createEffect(() => {
     if (!video?.chapters) return;
@@ -80,9 +81,11 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
       }
     }, 1000);
   });
+
   onCleanup(() => {
     clearInterval(interval);
   });
+
   const [currentAction, setCurrentAction] = createSignal({
     name: "",
     value: "",
@@ -143,20 +146,26 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
         />
         <ActionDisplay action={currentAction()} />
       </div>
+
       <div class="pointer-events-none absolute inset-0 z-10 flex h-full flex-col justify-between text-text1 opacity-0 transition-opacity duration-200 ease-linear not-can-play:opacity-100 can-control:opacity-100">
+
         <div class="pointer-events-none absolute inset-0 z-0 h-full w-full bg-gradient-to-t from-black/50 from-5% via-transparent via-50% to-black/20 to-100%" />
+
+        {/* Top Controls */}
         <MediaControlGroup>
           <div class="z-10 flex w-24 justify-between rounded-full bg-black/30 items-center truncate font-sans text-lg font-normal text-white not-can-play:opacity-0">
-            <button role="button" aria-label="Previous Video"
-            disabled
-            class="h-10 w-10 disabled:text-white/50"
-            >
+            <button
+              role="button"
+              aria-label="Previous Video"
+              disabled
+              class="h-10 w-10 disabled:text-white/50">
               <media-icon type="chevron-left" />
             </button>
             <div class="w-px h-8 bg-white/50" />
-            <button role="button" aria-label="Next Video"
-            class="h-10 w-10 disabled:text-white/50"
-            >
+            <button
+              role="button"
+              aria-label="Next Video"
+              class="h-10 w-10 disabled:text-white/50">
               <media-icon type="chevron-right" />
             </button>
           </div>
@@ -174,10 +183,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
                 type="volume-high"
                 class="hidden group-data-[volume=high]:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
               />
-              <media-tooltip
-                position="bottom center"
-                class=""
-                style={{ transformOrigin: "50% 100%" }}>
+              <media-tooltip position="bottom center" class="">
                 <span class="hidden not-muted:inline">Mute</span>
                 <span class="hidden muted:inline">Unmute</span>
               </media-tooltip>
@@ -186,6 +192,8 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             <SettingsMenu />
           </div>
         </MediaControlGroup>
+
+        {/* Centre Controls */}
         <div class="flex min-h-[48px] w-full p-2 items-center justify-center">
           <media-play-button
             aria-keyshortcuts="k Space"
@@ -201,41 +209,24 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             />
           </media-play-button>
         </div>
-        {/* <div
-        aria-hidden
-        class="absolute inset-0 z-50 flex flex-col justify-center w-full h-full text-white transition-opacity duration-200 ease-linear ">
-        <media-play-button
-          aria-keyshortcuts="k"
-          class="group rounded-sm mx-auto text-white outline-none inline-flex justify-center items-center transition-all relative h-20 w-20 mr-1 -ml-1"
-          aria-label="Play">
-          <media-icon
-            type="play"
-            class="hidden ring-0 paused:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary  "
-          />
-          <media-icon
-            type="pause"
-            class="hidden ring-0 not-paused:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
-          />
-        </media-play-button>
-      </div> */}
 
+        {/* Bottom Controls */}
         <div class="pointer-events-none z-10 flex w-full max-w-full shrink flex-col px-2 pb-2 can-control:pointer-events-auto not-can-play:opacity-0 transition-all">
+
           <div class="flex items-center">
-            <media-live-indicator class="flex h-10 w-10 items-center justify-center text-white not-live:hidden">
-              <div class="rounded-sm bg-gray-400 px-1 py-px font-sans text-xs font-bold uppercase tracking-widest text-slate-800 live-edge:bg-red-500 live-edge:text-white">
+            <media-live-indicator class="flex group h-4 w-10 rounded-sm py-px px-1 tracking-widest text-sm uppercase items-center justify-center text-white not-live:hidden bg-gray-400 live-edge:bg-red-500 live-edge:text-white">
                 live
-              </div>
             </media-live-indicator>
             <media-time-slider
-              class="group flex h-8 w-full z-10 items-center"
-              track-class="absolute top-1/2 left-0 z-0 h-1 w-full -translate-y-1/2 bg-white/50 outline-none group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
-              track-fill-class="live:bg-red-500 absolute top-1/2 left-0 z-20 h-1 w-[var(--slider-fill-percent)] -translate-y-1/2 bg-primary will-change-[width]"
-              track-progress-class="absolute top-1/2 left-0 z-10 h-1 w-[var(--media-buffered-percent)] -translate-y-1/2 bg-white/50 will-change-[width]"
-              thumb-container-class="absolute top-0 left-[var(--slider-fill-percent)] z-20 h-full w-5 -translate-x-1/2 group-data-[dragging]:left-[var(--slider-pointer-percent)]"
-              thumb-class="absolute top-1/2 left-0 h-5 w-5 -translate-y-1/2 rounded-full bg-primary opacity-0 transition-opacity duration-150 ease-in group-data-[interactive]:opacity-100"
-              chapters-class="relative flex items-center w-full h-full"
-              chapter-container-class="flex items-center w-[var(--width)] h-full mr-0.5 last:mr-0"
-              chapter-class="relative flex items-center w-full h-1">
+              class="group peer flex h-8 w-full z-10 items-center"
+              track-class="group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
+              track-fill-class="z-20 bg-primary "
+              track-progress-class="z-10"
+              thumb-container-class="z-20"
+              thumb-class="bg-primary"
+              chapters-class=""
+              chapter-container-class=""
+              chapter-class="">
               <div slot="preview">
                 <media-slider-value
                   type="pointer"
@@ -245,12 +236,10 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
                 <div class="bg-bg1/80 rounded-t px-2">
                   <span part="chapter-title" />
                 </div>
-                {/* </div> */}
                 <media-slider-video
                   src={video?.videoStreams.find((s) => s.bitrate < 400000)?.url}
                   onError={console.error}
                 />
-                {/* </div> */}
               </div>
             </media-time-slider>
           </div>
@@ -258,41 +247,41 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
           <div class="flex items-center px-2 w-full z-10">
             <media-play-button
               aria-keyshortcuts="k Space"
-              class="group rounded-sm text-white outline-none hidden sm:inline-flex justify-center items-center transition-all relative h-10 w-10 mr-1 -ml-1"
+              class="group hidden sm:inline-flex"
               aria-label="Play">
               <media-icon
                 type="play"
-                class="hidden ring-0 paused:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary  "
+                class="hidden paused:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary  "
               />
               <media-icon
                 type="pause"
-                class="hidden ring-0 not-paused:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
+                class="hidden not-paused:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
               />
               {/* <media-icon
                   type="replay"
                   class="hidden ring-0 ended:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
                 /> */}
-              <media-tooltip style={{ transformOrigin: "50% 100%" }}>
+              <media-tooltip>
                 <span class="hidden paused:inline">Play (k)</span>
                 <span class="hidden not-paused:inline">Pause (k)</span>
               </media-tooltip>
             </media-play-button>
             <media-mute-button
               aria-keyshortcuts="m"
-              class="group peer hidden h-10 w-10 min-w-0 items-center justify-center rounded-sm text-white outline-none sm:flex">
+              class="group peer hidden sm:flex">
               <media-icon
                 type="mute"
-                class="hidden ring-0 group-data-[volume=muted]:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
+                class="hidden group-data-[volume=muted]:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
               />
               <media-icon
                 type="volume-low"
-                class="hidden ring-0 group-data-[volume=low]:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
+                class="hidden group-data-[volume=low]:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
               />
               <media-icon
                 type="volume-high"
-                class="hidden ring-0 group-data-[volume=high]:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
+                class="hidden group-data-[volume=high]:block group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
               />
-              <media-tooltip class="" style={{ transformOrigin: "50% 100%" }}>
+              <media-tooltip>
                 <span class="hidden not-muted:inline">Mute (m)</span>
                 <span class="hidden muted:inline">Unmute (m)</span>
               </media-tooltip>
@@ -301,7 +290,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
               aria-keyshortcuts="ArrowUp ArrowDown"
               key-step="5"
               shift-key-multiplier="2"
-              class="group hidden sm:inline-block relative h-8 w-full transition-all duration-200 max-w-0 mr-2 data-[hocus]:max-w-[5rem] peer-data-[hocus]:max-w-[5rem] "
+              class="group hidden sm:inline-block transition-all duration-200 max-w-0 data-[hocus]:max-w-[5rem] peer-data-[hocus]:max-w-[5rem] "
               track-class="absolute top-1/2 left-0 block h-1 w-20 hidden bg-[#5a595a] outline-none group-data-[hocus]:block group-data-[hocus]:ring-4 group-data-[hocus]:ring-primary"
               track-fill-class="absolute top-1/2 left-0 z-20 h-1 w-[var(--slider-fill-percent)] -translate-y-1/2 bg-white will-change-[width]"
               thumb-container-class="absolute top-0 left-[var(--slider-fill-percent)] z-20 h-full w-5 -translate-x-1/2 group-data-[dragging]:left-[var(--slider-pointer-percent)]"
@@ -351,7 +340,9 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             </media-caption-button>
             <RecommendedVideosMenu videos={video?.relatedStreams} />
             <media-toggle-button
-              onClick={()=>setPreferences({theatreMode:!preferences.theatreMode})}
+              onClick={() =>
+                setPreferences({ theatreMode: !preferences.theatreMode })
+              }
               aria-keyshortcuts="t"
               aria-label="Theatre Mode"
               class="group z-10 hidden lg:inline-flex h-10 w-10 items-center justify-center rounded-sm text-white outline-none ">

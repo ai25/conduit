@@ -1,11 +1,11 @@
 import { PipedInstance } from "~/types";
 import Select from "~/components/Select";
 import { For, createEffect, createSignal, useContext } from "solid-js";
-import { InstanceContext, ThemeContext } from "~/root";
+import { InstanceContext, PreferencesContext, ThemeContext } from "~/root";
 import { useCookie } from "~/utils/hooks";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { A } from "@solidjs/router";
-import { useNavigate } from "solid-start";
+import { useLocation, useNavigate } from "solid-start";
 
 const Header = () => {
   const [isOpen, setIsOpen] = createSignal(false);
@@ -14,6 +14,8 @@ const Header = () => {
   const [, setTheme] = useCookie("theme", "monokai");
   const [, setInstance] = useCookie("instance", "https://pipedapi.kavin.rocks");
   const [instances, setInstances] = createSignal<PipedInstance[] | Error>();
+  const route = useLocation();
+  const [preferences] = useContext(PreferencesContext);
 
   const links = [
     { href: "/feed", label: "Feed" },
@@ -59,7 +61,12 @@ const Header = () => {
   });
 
   return (
-    <header class="w-full px-2 max-h-12">
+    <header
+      classList={{
+        "sticky top-0":
+          route.pathname === "/watch" && preferences.theatreMode,
+      }}
+      class="w-full px-2 max-h-12">
       <button
         class="sr-only focus:not-sr-only"
         onClick={() => {

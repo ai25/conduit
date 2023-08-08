@@ -43,7 +43,8 @@ import Header from "./components/Header";
 import PlayerSkin from "./components/PlayerSkin";
 import { MediaOutletElement, MediaPlayerElement } from "vidstack";
 import { videoId } from "./routes/history";
-import { getStorageValue } from "./utils/storage";
+import { getStorageValue, setStorageValue } from "./utils/storage";
+import PlayerContainer from "./components/PlayerContainer";
 
 const theme = createSignal("monokai");
 export const ThemeContext = createContext(theme);
@@ -134,7 +135,7 @@ export default function Root() {
     }
   });
 
-  createEffect(() => {
+  createRenderEffect(() => {
     preferences[1](
       getStorageValue(
         "preferences",
@@ -150,6 +151,16 @@ export default function Root() {
         "json",
         "localStorage"
       )
+    );
+  });
+
+  createEffect(() => {
+    console.log(preferences[0], "preferences");
+    // preferences[1]({ ...preferences[0], autoplay: xdd() });
+    setStorageValue(
+      "preferences",
+      JSON.stringify(preferences[0]),
+      "localStorage"
     );
   });
 
@@ -179,20 +190,7 @@ export default function Root() {
                       </div>
                     </Show>
                     <Header />
-                    <Switch fallback={<LoadingState />}>
-                      <Match when={video[0].error} keyed>
-                        <ErrorState
-                          message={video[0].error!.message}
-                          name={video[0].error!.name}
-                        />
-                      </Match>
-                      <Match when={video[0].value} keyed>
-                        {(video) => {
-                          console.log("video changed", video.title);
-                          return <Player />;
-                        }}
-                      </Match>
-                    </Switch>
+                    <PlayerContainer />
                     <PipContainer />
                     <Routes>
                       <FileRoutes />
@@ -239,6 +237,7 @@ const PipContainer = () => {
       });
     }
   });
+
   const hideContainer = () => {
     pipContainer?.classList.add("hidden");
   };
@@ -250,8 +249,8 @@ const PipContainer = () => {
       id="pip-container"
       style={{
         "aspect-ratio": video[0].value
-          ? video[0].value.videoStreams[0].width /
-            video[0].value.videoStreams[0].height
+          ? video[0].value.videoStreams[0]?.width /
+            video[0].value.videoStreams[0]?.height
           : "16/9",
       }}
       class="w-full sm:w-96 z-[999] hidden justify-center items-center aspect-video sticky top-2 inset-x-0 sm:left-2 rounded-lg overflow-hidden bg-black">
@@ -386,74 +385,3 @@ const PipContainer = () => {
     </div>
   );
 };
-
-export const Spinner = () => (
-  <svg
-    class="h-24 w-24 text-white  transition-opacity duration-200 ease-linear animate-spin"
-    fill="none"
-    viewBox="0 0 120 120"
-    aria-hidden="true">
-    <circle
-      class="opacity-25"
-      cx="60"
-      cy="60"
-      r="54"
-      stroke="currentColor"
-      stroke-width="8"
-    />
-    <circle
-      class="opacity-75"
-      cx="60"
-      cy="60"
-      r="54"
-      stroke="currentColor"
-      stroke-width="10"
-      pathLength="100"
-      style={{
-        "stroke-dasharray": 50,
-        "stroke-dashoffset": "50",
-      }}
-    />
-  </svg>
-);
-
-const LoadingState = () => {
-  const route = useLocation();
-  console.log("loading state", route);
-  if (route.pathname !== "/watch") return null;
-  return (
-    <div class="flex">
-      <div class="pointer-events-none col-span-3 md:max-w-[calc(100vw-20rem)] aspect-video bg-black  flex h-full w-full items-center justify-center">
-        <Spinner />
-      </div>
-    </div>
-  );
-};
-
-function ErrorState(error: Error) {
-  const route = useLocation();
-  console.log("loading state", route);
-  if (route.pathname !== "/watch") return null;
-  return (
-    <div class="grid grid-cols-1 md:grid-cols-4">
-      <div class="pointer-events-none flex-col text-center gap-2 col-span-3 md:max-w-[calc(100vw-20rem)] aspect-video bg-black  flex h-full w-full items-center justify-center">
-        <div class="text-lg sm:text-2xl font-bold text-red-300">
-          {error.name} :(
-        </div>
-        <div class="flex flex-col">
-          <div class="text-sm sm:text-lg text-white">{error.message}</div>
-          <div class="text-sm sm:text-lg text-white">
-            Please try switching to a different instance or refresh the page.
-          </div>
-        </div>
-        {/* <div class="flex justify-center gap-2">
-          <button
-            class="px-4 py-2 text-lg text-white border border-white rounded-md"
-            onClick={() => window.location.reload()}>
-            Refresh
-          </button>
-        </div> */}
-      </div>
-    </div>
-  );
-}

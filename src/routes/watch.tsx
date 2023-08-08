@@ -44,8 +44,8 @@ export function extractVideoId(url: string | undefined): string | undefined {
   if (url?.includes("/watch?v=")) {
     id = url.split("/watch?v=")[1];
   } else {
-    id = url?.match("(?<=/)([^/]{11})(?=[/.])")?.[0];
-    console.log(url?.match("(?<=/)([^/]{11})(?=[/.])"), "id");
+    id = url?.match("vi(?:_webp)?\/([a-zA-Z0-9_-]{11})")?.[1];
+    console.log(url?.match("vi(?:_webp)?\/([a-zA-Z0-9_-]{11})"), "iddd");
   }
   return id ?? undefined;
 }
@@ -113,34 +113,24 @@ export default function Watch() {
       console.log("video already loaded");
       return;
     }
-    console.log(
-      new Date().toISOString().split("T")[1],
-      "visible task in watch page fetching video"
-    );
-    console.log("instance check", instance());
-    console.time("useResource");
     const abortController = new AbortController();
     let data;
 
-    console.log("fetching video", v, `${instance()}/streams/${v}`);
     try {
       const res = await fetch(`${instance()}/streams/${v}`, {
         signal: abortController.signal,
       });
-      console.log(res.status, res.statusText, "status");
       data = await res.json();
       if (data.error) throw new Error(data.error);
       console.log(data, "data");
       setVideo({ value: data, error: undefined });
-      // onResolved(data);
-      console.log(typeof data, "piped video");
     } catch (err) {
       setVideo({ value: undefined, error: err as Error });
       console.log(err, "error while fetching video");
     }
   });
   createEffect(() => {
-    if(!video.value) return;
+    if (!video.value) return;
     if ("window" in globalThis) {
       console.log("setting title");
       document.title = `${video.value?.title} - Conduit`;
@@ -213,7 +203,7 @@ export default function Watch() {
     <div
       classList={{
         "lg:-mr-[20rem]": !preferences.theatreMode,
-        "lg:ml-0": preferences.theatreMode,
+        "lg:mr-0": preferences.theatreMode,
       }}
       class="flex flex-col lg:flex-row w-full ">
       <div class="lg:min-h-[5540px] w-full">
@@ -244,7 +234,6 @@ export default function Watch() {
           }}
         </For>
       </div>
-
     </div>
   );
 }

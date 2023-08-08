@@ -51,6 +51,7 @@ import { DBContext } from "~/root";
 import { ttml2srt } from "~/utils/ttml";
 import PlayerSkin from "./PlayerSkin";
 import VideoCard from "./VideoCard";
+import { videoId } from "~/routes/history";
 
 const BUFFER_LIMIT = 3;
 const BUFFER_TIME = 15000;
@@ -66,6 +67,10 @@ export default function Player() {
   const updateProgress = () => {
     console.log("updating progress");
     if (!video.value) return;
+    if (!started()) {
+      console.log("not started , updating");
+      return;
+    }
     let currentTime = mediaPlayer?.currentTime;
     if (video.value?.duration < 60 || video.value.category === "Music") {
       currentTime = 0;
@@ -82,10 +87,12 @@ export default function Player() {
     if (!store) return;
 
     store.put(val, videoId);
-    console.log(`updated progress for ${video.value.title} to ${currentTime}`);
+    console.log(
+      `updated progress for ${video.value.title}. ${videoId} to ${currentTime}`
+    );
   };
 
-  const [preferences, setPreferences] = useContext(PreferencesContext)
+  const [preferences, setPreferences] = useContext(PreferencesContext);
 
   const [vtt, setVtt] = createSignal<string | undefined>(undefined);
 
@@ -205,19 +212,21 @@ export default function Player() {
   };
 
   const [currentTime, setCurrentTime] = createSignal(0);
+  const time = route.query.t;
+  const [started, setStarted] = createSignal(false);
 
   const onCanPlay = (event: Event) => {
     console.log("can play", route.search.match("fullscreen"));
     console.log(event);
-    if (route.search.match("fullscreen")) {
-      if (navigator.userActivation.isActive) {
-        document.querySelector("html")?.requestFullscreen();
-      }
-    }
     setError(undefined);
     init();
     if (!video.value?.chapters) return;
     if (!mediaPlayer) return;
+    if (route.search.match("fullscreen")) {
+      if (navigator.userActivation.isActive) {
+        mediaPlayer?.requestFullscreen();
+      }
+    }
     let chapters = [];
     for (let i = 0; i < video.value.chapters.length; i++) {
       const chapter = video.value.chapters[i];
@@ -241,7 +250,6 @@ export default function Player() {
         type: "vtt",
       });
     }
-    const { t: time } = route.query;
 
     if (time) {
       let start = 0;
@@ -263,25 +271,33 @@ export default function Player() {
       }
       setCurrentTime(start);
       // this.initialSeekComplete = true;
-    } else if (db()) {
-      //eslint-disable-next-line qwik/valid-lexical-scope
-      const tx = db()!.transaction("watch_history", "readonly");
-      const store = tx.objectStore("watch_history");
-      const videoId = extractVideoId(video.value.thumbnailUrl);
-      if (!videoId) return;
-      store.get(videoId).then((v) => {
-        if (!video.value) return;
-        console.log(v, "val");
-        const progress = v?.progress;
-        if (progress) {
-          if (progress < video.value.duration * 0.9) {
-            setCurrentTime(progress);
-          }
-        }
-        console.timeEnd("init");
-      });
     }
   };
+
+  createEffect(() => {
+    console.log("time effect", video.value?.title);
+    if (!video.value) return;
+    if (!mediaPlayer) return;
+    if (!db()) return;
+    if (time) return;
+    const tx = db()!.transaction("watch_history", "readonly");
+    const store = tx.objectStore("watch_history");
+    const id = videoId(video.value);
+    console.log(id, "id time");
+    if (!id) return;
+    store.get(id).then((v) => {
+      if (!video.value) return;
+      console.log(v, "val time");
+      const progress = v?.progress;
+      if (progress) {
+        if (progress < video.value.duration * 0.9) {
+          console.log("seeking to time", progress);
+          setCurrentTime(progress);
+        }
+      }
+      console.timeEnd("init");
+    });
+  });
 
   const onProviderChange = (event: MediaProviderChangeEvent) => {
     console.log(event, "provider change");
@@ -317,7 +333,6 @@ export default function Player() {
   //   };
   //   return (
   //     <media-player
-  //   title="Sprite Fight"
   //   src="https://stream.mux.com/VZtzUzGRv02OhRnZCxcNg49OilvolTqdnFLEqBsTwaxU/low.mp4"
   //   poster="https://image.mux.com/VZtzUzGRv02OhRnZCxcNg49OilvolTqdnFLEqBsTwaxU/thumbnail.webp?time=268&width=980"
   //   thumbnails="https://media-files.vidstack.io/sprite-fight/thumbnails.vtt"
@@ -367,16 +382,10 @@ export default function Player() {
     console.log("mount", mediaPlayer);
     document.addEventListener("beforeunload", updateProgress);
     document.addEventListener("visibilitychange", updateProgress);
-    mediaPlayer?.addEventListener("drag", (e: any) => {
-      console.log("dragstart", e);
-    });
   });
   onCleanup(() => {
     document.removeEventListener("beforeunload", updateProgress);
     document.removeEventListener("visibilitychange", updateProgress);
-    mediaPlayer?.removeEventListener("drag", (e: any) => {
-      console.log("dragstart", e);
-    });
   });
   const isRouting = useIsRouting();
   const navigate = useNavigate();
@@ -399,113 +408,97 @@ export default function Player() {
   });
 
   return (
-    <div
-      class="flex sticky md:static top-0 z-50 md:z-0"
-      classList={{
-        hidden: route.pathname !== "/watch",
-      }}>
-      <media-player
-        id="player"
-        class="peer w-full h-full aspect-video"
-        current-time={currentTime()}
-        // onTextTrackChange={handleTextTrackChange}
-        load="eager"
-        key-shortcuts={{
-          togglePaused: "k Space",
-          toggleMuted: "m",
-          toggleFullscreen: "f",
-          togglePictureInPicture: "i",
-          toggleCaptions: "c",
-          seekBackward: "ArrowLeft h",
-          seekForward: "ArrowRight l",
-          volumeUp: "ArrowUp",
-          volumeDown: "ArrowDown",
-        }}
-        on:can-play={onCanPlay}
-        on:provider-change={onProviderChange}
-        on:hls-error={handleHlsError}
-        on:pause={updateProgress}
-        on:seeked={updateProgress}
-        on:ended={updateProgress}
-        key-target="document"
-        autoplay
-        ref={mediaPlayer}
-        title={video.value?.title ?? ""}
-        src={video.value?.hls ?? ""}
-        poster={
-          video.value?.thumbnailUrl.replace("maxresdefault", "mqdefault") ?? ""
-        }
-        aspect-ratio={16 / 9}
-        crossorigin="anonymous">
-        <media-outlet ref={outlet}>
-          <media-poster alt={video.value?.title ?? ""} />
-          {tracks().map((track) => {
-            return (
-              <track
-                id={track.id}
-                kind={track.kind as any}
-                src={track.src}
-                srclang={track.srcLang}
-                label={track.label}
-                data-type={track.dataType}
-              />
-            );
-          })}
-          <media-captions class="transition-[bottom] not-can-control:opacity-100 user-idle:opacity-100 not-user-idle:bottom-[80px]" />
-        </media-outlet>
-        {error()?.fatal ? (
-          <div class="absolute top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50">
-            <div class="flex flex-col items-center justify-center w-full h-full gap-3">
-              <div class="text-2xl font-bold text-white">
-                {error()?.name} {error()?.details}
-              </div>
-              <div class="flex flex-col">
-                <div class="text-lg text-white">{error()?.message}</div>
-                <div class="text-lg text-white">
-                  Please try switching to a different instance or refresh the
-                  page.
-                </div>
-              </div>
-              <div class="flex justify-center gap-2">
-                <button
-                  class="px-4 py-2 text-lg text-white border border-white rounded-md"
-                  // onClick={() => window.location.reload()}
-                >
-                  Refresh
-                </button>
-                <button
-                  class="px-4 py-2 text-lg text-white border border-white rounded-md"
-                  onClick={() => {
-                    setError(undefined);
-                  }}>
-                  Close
-                </button>
+    <media-player
+      id="player"
+      class="peer w-full h-full aspect-video"
+      current-time={currentTime()}
+      // onTextTrackChange={handleTextTrackChange}
+      load="eager"
+      key-shortcuts={{
+        togglePaused: "k Space",
+        toggleMuted: "m",
+        toggleFullscreen: "f",
+        togglePictureInPicture: "i",
+        toggleCaptions: "c",
+        seekBackward: "ArrowLeft h",
+        seekForward: "ArrowRight l",
+        volumeUp: "ArrowUp",
+        volumeDown: "ArrowDown",
+      }}
+      on:can-play={onCanPlay}
+      on:provider-change={onProviderChange}
+      on:hls-error={handleHlsError}
+      on:pause={updateProgress}
+      on:seeked={updateProgress}
+      on:ended={updateProgress}
+      on:play={() => setStarted(true)}
+      key-target="document"
+      autoplay
+      ref={mediaPlayer}
+      title={video.value?.title ?? ""}
+      src={video.value?.hls ?? ""}
+      poster={
+        video.value?.thumbnailUrl.replace("maxresdefault", "mqdefault") ?? ""
+      }
+      aspect-ratio={16 / 9}
+      crossorigin="anonymous">
+      <media-outlet ref={outlet}>
+        <media-poster alt={video.value?.title ?? ""} />
+        {tracks().map((track) => {
+          return (
+            <track
+              id={track.id}
+              kind={track.kind as any}
+              src={track.src}
+              srclang={track.srcLang}
+              label={track.label}
+              data-type={track.dataType}
+            />
+          );
+        })}
+        <media-captions class="transition-[bottom] not-can-control:opacity-100 user-idle:opacity-100 not-user-idle:bottom-[80px]" />
+      </media-outlet>
+      {error()?.fatal ? (
+        <div class="absolute top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50">
+          <div class="flex flex-col items-center justify-center w-full h-full gap-3">
+            <div class="text-2xl font-bold text-white">
+              {error()?.name} {error()?.details}
+            </div>
+            <div class="flex flex-col">
+              <div class="text-lg text-white">{error()?.message}</div>
+              <div class="text-lg text-white">
+                Please try switching to a different instance or refresh the
+                page.
               </div>
             </div>
+            <div class="flex justify-center gap-2">
+              <button
+                class="px-4 py-2 text-lg text-white border border-white rounded-md"
+                // onClick={() => window.location.reload()}
+              >
+                Refresh
+              </button>
+              <button
+                class="px-4 py-2 text-lg text-white border border-white rounded-md"
+                onClick={() => {
+                  setError(undefined);
+                }}>
+                Close
+              </button>
+            </div>
           </div>
-        ) : (
-          <></>
-          // <div class="absolute top-0 right-0 opacity-0 pointer-events-none bg-black/50">
-          //   <div class="absolute top-0 right-0 z-10 flex flex-col justify-between w-full h-full text-white transition-opacity duration-200 ease-linear opacity-0 pointer-events-none can-control:opacity-100">
-          //     <div class="text-sm text-white">Buffering?</div>
-          //     <div class="text-xs text-white">Try switching to a different instance.</div>
-          //   </div>
-          // </div>
-        )}
-        <PlayerSkin video={video.value} isMiniPlayer={false} />
-        {/* <media-community-skin></media-community-skin> */}
-      </media-player>
-      <div
-      classList={{"lg:flex": preferences.theatreMode}}
-       class="w-[28rem] hidden relative h-1 self-start justify-start">
-        <div class="absolute top-0 flex w-full justify-start items-center flex-col h-full">
-          <For each={video.value?.relatedStreams}>
-            {(stream) => {
-              return <VideoCard v={stream} />;
-            }}
-          </For>
         </div>
-      </div>
-    </div>
+      ) : (
+        <></>
+        // <div class="absolute top-0 right-0 opacity-0 pointer-events-none bg-black/50">
+        //   <div class="absolute top-0 right-0 z-10 flex flex-col justify-between w-full h-full text-white transition-opacity duration-200 ease-linear opacity-0 pointer-events-none can-control:opacity-100">
+        //     <div class="text-sm text-white">Buffering?</div>
+        //     <div class="text-xs text-white">Try switching to a different instance.</div>
+        //   </div>
+        // </div>
+      )}
+      <PlayerSkin video={video.value} isMiniPlayer={false} />
+      {/* <media-community-skin></media-community-skin> */}
+    </media-player>
   );
 }
