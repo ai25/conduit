@@ -62,10 +62,10 @@ const Header = () => {
 
   return (
     <header
-      classList={{
-        "sticky top-0":
-          route.pathname === "/watch" && preferences.theatreMode,
-      }}
+      // classList={{
+      //   "sticky top-0":
+      //     route.pathname === "/watch" && preferences.theatreMode,
+      // }}
       class="w-full px-2 max-h-12">
       <button
         class="sr-only focus:not-sr-only"
@@ -113,7 +113,7 @@ const Header = () => {
             <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
           </svg>
         </button>
-        {/* <Select
+        <Select
           name="theme"
           value={theme() ?? ""}
           onChange={(v) => {
@@ -127,7 +127,7 @@ const Header = () => {
             { value: "discord", label: "Discord" },
             { value: "github", label: "Github" },
           ]}
-        /> */}
+        />
 
         <Select
           name="instance"

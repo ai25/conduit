@@ -136,6 +136,7 @@ export default function Root() {
   });
 
   createRenderEffect(() => {
+    console.log("render effect setting context, theatre is:", preferences[0].theatreMode)
     preferences[1](
       getStorageValue(
         "preferences",
@@ -155,7 +156,7 @@ export default function Root() {
   });
 
   createEffect(() => {
-    console.log(preferences[0], "preferences");
+    console.log(preferences[0], "setting theater prefs in root, theatre mode is set to: ", preferences[0].theatreMode);
     // preferences[1]({ ...preferences[0], autoplay: xdd() });
     setStorageValue(
       "preferences",

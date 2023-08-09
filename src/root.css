@@ -30,3 +30,4 @@ svg {
 .scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-accent1;
 }
+

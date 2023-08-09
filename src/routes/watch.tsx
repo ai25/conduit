@@ -14,6 +14,7 @@ import {
   Suspense,
   Switch,
   createEffect,
+  createRenderEffect,
   createResource,
   createSignal,
   lazy,
@@ -44,8 +45,8 @@ export function extractVideoId(url: string | undefined): string | undefined {
   if (url?.includes("/watch?v=")) {
     id = url.split("/watch?v=")[1];
   } else {
-    id = url?.match("vi(?:_webp)?\/([a-zA-Z0-9_-]{11})")?.[1];
-    console.log(url?.match("vi(?:_webp)?\/([a-zA-Z0-9_-]{11})"), "iddd");
+    id = url?.match("vi(?:_webp)?/([a-zA-Z0-9_-]{11})")?.[1];
+    console.log(url?.match("vi(?:_webp)?/([a-zA-Z0-9_-]{11})"), "iddd");
   }
   return id ?? undefined;
 }
@@ -198,36 +199,38 @@ export default function Watch() {
   //   setStorageValue("video", JSON.stringify(video.value), "sessionStorage");
   //   console.log(video.value?.title, "title");
   // });
+  const [theatre, setTheatre] = createSignal(true);
+  createRenderEffect(() => {
+    console.log(
+      "render effect in watch page, theatre is:",
+      preferences.theatreMode
+    );
+    setTheatre(preferences.theatreMode);
+    console.log("theatre() is set to ", theatre());
+  });
+
+  // if (!("localStorage" in globalThis)){
+  //   console.log("localStorage not supported");
+  //   return <div>localStorage not supported</div>
+  // }
 
   return (
     <div
       classList={{
-        "lg:-mr-[20rem]": !preferences.theatreMode,
-        "lg:mr-0": preferences.theatreMode,
+        "lg:w-[calc(100%-20rem)]": !theatre(),
+        "lg:max-w-full min-w-0": theatre(),
       }}
-      class="flex flex-col lg:flex-row w-full ">
-      <div class="lg:min-h-[5540px] w-full">
+      class="flex flex-col lg:flex-row w-full max-w-full overflow-hidden">
+      <div class="lg:min-h-[5540px] w-full mx-2 overflow-hidden">
         <div class="min-h-full w-full">
-          <Switch fallback={<div>loading</div>}>
-            {/* <Match when={resource.loading}>
-                <div>loading</div>
-              </Match> */}
-            {/* <Match when={resource.error}>
-                <div>error</div>
-              </Match> */}
-            <Match when={video.error} keyed>
-              {(error) => <div>{error.message}</div>}
-            </Match>
-            <Match when={video.value} keyed>
-              {(video) => <Description video={video} />}
-            </Match>
-          </Switch>
-          {/* {video.value?.title} */}
+          <Show when={video.value} keyed>
+            {(video) => <Description video={video} />}
+          </Show>
         </div>
       </div>
       <div
-        classList={{ "lg:hidden": !preferences.theatreMode }}
-        class="flex flex-col items-center gap-2">
+        classList={{ "lg:hidden": !theatre() }}
+        class="flex min-w-0 flex-col items-center gap-2">
         <For each={video.value?.relatedStreams}>
           {(stream) => {
             return <VideoCard v={stream} />;

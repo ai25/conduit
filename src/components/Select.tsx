@@ -70,7 +70,7 @@ export default (props: {
         </svg>
       </button>
       <div
-        class={`z-[9999] ${
+        class={`z-[999999] ${
           expanded() ? "" : "hidden"
         } bg-bg1/50 scrollbar max-h-64 overflow-auto backdrop-blur-sm min-w-min inset-x-0 ring-2 ring-bg1 top-12 absolute  rounded-lg shadow max-w-[20rem] `}>
         <ul
