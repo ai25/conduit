@@ -38,7 +38,6 @@ import { Portal, isServer } from "solid-js/web";
 import VideoCard from "~/components/VideoCard";
 import { videoId } from "./history";
 import { PipedCommentResponse } from "~/components/Comment";
-import { playSavedVideo } from "./playlists";
 import { getHlsManifest } from "~/utils/hls";
 
 export function extractVideoId(url: string | undefined): string | undefined {
