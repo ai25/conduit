@@ -12,7 +12,7 @@ export default function PlayerContainer() {
   createRenderEffect(() => {
     console.log(preferences.theatreMode, "theatre mode");
   });
-  if (route.pathname !== "/watch") return null;
+
   const Loading = () =>
     route.pathname === "/watch" ? <LoadingState /> : <></>;
   const Error = (props: any) =>
@@ -25,7 +25,7 @@ export default function PlayerContainer() {
     <div
       class="flex sticky md:static top-0 z-50 md:z-0 mx-4"
       classList={{
-        hidden: route.pathname !== "/watch",
+        "hidden": route.pathname !== "/watch",
         "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
       }}>
       <Switch fallback={<Loading />}>

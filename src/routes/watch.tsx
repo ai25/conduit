@@ -38,15 +38,15 @@ import { Portal, isServer } from "solid-js/web";
 import VideoCard from "~/components/VideoCard";
 import { videoId } from "./history";
 import { PipedCommentResponse } from "~/components/Comment";
+import { playSavedVideo } from "./playlists";
+import { getHlsManifest } from "~/utils/hls";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
-  console.log(`extracting id from: ${url}`);
   if (url?.includes("/watch?v=")) {
     id = url.split("/watch?v=")[1];
   } else {
     id = url?.match("vi(?:_webp)?/([a-zA-Z0-9_-]{11})")?.[1];
-    console.log(url?.match("vi(?:_webp)?/([a-zA-Z0-9_-]{11})"), "iddd");
   }
   return id ?? undefined;
 }
@@ -106,6 +106,31 @@ export default function Watch() {
   // const instance = useContext(InstanceContext);
   // const db = useContext(DBContext);
 
+  async function fetchLocalVideo() {
+    const rootDir = await navigator.storage.getDirectory();
+    const dir = await rootDir.getDirectoryHandle(route.query.v);
+    console.log("DIR", dir.getFileHandle("streams.json"));
+    if (!dir) {
+      console.log("no dir");
+      return 0;
+    }
+    try {
+      const videoInfoHandle = await dir.getFileHandle("streams.json");
+      console.log(videoInfoHandle);
+      const file = await (await videoInfoHandle.getFile()).text();
+      console.log(file);
+      const video = JSON.parse(file);
+      console.log(video);
+      const hls = await getHlsManifest(route.query.v);
+      console.log(hls);
+      setVideo({ value: { ...video, hls }, error: undefined });
+      return 1;
+    } catch (error) {
+      console.error(error);
+      return 0;
+    }
+  }
+
   createEffect(async () => {
     const v = route.query.v;
     console.log(v, "v");
@@ -113,6 +138,19 @@ export default function Watch() {
     if (untrack(() => videoId(video.value)) === v) {
       console.log("video already loaded");
       return;
+    }
+    const rootDir = await navigator.storage.getDirectory();
+    if (rootDir) {
+      try {
+        const dir = await rootDir.getDirectoryHandle(v);
+        console.log(dir);
+        if (await fetchLocalVideo()) {
+          console.log("DIRECTORY");
+          return;
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
     const abortController = new AbortController();
     let data;
@@ -124,6 +162,9 @@ export default function Watch() {
       data = await res.json();
       if (data.error) throw new Error(data.error);
       console.log(data, "data");
+      // const url = await getHlsManifest("VpWkcFsZ2Zs");
+      // console.log(url, "URL");
+      // setVideo({ value: { ...data, hls: url }, error: undefined });
       setVideo({ value: data, error: undefined });
     } catch (err) {
       setVideo({ value: undefined, error: err as Error });
@@ -220,7 +261,8 @@ export default function Watch() {
         "lg:w-[calc(100%-20rem)]": !theatre(),
         "lg:max-w-full min-w-0": theatre(),
       }}
-      class="flex flex-col lg:flex-row w-full max-w-full overflow-hidden">
+      class="flex flex-col lg:flex-row w-full max-w-full overflow-hidden"
+    >
       <div class="lg:min-h-[5540px] w-full mx-2 overflow-hidden">
         <div class="min-h-full w-full">
           <Show when={video.value} keyed>
@@ -230,7 +272,8 @@ export default function Watch() {
       </div>
       <div
         classList={{ "lg:hidden": !theatre() }}
-        class="flex min-w-0 flex-col items-center gap-2">
+        class="flex min-w-0 flex-col items-center gap-2"
+      >
         <For each={video.value?.relatedStreams}>
           {(stream) => {
             return <VideoCard v={stream} />;

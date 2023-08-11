@@ -3,8 +3,8 @@ import { DBContext, InstanceContext } from "~/root";
 import { extractVideoId } from "./watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
+import dayjs from "dayjs";
 export const videoId = (item: any) => {
-  console.log("videoId function, item:", item);
   if (!item) return undefined;
   if (item.videoId) return item.videoId;
   else if (item.id) return item.id;
@@ -23,6 +23,7 @@ export default function History() {
   let fileSelector: HTMLInputElement | undefined = undefined;
   const itemsLength = () => items().length;
   const [db] = useContext(DBContext);
+  const [all, setAll] = createSignal<RelatedStream[]>([]);
   const [historyItems, setHistoryItems] = createSignal<RelatedStream[]>([]);
   const [limit, setLimit] = createSignal(100);
   const [instance] = useContext(InstanceContext);
@@ -122,6 +123,8 @@ export default function History() {
         const iv = json.watch_history.map((video: any) => {
           return {
             videoId: video,
+            watchedAt: 0,
+            currentTime: 0,
           };
         });
         setItems(iv);
@@ -174,10 +177,24 @@ export default function History() {
       const store = tx?.objectStore("watch_history");
       const items = await store?.getAll();
       if (!items || items.length === 0) return;
-      setHistoryItems(items)
+      setAll(items);
+      setHistoryItems(all().slice(0, limit()));
+      console.log(all().length);
     }
   });
-
+  createEffect(() => {
+    setHistoryItems(
+      all()
+        .slice(0, limit())
+        .sort((a: any, b: any) => {
+          if (!a.watchedAt && !b.watchedAt) return 0;
+          if (!a.watchedAt) return 1;
+          if (!b.watchedAt) return -1;
+          return b.watchedAt - a.watchedAt;
+        })
+    );
+    console.log(historyItems()[0]);
+  });
 
   return (
     <div class="">
@@ -205,17 +222,24 @@ export default function History() {
       <div class="flex flex-wrap justify-center">
         <For each={historyItems()}>
           {(item) => (
-            <VideoCard
-              v={{
-                ...item,
-                url: `/watch?v=${videoId(item)}}`,
-                thumbnail: `${instance().replace("api", "proxy")}/vi/${videoId(
-                  item
-                )}/mqdefault.jpg?host=i.ytimg.com`,
-              }}
-            />
+            <div class="flex flex-col">
+              {dayjs(item.watchedAt).fromNow()}
+              <VideoCard
+                v={{
+                  ...item,
+                  url: `/watch?v=${videoId(item)}}`,
+                  thumbnail: `${instance().replace(
+                    "api",
+                    "proxy"
+                  )}/vi/${videoId(item)}/mqdefault.jpg?host=i.ytimg.com`,
+                }}
+              />
+            </div>
           )}
         </For>
+        <button class="btn" onClick={() => setLimit(limit() + 10)}>
+          Load More
+        </button>
       </div>
     </div>
   );

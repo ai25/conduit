@@ -22,43 +22,43 @@ const Header = () => {
     { href: "/trending", label: "Trending" },
     { href: "/history", label: "History" },
     { href: "/import", label: "Import" },
+    { href: "/playlists", label: "Playlists" },
   ];
 
   const toggleMenu = () => {
     setIsOpen(!isOpen());
   };
-  createEffect(async () => {
-    console.log(
-      new Date().toISOString().split("T")[1],
-      "visible task setting instances in header",
-      instances
-    );
-    console.time("visible task setting instances in header");
-    await fetch("https://piped-instances.kavin.rocks/")
-      .then(async (res) => {
-        console.log("INSTANCES", res.status);
-        if (res.status === 200) {
-          setInstances(await res.json());
-          console.timeEnd("visible task setting instances in header");
-        } else {
-          setInstances(new Error("Failed to fetch instances"));
-        }
-      })
-      .catch((err) => {
-        console.log("INSTANCES ERROR", err.message);
-        return err as Error;
-      });
-    if (
-      !instances() ||
-      instances() instanceof Error ||
-      (instances() as PipedInstance[]).length < 1
-    ) {
-      setInstances(getStorageValue("instances", [], "json", "localStorage"));
-      return;
-    }
+  // createEffect(async () => {
+  //   console.log(
+  //     new Date().toISOString().split("T")[1],
+  //     "visible task setting instances in header",
+  //     instances()
+  //   );
+  //   console.time("visible task setting instances in header");
+  //   await fetch("https://piped-instances.kavin.rocks/")
+  //     .then(async (res) => {
+  //       console.log("INSTANCES", res.status);
+  //       if (res.status === 200) {
+  //         setInstances(await res.json());
 
-    setStorageValue("instances", JSON.stringify(instances), "localStorage");
-  });
+  //       } else {
+  //         setInstances(new Error("Failed to fetch instances"));
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.log("INSTANCES ERROR", err.message);
+  //       return err as Error;
+  //     });
+  //   if (
+  //     !instances() ||
+  //     instances() instanceof Error ||
+  //     (instances() as PipedInstance[]).length < 1
+  //   ) {
+  //     setInstances(getStorageValue("instances", [], "json", "localStorage"));
+  //     return;
+  //   }
+
+  // });
 
   return (
     <header
@@ -66,12 +66,14 @@ const Header = () => {
       //   "sticky top-0":
       //     route.pathname === "/watch" && preferences.theatreMode,
       // }}
-      class="w-full px-2 max-h-12">
+      class="w-full px-2 max-h-12"
+    >
       <button
         class="sr-only focus:not-sr-only"
         onClick={() => {
           document.querySelector("media-player")?.focus();
-        }}>
+        }}
+      >
         Skip to main content
       </button>
       <div class="flex items-center justify-between">
@@ -88,13 +90,15 @@ const Header = () => {
         <nav
           class={`${
             isOpen() ? "visible" : "invisible"
-          } relative w-full flex-grow sm:visible sm:flex sm:w-auto sm:items-center`}>
+          } relative w-full flex-grow sm:visible sm:flex sm:w-auto sm:items-center`}
+        >
           <div class="absolute bg-bg1 z-[99999] sm:flex-grow sm:flex-row sm:text-center">
             <For each={links}>
               {(link) => (
                 <A
                   href={link.href}
-                  class="mr-4 mt-4 block hover:text-highlight sm:mt-0 sm:inline-block">
+                  class="mr-4 mt-4 block hover:text-highlight sm:mt-0 sm:inline-block"
+                >
                   {link.label}
                 </A>
               )}
@@ -104,11 +108,13 @@ const Header = () => {
         <Search />
         <button
           class="inline sm:hidden items-center rounded border px-3 py-2 hover:border-black"
-          onClick={toggleMenu}>
+          onClick={toggleMenu}
+        >
           <svg
             class="h-3 w-3 fill-current"
             viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg">
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <title>Menu</title>
             <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
           </svg>
@@ -192,7 +198,8 @@ const Search = () => {
           e.preventDefault();
           handleSearch(search()!);
         }}
-        class="relative max-w-full">
+        class="relative max-w-full"
+      >
         <input
           value={search() ?? ""}
           onInput={(e) => {
@@ -213,7 +220,8 @@ const Search = () => {
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          stroke-width="2">
+          stroke-width="2"
+        >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -226,7 +234,8 @@ const Search = () => {
               {(suggestion) => (
                 <button
                   onClick={() => handleSearch(suggestion)}
-                  class="cursor-pointer w-full border-bg3 rounded-t border-b hover:bg-bg3">
+                  class="cursor-pointer w-full border-bg3 rounded-t border-b hover:bg-bg3"
+                >
                   <div class="flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative ">
                     <div class="w-full items-center flex">
                       <div class="mx-2">{suggestion}</div>

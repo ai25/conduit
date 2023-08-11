@@ -19,8 +19,8 @@ export interface PipedVideo {
   likes: number
   dislikes: number
   uploaderSubscriberCount: number
-  audioStreams: AudioStream[]
-  videoStreams: VideoStream[]
+  audioStreams: AudioStream[] | null
+  videoStreams: VideoStream[] | null
   relatedStreams: RelatedStream[]
   subtitles: Subtitle[]
   livestream: boolean

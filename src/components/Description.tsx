@@ -16,6 +16,7 @@ import dayjs from "dayjs";
 import Comment, { PipedCommentResponse } from "./Comment";
 import { InstanceContext } from "~/root";
 import { videoId } from "~/routes/history";
+import { downloadVideo } from "~/utils/hls";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -120,6 +121,12 @@ export default ({ video }: { video: PipedVideo }) => {
       comments: [...comments()!.comments, ...data.comments],
     });
   }
+
+  async function handleDownload() {
+    if (!(await navigator.storage.persist())) return;
+    downloadVideo(videoId(video));
+  }
+
   return (
     <div class="mb-2 w-full break-before-auto overflow-hidden bg-bg1 p-4 -mr-4">
       <div class="flex flex-col justify-between gap-2 lg:flex-row">
@@ -139,14 +146,16 @@ export default ({ video }: { video: PipedVideo }) => {
               <div class="flex flex-col items-center justify-start">
                 <A
                   href={`${video.uploaderUrl}`}
-                  class="flex w-fit items-center gap-2">
+                  class="flex w-fit items-center gap-2"
+                >
                   {video.uploader}{" "}
                   {video.uploaderVerified && (
                     <svg
                       class="h-4 w-4 "
                       xmlns="http://www.w3.org/2000/svg"
                       fill="currentColor"
-                      viewBox="0 0 24 24">
+                      viewBox="0 0 24 24"
+                    >
                       <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z" />
                     </svg>
                   )}
@@ -161,7 +170,8 @@ export default ({ video }: { video: PipedVideo }) => {
             </div>
             <button
               onClick={toggleSubscribed}
-              class={`btn ${isSubscribed() ? "!bg-bg3 !text-text1" : ""} `}>
+              class={`btn ${isSubscribed() ? "!bg-bg3 !text-text1" : ""} `}
+            >
               Subscribe{isSubscribed() && "d"}
             </button>
           </div>
@@ -175,6 +185,9 @@ export default ({ video }: { video: PipedVideo }) => {
             })()}
           </p>
           <p class="">{numeral(video.views).format("0,0")} views</p>
+          <button onClick={handleDownload} class="btn">
+            Download
+          </button>
         </div>
       </div>
       <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
@@ -192,7 +205,8 @@ export default ({ video }: { video: PipedVideo }) => {
           onClick={() => {
             setExpanded(!expanded());
           }}
-          class="text-center text-sm text-accent1 hover:underline shadow shadow-[22px]">
+          class="text-center text-sm text-accent1 hover:underline shadow shadow-[22px]"
+        >
           Show {expanded() ? "less" : "more"}
         </button>
       </div>
@@ -203,7 +217,8 @@ export default ({ video }: { video: PipedVideo }) => {
             Load Comments
           </button>
         }
-        keyed>
+        keyed
+      >
         {(c) => (
           <Switch>
             <Match when={c.comments.length === 0}>

@@ -38,7 +38,7 @@ import {
   useContext,
 } from "solid-js";
 import { PlayerContext, PreferencesContext } from "~/root";
-import { PipedVideo, Subtitle } from "~/types";
+import { PipedVideo, RelatedStream, Subtitle } from "~/types";
 import { chaptersVtt } from "~/utils/chapters";
 import { useIsRouting, useLocation, useNavigate } from "solid-start";
 // import { extractVideoId } from "~/routes/watch";
@@ -72,23 +72,39 @@ export default function Player() {
       return;
     }
     let currentTime = mediaPlayer?.currentTime;
-    if (video.value?.duration < 60 || video.value.category === "Music") {
+    if (video.value.category === "Music") {
       currentTime = 0;
     }
     const tx = db()?.transaction("watch_history", "readwrite");
     const store = tx?.objectStore("watch_history");
-    const videoId = extractVideoId(video.value.thumbnailUrl);
-    console.log(videoId, video.value, "videoId");
-    if (!videoId) return;
-    const val = {
-      ...JSON.parse(JSON.stringify(video.value)),
-      progress: currentTime,
-    };
     if (!store) return;
+    const id = videoId(video.value);
+    if (!id) return;
 
-    store.put(val, videoId);
+    let isShort = false;
+    let width = video.value.videoStreams?.[0]?.width;
+    let height = video.value.videoStreams?.[0]?.height;
+    if (width && height) {
+      isShort = height > width;
+    }
+
+    const val = {
+      title: video.value.title,
+      duration: video.value.duration,
+      thumbnail: video.value.thumbnailUrl,
+      uploaderName: video.value.uploader,
+      uploaderAvatar: video.value.uploaderAvatar,
+      uploaderUrl: video.value.uploaderUrl,
+      url: `/watch?v=${id}`,
+      isShort,
+      progress: currentTime,
+      watchedAt: new Date().getTime(),
+    };
+    console.log("updating progress", val);
+
+    store.put(val, id);
     console.log(
-      `updated progress for ${video.value.title}. ${videoId} to ${currentTime}`
+      `updated progress for ${video.value.title}. ${id} to ${currentTime}`
     );
   };
 
@@ -304,11 +320,15 @@ export default function Player() {
     const provider = event.detail;
     if (isHLSProvider(provider)) {
       provider.library = () => import("hls.js");
+      console.log(provider);
+      provider.config = {
+        startLevel: 0,
+      };
     }
   };
 
   const handleHlsError = (err: HLSErrorEvent) => {
-    console.log(err.detail);
+    console.dir(err.detail);
     setError({
       name: err.detail.error.name,
       code: err.detail.response?.code,
@@ -436,12 +456,13 @@ export default function Player() {
       autoplay
       ref={mediaPlayer}
       title={video.value?.title ?? ""}
-      src={video.value?.hls ?? ""}
+      // src={video.value?.hls ?? ""}
       poster={
         video.value?.thumbnailUrl.replace("maxresdefault", "mqdefault") ?? ""
       }
       aspect-ratio={16 / 9}
-      crossorigin="anonymous">
+      crossorigin="anonymous"
+    >
       <media-outlet ref={outlet}>
         <media-poster alt={video.value?.title ?? ""} />
         {tracks().map((track) => {
@@ -457,6 +478,7 @@ export default function Player() {
           );
         })}
         <media-captions class="transition-[bottom] not-can-control:opacity-100 user-idle:opacity-100 not-user-idle:bottom-[80px]" />
+        <source src={video.value!.hls} type="application/x-mpegurl" />
       </media-outlet>
       {error()?.fatal ? (
         <div class="absolute top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50">
@@ -482,7 +504,8 @@ export default function Player() {
                 class="px-4 py-2 text-lg text-white border border-white rounded-md"
                 onClick={() => {
                   setError(undefined);
-                }}>
+                }}
+              >
                 Close
               </button>
             </div>

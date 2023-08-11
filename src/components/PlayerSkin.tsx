@@ -409,6 +409,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
 const ActionDisplay = (props: { action: { name: string; value: string } }) => {
   const [name, setName] = createSignal("");
   const [value, setValue] = createSignal("");
+
   let timeout: any;
   let acc = 0;
   createEffect(() => {
@@ -429,7 +430,7 @@ const ActionDisplay = (props: { action: { name: string; value: string } }) => {
       setName("");
       setValue("");
       acc = 0;
-    }, 750);
+    }, 350);
   });
   onCleanup(() => {
     clearTimeout(timeout);
@@ -439,11 +440,11 @@ const ActionDisplay = (props: { action: { name: string; value: string } }) => {
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
       <div
         classList={{
-          "opacity-0 scale-0": name() == "",
+          "opacity-0 scale-50": name() == "",
           "opacity-100 scale-100": !!name(),
         }}
-        class="flex items-center flex-col justify-center transition-all duration-200 ease-in-out w-32 h-32 bg-black rounded-full bg-opacity-50">
-        <div class="w-16 h-16 font-bold text-white">
+        class="flex items-center flex-col justify-center transition-all ease-in-out w-28 h-28 bg-bg1/50 rounded-full ">
+        <div class="w-16 h-16 font-bold text-text1">
           <media-icon
             class="absolute w-16 h-16"
             type="mute"
@@ -484,7 +485,7 @@ const ActionDisplay = (props: { action: { name: string; value: string } }) => {
             classList={{ "opacity-0": name() !== "pause" }}></media-icon>
         </div>
 
-        <div class="text-2xl font-bold text-white">{value()}</div>
+        <div class="text-lg font-bold text-text1">{value()}</div>
       </div>
     </div>
   );

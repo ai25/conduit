@@ -28,7 +28,6 @@ export default ({
     const id = videoId(v);
     if (!id) return;
     const val = await store.get(id);
-    console.log(val, "val");
     // setThumbnail(
     //   v?.thumbnail?.replace("hqdefault", "mqdefault") ??
     //     `${instance().replace(
