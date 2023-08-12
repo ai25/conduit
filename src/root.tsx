@@ -205,6 +205,7 @@ export default function Root() {
                       </div>
                     </Show>
                     <Header />
+                    <div aria-hidden="true" class="h-10" />
                     <PlayerContainer />
                     <PipContainer />
                     <Routes>
