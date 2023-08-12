@@ -7,6 +7,13 @@ import { fetchWithTimeout } from "./watch";
 
 export function routeData() {
   return createRouteData(async () => {
+  });
+}
+export default function Trending() {
+  const [trending, setTrending] = createSignal<TrendingStream[] | null>()
+  const [error, setError] = createSignal<Error | null>(null);
+  createEffect(async () => {
+
     try {
       const trending = await fetchWithTimeout(
         `https://pipedapi.kavin.rocks/trending?region=US`,
@@ -15,15 +22,12 @@ export function routeData() {
       const res = await trending.json();
 
       console.log(res);
-      return res as TrendingStream[];
+      setTrending(res as TrendingStream[]);
     } catch (err) {
       console.log("error", err);
-      return err as Error;
+      setError(err as Error);
     }
-  });
-}
-export default function Trending() {
-  const trending = useRouteData<typeof routeData>();
+  })
   return (
     <div class="flex min-h-full flex-wrap justify-center bg-bg1">
       {/* {loading.value && (
@@ -35,25 +39,25 @@ export default function Trending() {
 
       <Switch
         fallback={
-          <For each={Array(10).fill(0)}>
+          <For each={Array(40).fill(0)}>
             {() => <VideoCard v={undefined} />}
           </For>
         }>
         <Match when={!trending()} keyed>
           {(loading) =>
             loading && (
-              <For each={Array(10).fill(0)}>
+              <For each={Array(40).fill(0)}>
                 {() => <VideoCard v={undefined} />}
               </For>
             )
           }
         </Match>
-        <Match when={trending.error} keyed>
-          <div>Error: {trending.error.message}</div>
+        <Match when={error()} keyed>
+          <div>Error: {error()!.message}</div>
         </Match>
-        <Match when={trending() instanceof Error} keyed>
+        <Match when={(trending() as TrendingStream[] &{error:any})?.error } keyed>
           {(error) =>
-            error && <div>Error: {(trending() as Error).message}</div>
+            error && <div>Error: {error.message}</div>
           }
         </Match>
         <Match when={(trending() as TrendingStream[])} keyed>

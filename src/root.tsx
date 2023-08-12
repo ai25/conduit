@@ -269,7 +269,7 @@ const PipContainer = () => {
             video[0].value.videoStreams[0]?.height
           : "16/9",
       }}
-      class="w-full sm:w-96 z-[999] hidden justify-center items-center aspect-video sticky top-2 inset-x-0 sm:left-2 rounded-lg overflow-hidden bg-black"
+      class="w-full sm:w-96 z-[999] hidden justify-center items-center aspect-video sticky top-12 inset-x-0 sm:left-2 rounded-lg overflow-hidden bg-black"
     >
       <div
         onPointerDown={handlePointerEvent}

@@ -31,3 +31,6 @@ svg {
     @apply bg-accent1;
 }
 
+video, media-outlet {
+  @apply max-w-full max-h-full lg:max-h-[75vh]
+}

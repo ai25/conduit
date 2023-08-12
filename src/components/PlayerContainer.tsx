@@ -1,6 +1,13 @@
 import { useLocation } from "solid-start";
 import Player from "./Player";
-import { For, Match, Switch, createRenderEffect, useContext } from "solid-js";
+import {
+  For,
+  Match,
+  Show,
+  Switch,
+  createRenderEffect,
+  useContext,
+} from "solid-js";
 import { PlayerContext, PreferencesContext } from "~/root";
 import VideoCard from "./VideoCard";
 
@@ -25,7 +32,7 @@ export default function PlayerContainer() {
     <div
       class="flex sticky md:static top-0 z-50 md:z-0 mx-4"
       classList={{
-        "hidden": route.pathname !== "/watch",
+        hidden: route.pathname !== "/watch",
         "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
       }}>
       <Switch fallback={<Loading />}>
@@ -39,16 +46,26 @@ export default function PlayerContainer() {
         </Match>
       </Switch>
       <div
-        classList={{ "hidden lg:flex": !preferences.theatreMode,
-        "hidden": preferences.theatreMode
-     }}
+        classList={{
+          "hidden lg:flex": !preferences.theatreMode,
+          hidden: preferences.theatreMode,
+        }}
         class="w-[28rem] relative h-1 self-start justify-start">
         <div class="absolute top-0 flex w-full justify-start items-center flex-col h-full">
-          <For each={video.value?.relatedStreams}>
-            {(stream) => {
-              return <VideoCard v={stream} />;
-            }}
-          </For>
+          <Show
+            when={video.value}
+            keyed
+            fallback={
+              <For each={Array(20).fill(0)}>{() => <VideoCard />}</For>
+            }>
+            {(video) => (
+              <For each={video.relatedStreams}>
+                {(stream) => {
+                  return <VideoCard v={stream} />;
+                }}
+              </For>
+            )}
+          </Show>
         </div>
       </div>
     </div>

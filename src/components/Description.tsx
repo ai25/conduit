@@ -17,6 +17,8 @@ import Comment, { PipedCommentResponse } from "./Comment";
 import { InstanceContext } from "~/root";
 import { videoId } from "~/routes/history";
 import { downloadVideo } from "~/utils/hls";
+import Button from "./Button";
+import { Toaster } from "solid-headless";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -168,12 +170,12 @@ export default ({ video }: { video: PipedVideo }) => {
                 </div>
               </div>
             </div>
-            <button
+            <Button
               onClick={toggleSubscribed}
-              class={`btn ${isSubscribed() ? "!bg-bg3 !text-text1" : ""} `}
-            >
-              Subscribe{isSubscribed() && "d"}
-            </button>
+              activated={isSubscribed()}
+              label={`Subscribe${isSubscribed() ? "d" : ""}`}
+            />
+             <Toaster /> 
           </div>
         </div>
         <div class="flex items-center justify-between lg:flex-col lg:items-start lg:justify-start">

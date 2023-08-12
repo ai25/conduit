@@ -70,29 +70,6 @@ export async function fetchWithTimeout(
   return response;
 }
 
-// export function routeData({ params, location, data }: RouteDataArgs) {
-//   console.log(params, "params", location.query["v"], "v", data, "data");
-//   return createRouteData(
-//     async ([, v]) => {
-//       const instance = "https://pipedapi.kavin.rocks";
-//       try {
-//         const res = await fetch(`${instance}/streams/${v}`, {
-//           mode: "no-cors"
-//         });
-//         const data = await res.json();
-//         console.log(typeof data, "piped video");
-//         return data as PipedVideo;
-//       } catch (err) {
-//         console.log(err, "error while fetching video");
-//         return err as Error;
-//       }
-//     },
-//     {
-//       key: () => ["v", location.query["v"]],
-//     }
-//   );
-// }
-
 export default function Watch() {
   console.log(new Date().toISOString().split("T")[1], "rendering watch page");
 
@@ -148,7 +125,7 @@ export default function Watch() {
           return;
         }
       } catch (e) {
-        console.error(e);
+        console.info(e);
       }
     }
     const abortController = new AbortController();
@@ -177,70 +154,9 @@ export default function Watch() {
       document.title = `${video.value?.title} - Conduit`;
     }
   });
-  // const fetcher = async (
-  //   sourceOutput: any,
-  //   info: { value: PipedVideo | undefined; refetching: any | boolean }
-  // ) => {
-  //   if (isServer) return;
-  //   console.log(
-  //     new Date().toISOString().split("T")[1],
-  //     "fetcher in watch page fetching video"
-  //   );
-  //   const instance = "https://pipedapi.kavin.rocks";
-  //   try {
-  //     const res = await fetch(`${instance}/streams/${v}`);
-  //     const data = await res.json();
-  //     console.log(typeof data, "piped video");
-  //     console.log(video.value, "video valu");
-  //     return data;
-  //   } catch (err) {
-  //     console.log(err, "error while fetching video");
-  //     setError({
-  //       name: (err as Error).name,
-  //       message: (err as Error).message,
-  //     });
-  //     return err;
-  //   }
-  // };
 
-  // const [resource, { mutate, refetch }] = createResource(fetcher, {});
-
-  // onMount(() => {
-  //   refetch();
-  // });
-
-  // createEffect(async () => {
-
-  //   console.log(video.value?.title, "title1", data?.title);
-  //   console.log(data, "video", playerContext.value);
-  //   const persistedVideo = getStorageValue(
-  //     "video",
-  //     null,
-  //     "json",
-  //     "sessionStorage"
-  //   );
-  //   if (!video.value) return;
-  //   if (
-  //     extractVideoId(video.value.thumbnailUrl) ===
-  //       extractVideoId(persistedVideo?.thumbnailUrl) &&
-  //     document.querySelector("media-player")?.getAttribute("canplay") === "true"
-  //   ) {
-  //     console.log(
-  //       "same video",
-  //       extractVideoId(video.value.thumbnailUrl),
-  //       extractVideoId(persistedVideo?.thumbnailUrl),
-  //       document.querySelector("media-player")?.getAttribute("canplay")
-  //     );
-
-  //     return;
-  //   }
-  //   console.log("setting context value");
-  //   playerContext.value = video.value;
-  //   setStorageValue("video", JSON.stringify(video.value), "sessionStorage");
-  //   console.log(video.value?.title, "title");
-  // });
   const [theatre, setTheatre] = createSignal(true);
-  createRenderEffect(() => {
+  createEffect(() => {
     console.log(
       "render effect in watch page, theatre is:",
       preferences.theatreMode
@@ -249,10 +165,6 @@ export default function Watch() {
     console.log("theatre() is set to ", theatre());
   });
 
-  // if (!("localStorage" in globalThis)){
-  //   console.log("localStorage not supported");
-  //   return <div>localStorage not supported</div>
-  // }
 
   return (
     <div
@@ -264,7 +176,7 @@ export default function Watch() {
     >
       <div class="lg:min-h-[5540px] w-full mx-2 overflow-hidden">
         <div class="min-h-full w-full">
-          <Show when={video.value} keyed>
+          <Show when={video.value} keyed >
             {(video) => <Description video={video} />}
           </Show>
         </div>
@@ -273,11 +185,13 @@ export default function Watch() {
         classList={{ "lg:hidden": !theatre() }}
         class="flex min-w-0 flex-col items-center gap-2"
       >
-        <For each={video.value?.relatedStreams}>
+        <Show when={video.value} keyed fallback={<For each={Array(20).fill(0)}>{()=><VideoCard />}</For>}>
+        {(video)=><For each={video?.relatedStreams}>
           {(stream) => {
             return <VideoCard v={stream} />;
           }}
-        </For>
+        </For>}
+        </Show>
       </div>
     </div>
   );

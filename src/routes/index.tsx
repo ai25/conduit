@@ -1,3 +1,4 @@
+import { Toaster } from "solid-headless";
 import { createSignal, onCleanup, onMount } from "solid-js";
 import { A } from "solid-start";
 import Counter from "~/components/Counter";
@@ -11,6 +12,7 @@ export default function Home() {
       <h1 class="max-6-xs text-6xl text-sky-700 font-thin uppercase my-16">
         Hello world from Index!
       </h1>
+      <Toaster />
       {/* <Counter /> */}
       <media-player
         title="Sprite Fight"

@@ -3,11 +3,28 @@ import numeral from "numeral";
 // import { DBContext } from "~/routes/layout";
 import { extractVideoId } from "~/routes/watch";
 import { A } from "solid-start";
-import { createRenderEffect, createSignal, useContext } from "solid-js";
+import {
+  Match,
+  Switch,
+  createRenderEffect,
+  createSignal,
+  useContext,
+} from "solid-js";
 import { DBContext, InstanceContext } from "~/root";
 import { videoId } from "~/routes/history";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import {
+  Menu,
+  MenuItem,
+  Popover,
+  PopoverButton,
+  PopoverPanel,
+  Transition,
+} from "solid-headless";
+import { MenuButton, MenuItems } from "vidstack";
+import DropdownItem from "./DropdownItem";
+import Dropdown from "./Dropdown";
 
 dayjs.extend(relativeTime);
 
@@ -41,7 +58,7 @@ export default ({
   if (!v)
     return (
       <div
-        class={` flex w-72 max-w-[18rem] flex-col items-start rounded-xl bg-bg1 p-4`}>
+        class={` flex w-72 max-w-[18rem] flex-col items-start rounded-xl bg-bg1 `}>
         <div class="animate-pulse w-64 h-32 bg-bg2 flex aspect-video max-w-fit flex-col overflow-hidden rounded text-text1">
           <div class="bg-bg2 w-full h-full"></div>
         </div>
@@ -118,6 +135,25 @@ export default ({
             </div>
 
             <div class="flex w-full flex-col">
+              <Dropdown>
+                <DropdownItem as="button" label="Add to queue" />
+                <Switch>
+                  <Match when={progress() === undefined}>
+                    <DropdownItem
+                      as="button"
+                      label="Remove from history"
+                      // onClick={() => setProgress(undefined)}
+                    />
+                  </Match>
+                  <Match when={progress() !== undefined}>
+                    <DropdownItem
+                      as="button"
+                      label="Mark as watched"
+                      // onClick={() => setProgress(0)}
+                    />
+                  </Match>
+                </Switch>
+              </Dropdown>
               <A href={v.uploaderUrl || ""}>
                 <div class="peer w-fit text-sm">{v.uploaderName}</div>
               </A>
