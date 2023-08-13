@@ -187,7 +187,7 @@ export default function Root() {
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
         />
 
-        <Link rel="manifest" href="manifest.json" />
+        <Link rel="manifest" href="manifest.webmanifest" />
       </Head>
       <ThemeContext.Provider value={theme}>
         <DBContext.Provider value={db}>
