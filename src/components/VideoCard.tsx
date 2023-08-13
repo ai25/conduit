@@ -70,7 +70,7 @@ export default ({
 
   return (
     <div
-      class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-center rounded-xl bg-bg1 p-4`}>
+      class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-center rounded-xl bg-bg1 p-2`}>
       <A
         href={v.url ?? `/watch?v=${videoId(v)}`}
         class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1">

@@ -371,8 +371,10 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             </media-caption-button>
             <RecommendedVideosMenu videos={video?.relatedStreams} />
             <media-toggle-button
-              onClick={() =>
+              onClick={() =>{
+                console.log("toggle", preferences.theatreMode) 
                 setPreferences({ theatreMode: !preferences.theatreMode })
+              }
               }
               aria-keyshortcuts="t"
               aria-label="Theatre Mode"

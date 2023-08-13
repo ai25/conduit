@@ -141,7 +141,7 @@ export default function Root() {
     }
   });
 
-  createRenderEffect(() => {
+  onMount(() => {
     console.log(
       "render effect setting context, theatre is:",
       preferences[0].theatreMode
@@ -170,7 +170,6 @@ export default function Root() {
       "setting theater prefs in root, theatre mode is set to: ",
       preferences[0].theatreMode
     );
-    // preferences[1]({ ...preferences[0], autoplay: xdd() });
     setStorageValue(
       "preferences",
       JSON.stringify(preferences[0]),
@@ -195,7 +194,7 @@ export default function Root() {
           <InstanceContext.Provider value={instance}>
             <PlayerContext.Provider value={video}>
               <Body
-                class={`${theme[0]()} bg-bg1 font-poppins scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2`}
+                class={`${theme[0]()} bg-bg1 font-poppins scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}
               >
                 <Suspense>
                   <ErrorBoundary>

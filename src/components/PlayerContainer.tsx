@@ -5,7 +5,9 @@ import {
   Match,
   Show,
   Switch,
+  createEffect,
   createRenderEffect,
+  createSignal,
   useContext,
 } from "solid-js";
 import { PlayerContext, PreferencesContext } from "~/root";
@@ -28,12 +30,24 @@ export default function PlayerContainer() {
     ) : (
       <></>
     );
+
+  const [theatre, setTheatre] = createSignal(true);
+  createEffect(() => {
+    console.log(
+      "render effect in watch page, theatre is:",
+      preferences.theatreMode
+    );
+    setTheatre(preferences.theatreMode);
+    console.log("theatre() is set to ", theatre());
+  });
   return (
     <div
-      class="flex sticky md:static top-0 z-50 md:z-0 mx-4"
+      class="flex sticky md:static top-12 z-50 md:z-0 "
       classList={{
         hidden: route.pathname !== "/watch",
-        "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
+        "lg:max-w-[calc(100%-19rem)]": !theatre(),
+
+        // "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
       }}>
       <Switch fallback={<Loading />}>
         <Match when={video.error} keyed>
@@ -45,7 +59,7 @@ export default function PlayerContainer() {
           }}
         </Match>
       </Switch>
-      <div
+      {/* <div
         classList={{
           "hidden lg:flex": !preferences.theatreMode,
           hidden: preferences.theatreMode,
@@ -67,7 +81,7 @@ export default function PlayerContainer() {
             )}
           </Show>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

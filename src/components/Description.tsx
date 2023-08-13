@@ -130,7 +130,7 @@ export default ({ video }: { video: PipedVideo }) => {
   }
 
   return (
-    <div class="mb-2 w-full break-before-auto overflow-hidden bg-bg1 p-4 -mr-4">
+    <div class="mb-2 max-w-full bg-bg1 p-4 ">
       <div class="flex flex-col justify-between gap-2 lg:flex-row">
         <div class="flex flex-col gap-2 ">
           <h1 class="text-xl font-bold sm:text-2xl ">{video.title}</h1>
@@ -197,17 +197,22 @@ export default ({ video }: { video: PipedVideo }) => {
           tabIndex={0}
           id="description"
           aria-expanded={expanded()}
-          class={`min-w-0 max-w-full truncate break-words ${
+          class={`min-w-0 max-w-full overflow-hidden ${
             expanded() ? "" : "max-h-20"
           }`}
           innerHTML={rewriteDescription(video.description)}
         />
+        <div
+        classList={{hidden: expanded()}}
+         class="w-full h-0 relative">
+        <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
+        </div>
         <button
           aria-controls="description"
           onClick={() => {
             setExpanded(!expanded());
           }}
-          class="text-center text-sm text-accent1 hover:underline shadow shadow-[22px]"
+          class="text-center text-sm text-accent1 hover:underline "
         >
           Show {expanded() ? "less" : "more"}
         </button>

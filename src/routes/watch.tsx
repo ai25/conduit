@@ -165,33 +165,44 @@ export default function Watch() {
     console.log("theatre() is set to ", theatre());
   });
 
-
   return (
     <div
-      classList={{
-        "lg:w-[calc(100%-20rem)]": !theatre(),
-        "lg:max-w-full min-w-0": theatre(),
-      }}
-      class="flex flex-col lg:flex-row w-full max-w-full overflow-hidden"
-    >
-      <div class="lg:min-h-[5540px] w-full mx-2 overflow-hidden">
-        <div class="min-h-full w-full">
-          <Show when={video.value} keyed >
+      // classList={{
+      //   "": !theatre(),
+      //   "": theatre(),
+      // }}
+      class="flex flex-col md:flex-row max-w-full ">
+      <div classList={{ "": !theatre() }} class="w-full">
+        <div class="min-h-full max-w-full">
+          <Show when={video.value} keyed>
             {(video) => <Description video={video} />}
           </Show>
         </div>
       </div>
       <div
-        classList={{ "lg:hidden": !theatre() }}
-        class="flex min-w-0 flex-col items-center gap-2"
-      >
-        <Show when={video.value} keyed fallback={<For each={Array(20).fill(0)}>{()=><VideoCard />}</For>}>
-        {(video)=><For each={video?.relatedStreams}>
-          {(stream) => {
-            return <VideoCard v={stream} />;
-          }}
-        </For>}
-        </Show>
+        classList={{
+          "md:min-w-[22rem] md:w-[22rem] md:max-w-[22rem] h-full": !theatre(),
+        }}
+        class="flex min-w-0 flex-col items-center gap-2 bg-red-500">
+        <div
+          classList={{
+            "lg:absolute lg:top-10 lg:right-0 -mx-2": !theatre(),
+          }}>
+          <Show
+            when={video.value}
+            keyed
+            fallback={
+              <For each={Array(20).fill(0)}>{() => <VideoCard />}</For>
+            }>
+            {(video) => (
+              <For each={video?.relatedStreams}>
+                {(stream) => {
+                  return <VideoCard v={stream} />;
+                }}
+              </For>
+            )}
+          </Show>
+        </div>
       </div>
     </div>
   );

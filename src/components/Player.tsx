@@ -430,7 +430,7 @@ export default function Player() {
   return (
     <media-player
       id="player"
-      class={`peer w-full h-full  aspect-[${video.value.videoStreams[0]!.width} / ${video.value.videoStreams[0]!.height}] lg:max-h-[75vh]`}
+      class={`peer w-full h-full aspect-auto`}
       current-time={currentTime()}
       // onTextTrackChange={handleTextTrackChange}
       load="eager"
@@ -460,15 +460,15 @@ export default function Player() {
       poster={
         video.value?.thumbnailUrl.replace("maxresdefault", "mqdefault") ?? ""
       }
-      aspect-ratio={video.value?.videoStreams?.[0]
-          ? video.value.videoStreams[0]?.width /
-            video.value.videoStreams[0]?.height
-          : 
-16 / 9}
+//       aspect-ratio={video.value?.videoStreams?.[0]
+//           ? video.value.videoStreams[0]?.width /
+//             video.value.videoStreams[0]?.height
+//           : 
+// 16 / 9}
+      aspect-ratio={16/9}
       crossorigin="anonymous"
     >
       <media-outlet
-      class="lg:!max-h-[75vh]"
        ref={outlet}>
         <media-poster alt={video.value?.title ?? ""} />
         {tracks().map((track) => {
