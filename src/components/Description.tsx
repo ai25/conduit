@@ -133,7 +133,7 @@ export default ({ video }: { video: PipedVideo }) => {
     <div class="mb-2 max-w-full bg-bg1 p-4 ">
       <div class="flex flex-col justify-between gap-2 lg:flex-row">
         <div class="flex flex-col gap-2 ">
-          <h1 class="text-xl font-bold sm:text-2xl ">{video.title}</h1>
+          <h1 class="text-lg font-bold sm:text-xl ">{video.title}</h1>
           <div class="mb-1  flex justify-between gap-4 sm:justify-start ">
             <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
               <A href={`${video.uploaderUrl}`}>
@@ -148,16 +148,14 @@ export default ({ video }: { video: PipedVideo }) => {
               <div class="flex flex-col items-center justify-start">
                 <A
                   href={`${video.uploaderUrl}`}
-                  class="flex w-fit items-center gap-2"
-                >
+                  class="flex w-fit items-center gap-2">
                   {video.uploader}{" "}
                   {video.uploaderVerified && (
                     <svg
                       class="h-4 w-4 "
                       xmlns="http://www.w3.org/2000/svg"
                       fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
+                      viewBox="0 0 24 24">
                       <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z" />
                     </svg>
                   )}
@@ -175,10 +173,10 @@ export default ({ video }: { video: PipedVideo }) => {
               activated={isSubscribed()}
               label={`Subscribe${isSubscribed() ? "d" : ""}`}
             />
-             <Toaster /> 
+            <Toaster />
           </div>
         </div>
-        <div class="flex items-center justify-between lg:flex-col lg:items-start lg:justify-start">
+        <div class="flex items-center justify-between text-sm lg:flex-col lg:items-start lg:justify-start">
           <p class="break-words">
             Published{" "}
             {(() => {
@@ -190,6 +188,19 @@ export default ({ video }: { video: PipedVideo }) => {
           <button onClick={handleDownload} class="btn">
             Download
           </button>
+          <div class="flex gap-2">
+          {numeral(video.likes).format("0a").toUpperCase()} 👍
+          <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
+            <div
+              class="h-full bg-accent1 rounded-r"
+              style={{
+                width: `${
+                  (video?.dislikes / (video?.likes + video?.dislikes)) * 100
+                }%`,
+              }}></div>
+          </div>
+          {numeral(video.dislikes).format("0a").toUpperCase()} 👎
+          </div>
         </div>
       </div>
       <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
@@ -202,18 +213,15 @@ export default ({ video }: { video: PipedVideo }) => {
           }`}
           innerHTML={rewriteDescription(video.description)}
         />
-        <div
-        classList={{hidden: expanded()}}
-         class="w-full h-0 relative">
-        <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
+        <div classList={{ hidden: expanded() }} class="w-full h-0 relative">
+          <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
         </div>
         <button
           aria-controls="description"
           onClick={() => {
             setExpanded(!expanded());
           }}
-          class="text-center text-sm text-accent1 hover:underline "
-        >
+          class="text-center text-sm text-accent1 hover:underline ">
           Show {expanded() ? "less" : "more"}
         </button>
       </div>
@@ -224,8 +232,7 @@ export default ({ video }: { video: PipedVideo }) => {
             Load Comments
           </button>
         }
-        keyed
-      >
+        keyed>
         {(c) => (
           <Switch>
             <Match when={c.comments.length === 0}>

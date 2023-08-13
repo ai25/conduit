@@ -31,7 +31,12 @@ import {
 } from "solid-start";
 import { For } from "solid-js";
 import { reconcile } from "solid-js/store";
-import { InstanceContext, PlayerContext, PreferencesContext } from "~/root";
+import {
+  DBContext,
+  InstanceContext,
+  PlayerContext,
+  PreferencesContext,
+} from "~/root";
 import { Portal, isServer } from "solid-js/web";
 // const Description = lazy(() => import("~/components/Description"));
 // const VideoCard = lazy(() => import("~/components/VideoCard"));
@@ -39,6 +44,8 @@ import VideoCard from "~/components/VideoCard";
 import { videoId } from "./history";
 import { PipedCommentResponse } from "~/components/Comment";
 import { getHlsManifest } from "~/utils/hls";
+import PlaylistCard from "~/components/PlaylistCard";
+import { createVirtualizer } from "@tanstack/solid-virtual";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
@@ -77,10 +84,12 @@ export default function Watch() {
   const [instance] = useContext(InstanceContext);
   const [preferences] = useContext(PreferencesContext);
   const route = useLocation();
+
+  const [list, setList] = createSignal<any>(undefined);
   // const videoLoaded = useSignal(false);
   // const preferences = useContext(PreferencesContext);
   // const instance = useContext(InstanceContext);
-  // const db = useContext(DBContext);
+  const [db] = useContext(DBContext);
 
   async function fetchLocalVideo() {
     const rootDir = await navigator.storage.getDirectory();
@@ -164,6 +173,25 @@ export default function Watch() {
     setTheatre(preferences.theatreMode);
     console.log("theatre() is set to ", theatre());
   });
+  createEffect(async () => {
+    const listId = route.query.list;
+    if (!listId) return;
+    if (!db()) return;
+
+    const tx = db()!.transaction("playlists", "readonly");
+    const store = tx.objectStore("playlists");
+    const l = await store.get(listId);
+    setList(l);
+    console.log(l);
+  });
+  let parentRef: HTMLDivElement;
+  const rowVirtualizer = createVirtualizer({
+    count: 137,
+    getScrollElement: () => parentRef,
+    estimateSize: () => 72,
+    overscan: 5,
+  });
+  console.log(rowVirtualizer, "rowVirtualizer");
 
   return (
     <div
@@ -183,11 +211,53 @@ export default function Watch() {
         classList={{
           "md:min-w-[22rem] md:w-[22rem] md:max-w-[22rem] h-full": !theatre(),
         }}
-        class="flex min-w-0 flex-col items-center gap-2 bg-red-500">
+        class="flex min-w-0 flex-col items-center gap-2">
         <div
           classList={{
             "lg:absolute lg:top-10 lg:right-0 -mx-2": !theatre(),
+            "lg:pl-4 md:mr-4": theatre(),
           }}>
+          <Show when={list()} keyed>
+            {(list) => (
+              <div
+                ref={parentRef}
+                class="flex flex-col gap-2 lg:max-w-[18rem] bg-bg2 px-1 mx-2 max-h-[30rem] overflow-y-auto scrollbar my-4 rounded-xl">
+                <h3 class="text-lg font-bold sm:text-xl ">{list.name}</h3>
+                {/* <For each={rowVirtualizer.getVirtualItems()}>
+                  {(item, index) => {
+                    return (
+                     <div
+                     style={{
+                       width: '100%',
+                       height: `${item.size}px`,
+                       transform: `translateY(${item.start}px)`,
+                     }}
+                   >
+                      <PlaylistCard
+                        list={list.id}
+                        index={index() + 1}
+                        v={list.videos[index()]}
+                        active={route.query.index}
+                      />
+                   </div>
+                    );
+                  }}
+                </For> */}
+                <For each={list.videos}>
+                  {(item, index) => {
+                    return (
+                      <PlaylistCard
+                        list={list.id}
+                        index={index() + 1}
+                        v={item}
+                        active={route.query.index}
+                      />
+                    );
+                  }}
+                </For>
+              </div>
+            )}
+          </Show>
           <Show
             when={video.value}
             keyed

@@ -381,15 +381,15 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
               class="group z-10 hidden lg:inline-flex fullscreen:hidden h-10 w-10 items-center justify-center rounded-sm text-white outline-none ">
               <media-icon
                 classList={{
-                  hidden: !preferences.theatreMode,
-                  block: preferences.theatreMode,
+                  hidden: preferences.theatreMode,
+                  block: !preferences.theatreMode,
                 }}
                 class="group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
                 type="theatre-mode"></media-icon>
               <media-icon
                 classList={{
-                  hidden: preferences.theatreMode,
-                  block: !preferences.theatreMode,
+                  hidden: !preferences.theatreMode,
+                  block: preferences.theatreMode,
                 }}
                 class="group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
                 type="theatre-mode-exit"></media-icon>
