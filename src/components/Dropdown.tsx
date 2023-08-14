@@ -18,13 +18,14 @@ export default function Dropdown(props: {
   showButton?: boolean;
   show?: boolean;
   buttonClass?: string;
+  panelPosition?: "left" | "right" | "center";
 }) {
   return (
     <Popover defaultOpen={false} class={`relative ${props.class}`}>
       {({ isOpen }) => (
         <>
           <Show when={props.showButton !== false}>
-            <PopoverButton class={`text-text3 group bg-primary px-3 py-2 rounded-md inline-flex items-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-accent1 ${props.buttonClass ?? ""}`}>
+            <PopoverButton onClick={e=>e.preventDefault()} class={`text-text3 group  focus:outline-none focus-visible:ring-4 focus-visible:ring-accent1 ${props.buttonClass ?? ""}`}>
               <Show when={props.iconPosition === "left" && props.icon}>
                 <span
                   classList={{
@@ -58,7 +59,13 @@ export default function Dropdown(props: {
             leaveTo="opacity-0 -translate-y-1 scale-50">
             <PopoverPanel
               unmount={false}
-              class="absolute z-10 px-4 mt-3 transform -translate-x-1/2 left-1/2 sm:px-0 lg:max-w-3xl">
+              classList={{
+                "right-0 -translate-x-full": props.panelPosition === "left",
+                "right-0 translate-x-full": props.panelPosition === "right",
+                "left-1/2 -translate-x-1/2": props.panelPosition === "center",
+
+              }}
+              class="absolute z-10 px-4 mt-3 transform sm:px-0 lg:max-w-3xl">
               <Menu class="overflow-hidden w-64 rounded-lg shadow-lg ring-1 ring-black/5 bg-bg2 flex flex-col space-y-1 p-1">
                 {props.children}
               </Menu>

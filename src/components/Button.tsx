@@ -14,7 +14,7 @@ export default function Button(props: {
       onClick={props.onClick}
       disabled={props.disabled}
       classList={{ "!text-text1 !bg-bg2": props.activated }}
-      class={`text-text3 bg-primary hover:bg-highlight cursor-pointer focus:ring-4 focus:ring-accent1 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 focus:outline-none  ${props.class}`}>
+      class={`text-text3 bg-primary hover:bg-accent1 cursor-pointer select-none focus:ring-4 focus:ring-accent1 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 focus:outline-none  ${props.class}`}>
       {props.label} 
     </HeadlessButton>
   );

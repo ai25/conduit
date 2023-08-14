@@ -19,10 +19,10 @@ svg {
 }
 
 .scrollbar::-webkit-scrollbar {
-  @apply w-1 overflow-hidden
+  @apply w-1 overflow-hidden 
 }
 .scrollbar::-webkit-scrollbar-track {
-    @apply bg-bg2;
+    @apply bg-bg2 mr-1;
 }
 .scrollbar::-webkit-scrollbar-thumb {
     @apply bg-primary rounded
@@ -31,3 +31,9 @@ svg {
     @apply bg-accent1;
 }
 
+button, a{
+  -webkit-tap-highlight-color: transparent
+}
+.link {
+  @apply text-text1 hover:text-accent1 hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-accent1 outline-none rounded focus-visible:underline ;
+}

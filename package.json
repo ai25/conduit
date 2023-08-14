@@ -25,6 +25,7 @@
     "dayjs": "^1.11.9",
     "hls.js": "^1.4.10",
     "idb": "^7.1.1",
+    "long-press-event": "^2.4.6",
     "media-icons": "^0.10.0",
     "numeral": "^2.0.6",
     "solid-headless": "^0.13.1",

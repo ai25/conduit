@@ -173,14 +173,21 @@ export default function Watch() {
     setTheatre(preferences.theatreMode);
     console.log("theatre() is set to ", theatre());
   });
+  const [listId, setListId] = createSignal<string | undefined>(undefined);
   createEffect(async () => {
-    const listId = route.query.list;
-    if (!listId) return;
+    console.log("fetching playlist")
+    setListId(route.query.list);
+    if (!listId()){
+      setList(undefined);
+      console.log("fetching playlistno list id")
+      return
+    }
+    console.log("fetching playlistlist id", listId())
     if (!db()) return;
 
     const tx = db()!.transaction("playlists", "readonly");
     const store = tx.objectStore("playlists");
-    const l = await store.get(listId);
+    const l = await store.get(listId()!);
     setList(l);
     console.log(l);
   });
@@ -209,19 +216,20 @@ export default function Watch() {
       </div>
       <div
         classList={{
-          "md:min-w-[22rem] md:w-[22rem] md:max-w-[22rem] h-full": !theatre(),
+          "md:min-w-[22rem] md:w-[22rem] md:max-w-[29rem] h-full": !theatre(),
         }}
         class="flex min-w-0 flex-col items-center gap-2">
         <div
           classList={{
-            "lg:absolute lg:top-10 lg:right-0 -mx-2": !theatre(),
+            "lg:absolute lg:top-10 lg:right-0 -mx-2 mx-auto": !theatre(),
             "lg:pl-4 md:mr-4": theatre(),
           }}>
           <Show when={list()} keyed>
             {(list) => (
+              <div class="overflow-hidden rounded-xl mx-2 mr-3 my-4 ">
               <div
                 ref={parentRef}
-                class="flex flex-col gap-2 lg:max-w-[18rem] bg-bg2 px-1 mx-2 max-h-[30rem] overflow-y-auto scrollbar my-4 rounded-xl">
+                class="flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar">
                 <h3 class="text-lg font-bold sm:text-xl ">{list.name}</h3>
                 {/* <For each={rowVirtualizer.getVirtualItems()}>
                   {(item, index) => {
@@ -255,7 +263,7 @@ export default function Watch() {
                     );
                   }}
                 </For>
-              </div>
+              </div></div>
             )}
           </Show>
           <Show

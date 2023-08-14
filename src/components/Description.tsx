@@ -50,12 +50,12 @@ export default ({ video }: { video: PipedVideo }) => {
       .replaceAll(
         /<a href="\/watch\?v=([a-zA-Z0-9_?=&-]*)&amp;t=([0-9]*)">([a-zA-Z0-9_?=&-:]*)<\/a>/gm,
         `<button
-        class="text-primary hover:text-highlight hover:underline" onclick="handleTimestamp('$1','$2')">$3</button>`
+        class="link" onclick="handleTimestamp('$1','$2')">$3</button>`
       )
       // add a class to all <a> tags
       .replaceAll(
         /<a href/gm,
-        '<a class="text-primary hover:text-highlight hover:underline" href'
+        '<a class="link" href'
       );
     return t;
   }
@@ -136,7 +136,7 @@ export default ({ video }: { video: PipedVideo }) => {
           <h1 class="text-lg font-bold sm:text-xl ">{video.title}</h1>
           <div class="mb-1  flex justify-between gap-4 sm:justify-start ">
             <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
-              <A href={`${video.uploaderUrl}`}>
+              <A class="link" href={`${video.uploaderUrl}`}>
                 <img
                   src={video.uploaderAvatar}
                   width={42}
@@ -148,7 +148,7 @@ export default ({ video }: { video: PipedVideo }) => {
               <div class="flex flex-col items-center justify-start">
                 <A
                   href={`${video.uploaderUrl}`}
-                  class="flex w-fit items-center gap-2">
+                  class="link flex w-fit items-center gap-2">
                   {video.uploader}{" "}
                   {video.uploaderVerified && (
                     <svg

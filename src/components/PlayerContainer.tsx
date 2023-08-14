@@ -45,7 +45,7 @@ export default function PlayerContainer() {
       class="flex sticky md:static top-12 z-50 md:z-0 "
       classList={{
         hidden: route.pathname !== "/watch",
-        "lg:max-w-[calc(100%-19rem)]": !theatre(),
+        "lg:max-w-[calc(100%-22rem)]": !theatre(),
 
         // "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
       }}>

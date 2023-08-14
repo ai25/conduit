@@ -45,7 +45,12 @@ import { MediaOutletElement, MediaPlayerElement } from "vidstack";
 import { videoId } from "./routes/history";
 import { getStorageValue, setStorageValue } from "./utils/storage";
 import PlayerContainer from "./components/PlayerContainer";
+import { registerSW } from 'virtual:pwa-register'
+import Modal from "./components/Modal";
 
+// const updateSW = registerSW({
+//   onOfflineReady() {},
+// })
 const theme = createSignal("monokai");
 export const ThemeContext = createContext(theme);
 
@@ -194,7 +199,7 @@ export default function Root() {
           <InstanceContext.Provider value={instance}>
             <PlayerContext.Provider value={video}>
               <Body
-                class={`${theme[0]()} bg-bg1 font-poppins scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}
+                class={`${theme[0]()} bg-bg1 font-poppins text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}
               >
                 <Suspense>
                   <ErrorBoundary>

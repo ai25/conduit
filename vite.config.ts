@@ -14,17 +14,12 @@ export default defineConfig({
     solid({ adapter: vercel() }),
     VitePWA({
       registerType: "autoUpdate",
+      
       workbox: {
         globPatterns: [
           "**/*.{js,css,html,ico,svg,png}",
           "manifest.webmanifest","manifest.json"
         ],
-        additionalManifestEntries: [
-          { url: "/index.html", revision: null },
-          { url: "/manifest.webmanifest", revision: null },
-          { url: "/manifest.json", revision: null },
-        ],
-
         globIgnores: ["**/*-legacy-*.js"],
         runtimeCaching: [
           {

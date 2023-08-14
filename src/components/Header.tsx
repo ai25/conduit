@@ -116,7 +116,7 @@ const Header = () => {
           {(link) => (
             <A
               href={link.href}
-              class="text-sm p-1 text-left rounded hover:bg-highlight hover:text-text3 focus:outline-none focus:bg-highlight focus:text-text3 transition">
+              class="link text-sm p-1 text-left transition ">
               {link.label}
             </A>
           )}
