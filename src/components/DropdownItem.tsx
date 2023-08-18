@@ -11,15 +11,18 @@ export default function DropdownItem(props: {
   selected?: boolean;
   iconPosition?: "left" | "right";
 }) {
+  function classNames(...classes: (string | boolean | undefined)[]): string {
+    return classes.filter(Boolean).join(" ");
+  }
   return (
     <MenuItem
       as={props.as}
-      class={`group z-10 text-text1 bg-bg1/95 hover:bg-bg3/50 focus-visible:bg-bg3/50 focus-visible:ring-2 focus-visible:ring-primary inline-flex items-center w-full px-2 py-2 text-sm rounded-md transition-colors duration-200 ease-in-out focus:outline-none ${
-        props.class ?? ""
-      } `}
-      classList={{
-        "text-text3 bg-primary focus-visible:text-text1": props.selected,
-      }}
+      class={` ${classNames(
+        props.selected && "text-text3 bg-primary focus-visible:text-text1"
+      )}
+        group z-10 text-text1 bg-bg1/95 hover:bg-bg3/50 focus-visible:bg-bg3/50 focus-visible:ring-2 focus-visible:ring-primary inline-flex items-center w-full px-2 py-2 text-sm rounded-md transition-colors duration-200 ease-in-out focus:outline-none ${
+          props.class ?? ""
+        } `}
       onClick={(e: any) => props.onClick?.(e, props.value)}>
       <Show when={props.iconPosition === "left" && props.icon}>
         <span

@@ -7,6 +7,10 @@
   src: url("/fonts/poppins-500.woff2") format("woff2");
 }
 
+body {
+  @apply overscroll-y-contain
+}
+
 svg {
   @apply ring-0;
 }

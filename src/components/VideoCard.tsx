@@ -64,7 +64,6 @@ export default ({
         </div>
         <div class="animate-pulse w-3/4 h-4 bg-bg2 rounded mt-2"></div>
         <div class="animate-pulse w-1/2 h-4 bg-bg2 rounded mt-2"></div>
-        <div class="animate-pulse w-1/4 h-4 bg-bg2 rounded mt-2"></div>
       </div>
     );
 

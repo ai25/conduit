@@ -20,12 +20,19 @@ export default function Dropdown(props: {
   buttonClass?: string;
   panelPosition?: "left" | "right" | "center";
 }) {
+  function classNames(...classes: (string | boolean | undefined)[]): string {
+    return classes.filter(Boolean).join(" ");
+  }
   return (
     <Popover defaultOpen={false} class={`relative ${props.class}`}>
       {({ isOpen }) => (
         <>
           <Show when={props.showButton !== false}>
-            <PopoverButton onClick={e=>e.preventDefault()} class={`text-text3 group  focus:outline-none focus-visible:ring-4 focus-visible:ring-accent1 ${props.buttonClass ?? ""}`}>
+            <PopoverButton
+              onClick={(e: any) => e.preventDefault()}
+              class={`text-text3 group  focus:outline-none focus-visible:ring-4 focus-visible:ring-accent1 ${
+                props.buttonClass ?? ""
+              }`}>
               <Show when={props.iconPosition === "left" && props.icon}>
                 <span
                   classList={{
@@ -59,13 +66,11 @@ export default function Dropdown(props: {
             leaveTo="opacity-0 -translate-y-1 scale-50">
             <PopoverPanel
               unmount={false}
-              classList={{
-                "right-0 -translate-x-full": props.panelPosition === "left",
-                "right-0 translate-x-full": props.panelPosition === "right",
-                "left-1/2 -translate-x-1/2": props.panelPosition === "center",
-
-              }}
-              class="absolute z-10 px-4 mt-3 transform sm:px-0 lg:max-w-3xl">
+              class={`${classNames(
+                props.panelPosition === "left" && "left-8 -translate-x-full",
+                props.panelPosition === "right" && "right-8 translate-x-full",
+                props.panelPosition === "center" && "left-1/2 -translate-x-1/2"
+              )} absolute z-10 px-4 mt-3 transform sm:px-0 lg:max-w-3xl`}>
               <Menu class="overflow-hidden w-64 rounded-lg shadow-lg ring-1 ring-black/5 bg-bg2 flex flex-col space-y-1 p-1">
                 {props.children}
               </Menu>

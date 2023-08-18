@@ -164,15 +164,6 @@ export default function Watch() {
     }
   });
 
-  const [theatre, setTheatre] = createSignal(true);
-  createEffect(() => {
-    console.log(
-      "render effect in watch page, theatre is:",
-      preferences.theatreMode
-    );
-    setTheatre(preferences.theatreMode);
-    console.log("theatre() is set to ", theatre());
-  });
   const [listId, setListId] = createSignal<string | undefined>(undefined);
   createEffect(async () => {
     console.log("fetching playlist")
@@ -207,7 +198,7 @@ export default function Watch() {
       //   "": theatre(),
       // }}
       class="flex flex-col md:flex-row max-w-full ">
-      <div classList={{ "": !theatre() }} class="w-full">
+      <div classList={{ "": !preferences.theatreMode }} class="w-full">
         <div class="min-h-full max-w-full">
           <Show when={video.value} keyed>
             {(video) => <Description video={video} />}
@@ -216,13 +207,13 @@ export default function Watch() {
       </div>
       <div
         classList={{
-          "md:min-w-[22rem] md:w-[22rem] md:max-w-[29rem] h-full": !theatre(),
+          "md:min-w-[22rem] md:w-[22rem] md:max-w-[29rem] h-full": !preferences.theatreMode,
         }}
         class="flex min-w-0 flex-col items-center gap-2">
         <div
           classList={{
-            "lg:absolute lg:top-10 lg:right-0 -mx-2 mx-auto": !theatre(),
-            "lg:pl-4 md:mr-4": theatre(),
+            "lg:absolute lg:top-10 lg:right-0 -mx-2 mx-auto": !preferences.theatreMode,
+            "lg:pl-4 md:mr-4": preferences.theatreMode,
           }}>
           <Show when={list()} keyed>
             {(list) => (

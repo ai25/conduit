@@ -27,6 +27,7 @@ import {
 import {
   For,
   ParentProps,
+  Show,
   children,
   createEffect,
   createMemo,
@@ -38,7 +39,7 @@ import {
   useContext,
 } from "solid-js";
 import { PlayerContext, PreferencesContext } from "~/root";
-import { PipedVideo, RelatedStream, Subtitle } from "~/types";
+import { PipedVideo, PreviewFrame, RelatedStream, Subtitle } from "~/types";
 import { chaptersVtt } from "~/utils/chapters";
 import { useIsRouting, useLocation, useNavigate } from "solid-start";
 // import { extractVideoId } from "~/routes/watch";
@@ -52,6 +53,7 @@ import { ttml2srt } from "~/utils/ttml";
 import PlayerSkin from "./PlayerSkin";
 import VideoCard from "./VideoCard";
 import { videoId } from "~/routes/history";
+import numeral from "numeral";
 
 const BUFFER_LIMIT = 3;
 const BUFFER_TIME = 15000;
@@ -291,6 +293,13 @@ export default function Player() {
   };
 
   createEffect(() => {
+    if (!video.value) return;
+    if (!mediaPlayer) return;
+    mediaPlayer.thumbnails = generateStoryboard(video.value.previewFrames[1]);
+    console.log(mediaPlayer.thumbnails);
+  })
+
+  createEffect(() => {
     console.log("time effect", video.value?.title);
     if (!video.value) return;
     if (!mediaPlayer) return;
@@ -336,6 +345,7 @@ export default function Player() {
       fatal: err.detail.fatal,
       message: err.detail.error.message,
     });
+    console.log(error());
   };
 
   //   function selectDefaultQuality() {
@@ -420,17 +430,56 @@ export default function Player() {
       // }
       updateProgress();
     }
-    if (route.pathname !== "/watch") {
-      toggleFloating(true);
-    } else {
-      toggleFloating(false);
-    }
+    // if (route.pathname !== "/watch") {
+    //   toggleFloating(true);
+    // } else {
+    //   toggleFloating(false);
+    // }
   });
+
+  const generateStoryboard = (previewFrames: PreviewFrame | undefined) => {
+    if (!previewFrames) return;
+    let output = "WEBVTT\n\n";
+    let currentTime = 0;
+
+    for (let url of previewFrames.urls) {
+        for (let y = 0; y < previewFrames.framesPerPageY; y++) {
+            for (let x = 0; x < previewFrames.framesPerPageX; x++) {
+
+                if (currentTime >= previewFrames.totalCount * previewFrames.durationPerFrame) {
+                    break;
+                }
+
+                let startX = x * previewFrames.frameWidth;
+                let startY = y * previewFrames.frameHeight;
+
+                output += `${formatTime(currentTime)} --> ${formatTime(currentTime + previewFrames.durationPerFrame)}\n`;
+                output += `${url}#xywh=${startX},${startY},${previewFrames.frameWidth},${previewFrames.frameHeight}\n\n`;
+
+                currentTime += previewFrames.durationPerFrame;
+            }
+        }
+    }
+
+    function formatTime(ms: number): string {
+        let hours = Math.floor(ms / 3600000);
+        ms -= hours * 3600000;
+        let minutes = Math.floor(ms / 60000);
+        ms -= minutes * 60000;
+        let seconds = Math.floor(ms / 1000);
+        ms -= seconds * 1000;
+        
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+    }
+
+    const blob = new Blob([output], {type: 'text/vtt'});
+    return URL.createObjectURL(blob);
+}
 
   return (
     <media-player
       id="player"
-      class={`peer w-full h-full aspect-auto`}
+      class={`peer pointer-events-auto`}
       current-time={currentTime()}
       // onTextTrackChange={handleTextTrackChange}
       load="eager"
@@ -458,17 +507,18 @@ export default function Player() {
       title={video.value?.title ?? ""}
       // src={video.value?.hls ?? ""}
       poster={
-        video.value?.thumbnailUrl.replace("maxresdefault", "mqdefault") ?? ""
+        video.value?.thumbnailUrl?? ""
       }
-//       aspect-ratio={video.value?.videoStreams?.[0]
-//           ? video.value.videoStreams[0]?.width /
-//             video.value.videoStreams[0]?.height
-//           : 
-// 16 / 9}
-      aspect-ratio={16/9}
-      crossorigin="anonymous"
-    >
+      //       aspect-ratio={video.value?.videoStreams?.[0]
+      //           ? video.value.videoStreams[0]?.width /
+      //             video.value.videoStreams[0]?.height
+      //           :
+      // 16 / 9}
+      aspect-ratio={16 / 9}
+      thumbnails={generateStoryboard(video.value?.previewFrames[1])}
+      crossorigin="anonymous">
       <media-outlet
+      // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
        ref={outlet}>
         <media-poster alt={video.value?.title ?? ""} />
         {tracks().map((track) => {
@@ -486,46 +536,43 @@ export default function Player() {
         <media-captions class="transition-[bottom] not-can-control:opacity-100 user-idle:opacity-100 not-user-idle:bottom-[80px]" />
         <source src={video.value!.hls} type="application/x-mpegurl" />
       </media-outlet>
-      {error()?.fatal ? (
-        <div class="absolute top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50">
-          <div class="flex flex-col items-center justify-center w-full h-full gap-3">
-            <div class="text-2xl font-bold text-white">
-              {error()?.name} {error()?.details}
-            </div>
-            <div class="flex flex-col">
-              <div class="text-lg text-white">{error()?.message}</div>
-              <div class="text-lg text-white">
-                Please try switching to a different instance or refresh the
-                page.
+      <Show when={error()}>
+        {(err) => (
+          <Show when={err().fatal}>
+            <div
+            // classList={{hidden: preferences.pip}}
+             class="absolute top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50">
+              <div class="flex flex-col items-center justify-center w-full h-full gap-3">
+                <div class="text-2xl font-bold text-white">
+                  {error()?.name} {error()?.details}
+                </div>
+                <div class="flex flex-col">
+                  <div class="text-lg text-white">{error()?.message}</div>
+                  <div class="text-lg text-white">
+                    Please try switching to a different instance or refresh the
+                    page.
+                  </div>
+                </div>
+                <div class="flex justify-center gap-2">
+                  <button
+                    class="px-4 py-2 text-lg text-white border border-white rounded-md"
+                    // onClick={() => window.location.reload()}
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    class="px-4 py-2 text-lg text-white border border-white rounded-md"
+                    onClick={() => {
+                      setError(undefined);
+                    }}>
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
-            <div class="flex justify-center gap-2">
-              <button
-                class="px-4 py-2 text-lg text-white border border-white rounded-md"
-                // onClick={() => window.location.reload()}
-              >
-                Refresh
-              </button>
-              <button
-                class="px-4 py-2 text-lg text-white border border-white rounded-md"
-                onClick={() => {
-                  setError(undefined);
-                }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <></>
-        // <div class="absolute top-0 right-0 opacity-0 pointer-events-none bg-black/50">
-        //   <div class="absolute top-0 right-0 z-10 flex flex-col justify-between w-full h-full text-white transition-opacity duration-200 ease-linear opacity-0 pointer-events-none can-control:opacity-100">
-        //     <div class="text-sm text-white">Buffering?</div>
-        //     <div class="text-xs text-white">Try switching to a different instance.</div>
-        //   </div>
-        // </div>
-      )}
+          </Show>
+        )}
+      </Show>
       <PlayerSkin video={video.value} isMiniPlayer={false} />
       {/* <media-community-skin></media-community-skin> */}
     </media-player>

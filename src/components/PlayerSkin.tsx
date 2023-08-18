@@ -48,6 +48,7 @@ declare module "solid-js" {
       "media-audio-menu-button": any;
       "media-audio-menu-items": any;
       "media-toggle-button": any;
+      "media-slider-thumbnail": any;
     }
   }
 }
@@ -252,11 +253,12 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
               chapter-container-class=""
               chapter-class="">
               <div class="" slot="preview">
-                <media-slider-video
+                {/* <media-slider-video
                   src={video?.videoStreams.find((s) => s.bitrate < 400000)?.url}
                   onError={console.error}
                   class="rounded-lg border-black -mb-1"
-                />
+                /> */}
+                <media-slider-thumbnail  class="rounded-lg border-2 ring-inset border-bg1 -mb-1 " />
                 <media-slider-value
                   type="pointer"
                   format="time"
@@ -371,11 +373,12 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
             </media-caption-button>
             <RecommendedVideosMenu videos={video?.relatedStreams} />
             <media-toggle-button
-              onClick={() =>{
-                console.log("toggle", preferences.theatreMode) 
-                setPreferences({ theatreMode: !preferences.theatreMode })
-              }
-              }
+              onClick={() => {
+                console.log("toggle", preferences.theatreMode);
+                setPreferences((state) => ({
+                  theatreMode: !state.theatreMode,
+                }));
+              }}
               aria-keyshortcuts="t"
               aria-label="Theatre Mode"
               class="group z-10 hidden lg:inline-flex fullscreen:hidden h-10 w-10 items-center justify-center rounded-sm text-white outline-none ">

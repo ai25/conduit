@@ -5,7 +5,7 @@ import { Spinner } from "~/components/PlayerContainer";
 import { RelatedStream } from "~/types";
 import { getStorageValue } from "~/utils/storage";
 
-export default function Subscriptions() {
+export default function Feed() {
   // const { data, refetch } = trpc.useQuery([
   //   "db.getSubscriptions",
 

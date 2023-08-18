@@ -30,6 +30,7 @@ import {
   parseCookie,
   Link,
   useNavigate,
+  Route,
 } from "solid-start";
 import "./root.css";
 import { isServer } from "solid-js/web";
@@ -42,11 +43,19 @@ import { IDBPDatabase, openDB } from "idb";
 import Header from "./components/Header";
 import PlayerSkin from "./components/PlayerSkin";
 import { MediaOutletElement, MediaPlayerElement } from "vidstack";
-import { videoId } from "./routes/history";
+import History, { videoId } from "./routes/history";
 import { getStorageValue, setStorageValue } from "./utils/storage";
 import PlayerContainer from "./components/PlayerContainer";
-import { registerSW } from 'virtual:pwa-register'
+import { registerSW } from "virtual:pwa-register";
 import Modal from "./components/Modal";
+import { Transition } from "solid-headless";
+import Watch from "./routes/watch";
+import Feed from "./routes/feed";
+import Playlists from "./routes/playlists";
+import Playlist from "./routes/playlist";
+import Search from "./routes/search";
+import Trending from "./routes/trending";
+import Import from "./routes/import";
 
 // const updateSW = registerSW({
 //   onOfflineReady() {},
@@ -199,8 +208,7 @@ export default function Root() {
           <InstanceContext.Provider value={instance}>
             <PlayerContext.Provider value={video}>
               <Body
-                class={`${theme[0]()} bg-bg1 font-poppins text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}
-              >
+                class={`${theme[0]()} bg-bg1 font-poppins text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}>
                 <Suspense>
                   <ErrorBoundary>
                     <Show when={isRouting()}>
@@ -211,9 +219,36 @@ export default function Root() {
                     <Header />
                     <div aria-hidden="true" class="h-10" />
                     <PlayerContainer />
-                    <PipContainer />
+                    {/* <PipContainer />{" "} */}
                     <Routes>
                       <FileRoutes />
+                      {/* <Transition
+                        show={!isRouting()}
+                        enter="transition-opacity duration-200"
+                        enterFrom="opacity-0 translate-y-1"
+                        enterTo="opacity-100 translate-y-0"
+                        leave="transition-opacity duration-200"
+                        leaveFrom="opacity-100 translate-y-0"
+                        leaveTo="opacity-0 translate-y-1">
+                        <Route path="/" element={<Feed />} />
+                      </Transition>
+                      <Transition
+                        show={!isRouting()}
+                        enter="transition-opacity duration-200"
+                        enterFrom="opacity-0 translate-y-1"
+                        enterTo="opacity-100 translate-y-0"
+                        leave="transition-opacity duration-200"
+                        leaveFrom="opacity-100 translate-y-0"
+                        leaveTo="opacity-0 translate-y-1">
+                        <Route path="/watch" element={<Watch />} />
+                        </Transition>
+                        <Route path="/feed" element={<Feed />} />
+                        <Route path="/history" element={<History />} />
+                        <Route path="/playlists" element={<Playlists />} />
+                        <Route path="/playlist" element={<Playlist />} />
+                        <Route path="/search" element={<Search />} />
+                        <Route path="/trending" element={<Trending />} />
+                        <Route path="/import" element={<Import />} /> */}
                     </Routes>
                   </ErrorBoundary>
                 </Suspense>
@@ -273,8 +308,7 @@ const PipContainer = () => {
             video[0].value.videoStreams[0]?.height
           : "16/9",
       }}
-      class="w-full sm:w-96 z-[999] hidden justify-center items-center aspect-video sticky top-12 inset-x-0 sm:left-2 rounded-lg overflow-hidden bg-black"
-    >
+      class="w-full sm:w-96 z-[999] hidden justify-center items-center aspect-video sticky top-12 inset-x-0 sm:left-2 rounded-lg overflow-hidden bg-black">
       <div
         onPointerDown={handlePointerEvent}
         onPointerUp={handlePointerEvent}
@@ -282,8 +316,7 @@ const PipContainer = () => {
         onMouseMove={handlePointerEvent}
         onFocusIn={handlePointerEvent}
         classList={{ "opacity-0": userIdle() }}
-        class="absolute bg-black/50 flex flex-col items-center justify-between inset-0 w-full h-full p-2 z-[9999] transition-opacity duration-200"
-      >
+        class="absolute bg-black/50 flex flex-col items-center justify-between inset-0 w-full h-full p-2 z-[9999] transition-opacity duration-200">
         <div class="flex items-center justify-between w-full">
           <button
             onClick={() => {
@@ -295,14 +328,12 @@ const PipContainer = () => {
                 console.log("no player or outlet");
               }
             }}
-            class=" w-10 h-10 z-10 text-white hover:text-gray-200"
-          >
+            class=" w-10 h-10 z-10 text-white hover:text-gray-200">
             <svg
               // class="h-6 w-6"
               fill="none"
               viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+              stroke="currentColor">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -326,14 +357,12 @@ const PipContainer = () => {
                 console.log("no player or outlet");
               }
             }}
-            class=" w-10 h-10 z-10 text-white hover:text-gray-200"
-          >
+            class=" w-10 h-10 z-10 text-white hover:text-gray-200">
             <svg
               // class="h-6 w-6"
               fill="none"
               viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+              stroke="currentColor">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -355,18 +384,15 @@ const PipContainer = () => {
                   player()!.play();
                 }
               }
-            }}
-          >
+            }}>
             <media-icon
               type="play"
               class="h-12 w-12"
-              classList={{ hidden: playing() }}
-            ></media-icon>
+              classList={{ hidden: playing() }}></media-icon>
             <media-icon
               type="pause"
               class="h-12 w-12"
-              classList={{ hidden: !playing() }}
-            ></media-icon>
+              classList={{ hidden: !playing() }}></media-icon>
           </button>
         </div>
         <div class="flex items-center justify-between w-full">
@@ -377,8 +403,7 @@ const PipContainer = () => {
                 setMuted(player()!.muted);
               }
             }}
-            class=" w-10 h-10 z-10 text-white hover:text-gray-200"
-          >
+            class=" w-10 h-10 z-10 text-white hover:text-gray-200">
             <media-icon type="volume-high" classList={{ hidden: muted() }} />
             <media-icon type="mute" classList={{ hidden: !muted() }} />
           </button>

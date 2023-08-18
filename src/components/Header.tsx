@@ -109,7 +109,7 @@ const Header = () => {
         onClick={() => {
           document.querySelector("media-player")?.focus();
         }}>
-        Skip to main content
+        Skip navigation
       </button>
       <ul class="hidden lg:flex items-center justify-between px-2 mr-auto">
         <For each={links}>
@@ -316,7 +316,7 @@ const Sel = (props: {
           label={props.value}
           icon={<ChevronDownIcon class="w-5 h-5" />}
           iconPosition="right"
-          buttonClass="max-w-[10rem]"
+          buttonClass="max-w-[10rem] bg-primary rounded-lg flex px-3 py-1 text-sm font-medium text-left text-bg2 hover:bg-text2 focus:outline-none focus-visible:ring focus-visible:ring-accent1"
           rotateIcon={true}>
           <For each={props.options}>
             {(option) => (
