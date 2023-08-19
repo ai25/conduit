@@ -1,31 +1,41 @@
 import VideoCard from "~/components/VideoCard";
 
-import { For, createEffect, createSignal, onCleanup, onMount, useContext } from "solid-js";
+import {
+  For,
+  Match,
+  Show,
+  Switch,
+  createEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+  useContext,
+} from "solid-js";
 import { useLocation } from "solid-start";
-import { getStorageValue } from "~/utils/storage";
+import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { InstanceContext } from "~/root";
-import { Channel as PipedChannel } from "~/types";
+import { ContentItem, Channel as PipedChannel, RelatedChannel, RelatedPlaylist, RelatedStream } from "~/types";
+import Button from "~/components/Button";
+import { Spinner } from "~/components/PlayerContainer";
+import { fetchJson } from "~/utils/helpers";
+import { A } from "@solidjs/router";
+import { Checkmark } from "~/components/Description";
+import PlaylistCard from "~/components/PlaylistCard";
 
 export default function Channel() {
   const [channel, setChannel] = createSignal<PipedChannel | undefined>();
   const [error, setError] = createSignal<Error | undefined>();
   const [isSubscribed, setIsSubscribed] = createSignal(false);
   const [tabs, setTabs] = createSignal<any[]>([]);
-  let selectedTab = 0;
-  let [contentItems, setContentItems] = createSignal<any[]>([]);
+  const [selectedTab, setSelectedTab] = createSignal(0);
+  const [contentItems, setContentItems] = createSignal<ContentItem[]>([]);
   const [instance] = useContext(InstanceContext);
+  const [loading, setLoading] = createSignal(true);
   const route = useLocation();
   onMount(() => {
     getChannelData();
   });
-  createEffect(() => {
-    if (error()) return;
-    if (channel()) document.title = channel()!.name + " - Piped";
-    window.addEventListener("scroll", handleScroll);
-  });
-  onCleanup(() => {
-    window.removeEventListener("scroll", handleScroll);
-  });
+
   async function fetchSubscribedStatus() {
     if (!channel()?.id) return;
     const channels = getStorageValue(
@@ -36,195 +46,260 @@ export default function Channel() {
     ) as string[];
     setIsSubscribed(channels.find((id) => id === channel()!.id) ? true : false);
   }
+
   async function fetchChannel() {
     console.log(route, "fetching channel");
     const url = instance() + route.pathname + "/";
     return await fetch(url).then((res) => res.json());
   }
+
   async function getChannelData() {
     fetchChannel()
       .then((data) => {
         console.log(data, "data");
+        setLoading(false);
         if (data.error) {
-          setError(data)
+          setError(data);
         } else {
-          setChannel(data)
-        }})
+          setChannel(data);
+        }
+      })
       .then(() => {
         if (!error()) {
-          document.title = channel()!.name + " - Piped";
-          setContentItems(channel()!.relatedStreams)
+          document.title = channel()!.name + " - Conduit";
+          setContentItems(channel()!.relatedStreams);
           fetchSubscribedStatus();
-          setTabs([{ translatedName: "videos" }]);
+          setTabs([{ name: "videos" }]);
           const tabQuery = route.query.tab;
           for (let i = 0; i < channel()!.tabs.length; i++) {
             let tab = channel()!.tabs[i];
-            tab.translatedName = tab.name;
             setTabs((tabs) => [...tabs, tab]);
             if (tab.name === tabQuery) loadTab(i + 1);
           }
         }
       });
   }
-  function handleScroll() {
-    // if (
-    //     this.loading ||
-    //     !this.channel ||
-    //     !this.channel.nextpage ||
-    //     (this.selectedTab != 0 && !this.tabs[this.selectedTab].tabNextPage)
-    // )
-    //     return;
-    // if (window.innerHeight + window.scrollY >= document.body.offsetHeight - window.innerHeight) {
-    //     this.loading = true;
-    //     if (this.selectedTab == 0) {
-    //         this.fetchChannelNextPage();
-    //     } else {
-    //         this.fetchChannelTabNextPage();
-    //     }
-    // }
+  function handleScroll(e: any) {
+    console.log(e[0], selectedTab(), tabs()[selectedTab()]);
+    const entry = e[0];
+    if (
+      !channel() ||
+      !channel()!.nextpage ||
+      (selectedTab() != 0 && !tabs()[selectedTab()!]?.tabNextPage)
+    )
+      return;
+    if (entry?.isIntersecting) {
+      // this.loading = true;
+      if (selectedTab() == 0) {
+        fetchChannelNextPage();
+      } else {
+        fetchChannelTabNextPage();
+      }
+    }
   }
-  function fetchChannelNextPage() {
-    // this.fetchJson(this.apiUrl() + "/nextpage/channel/" + this.channel.id, {
-    //     nextpage: this.channel.nextpage,
-    // }).then(json => {
-    //     this.channel.nextpage = json.nextpage;
-    //     this.loading = false;
-    //     this.updateWatched(json.relatedStreams);
-    //     json.relatedStreams.map(stream => this.contentItems.push(stream));
-    // });
+
+  async function fetchChannelNextPage() {
+    setLoading(true);
+    const json = await fetchJson(
+      `${instance()}/nextpage/channel/${channel()!.id}`,
+      {
+        nextpage: channel()!.nextpage,
+      }
+    );
+    setLoading(false);
+    console.log(json.relatedStreams);
+    if (json.error) return;
+    setChannel((c) => ({ ...c, nextpage: json.nextpage }));
+    if (!json.relatedStreams) return;
+    setContentItems((items) => [...items, ...json.relatedStreams]);
   }
-  function fetchChannelTabNextPage() {
-    // this.fetchJson(this.apiUrl() + "/channels/tabs", {
-    //     data: this.tabs[this.selectedTab].data,
-    //     nextpage: this.tabs[this.selectedTab].tabNextPage,
-    // }).then(json => {
-    //     this.tabs[this.selectedTab].tabNextPage = json.nextpage;
-    //     this.loading = false;
-    //     json.content.map(item => this.contentItems.push(item));
-    //     this.tabs[this.selectedTab].content = this.contentItems;
-    // });
+  async function fetchChannelTabNextPage() {
+    setLoading(true);
+    const json = await fetchJson(`${instance()}/channels/tabs`, {
+      data: tabs()[selectedTab()].data,
+      nextpage: tabs()[selectedTab()].tabNextPage,
+    });
+    setLoading(false);
+    const newTabs = tabs();
+    newTabs[selectedTab()].tabNextPage = json.nextpage;
+    newTabs[selectedTab()].content = [...contentItems(), ...json.content];
+    setTabs(newTabs);
   }
-  function subscribeHandler() {
-    // if (this.authenticated) {
-    //     this.fetchJson(this.authApiUrl() + (this.subscribed ? "/unsubscribe" : "/subscribe"), null, {
-    //         method: "POST",
-    //         body: JSON.stringify({
-    //             channelId: this.channel.id,
-    //         }),
-    //         headers: {
-    //             Authorization: this.getAuthToken(),
-    //             "Content-Type": "application/json",
-    //         },
-    //     });
-    // } else {
-    //     if (!this.handleLocalSubscriptions(this.channel.id)) return;
-    // }
-    // this.subscribed = !this.subscribed;
-  }
-  // function getTranslatedTabName(tabName) {
-  //     let translatedTabName = tabName;
-  //     switch (tabName) {
-  //         case "livestreams":
-  //             translatedTabName = this.$t("titles.livestreams");
-  //             break;
-  //         case "playlists":
-  //             translatedTabName = this.$t("titles.playlists");
-  //             break;
-  //         case "channels":
-  //             translatedTabName = this.$t("titles.channels");
-  //             break;
-  //         case "shorts":
-  //             translatedTabName = this.$t("video.shorts");
-  //             break;
-  //         default:
-  //             console.error(`Tab name "${tabName}" is not translated yet!`);
-  //             break;
-  //     }
-  //     return translatedTabName;
-  // },
+  const toggleSubscribed = () => {
+    const channels = getStorageValue(
+      "localSubscriptions",
+      [],
+      "json",
+      "localStorage"
+    ) as string[];
+    if (!isSubscribed()) {
+      setStorageValue(
+        "localSubscriptions",
+        JSON.stringify([...channels, channel()!.id]),
+        "localStorage"
+      );
+      setIsSubscribed(true);
+    } else {
+      setStorageValue(
+        "localSubscriptions",
+        JSON.stringify(channels.filter((c) => c !== channel()!.id)),
+        "localStorage"
+      );
+      setIsSubscribed(false);
+    }
+  };
+
   function loadTab(index: number) {
-    selectedTab = index;
+    setSelectedTab(index);
+    console.log(route.pathname, "route", new URL(window.location.href));
 
     // update the tab query in the url path
-    const url = new URL(route.pathname);
+    const url = new URL(window.location.href);
     url.searchParams.set("tab", tabs()[index].name ?? "videos");
     history.replaceState(window.history.state, "", url);
 
     if (index == 0) {
-      setContentItems(channel()!.relatedStreams)
+      setContentItems(channel()!.relatedStreams as RelatedStream[]);
       return;
     }
 
     if (tabs()[index].content) {
-      contentItems = tabs()[index].content;
+      setContentItems(tabs()[index].content);
       return;
     }
-    // fetchJson(this.apiUrl() + "/channels/tabs", {
-    //     data: this.tabs[index].data,
-    // }).then(tab => {
-    //     this.contentItems = this.tabs[index].content = tab.content;
-    //     this.tabs[this.selectedTab].tabNextPage = tab.nextpage;
-    // });
+
+    let u = new URL(`${instance()}/channels/tabs?data=${tabs()[index].data}`);
+    fetch(u)
+      .then((res) => res.json())
+      .then((tab) => {
+        console.log(tab, "tab");
+        const newTabs = tabs();
+        newTabs[index].tabNextPage = tab.nextpage;
+        newTabs[index].content = tab.content;
+        setTabs(newTabs);
+        setContentItems(tab.content);
+      });
   }
+
+  let intersection: HTMLDivElement | undefined = undefined;
+
+  onMount(() => {
+    console.log(intersection, "intersection");
+    if (!intersection) return;
+
+    const intersectionObserver = new IntersectionObserver(handleScroll, {
+      threshold: 0.1,
+    });
+
+    intersectionObserver.observe(intersection);
+  });
+  function assertType<T>(item: any, property: string, value: string) {
+    if (item[property] === value){
+      return item as T;
+    } 
+}
+
 
   return (
     <div>
-      {/* <div class="flex justify-center place-items-center">
+      <div class="flex justify-center place-items-center">
         <img
           height="48"
           width="48"
           class="rounded-full m-1"
-          src="channel.avatarUrl"
+          src={channel()?.avatarUrl}
         />
-        <h1 v-text="channel.name" /> */}
+        <h1 v-text="channel.name" />
         {/* <font-awesome-icon class="ml-1.5 !text-3xl" v-if="channel.verified" icon="check" /> */}
-      {/* </div>
-      <img
-        v-if="channel.bannerUrl"
-        src="channel.bannerUrl"
-        class="w-full pb-1.5"
-        loading="lazy"
-      />
+      </div>
+      <Show when={channel()?.bannerUrl}>
+        <img src={channel()!.bannerUrl} class="w-full pb-1.5" loading="lazy" />
+      </Show>
       <p class="whitespace-pre-wrap">
-        <span v-html="purifyHTML(rewriteDescription(channel.description))" />
-      </p> */}
+        <span innerHTML={channel()?.description} />
+      </p>
 
-      {/* <button
-        class="btn"
-        click="subscribeHandler"
-        v-t="{
-                path: `actions.${subscribed ? 'unsubscribe' : 'subscribe'}`,
-                args: { count: numberFormat(channel.subscriberCount) },
-            }"></button> */}
+      <Button
+        onClick={toggleSubscribed}
+        activated={isSubscribed()}
+        label={`Subscribe${isSubscribed() ? "d" : ""}`}
+      />
 
-      {/* <a
-        aria-label="RSS feed"
-        title="RSS feed"
-        role="button"
-        v-if="channel.id"
-        href="`${apiUrl()}/feed/unauthenticated/rss?channels=${channel.id}`"
-        target="_blank"
-        class="btn flex-col mx-3">
-      </a> */}
-
-      {/* <button link="`https://youtube.com/channel/${this.channel.id}`" /> */}
-
-      {/* <div class="flex mt-4 mb-2">
-        <button
-          v-for="(tab, index) in tabs"
-          class="btn mr-2"
-          click="loadTab(index)"
-          class="{ active: selectedTab == index }">
-          <span v-text="tab.translatedName"></span>
-        </button>
-      </div> */}
+      <div class="flex mt-4 mb-2">
+        <For each={tabs()}>
+          {(tab, index) => {
+            console.log(selectedTab(), index(), tab.name);
+            return(
+            <Button
+              label={tab.name}
+              activated={selectedTab() === index()}
+              onClick={() => loadTab(index())}
+            />
+          )}}
+        </For>
+      </div>
 
       <hr />
 
-      <div class="flex flex-wrap">
-        <For each={contentItems()}>{(item) => <VideoCard v={item} />}</For>
-      </div>
+      <div class="flex flex-wrap justify-center">
+        <For
+          each={
+            contentItems()
+          }>
+          {(item) =>{
+             return (
+            <Switch>
+              <Match when={assertType<RelatedStream>(item, "type", "stream")} keyed>
+                {(item)=><VideoCard v={item} />}
+              </Match>
+              <Match when={assertType<RelatedChannel>(item, "type", "channel")} keyed>
+                {(item)=>
+                  <div class="w-44 mx-1 flex flex-col gap-2 items-start">
+                    <A href={item.url} class="group outline-none">
+                      <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
+                        <img
+                          class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
+                          src={item.thumbnail}
+                          loading="lazy"
+                        />
+                      </div>
+                    </A>
+                      <A class="link" href={item.url}>
+                        <div class="flex gap-1">
+                          <span>{item.name}</span>
+                          <Show when={item.verified}>
+                            <Checkmark />
+                          </Show>
+                          
+                        </div>
+                      </A>
 
+                    {/* <template v-if="props.item.videos >= 0">
+                      <br v-if="props.item.uploaderName" />
+                      <strong v-text="`${props.item.videos} ${$t('video.videos')}`" />
+                    </template> */}
+
+                    <br />
+                  </div>}
+              </Match>
+              <Match when={assertType<RelatedPlaylist>(item, "type", "playlist")} keyed>
+                {(item)=> <PlaylistCard item={item} />}
+              </Match>
+
+            </Switch>
+          )}}
+        </For>
+        <Show when={loading()}>
+          <div class="w-full flex justify-center">
+            <Spinner />
+          </div>
+        </Show>
+        <Show when={(!channel()?.nextpage || !tabs()?.[selectedTab()]?.tabNextPage) && !loading()}>no more items</Show>
+        <div
+          ref={intersection}
+          class="w-full h-10 mt-2"
+        />
+      </div>
     </div>
   );
 }

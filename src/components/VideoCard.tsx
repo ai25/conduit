@@ -6,6 +6,7 @@ import { A } from "solid-start";
 import {
   Match,
   Switch,
+  createEffect,
   createRenderEffect,
   createSignal,
   useContext,
@@ -38,7 +39,7 @@ export default ({
   const [instance] = useContext(InstanceContext);
   const [thumbnail, setThumbnail] = createSignal<string | undefined>(undefined);
 
-  createRenderEffect(async () => {
+  createEffect(async () => {
     if (!db()) return;
     const tx = db()!.transaction("watch_history", "readwrite");
     const store = tx.objectStore("watch_history");

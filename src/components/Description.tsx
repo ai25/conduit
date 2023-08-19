@@ -53,10 +53,7 @@ export default ({ video }: { video: PipedVideo }) => {
         class="link" onclick="handleTimestamp('$1','$2')">$3</button>`
       )
       // add a class to all <a> tags
-      .replaceAll(
-        /<a href/gm,
-        '<a class="link" href'
-      );
+      .replaceAll(/<a href/gm, '<a class="link" href');
     return t;
   }
   const [expanded, setExpanded] = createSignal(false);
@@ -149,16 +146,7 @@ export default ({ video }: { video: PipedVideo }) => {
                 <A
                   href={`${video.uploaderUrl}`}
                   class="link flex w-fit items-center gap-2">
-                  {video.uploader}{" "}
-                  {video.uploaderVerified && (
-                    <svg
-                      class="h-4 w-4 "
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="currentColor"
-                      viewBox="0 0 24 24">
-                      <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z" />
-                    </svg>
-                  )}
+                  {video.uploader} {video.uploaderVerified && <Checkmark />}
                 </A>
                 <div class="flex w-full items-center text-start text-xs text-text2 sm:text-sm">
                   {numeral(video.uploaderSubscriberCount)
@@ -189,17 +177,17 @@ export default ({ video }: { video: PipedVideo }) => {
             Download
           </button>
           <div class="flex gap-2">
-          {numeral(video.likes).format("0a").toUpperCase()} 👍
-          <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
-            <div
-              class="h-full bg-accent1 rounded-r"
-              style={{
-                width: `${
-                  (video?.dislikes / (video?.likes + video?.dislikes)) * 100
-                }%`,
-              }}></div>
-          </div>
-          {numeral(video.dislikes).format("0a").toUpperCase()} 👎
+            {numeral(video.likes).format("0a").toUpperCase()} 👍
+            <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
+              <div
+                class="h-full bg-accent1 rounded-r"
+                style={{
+                  width: `${
+                    (video?.dislikes / (video?.likes + video?.dislikes)) * 100
+                  }%`,
+                }}></div>
+            </div>
+            {numeral(video.dislikes).format("0a").toUpperCase()} 👎
           </div>
         </div>
       </div>
@@ -264,3 +252,13 @@ export default ({ video }: { video: PipedVideo }) => {
     </div>
   );
 };
+
+export const Checkmark = () => (
+  <svg
+    class="h-4 w-4 "
+    xmlns="http://www.w3.org/2000/svg"
+    fill="currentColor"
+    viewBox="0 0 24 24">
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z" />
+  </svg>
+);

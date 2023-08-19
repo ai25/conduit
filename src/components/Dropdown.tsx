@@ -7,6 +7,7 @@ import {
 } from "solid-headless";
 import { Show } from "solid-js";
 import { JSX } from "solid-js";
+import { classNames } from "~/utils/helpers";
 
 export default function Dropdown(props: {
   class?: string;
@@ -20,9 +21,6 @@ export default function Dropdown(props: {
   buttonClass?: string;
   panelPosition?: "left" | "right" | "center";
 }) {
-  function classNames(...classes: (string | boolean | undefined)[]): string {
-    return classes.filter(Boolean).join(" ");
-  }
   return (
     <Popover defaultOpen={false} class={`relative ${props.class}`}>
       {({ isOpen }) => (

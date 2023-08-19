@@ -47,8 +47,8 @@ export default function PlayerContainer() {
     <div
       class="flex sticky md:relative top-12 md:top-0 z-50 md:z-0 "
       classList={{
-        "fixed bottom-0": route.pathname !== "/watch",
-        "lg:max-w-[calc(100%-22rem)]": !theatre(),
+        "fixed md:fixed bottom-0": route.pathname !== "/watch",
+        "lg:max-w-[calc(100%-20.8rem)]": !theatre(),
 
         // "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
       }}

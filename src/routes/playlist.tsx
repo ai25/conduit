@@ -9,31 +9,31 @@ import {
 } from "solid-js";
 import { useLocation } from "solid-start";
 import VideoCard from "~/components/VideoCard";
-import { DBContext } from "~/root";
+import { DBContext, InstanceContext } from "~/root";
 import { RelatedStream } from "~/types";
 import dayjs from "dayjs";
 import { videoId } from "./history";
 import { A } from "@solidjs/router";
-import PlaylistCard from "~/components/PlaylistCard";
+import PlaylistItem from "~/components/PlaylistItem";
+import { fetchJson } from "~/utils/helpers";
 
 export default function Playlist() {
   const [playlist, setPlaylist] = createSignal(null);
   const [admin, setAdmin] = createSignal(false);
   const [isBookmarked, setIsBookmarked] = createSignal(false);
-  const [list, setList] = createSignal<{ videos: RelatedStream[], id:string }>();
+  const [list, setList] = createSignal<{
+    videos: RelatedStream[];
+    id: string;
+  }>();
   const [db] = useContext(DBContext);
   const route = useLocation();
+  const isLocal = () => route.query.list?.startsWith("conduit-");
   const id = route.query.list;
-  //     getRssUrl: _this => {
-  //         return _this.authApiUrl() + "/rss/playlists/" + _this.$route.query.list;
-  //     }
-  //     isPipedPlaylist: _this => {
-  //         // regex to determine whether it's a Piped plalylist
-  //         return /[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}/.test(
-  //             _this.$route.query.list,
-  //         );
-  //     }
+  const [instance] = useContext(InstanceContext);
+
   createEffect(async () => {
+    if (!id) return;
+    if (!isLocal()) return;
     if (!db()) return;
 
     const tx = db()!.transaction("playlists", "readonly");
@@ -43,6 +43,15 @@ export default function Playlist() {
     setList(l);
     console.log(l);
   });
+
+  createEffect(async () => {
+    if (!id) return;
+    if (isLocal()) return;
+    const json = await fetchJson(`${instance()}/playlists/${id}`);
+    setList(json);
+    console.log(json);
+  });
+
   onMount(() => {
     // this.getPlaylistData();
     // const playlistId = this.$route.query.list;
@@ -156,21 +165,37 @@ export default function Playlist() {
   //     }
   // }
 
-
   return (
     <>
       <Show when={list()} keyed>
         {(l) => {
           return (
             <div class="max-w-5xl mx-auto">
-              <h1 class="text-2xl font-bold mb-4">Playlist Name</h1>
+              <h1 class="text-2xl font-bold mb-4">{list()!.name}</h1>
 
               <div class="grid grid-cols-1 gap-4 ">
-                <For each={l.videos}>
-                  {(video, index) => (
-                    <PlaylistCard v={video} index={index() + 1} list={list()!.id} />
-                  )}
-                </For>
+                <Show when={isLocal() && l.videos.length > 0}>
+                  <For each={l.videos}>
+                    {(video, index) => (
+                      <PlaylistItem
+                        v={video}
+                        index={index() + 1}
+                        list={id}
+                      />
+                    )}
+                  </For>
+                </Show>
+                <Show when={!isLocal() && l.relatedStreams.length > 0}>
+                  <For each={l.relatedStreams}>
+                    {(video, index) => (
+                      <PlaylistItem
+                        v={video}
+                        index={index() + 1}
+                        list={id}
+                      />
+                    )}
+                  </For>
+                </Show>
                 {/* <For each={Array(20).fill(0)}>{() => <PlaylistCard />}</For> */}
               </div>
             </div>

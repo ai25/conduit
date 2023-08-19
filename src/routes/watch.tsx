@@ -1,51 +1,27 @@
-import { PipedVideo } from "~/types";
-// import {
-//   DBContext,
-//   InstanceContext,
-//   PlayerContext,
-//   PreferencesContext,
-//   getStorageValue,
-//   setStorageValue,
-// } from "../layout";
 import Description from "~/components/Description";
 import {
-  Match,
   Show,
-  Suspense,
-  Switch,
   createEffect,
-  createRenderEffect,
-  createResource,
   createSignal,
-  lazy,
-  onCleanup,
-  onMount,
   untrack,
   useContext,
 } from "solid-js";
 import {
-  RouteDataArgs,
-  createRouteData,
   useLocation,
-  useRouteData,
 } from "solid-start";
 import { For } from "solid-js";
-import { reconcile } from "solid-js/store";
 import {
   DBContext,
   InstanceContext,
   PlayerContext,
   PreferencesContext,
 } from "~/root";
-import { Portal, isServer } from "solid-js/web";
-// const Description = lazy(() => import("~/components/Description"));
-// const VideoCard = lazy(() => import("~/components/VideoCard"));
 import VideoCard from "~/components/VideoCard";
 import { videoId } from "./history";
-import { PipedCommentResponse } from "~/components/Comment";
 import { getHlsManifest } from "~/utils/hls";
-import PlaylistCard from "~/components/PlaylistCard";
+import PlaylistItem from "~/components/PlaylistItem";
 import { createVirtualizer } from "@tanstack/solid-virtual";
+import { fetchJson } from "~/utils/helpers";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
@@ -165,15 +141,26 @@ export default function Watch() {
   });
 
   const [listId, setListId] = createSignal<string | undefined>(undefined);
+  const isLocalPlaylist = () => route.query.list?.startsWith("conduit-");
+
   createEffect(async () => {
-    console.log("fetching playlist")
+    if (!route.query.list) return;
+    if (isLocalPlaylist()) return;
+    const json = await fetchJson(`${instance()}/playlists/${route.query.list}`);
+    setList(json);
+    console.log(json);
+  });
+  createEffect(async () => {
+    if (!route.query.list) return;
+    if (!isLocalPlaylist()) return;
+    console.log("fetching playlist");
     setListId(route.query.list);
-    if (!listId()){
+    if (!listId()) {
       setList(undefined);
-      console.log("fetching playlistno list id")
-      return
+      console.log("fetching playlistno list id");
+      return;
     }
-    console.log("fetching playlistlist id", listId())
+    console.log("fetching playlistlist id", listId());
     if (!db()) return;
 
     const tx = db()!.transaction("playlists", "readonly");
@@ -207,22 +194,24 @@ export default function Watch() {
       </div>
       <div
         classList={{
-          "md:min-w-[22rem] md:w-[22rem] md:max-w-[29rem] h-full": !preferences.theatreMode,
+          "md:min-w-[22rem] md:w-[22rem] md:max-w-[29rem] h-full":
+            !preferences.theatreMode,
         }}
         class="flex min-w-0 flex-col items-center gap-2">
         <div
           classList={{
-            "lg:absolute lg:top-10 lg:right-0 -mx-2 mx-auto": !preferences.theatreMode,
+            "lg:absolute lg:top-10 lg:right-0 -mx-2 mx-auto":
+              !preferences.theatreMode,
             "lg:pl-4 md:mr-4": preferences.theatreMode,
           }}>
           <Show when={list()} keyed>
             {(list) => (
               <div class="overflow-hidden rounded-xl mx-2 mr-3 my-4 ">
-              <div
-                ref={parentRef}
-                class="flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar">
-                <h3 class="text-lg font-bold sm:text-xl ">{list.name}</h3>
-                {/* <For each={rowVirtualizer.getVirtualItems()}>
+                <div
+                  ref={parentRef}
+                  class="flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar">
+                  <h3 class="text-lg font-bold sm:text-xl ">{list.name}</h3>
+                  {/* <For each={rowVirtualizer.getVirtualItems()}>
                   {(item, index) => {
                     return (
                      <div
@@ -242,19 +231,36 @@ export default function Watch() {
                     );
                   }}
                 </For> */}
-                <For each={list.videos}>
-                  {(item, index) => {
-                    return (
-                      <PlaylistCard
-                        list={list.id}
-                        index={index() + 1}
-                        v={item}
-                        active={route.query.index}
-                      />
-                    );
-                  }}
-                </For>
-              </div></div>
+                  <Show when={isLocalPlaylist()}>
+                    <For each={list.videos}>
+                      {(item, index) => {
+                        return (
+                          <PlaylistItem
+                            list={list.id}
+                            index={index() + 1}
+                            v={item}
+                            active={route.query.index ?? 1}
+                          />
+                        );
+                      }}
+                    </For>
+                  </Show>
+                  <Show when={!isLocalPlaylist()}>
+                    <For each={list.relatedStreams}>
+                      {(item, index) => {
+                        return (
+                          <PlaylistItem
+                            list={route.query.list}
+                            index={index() + 1}
+                            v={item}
+                            active={route.query.index ?? 1}
+                          />
+                        );
+                      }}
+                    </For>
+                  </Show>
+                </div>
+              </div>
             )}
           </Show>
           <Show

@@ -21,6 +21,7 @@ import {
   MediaPlayerElement,
   MediaPosterElement,
   MediaProviderChangeEvent,
+  VideoProvider,
   isHLSProvider,
   // MediaPlayerConnectEvent,
 } from "vidstack";

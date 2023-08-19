@@ -151,19 +151,65 @@ export interface PipedChannelResponse {
 }
 
 export interface Channel {
-  id: string;
-  name: string;
-  avatarUrl: string;
-  bannerUrl: string;
-  description: string;
-  nextpage: string | null;
-  subscriberCount: number;
-  verified: boolean;
-  relatedStreams: RelatedStream[];
-  tabs: Tab[];
+  id?: string;
+  name?: string;
+  avatarUrl?: string;
+  bannerUrl?: string;
+  description?: string;
+  nextpage?: any;
+  subscriberCount?: number;
+  verified?: boolean;
+  relatedStreams?: RelatedStream[];
+  tabs?: Tab[];
 }
+
+export interface RelatedChannel {
+  url: string
+  type: "channel"
+  name: string
+  thumbnail: string
+  description: any
+  subscribers: number
+  videos: number
+  verified: boolean
+}
+
+export interface RelatedPlaylist {
+  url: string
+  type: "playlist"
+  name: string
+  thumbnail: string
+  uploaderName: string
+  uploaderUrl: string
+  uploaderVerified: boolean
+  playlistType: string
+  videos: number
+}
+
 
 export interface Tab {
   name: string;
   data: string;
 }
+
+export interface Tab {
+  name: string
+  data: string
+  tabNextPage?: any
+  content?: RelatedStream[]
+}
+
+export interface Playlist {
+  name: string
+  thumbnailUrl: string
+  description: string
+  bannerUrl: any
+  nextpage: any
+  uploader: string
+  uploaderUrl: string
+  uploaderAvatar: string
+  videos: number
+  relatedStreams: RelatedStream[]
+}
+
+export type ContentItem = RelatedStream | RelatedChannel | RelatedPlaylist
