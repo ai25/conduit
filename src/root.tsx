@@ -58,6 +58,7 @@ import Trending from "./routes/trending";
 import Import from "./routes/import";
 import { PlaylistProvider } from "./stores/playlistStore";
 import { QueueProvider } from "./stores/queueStore";
+import { PlayerStateProvider } from "./stores/playerStateStore";
 
 // const updateSW = registerSW({
 //   onOfflineReady() {},
@@ -211,22 +212,25 @@ export default function Root() {
             <QueueProvider>
               <PlaylistProvider>
                 <PlayerContext.Provider value={video}>
-                  <Body
-                    class={`${theme[0]()} bg-bg1 font-poppins text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}>
-                    <Suspense>
-                      <ErrorBoundary>
-                        <Show when={isRouting()}>
-                          <div class="fixed h-1 w-full top-0 z-50">
-                            <div class={`h-1 bg-primary w-[${progress()}%]`} />
-                          </div>
-                        </Show>
-                        <Header />
-                        <div aria-hidden="true" class="h-10" />
-                        <PlayerContainer />
-                        {/* <PipContainer />{" "} */}
-                        <Routes>
-                          <FileRoutes />
-                          {/* <Transition
+                  <PlayerStateProvider>
+                    <Body
+                      class={`${theme[0]()} bg-bg1 font-poppins text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}>
+                      <Suspense>
+                        <ErrorBoundary>
+                          <Show when={isRouting()}>
+                            <div class="fixed h-1 w-full top-0 z-50">
+                              <div
+                                class={`h-1 bg-primary w-[${progress()}%]`}
+                              />
+                            </div>
+                          </Show>
+                          <Header />
+                          <div aria-hidden="true" class="h-10" />
+                          <PlayerContainer />
+                          {/* <PipContainer />{" "} */}
+                          <Routes>
+                            <FileRoutes />
+                            {/* <Transition
                         show={!isRouting()}
                         enter="transition-opacity duration-200"
                         enterFrom="opacity-0 translate-y-1"
@@ -253,11 +257,12 @@ export default function Root() {
                         <Route path="/search" element={<Search />} />
                         <Route path="/trending" element={<Trending />} />
                         <Route path="/import" element={<Import />} /> */}
-                        </Routes>
-                      </ErrorBoundary>
-                    </Suspense>
-                    <Scripts />
-                  </Body>
+                          </Routes>
+                        </ErrorBoundary>
+                      </Suspense>
+                      <Scripts />
+                    </Body>
+                  </PlayerStateProvider>
                 </PlayerContext.Provider>
               </PlaylistProvider>
             </QueueProvider>

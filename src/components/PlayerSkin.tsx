@@ -10,14 +10,18 @@ import {
   useContext,
 } from "solid-js";
 import { A } from "solid-start";
-import { MediaGestureElement, MediaPlayerElement } from "vidstack";
+import { MediaGestureElement, MediaPlayerElement, MediaRemoteControl } from "vidstack";
 import { MediaIconElement } from "vidstack/icons";
 import { PreferencesContext } from "~/root";
+import { usePlaylist } from "~/stores/playlistStore";
+import { useQueue } from "~/stores/queueStore";
+import PlaylistItem from "./PlaylistItem";
+import { usePlayerState } from "~/stores/playerStateStore";
 
 declare module "solid-js" {
   namespace JSX {
     interface IntrinsicElements {
-      "media-gesture": any;
+      "media-gesture": MediaGestureElement;
       "media-mute-button": any;
       "media-icon": MediaIconElement;
       "media-tooltip": any;
@@ -55,9 +59,9 @@ declare module "solid-js" {
 
 interface PlayerSkinProps {
   video: PipedVideo | null | undefined;
-  isMiniPlayer: boolean;
+  nextVideo?: { url: string; info: RelatedStream } | null;
 }
-export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
+export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
   const [currentChapter, setCurrentChapter] = createSignal("");
   const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
   const [preferences, setPreferences] = useContext(PreferencesContext);
@@ -92,6 +96,21 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
     value: "",
   });
 
+  const [playlist] = usePlaylist();
+  const queueStore = useQueue();
+
+  const videos = () => {
+    if (playlist()) {
+      if (Array.isArray(playlist()!.videos)) return playlist()!.videos;
+      else return playlist()!.relatedStreams;
+    } else if (queueStore.queue()) {
+      return queueStore.queue();
+    } else return [];
+  };
+
+  const playerState = usePlayerState()
+  const remote = new MediaRemoteControl()
+
   return (
     <div
       tabIndex={0}
@@ -110,8 +129,8 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
           }}
           onPointerDown={() => {
             if (!player()) return;
-            // console.log(player()!.user.idling, "idling");
-            // player()!.user.idle(!player()!.user.idling, 5000);
+            // console.log("pointer down attac", remote.resumeUserIdle());
+            // remote.resumeUserIdle()
           }}
         />
         <BufferingIndicator />
@@ -153,39 +172,59 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
 
         {/* Top Controls */}
         <MediaControlGroup>
-          <div class="z-10 flex w-24 justify-between rounded-full bg-bg1/50 items-center font-sans text-lg font-normal text-white not-can-play:opacity-0">
-            <div class="h-10 w-10 ">
-              <button
-                role="button"
-                aria-label="Previous Video"
-                disabled
-                class="disabled:text-text1/50">
-                <media-icon type="chevron-left" />
-              </button>
+          <div class="z-10 flex w-36 justify-center rounded-full bg-bg1/50 items-center font-sans text-lg font-normal text-white not-can-play:opacity-0">
+            <div class="group flex items-center">
+              <RecommendedVideosMenu videos={videos()} />
+              <div class="relative w-0 h-1 opacity-0 self-end group-hover:opacity-100 transition-all scale-0 group-hover:scale-100 origin-top-left">
+                <div class="absolute top-2 -left-10 bg-bg1/50 h-max w-max rounded-lg py-2 px-3">
+                  <div class="text-sm text-text1 mb-1">
+                    Playing from {playlist() ? playlist()!.name : "queue."}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="w-px h-6 bg-text1/50" />
-            <div class="h-10 w-10 ">
-              <A
-                href={`${video?.relatedStreams[0]?.url}`}
-                role="button"
-                aria-label="Next Video"
-                class="disabled:text-text1/50 text-text1 peer">
-                <media-icon type="chevron-right" />
-              </A>
-              <div class="relative w-0 h-1 opacity-0 peer-hover:opacity-100 transition-all scale-0 peer-hover:scale-100 origin-top-left">
-                <div class="absolute top-2 left-0 bg-bg1/50 h-max w-max rounded-lg py-2 px-3">
-                  <div class="text-sm text-text1 mb-1">Next:</div>
-                  <div class="flex gap-2 items-center">
-                    <img
-                      class="h-18 w-32 shrink-0 rounded-md bg-bg1"
-                      src={video?.relatedStreams[0]?.thumbnail}
-                    />
-                    <div class="ml-2 flex grow flex-col">
-                      <div class="text-sm text-text1 truncate">
-                        {video?.relatedStreams[0]?.title}
-                      </div>
-                      <div class="text-xs text-text1/50">
-                        {video?.relatedStreams[0]?.uploaderName}
+            <div class="w-24 flex items-center justify-between">
+              <div class="h-10 w-10 ">
+                <button
+                  role="button"
+                  aria-label="Previous Video"
+                  onClick={() => {
+                    history.back();
+                  }}
+                  disabled={
+                    !playlist() ||
+                    queueStore.isEmpty() ||
+                    queueStore.isCurrentLast()
+                  }
+                  class="disabled:text-text1/50">
+                  <media-icon type="chevron-left" />
+                </button>
+              </div>
+              <div class="w-px h-6 bg-text1/50" />
+              <div class="h-10 w-10 ">
+                <A
+                  aria-disabled={!nextVideo}
+                  href={`${nextVideo?.url ?? ""}`}
+                  role="button"
+                  aria-label="Next Video"
+                  class="disabled:text-text1/50 text-text1 peer">
+                  <media-icon type="chevron-right" />
+                </A>
+                <div class="relative w-0 h-1 opacity-0 peer-hover:opacity-100 transition-all scale-0 peer-hover:scale-100 origin-top-left">
+                  <div class="absolute top-2 left-0 bg-bg1/50 h-max w-max rounded-lg py-2 px-3">
+                    <div class="text-sm text-text1 mb-1">Next (Shift + N):</div>
+                    <div class="flex gap-2 items-center">
+                      <img
+                        class="h-18 w-32 shrink-0 rounded-md bg-bg1"
+                        src={video?.relatedStreams[0]?.thumbnail}
+                      />
+                      <div class="ml-2 flex grow flex-col">
+                        <div class="text-sm text-text1 truncate">
+                          {video?.relatedStreams[0]?.title}
+                        </div>
+                        <div class="text-xs text-text1/50">
+                          {video?.relatedStreams[0]?.uploaderName}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -258,7 +297,7 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
                   onError={console.error}
                   class="rounded-lg border-black -mb-1"
                 /> */}
-                <media-slider-thumbnail  class="rounded-lg border-2 ring-inset border-bg1 -mb-1 " />
+                <media-slider-thumbnail class="rounded-lg border-2 ring-inset border-bg1 -mb-1 " />
                 <media-slider-value
                   type="pointer"
                   format="time"
@@ -371,7 +410,6 @@ export default function PlayerSkin({ video, isMiniPlayer }: PlayerSkinProps) {
                 <span slot="off">Closed-Captions Off</span>
               </media-tooltip>
             </media-caption-button>
-            <RecommendedVideosMenu videos={video?.relatedStreams} />
             <media-toggle-button
               onClick={() => {
                 console.log("toggle", preferences.theatreMode);
@@ -760,25 +798,27 @@ const PlaybackRateMenuButton = () => {
 };
 
 const RecommendedVideosMenu = ({ videos }: { videos?: RelatedStream[] }) => {
+  const [playlist] = usePlaylist();
   return (
-    <media-menu class="hidden fullscreen:inline-block ">
+    <media-menu position="bottom left" class="inline-block ">
       <RecommendedVideosMenuButton />
-      <media-menu-items class="max-h-96 bg-bg1/95 scrollbar">
+      <media-menu-items class="max-h-72 sm:max-h-96 bg-bg1/95 scrollbar">
         <For each={videos}>
           {(video) => (
             <A
+              href={video.url}
               role="menuitem"
               tabIndex={-1}
-              href={video.url}
-              class="flex gap-2 items-center p-2.5 focus:bg-bg3/50 hover:bg-bg3/50 focus:ring-2 focus:ring-primary">
-              <img
-                class="h-9 w-16 shrink-0 rounded-md bg-bg1"
-                src={video.thumbnail}
-              />
-              <div class="ml-2 flex grow flex-col">
-                <div class="text-sm text-text1">{video.title}</div>
-                <div class="text-xs text-text1/50">{video.uploaderName}</div>
-              </div>
+              class="focus:bg-bg3/50 max-w-xs hover:bg-bg3/50 focus:ring-2 focus:ring-primary">
+                <img class="h-18 w-32 shrink-0 rounded-md bg-bg1" src={video.thumbnail} />
+                <div class="ml-2 flex grow flex-col overflow-hidden whitespace-pre-wrap">
+                  <div class="text-sm text-text1 truncate">
+                    {video.title}
+                  </div>
+                  <div class="text-xs text-text1/50">
+                    {video.uploaderName}
+                  </div>
+                </div>
             </A>
           )}
         </For>

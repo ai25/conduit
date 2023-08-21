@@ -58,6 +58,7 @@ import numeral from "numeral";
 import { useQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
 import dayjs from "dayjs";
+import { Dispose } from "maverick.js";
 
 const BUFFER_LIMIT = 3;
 const BUFFER_TIME = 15000;
@@ -640,11 +641,19 @@ export default function Player() {
     return URL.createObjectURL(blob);
   };
   const [mediaPlayerConnected, setMediaPlayerConnected] = createSignal(false);
+  let unsubscribe: Dispose | undefined;
 
   createEffect(() => {
     if (!mediaPlayerConnected()) return;
     if (!video.value) return;
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);  
+    unsubscribe = mediaPlayer!.subscribe(({ paused, playing, }) => {
+      console.log('Paused:', paused);
+      // console.log('Playing:', playing);
+    });
+  });
+  onCleanup(() => {
+    unsubscribe?.();
   });
   const handleKeyDown = (e: KeyboardEvent) => {
     console.log(e.key);
@@ -780,6 +789,7 @@ export default function Player() {
       //   volumeUp: "ArrowUp",
       //   volumeDown: "ArrowDown",
       // }}
+      key-disabled
       on:can-play={onCanPlay}
       on:provider-change={onProviderChange}
       on:hls-error={handleHlsError}
@@ -865,7 +875,7 @@ export default function Player() {
             </div>
             <div class="flex flex-col">
               <div class="text-lg text-white w-72">
-                <VideoCard v={nextVideo() ?? undefined} />
+                <VideoCard v={nextVideo()?.info ?? undefined} />
               </div>
             </div>
             <div class="flex justify-center gap-2">
@@ -888,7 +898,7 @@ export default function Player() {
           </div>
         </div>
       </Show>
-      <PlayerSkin video={video.value} isMiniPlayer={false} />
+      <PlayerSkin video={video.value} nextVideo={nextVideo()} />
       {/* <media-community-skin></media-community-skin> */}
     </media-player>
   );
