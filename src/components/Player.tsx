@@ -55,6 +55,9 @@ import PlayerSkin from "./PlayerSkin";
 import VideoCard from "./VideoCard";
 import { videoId } from "~/routes/history";
 import numeral from "numeral";
+import { useQueue } from "~/stores/queueStore";
+import { usePlaylist } from "~/stores/playlistStore";
+import dayjs from "dayjs";
 
 const BUFFER_LIMIT = 3;
 const BUFFER_TIME = 15000;
@@ -112,6 +115,9 @@ export default function Player() {
   };
 
   const [preferences, setPreferences] = useContext(PreferencesContext);
+  const [playlist] = usePlaylist();
+
+  const queueStore = useQueue();
 
   const [vtt, setVtt] = createSignal<string | undefined>(undefined);
 
@@ -198,10 +204,10 @@ export default function Player() {
       mediaPlayer!.currentTime += 10;
     });
     navigator.mediaSession.setActionHandler("previoustrack", () => {
-      console.log("previous track");
+      mediaPlayer!.currentTime -= 10;
     });
     navigator.mediaSession.setActionHandler("nexttrack", () => {
-      console.log("next track");
+      mediaPlayer!.currentTime += 10;
     });
     navigator.mediaSession.setActionHandler("stop", () => {
       console.log("stop");
@@ -298,7 +304,7 @@ export default function Player() {
     if (!mediaPlayer) return;
     mediaPlayer.thumbnails = generateStoryboard(video.value.previewFrames[1]);
     console.log(mediaPlayer.thumbnails);
-  })
+  });
 
   createEffect(() => {
     console.log("time effect", video.value?.title);
@@ -323,6 +329,153 @@ export default function Player() {
       }
       console.timeEnd("init");
     });
+  });
+
+  createEffect(() => {
+    const nextVideo = video.value?.relatedStreams?.[0];
+    if (!nextVideo) return;
+    if (!mediaPlayer) return;
+    if (!video.value) return;
+    if (route.query.list) return;
+    queueStore.setCurrentVideo({
+      url: `/watch?v=${videoId(video.value)}`,
+      title: video.value.title,
+      thumbnail: video.value.thumbnailUrl,
+      duration: video.value.duration,
+      uploaderName: video.value.uploader,
+      uploaderAvatar: video.value.uploaderAvatar,
+      uploaderUrl: video.value.uploaderUrl,
+      isShort: false,
+      shortDescription: "",
+      type: "video",
+      uploaded: dayjs(video.value.uploadDate).unix(),
+      views: video.value.views,
+      uploadedDate: video.value.uploadDate,
+      uploaderVerified: video.value.uploaderVerified,
+    });
+    if (queueStore.isCurrentLast()) {
+      queueStore.addToQueue(nextVideo);
+    }
+  });
+
+  const playNext = () => {
+    console.log("playing next", nextVideo());
+    if (!nextVideo()) return;
+
+    navigate(nextVideo()!.url, { replace: false });
+    setEnded(false);
+  };
+
+  function handleSetNextVideo() {
+    console.log("setting next video");
+    let url = `/watch?v=`;
+    if (playlist()) {
+      const local = "videos" in playlist()!;
+      const listId =
+        route.query.list ?? (playlist() as unknown as { id: string })!.id;
+      let index; // index starts from 1
+      if (route.query.index) {
+        index = parseInt(route.query.index);
+      } else if (local) {
+        index = (playlist() as unknown as {
+          videos: RelatedStream[];
+        })!.videos!.findIndex((v) => videoId(v) === videoId(video.value));
+        if (index !== -1) index++;
+      } else {
+        index = playlist()!.relatedStreams!.findIndex(
+          (v) => videoId(v) === videoId(video.value)
+        );
+        if (index !== -1) index++;
+      }
+
+      if (index < playlist()!.relatedStreams?.length) {
+        const next = playlist()!.relatedStreams[index]; // index is already +1
+        url += `${videoId(next)}&list=${listId}&index=${index + 1}`;
+        setNextVideo({ url: url, info: next });
+      } else if (
+        index <
+        (playlist() as unknown as { videos: RelatedStream[] })!.videos?.length
+      ) {
+        const next = (playlist() as unknown as {
+          videos: RelatedStream[];
+        })!.videos[index]; // index is already +1
+        url += `${videoId(next)}&list=${listId}&index=${index + 1}`;
+        setNextVideo({
+          url: url,
+          info: next,
+        });
+      }
+      return;
+    }
+    const next = queueStore.next();
+    if (!next) return;
+
+    setNextVideo({
+      url: `/watch?v=${videoId(next)}`,
+      info: next,
+    });
+  }
+  createEffect(() => {
+    if (!video.value) return;
+    if (!mediaPlayer) return;
+    handleSetNextVideo();
+  });
+
+  const [ended, setEnded] = createSignal(false);
+  const [nextVideo, setNextVideo] = createSignal<{
+    url: string;
+    info: RelatedStream;
+  } | null>(null);
+
+  const handleEnded = () => {
+    console.log("ended");
+    if (!mediaPlayer) return;
+    if (!video.value) return;
+    setEnded(true);
+    showToast();
+    updateProgress();
+  };
+  const [showEndScreen, setShowEndScreen] = createSignal(false);
+  const defaultCounter = 5;
+  const [counter, setCounter] = createSignal(defaultCounter);
+  let timeoutCounter: any;
+
+  createEffect(() => {
+    console.log("ended effect", ended());
+    if (!ended()) return;
+    if (!mediaPlayer) return;
+    if (!video.value) return;
+  });
+
+  function showToast() {
+    console.log("showing toast");
+    setCounter(defaultCounter);
+    if (counter() < 1) {
+      console.log("counter less than 1");
+      playNext();
+      return;
+    }
+    if (timeoutCounter) clearInterval(timeoutCounter);
+    timeoutCounter = setInterval(() => {
+      console.log("counting", counter());
+      setCounter((c) => c - 1);
+      if (counter() === 0) {
+        dismiss();
+        playNext();
+      }
+    }, 1000);
+    console.log("showing end screen");
+    setShowEndScreen(true);
+  }
+  function dismiss() {
+    console.log("dismiss");
+    clearInterval(timeoutCounter);
+    setShowEndScreen(false);
+  }
+
+  onCleanup(() => {
+    clearInterval(timeoutCounter);
+    document.removeEventListener("keydown", handleKeyDown);
   });
 
   const onProviderChange = (event: MediaProviderChangeEvent) => {
@@ -438,44 +591,176 @@ export default function Player() {
     // }
   });
 
-  const generateStoryboard = (previewFrames: PreviewFrame | undefined) => {
-    if (!previewFrames) return;
+  const generateStoryboard = (
+    previewFrames: PreviewFrame | undefined
+  ): string | null => {
+    if (!previewFrames) return null;
     let output = "WEBVTT\n\n";
     let currentTime = 0;
 
     for (let url of previewFrames.urls) {
-        for (let y = 0; y < previewFrames.framesPerPageY; y++) {
-            for (let x = 0; x < previewFrames.framesPerPageX; x++) {
+      for (let y = 0; y < previewFrames.framesPerPageY; y++) {
+        for (let x = 0; x < previewFrames.framesPerPageX; x++) {
+          if (
+            currentTime >=
+            previewFrames.totalCount * previewFrames.durationPerFrame
+          ) {
+            break;
+          }
 
-                if (currentTime >= previewFrames.totalCount * previewFrames.durationPerFrame) {
-                    break;
-                }
+          let startX = x * previewFrames.frameWidth;
+          let startY = y * previewFrames.frameHeight;
 
-                let startX = x * previewFrames.frameWidth;
-                let startY = y * previewFrames.frameHeight;
+          output += `${formatTime(currentTime)} --> ${formatTime(
+            currentTime + previewFrames.durationPerFrame
+          )}\n`;
+          output += `${url}#xywh=${startX},${startY},${previewFrames.frameWidth},${previewFrames.frameHeight}\n\n`;
 
-                output += `${formatTime(currentTime)} --> ${formatTime(currentTime + previewFrames.durationPerFrame)}\n`;
-                output += `${url}#xywh=${startX},${startY},${previewFrames.frameWidth},${previewFrames.frameHeight}\n\n`;
-
-                currentTime += previewFrames.durationPerFrame;
-            }
+          currentTime += previewFrames.durationPerFrame;
         }
+      }
     }
 
     function formatTime(ms: number): string {
-        let hours = Math.floor(ms / 3600000);
-        ms -= hours * 3600000;
-        let minutes = Math.floor(ms / 60000);
-        ms -= minutes * 60000;
-        let seconds = Math.floor(ms / 1000);
-        ms -= seconds * 1000;
-        
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+      let hours = Math.floor(ms / 3600000);
+      ms -= hours * 3600000;
+      let minutes = Math.floor(ms / 60000);
+      ms -= minutes * 60000;
+      let seconds = Math.floor(ms / 1000);
+      ms -= seconds * 1000;
+
+      return `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${ms
+        .toString()
+        .padStart(3, "0")}`;
     }
 
-    const blob = new Blob([output], {type: 'text/vtt'});
+    const blob = new Blob([output], { type: "text/vtt" });
     return URL.createObjectURL(blob);
-}
+  };
+  const [mediaPlayerConnected, setMediaPlayerConnected] = createSignal(false);
+
+  createEffect(() => {
+    if (!mediaPlayerConnected()) return;
+    if (!video.value) return;
+    document.addEventListener("keydown", handleKeyDown);
+  });
+  const handleKeyDown = (e: KeyboardEvent) => {
+    console.log(e.key);
+    switch (e.key) {
+      case "f":
+        mediaPlayer?.requestFullscreen();
+        e.preventDefault();
+        break;
+      case "m":
+        mediaPlayer!.muted = !mediaPlayer!.muted;
+        e.preventDefault();
+        break;
+      case "j":
+        mediaPlayer!.currentTime = Math.max(mediaPlayer!.currentTime - 10, 0);
+        e.preventDefault();
+        break;
+      case "l":
+        mediaPlayer!.currentTime = Math.min(
+          mediaPlayer!.currentTime + 10,
+          video.value!.duration
+        );
+        e.preventDefault();
+        break;
+      case "c":
+        // mediaPlayer!.textTracks
+        e.preventDefault();
+        break;
+      case "k":
+      case " ":
+        if (mediaPlayer!.paused) mediaPlayer!.play();
+        else mediaPlayer!.pause();
+        e.preventDefault();
+        break;
+      // case "up":
+      //   videoEl.volume = Math.min(videoEl.volume + 0.05, 1);
+      //   e.preventDefault();
+      //   break;
+      // case "down":
+      //   videoEl.volume = Math.max(videoEl.volume - 0.05, 0);
+      //   e.preventDefault();
+      //   break;
+      case "ArrowLeft":
+        mediaPlayer!.currentTime = Math.max(mediaPlayer!.currentTime - 5, 0);
+        e.preventDefault();
+        break;
+      case "ArrowRight":
+        mediaPlayer!.currentTime = mediaPlayer!.currentTime + 5;
+        e.preventDefault();
+        break;
+      // case "0":
+      //   videoEl.currentTime = 0;
+      //   e.preventDefault();
+      //   break;
+      // case "1":
+      //   videoEl.currentTime = videoEl.duration * 0.1;
+      //   e.preventDefault();
+      //   break;
+      // case "2":
+      //   videoEl.currentTime = videoEl.duration * 0.2;
+      //   e.preventDefault();
+      //   break;
+      // case "3":
+      //   videoEl.currentTime = videoEl.duration * 0.3;
+      //   e.preventDefault();
+      //   break;
+      // case "4":
+      //   videoEl.currentTime = videoEl.duration * 0.4;
+      //   e.preventDefault();
+      //   break;
+      // case "5":
+      //   videoEl.currentTime = videoEl.duration * 0.5;
+      //   e.preventDefault();
+      //   break;
+      // case "6":
+      //   videoEl.currentTime = videoEl.duration * 0.6;
+      //   e.preventDefault();
+      //   break;
+      // case "7":
+      //   videoEl.currentTime = videoEl.duration * 0.7;
+      //   e.preventDefault();
+      //   break;
+      // case "8":
+      //   videoEl.currentTime = videoEl.duration * 0.8;
+      //   e.preventDefault();
+      //   break;
+      // case "9":
+      //   videoEl.currentTime = videoEl.duration * 0.9;
+      //   e.preventDefault();
+      //   break;
+      case "N":
+        if (e.shiftKey) {
+          playNext();
+          e.preventDefault();
+        }
+        break;
+      case "Escape":
+        if (ended()) {
+          dismiss();
+          e.preventDefault();
+        } else if (document.fullscreenElement) {
+          mediaPlayer?.exitFullscreen();
+          e.preventDefault();
+        }
+        break;
+
+      case ",":
+        mediaPlayer!.currentTime -= 0.04;
+        break;
+      case ".":
+        mediaPlayer!.currentTime += 0.04;
+        break;
+      // case "return":
+      //   self.skipSegment(videoEl);
+      //   break;
+    }
+  };
 
   return (
     <media-player
@@ -484,32 +769,30 @@ export default function Player() {
       current-time={currentTime()}
       // onTextTrackChange={handleTextTrackChange}
       load="eager"
-      key-shortcuts={{
-        togglePaused: "k Space",
-        toggleMuted: "m",
-        toggleFullscreen: "f",
-        togglePictureInPicture: "i",
-        toggleCaptions: "c",
-        seekBackward: "ArrowLeft h",
-        seekForward: "ArrowRight l",
-        volumeUp: "ArrowUp",
-        volumeDown: "ArrowDown",
-      }}
+      // key-shortcuts={{
+      //   togglePaused: "k Space",
+      //   toggleMuted: "m",
+      //   toggleFullscreen: "f",
+      //   togglePictureInPicture: "i",
+      //   toggleCaptions: "c",
+      //   seekBackward: "ArrowLeft h",
+      //   seekForward: "ArrowRight l",
+      //   volumeUp: "ArrowUp",
+      //   volumeDown: "ArrowDown",
+      // }}
       on:can-play={onCanPlay}
       on:provider-change={onProviderChange}
       on:hls-error={handleHlsError}
       on:pause={updateProgress}
       on:seeked={updateProgress}
-      on:ended={updateProgress}
+      on:ended={handleEnded}
       on:play={() => setStarted(true)}
-      key-target="document"
+      on:media-player-connect={() => setMediaPlayerConnected(true)}
       autoplay
       ref={mediaPlayer}
       title={video.value?.title ?? ""}
       // src={video.value?.hls ?? ""}
-      poster={
-        video.value?.thumbnailUrl?? ""
-      }
+      poster={video.value?.thumbnailUrl ?? ""}
       //       aspect-ratio={video.value?.videoStreams?.[0]
       //           ? video.value.videoStreams[0]?.width /
       //             video.value.videoStreams[0]?.height
@@ -519,8 +802,8 @@ export default function Player() {
       thumbnails={generateStoryboard(video.value?.previewFrames[1])}
       crossorigin="anonymous">
       <media-outlet
-      // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
-       ref={outlet}>
+        // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
+        ref={outlet}>
         <media-poster alt={video.value?.title ?? ""} />
         {tracks().map((track) => {
           return (
@@ -541,8 +824,8 @@ export default function Player() {
         {(err) => (
           <Show when={err().fatal}>
             <div
-            // classList={{hidden: preferences.pip}}
-             class="absolute top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50">
+              // classList={{hidden: preferences.pip}}
+              class="absolute top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50">
               <div class="flex flex-col items-center justify-center w-full h-full gap-3">
                 <div class="text-2xl font-bold text-white">
                   {error()?.name} {error()?.details}
@@ -573,6 +856,37 @@ export default function Player() {
             </div>
           </Show>
         )}
+      </Show>
+      <Show when={showEndScreen() && nextVideo()}>
+        <div class="absolute z-50 top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50">
+          <div class="flex flex-col items-center justify-center w-full h-full gap-3">
+            <div class="text-2xl font-bold text-white">
+              Playing next in {counter()} seconds
+            </div>
+            <div class="flex flex-col">
+              <div class="text-lg text-white w-72">
+                <VideoCard v={nextVideo() ?? undefined} />
+              </div>
+            </div>
+            <div class="flex justify-center gap-2">
+              <button
+                class="px-4 py-2 text-lg text-white border border-white rounded-md"
+                onClick={() => {
+                  dismiss();
+                  playNext();
+                }}>
+                Play now (Shift + N)
+              </button>
+              <button
+                class="px-4 py-2 text-lg text-white border border-white rounded-md"
+                onClick={() => {
+                  dismiss();
+                }}>
+                Dismiss (Esc)
+              </button>
+            </div>
+          </div>
+        </div>
       </Show>
       <PlayerSkin video={video.value} isMiniPlayer={false} />
       {/* <media-community-skin></media-community-skin> */}

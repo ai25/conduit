@@ -22,6 +22,7 @@ import { getHlsManifest } from "~/utils/hls";
 import PlaylistItem from "~/components/PlaylistItem";
 import { createVirtualizer } from "@tanstack/solid-virtual";
 import { fetchJson } from "~/utils/helpers";
+import { usePlaylist } from "~/stores/playlistStore";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
@@ -61,7 +62,7 @@ export default function Watch() {
   const [preferences] = useContext(PreferencesContext);
   const route = useLocation();
 
-  const [list, setList] = createSignal<any>(undefined);
+  const [playlist, setPlaylist] = usePlaylist()
   // const videoLoaded = useSignal(false);
   // const preferences = useContext(PreferencesContext);
   // const instance = useContext(InstanceContext);
@@ -142,31 +143,37 @@ export default function Watch() {
 
   const [listId, setListId] = createSignal<string | undefined>(undefined);
   const isLocalPlaylist = () => route.query.list?.startsWith("conduit-");
+  createEffect(() => {
+    if (!route.query.list) {
+      setPlaylist(undefined);
+      console.log("fetching playlistno list id");
+      return;
+    }
+  })
 
   createEffect(async () => {
     if (!route.query.list) return;
     if (isLocalPlaylist()) return;
     const json = await fetchJson(`${instance()}/playlists/${route.query.list}`);
-    setList(json);
+    setPlaylist({...json, id: route.query.list});
     console.log(json);
   });
   createEffect(async () => {
-    if (!route.query.list) return;
-    if (!isLocalPlaylist()) return;
-    console.log("fetching playlist");
-    setListId(route.query.list);
-    if (!listId()) {
-      setList(undefined);
+    if (!route.query.list) {
+      setPlaylist(undefined);
       console.log("fetching playlistno list id");
       return;
     }
+    if (!isLocalPlaylist()) return;
+    console.log("fetching playlist");
+    setListId(route.query.list);
     console.log("fetching playlistlist id", listId());
     if (!db()) return;
 
     const tx = db()!.transaction("playlists", "readonly");
     const store = tx.objectStore("playlists");
     const l = await store.get(listId()!);
-    setList(l);
+    setPlaylist(l);
     console.log(l);
   });
   let parentRef: HTMLDivElement;
@@ -204,7 +211,7 @@ export default function Watch() {
               !preferences.theatreMode,
             "lg:pl-4 md:mr-4": preferences.theatreMode,
           }}>
-          <Show when={list()} keyed>
+          <Show when={playlist()} keyed>
             {(list) => (
               <div class="overflow-hidden rounded-xl mx-2 mr-3 my-4 ">
                 <div

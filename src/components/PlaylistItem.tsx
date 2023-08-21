@@ -55,6 +55,7 @@ const PlaylistItem = (props: {
           inline: "start",
 
         });
+        card?.focus();
         document.querySelector("media-player")?.scrollIntoView({
           behavior: "smooth",
           block: "center",
