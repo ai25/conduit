@@ -63,7 +63,7 @@ export default function Dropdown(props: {
             leaveFrom="opacity-100 translate-y-0 scale-100"
             leaveTo="opacity-0 -translate-y-1 scale-50">
             <PopoverPanel
-              unmount={false}
+              unmount={true}
               class={`${classNames(
                 props.panelPosition === "left" && "left-8 -translate-x-full",
                 props.panelPosition === "right" && "right-8 translate-x-full",

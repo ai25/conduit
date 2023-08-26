@@ -1,5 +1,6 @@
 // @refresh reload
 import {
+  Accessor,
   Match,
   Show,
   Signal,
@@ -9,6 +10,8 @@ import {
   createEffect,
   createRenderEffect,
   createSignal,
+  from,
+  onCleanup,
   onMount,
   useContext,
 } from "solid-js";
@@ -59,6 +62,11 @@ import Import from "./routes/import";
 import { PlaylistProvider } from "./stores/playlistStore";
 import { QueueProvider } from "./stores/queueStore";
 import { PlayerStateProvider } from "./stores/playerStateStore";
+import { Store, clone } from "./stores/syncedStore";
+import syncedStore, { getYjsDoc, observeDeep } from "@syncedstore/core";
+import { WebrtcProvider } from "y-webrtc";
+import { IndexeddbPersistence } from "y-indexeddb";
+import { AppStateProvider, useAppState } from "./stores/appStateStore";
 
 // const updateSW = registerSW({
 //   onOfflineReady() {},
@@ -102,16 +110,21 @@ const preferences = createStore({
   quality: "auto",
   theatreMode: false,
 });
+const initialStore: Store = {
+  playlists: [],
+  history: [],
+  subscriptions: [],
+};
 export const PreferencesContext = createContext(preferences);
+const [store, setStore] = createSignal<Store | null>(null);
+const [solidStore, setSolidStore] = createSignal<Store | null>(null);
+export const SyncContext = createContext(store);
+export const SolidStoreContext = createContext(solidStore);
 
 defineCustomElements();
 
 export default function Root() {
   const location = useLocation();
-  const active = (path: string) =>
-    path == location.pathname
-      ? "border-sky-600"
-      : "border-transparent hover:border-sky-600";
   const isRouting = useIsRouting();
   const event = useServerContext();
   createRenderEffect(() => {
@@ -147,6 +160,7 @@ export default function Root() {
     console.timeEnd("db");
   });
   const [progress, setProgress] = createSignal(0);
+
   createEffect(() => {
     console.log(isRouting(), "isRouting");
     setProgress(0);
@@ -194,6 +208,50 @@ export default function Root() {
     );
   });
 
+  const doc = () => (store() ? getYjsDoc(store()) : null);
+  const [room, setRoom] = createSignal(
+    "localStorage" in globalThis
+      ? (JSON.parse(localStorage.getItem("room") || "{}") as {
+          id?: string;
+          password?: string;
+        })
+      : {}
+  );
+  createEffect(() => {
+    if (room().id) {
+      setStore(syncedStore(initialStore));
+    }
+  });
+  createEffect(() => {
+    if (!isServer) {
+      console.log(clone(store()), "store");
+
+      observeDeep(store(), () => {
+        console.log("store changed");
+        setSolidStore(clone(store()));
+      });
+    }
+  });
+  let webrtcProvider: WebrtcProvider | null = null;
+  let idbProvider: IndexeddbPersistence | null = null;
+  createEffect(() => {
+    if (!doc() || !room().id) return;
+    console.log(room().id, "setting webrtc provider");
+    webrtcProvider = new WebrtcProvider(room().id!, doc()!, {
+      signaling: ["wss://signaling.fly.dev"],
+      ...(room()!.password && { password: room().password }),
+    });
+    console.log(webrtcProvider, "webrtc provider");
+    webrtcProvider.connect();
+    idbProvider =
+      doc() && room().id ? new IndexeddbPersistence(room().id!, doc()!) : null;
+    console.log(idbProvider, "provider");
+  });
+  onCleanup(() => {
+    webrtcProvider?.disconnect();
+  });
+  const [appState] = useAppState();
+
   return (
     <Html lang="en">
       <Head>
@@ -210,27 +268,33 @@ export default function Root() {
         <DBContext.Provider value={db}>
           <InstanceContext.Provider value={instance}>
             <QueueProvider>
-              <PlaylistProvider>
-                <PlayerContext.Provider value={video}>
-                  <PlayerStateProvider>
-                    <Body
-                      class={`${theme[0]()} bg-bg1 font-poppins text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}>
-                      <Suspense>
-                        <ErrorBoundary>
-                          <Show when={isRouting()}>
-                            <div class="fixed h-1 w-full top-0 z-50">
-                              <div
-                                class={`h-1 bg-primary w-[${progress()}%]`}
-                              />
-                            </div>
-                          </Show>
-                          <Header />
-                          <div aria-hidden="true" class="h-10" />
-                          <PlayerContainer />
-                          {/* <PipContainer />{" "} */}
-                          <Routes>
-                            <FileRoutes />
-                            {/* <Transition
+              <AppStateProvider>
+                <PlaylistProvider>
+                  <PlayerContext.Provider value={video}>
+                    <PlayerStateProvider>
+                      <SyncContext.Provider value={store}>
+                        <Body
+                          class={`${theme[0]()} bg-bg1 font-poppins text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}>
+                          <Suspense>
+                            <ErrorBoundary>
+                              <Show when={appState.loading}>
+                                <div class="fixed h-1 w-full -mx-2 top-0 z-[9999999]">
+                                  <div
+                                    class={`h-1 bg-gradient-to-r from-accent1 via-primary to-accent1 bg-repeat-x w-full animate-stripe`}
+                                  />
+                                </div>
+                              </Show>
+                              <Header />
+                              <div aria-hidden="true" class="h-10" />
+                              <div class="bg-bg2 py-2"></div>
+                              <Show when={!isServer}>
+                                <StatusBar />
+                              </Show>
+                              <PlayerContainer />
+                              {/* <PipContainer />{" "} */}
+                              <Routes>
+                                <FileRoutes />
+                                {/* <Transition
                         show={!isRouting()}
                         enter="transition-opacity duration-200"
                         enterFrom="opacity-0 translate-y-1"
@@ -257,14 +321,16 @@ export default function Root() {
                         <Route path="/search" element={<Search />} />
                         <Route path="/trending" element={<Trending />} />
                         <Route path="/import" element={<Import />} /> */}
-                          </Routes>
-                        </ErrorBoundary>
-                      </Suspense>
-                      <Scripts />
-                    </Body>
-                  </PlayerStateProvider>
-                </PlayerContext.Provider>
-              </PlaylistProvider>
+                              </Routes>
+                            </ErrorBoundary>
+                          </Suspense>
+                          <Scripts />
+                        </Body>
+                      </SyncContext.Provider>
+                    </PlayerStateProvider>
+                  </PlayerContext.Provider>
+                </PlaylistProvider>
+              </AppStateProvider>
             </QueueProvider>
           </InstanceContext.Provider>
         </DBContext.Provider>
@@ -272,182 +338,229 @@ export default function Root() {
     </Html>
   );
 }
-const PipContainer = () => {
-  const [userIdle, setUserIdle] = createSignal(true);
-  const [playing, setPlaying] = createSignal(false);
-  const [outlet, setOutlet] = createSignal<MediaOutletElement | null>();
-  const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
-  const [muted, setMuted] = createSignal(false);
-  let timeout: any;
-  const handlePointerEvent = () => {
-    clearTimeout(timeout);
-    setUserIdle(false);
-    timeout = setTimeout(() => {
-      setUserIdle(true);
-    }, 2000);
-  };
-  let pipContainer: HTMLDivElement | undefined = undefined;
+
+const StatusBar = () => {
+  const [roomId, setRoomId] = createSignal("");
+  const [password, setPassword] = createSignal("");
 
   createEffect(() => {
-    if (!video[0].value) return;
-    console.log("setting player and outlet", videoId(video[0].value));
-    setPlayer(document.querySelector("media-player"));
-    setOutlet(document.querySelector("media-outlet"));
-    if (player()) {
-      player()!.addEventListener("play", () => {
-        console.log("playing");
-        setPlaying(true);
-      });
-      player()!.addEventListener("pause", () => {
-        setPlaying(false);
-      });
-    }
+    const room = JSON.parse(localStorage.getItem("room") || "{}");
+    setRoomId(room.id || "");
+    setPassword(room.password || "");
   });
 
-  const hideContainer = () => {
-    pipContainer?.classList.add("hidden");
-  };
-  const navigate = useNavigate();
+  if (roomId()) return <div class="py-2">Connected: {roomId()}</div>;
 
   return (
-    <div
-      ref={pipContainer}
-      id="pip-container"
-      style={{
-        "aspect-ratio": video[0].value
-          ? video[0].value.videoStreams[0]?.width /
-            video[0].value.videoStreams[0]?.height
-          : "16/9",
-      }}
-      class="w-full sm:w-96 z-[999] hidden justify-center items-center aspect-video sticky top-12 inset-x-0 sm:left-2 rounded-lg overflow-hidden bg-black">
-      <div
-        onPointerDown={handlePointerEvent}
-        onPointerUp={handlePointerEvent}
-        onMouseOver={handlePointerEvent}
-        onMouseMove={handlePointerEvent}
-        onFocusIn={handlePointerEvent}
-        classList={{ "opacity-0": userIdle() }}
-        class="absolute bg-black/50 flex flex-col items-center justify-between inset-0 w-full h-full p-2 z-[9999] transition-opacity duration-200">
-        <div class="flex items-center justify-between w-full">
-          <button
-            onClick={() => {
-              if (player() && outlet()) {
-                player()!.prepend(outlet()!);
-                player()!.pause();
-                hideContainer();
-              } else {
-                console.log("no player or outlet");
-              }
-            }}
-            class=" w-10 h-10 z-10 text-white hover:text-gray-200">
-            <svg
-              // class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={() => {
-              if (player() && outlet()) {
-                player()!.prepend(outlet()!);
-                hideContainer();
-                const id = videoId(video[0].value);
-                if (!id) {
-                  console.log("no id", id);
-                  return;
-                }
-                navigate(`/watch?v=${id}`);
-              } else {
-                console.log("no player or outlet");
-              }
-            }}
-            class=" w-10 h-10 z-10 text-white hover:text-gray-200">
-            <svg
-              // class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-        </div>
-        <div class="absolute inset-0 flex justify-center items-center">
-          <button
-            class="m-auto"
-            onClick={() => {
-              console.log("play", player());
-              if (player()) {
-                if (playing()) {
-                  player()!.pause();
-                } else {
-                  player()!.play();
-                }
-              }
-            }}>
-            <media-icon
-              type="play"
-              class="h-12 w-12"
-              classList={{ hidden: playing() }}></media-icon>
-            <media-icon
-              type="pause"
-              class="h-12 w-12"
-              classList={{ hidden: !playing() }}></media-icon>
-          </button>
-        </div>
-        <div class="flex items-center justify-between w-full">
-          <button
-            onClick={() => {
-              if (player()) {
-                player()!.muted = !player()!.muted;
-                setMuted(player()!.muted);
-              }
-            }}
-            class=" w-10 h-10 z-10 text-white hover:text-gray-200">
-            <media-icon type="volume-high" classList={{ hidden: muted() }} />
-            <media-icon type="mute" classList={{ hidden: !muted() }} />
-          </button>
-          {/* <button
-            onClick={() => {
-              if (player()) {
-                player()!.requestFullscreen();
-              }
-            }}
-            class="bg-white z-10 text-black rounded-full p-2 hover:bg-gray-200">
-            <svg
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                classList={{ hidden: document.fullscreenElement }}
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 11l3-3 3 3m-3 3v6m0 0H6m0 0h12M6 5h12m-6 6V5m0 0H6m0 0h12"
-              />
-              <path
-                classList={{ hidden: !document.fullscreenElement }}
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 7H7v6h6V7z"
-              />
-            </svg>
-          </button> */}
-        </div>
+    <div class="fixed bottom-0 left-0 right-0 bg-bg2 p-2 flex items-center justify-between">
+      <div class="flex items-center">
+        <label class="text-text1 mr-2">Room ID</label>
+        <input
+          type="text"
+          value={roomId()}
+          onInput={(e) => setRoomId(e.currentTarget.value)}
+          class="bg-bg1 text-text1 p-2 rounded-lg"
+        />
       </div>
+      <div class="flex items-center">
+        <label class="text-text1 mr-2">Password</label>
+        <input
+          type="text"
+          value={password()}
+          onInput={(e) => setPassword(e.currentTarget.value)}
+          class="bg-bg1 text-text1 p-2 rounded-lg"
+        />
+      </div>
+      <button
+        onClick={() => {
+          localStorage.setItem(
+            "room",
+            JSON.stringify({ id: roomId(), password: password() })
+          );
+          location.reload();
+        }}
+        class="bg-primary text-text1 p-2 rounded-lg">
+        Join
+      </button>
     </div>
   );
 };
+// const PipContainer = () => {
+//   const [userIdle, setUserIdle] = createSignal(true);
+//   const [playing, setPlaying] = createSignal(false);
+//   const [outlet, setOutlet] = createSignal<MediaOutletElement | null>();
+//   const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
+//   const [muted, setMuted] = createSignal(false);
+//   let timeout: any;
+//   const handlePointerEvent = () => {
+//     clearTimeout(timeout);
+//     setUserIdle(false);
+//     timeout = setTimeout(() => {
+//       setUserIdle(true);
+//     }, 2000);
+//   };
+//   let pipContainer: HTMLDivElement | undefined = undefined;
+
+//   createEffect(() => {
+//     if (!video[0].value) return;
+//     console.log("setting player and outlet", videoId(video[0].value));
+//     setPlayer(document.querySelector("media-player"));
+//     setOutlet(document.querySelector("media-outlet"));
+//     if (player()) {
+//       player()!.addEventListener("play", () => {
+//         console.log("playing");
+//         setPlaying(true);
+//       });
+//       player()!.addEventListener("pause", () => {
+//         setPlaying(false);
+//       });
+//     }
+//   });
+
+//   const hideContainer = () => {
+//     pipContainer?.classList.add("hidden");
+//   };
+//   const navigate = useNavigate();
+
+//   return (
+//     <div
+//       ref={pipContainer}
+//       id="pip-container"
+//       style={{
+//         "aspect-ratio": video[0].value
+//           ? video[0].value.videoStreams[0]?.width /
+//             video[0].value.videoStreams[0]?.height
+//           : "16/9",
+//       }}
+//       class="w-full sm:w-96 z-[999] hidden justify-center items-center aspect-video sticky top-12 inset-x-0 sm:left-2 rounded-lg overflow-hidden bg-black">
+//       <div
+//         onPointerDown={handlePointerEvent}
+//         onPointerUp={handlePointerEvent}
+//         onMouseOver={handlePointerEvent}
+//         onMouseMove={handlePointerEvent}
+//         onFocusIn={handlePointerEvent}
+//         classList={{ "opacity-0": userIdle() }}
+//         class="absolute bg-black/50 flex flex-col items-center justify-between inset-0 w-full h-full p-2 z-[9999] transition-opacity duration-200">
+//         <div class="flex items-center justify-between w-full">
+//           <button
+//             onClick={() => {
+//               if (player() && outlet()) {
+//                 player()!.prepend(outlet()!);
+//                 player()!.pause();
+//                 hideContainer();
+//               } else {
+//                 console.log("no player or outlet");
+//               }
+//             }}
+//             class=" w-10 h-10 z-10 text-white hover:text-gray-200">
+//             <svg
+//               // class="h-6 w-6"
+//               fill="none"
+//               viewBox="0 0 24 24"
+//               stroke="currentColor">
+//               <path
+//                 stroke-linecap="round"
+//                 stroke-linejoin="round"
+//                 stroke-width="2"
+//                 d="M6 18L18 6M6 6l12 12"
+//               />
+//             </svg>
+//           </button>
+//           <button
+//             onClick={() => {
+//               if (player() && outlet()) {
+//                 player()!.prepend(outlet()!);
+//                 hideContainer();
+//                 const id = videoId(video[0].value);
+//                 if (!id) {
+//                   console.log("no id", id);
+//                   return;
+//                 }
+//                 navigate(`/watch?v=${id}`);
+//               } else {
+//                 console.log("no player or outlet");
+//               }
+//             }}
+//             class=" w-10 h-10 z-10 text-white hover:text-gray-200">
+//             <svg
+//               // class="h-6 w-6"
+//               fill="none"
+//               viewBox="0 0 24 24"
+//               stroke="currentColor">
+//               <path
+//                 stroke-linecap="round"
+//                 stroke-linejoin="round"
+//                 stroke-width="2"
+//                 d="M15 19l-7-7 7-7"
+//               />
+//             </svg>
+//           </button>
+//         </div>
+//         <div class="absolute inset-0 flex justify-center items-center">
+//           <button
+//             class="m-auto"
+//             onClick={() => {
+//               console.log("play", player());
+//               if (player()) {
+//                 if (playing()) {
+//                   player()!.pause();
+//                 } else {
+//                   player()!.play();
+//                 }
+//               }
+//             }}>
+//             <media-icon
+//               type="play"
+//               class="h-12 w-12"
+//               classList={{ hidden: playing() }}></media-icon>
+//             <media-icon
+//               type="pause"
+//               class="h-12 w-12"
+//               classList={{ hidden: !playing() }}></media-icon>
+//           </button>
+//         </div>
+//         <div class="flex items-center justify-between w-full">
+//           <button
+//             onClick={() => {
+//               if (player()) {
+//                 player()!.muted = !player()!.muted;
+//                 setMuted(player()!.muted);
+//               }
+//             }}
+//             class=" w-10 h-10 z-10 text-white hover:text-gray-200">
+//             <media-icon type="volume-high" classList={{ hidden: muted() }} />
+//             <media-icon type="mute" classList={{ hidden: !muted() }} />
+//           </button>
+//           {/* <button
+//             onClick={() => {
+//               if (player()) {
+//                 player()!.requestFullscreen();
+//               }
+//             }}
+//             class="bg-white z-10 text-black rounded-full p-2 hover:bg-gray-200">
+//             <svg
+//               class="h-6 w-6"
+//               fill="none"
+//               viewBox="0 0 24 24"
+//               stroke="currentColor">
+//               <path
+//                 classList={{ hidden: document.fullscreenElement }}
+//                 stroke-linecap="round"
+//                 stroke-linejoin="round"
+//                 stroke-width="2"
+//                 d="M9 11l3-3 3 3m-3 3v6m0 0H6m0 0h12M6 5h12m-6 6V5m0 0H6m0 0h12"
+//               />
+//               <path
+//                 classList={{ hidden: !document.fullscreenElement }}
+//                 stroke-linecap="round"
+//                 stroke-linejoin="round"
+//                 stroke-width="2"
+//                 d="M13 7H7v6h6V7z"
+//               />
+//             </svg>
+//           </button> */}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };

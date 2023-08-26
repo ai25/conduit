@@ -11,7 +11,12 @@ import {
   createSignal,
   useContext,
 } from "solid-js";
-import { DBContext, InstanceContext } from "~/root";
+import {
+  DBContext,
+  InstanceContext,
+  SolidStoreContext,
+  SyncContext,
+} from "~/root";
 import { videoId } from "~/routes/history";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -26,6 +31,7 @@ import {
 import { MenuButton, MenuItems } from "vidstack";
 import DropdownItem from "./DropdownItem";
 import Dropdown from "./Dropdown";
+import { SyncedDB } from "~/stores/syncedStore";
 
 dayjs.extend(relativeTime);
 
@@ -38,21 +44,25 @@ export default ({
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
   const [instance] = useContext(InstanceContext);
   const [thumbnail, setThumbnail] = createSignal<string | undefined>(undefined);
+  const solidStore = useContext(SolidStoreContext);
 
   createEffect(async () => {
-    if (!db()) return;
-    const tx = db()!.transaction("watch_history", "readwrite");
-    const store = tx.objectStore("watch_history");
-    const id = videoId(v);
-    if (!id) return;
-    const val = await store.get(id);
-    // setThumbnail(
-    //   v?.thumbnail?.replace("hqdefault", "mqdefault") ??
-    //     `${instance().replace(
-    //       "api",
-    //       "proxy"
-    //     )}/vi/${id}/mqdefault.jpg?host=i.ytimg.com`
-    // );
+    if (!solidStore()) return;
+    // if (!db()) return;
+    // const tx = db()!.transaction("watch_history", "readwrite");
+    // const store = tx.objectStore("watch_history");
+    // const id = videoId(v);
+    // if (!id) return;
+    // const val = await store.get(id);
+    // // setThumbnail(
+    // //   v?.thumbnail?.replace("hqdefault", "mqdefault") ??
+    // //     `${instance().replace(
+    // //       "api",
+    // //       "proxy"
+    // //     )}/vi/${id}/mqdefault.jpg?host=i.ytimg.com`
+    // // );
+    const val = SyncedDB.history.findUnique(solidStore()!, videoId(v));
+    console.log(val, "VAL")
     setProgress(val?.progress || val?.currentTime);
   });
 

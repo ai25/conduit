@@ -1,14 +1,23 @@
 // type PlayerStateContextType = PlayerSto
 
-import { createContext, createEffect, createSignal, onCleanup, useContext } from "solid-js";
+import {
+  createContext,
+  createEffect,
+  createSignal,
+  onCleanup,
+  useContext,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import { MediaPlayerElement, MediaState } from "vidstack";
-import { Dispose } from 'maverick.js';
 
-const PlayerStateContext = createContext<Readonly<MediaState>|Partial<MediaState>>({});
+const PlayerStateContext = createContext<
+  Readonly<MediaState> | Partial<MediaState>
+>({});
 
 export const PlayerStateProvider = (props: { children: any }) => {
-  const [playerState, setPlayerState] = createStore<Readonly<MediaState>| Partial<MediaState>>({});
+  const [playerState, setPlayerState] = createStore<
+    Readonly<MediaState> | Partial<MediaState>
+  >({});
   const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
 
   createEffect(() => {
@@ -16,26 +25,20 @@ export const PlayerStateProvider = (props: { children: any }) => {
       setPlayer(document.querySelector("media-player"));
     }
   });
-  let unsubscribe: Dispose | undefined;
+  let unsubscribe: () => void | undefined;
 
   createEffect(() => {
-    console.log( "attac")
     if (!player()) return;
     player()!.onAttach(() => {
-        console.log("Attached");
-      unsubscribe = player()!.subscribe(({paused}) => {
-        // console.log("Paused:", paused);
-        // console.log("Playing:", state.);
-        setPlayerState({paused});
-        console.log("setting player state attac",paused)
+      unsubscribe = player()!.subscribe(({ paused }) => {
+        setPlayerState({ paused });
       });
-
     });
   });
 
   onCleanup(() => {
     unsubscribe?.();
-    });
+  });
 
   return (
     <PlayerStateContext.Provider value={playerState}>
@@ -45,6 +48,6 @@ export const PlayerStateProvider = (props: { children: any }) => {
 };
 
 export const usePlayerState = () => {
-    const context = useContext(PlayerStateContext);
-    return context;
-}
+  const context = useContext(PlayerStateContext);
+  return context;
+};

@@ -41,3 +41,17 @@ button, a{
 .link {
   @apply text-text1 hover:text-accent1 hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-accent1 outline-none rounded focus-visible:underline ;
 }
+
+@keyframes stripe {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 200% 0%;
+  }
+}
+
+.animate-stripe {
+  background-size: 50% 100%;
+  animation: stripe 2s linear infinite;
+}

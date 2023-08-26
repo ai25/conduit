@@ -39,7 +39,7 @@ import {
   onMount,
   useContext,
 } from "solid-js";
-import { PlayerContext, PreferencesContext } from "~/root";
+import { PlayerContext, PreferencesContext, SyncContext } from "~/root";
 import { PipedVideo, PreviewFrame, RelatedStream, Subtitle } from "~/types";
 import { chaptersVtt } from "~/utils/chapters";
 import { useIsRouting, useLocation, useNavigate } from "solid-start";
@@ -58,7 +58,9 @@ import numeral from "numeral";
 import { useQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
 import dayjs from "dayjs";
-import { Dispose } from "maverick.js";
+import { SyncedDB } from "~/stores/syncedStore";
+import { usePlayerState } from "../stores/playerStateStore";
+import { MediaRemoteControl } from "vidstack";
 
 const BUFFER_LIMIT = 3;
 const BUFFER_TIME = 15000;
@@ -71,20 +73,18 @@ export default function Player() {
   const route = useLocation();
   let mediaPlayer: MediaPlayerElement | undefined = undefined;
   const [db] = useContext(DBContext);
+  const store = useContext(SyncContext);
   const updateProgress = () => {
     console.log("updating progress");
     if (!video.value) return;
     if (!started()) {
-      console.log("not started , updating");
       return;
     }
     let currentTime = mediaPlayer?.currentTime;
     if (video.value.category === "Music") {
       currentTime = 0;
     }
-    const tx = db()?.transaction("watch_history", "readwrite");
-    const store = tx?.objectStore("watch_history");
-    if (!store) return;
+    if (!store()) return;
     const id = videoId(video.value);
     if (!id) return;
 
@@ -96,6 +96,7 @@ export default function Player() {
     }
 
     const val = {
+      id,
       title: video.value.title,
       duration: video.value.duration,
       thumbnail: video.value.thumbnailUrl,
@@ -104,18 +105,34 @@ export default function Player() {
       uploaderUrl: video.value.uploaderUrl,
       url: `/watch?v=${id}`,
       isShort,
-      progress: currentTime,
+      currentTime,
       watchedAt: new Date().getTime(),
     };
     console.log("updating progress", val);
-
-    store.put(val, id);
+    SyncedDB.history.upsert(store()!, { where: { id }, data: val });
     console.log(
       `updated progress for ${video.value.title}. ${id} to ${currentTime}`
     );
   };
+  const state = usePlayerState();
 
-  const [preferences, setPreferences] = useContext(PreferencesContext);
+  // let interval: any;
+
+  // createEffect(() => {
+  //   if (!video.value) return;
+  //   if (!mediaPlayer) return;
+  //   if (!started()) return;
+  //   if (video.value.category === "Music") return
+  //   if (!state.playing) return
+  //   if (interval) clearInterval(interval);
+  //   interval = setInterval(() => {
+  //     updateProgress();
+  //   }, 1000);
+  // });
+  // onCleanup(() => {
+  //   clearInterval(interval);
+  // });
+
   const [playlist] = usePlaylist();
 
   const queueStore = useQueue();
@@ -308,28 +325,19 @@ export default function Player() {
   });
 
   createEffect(() => {
-    console.log("time effect", video.value?.title);
     if (!video.value) return;
     if (!mediaPlayer) return;
-    if (!db()) return;
+    if (!store()) return;
     if (time) return;
-    const tx = db()!.transaction("watch_history", "readonly");
-    const store = tx.objectStore("watch_history");
     const id = videoId(video.value);
-    console.log(id, "id time");
     if (!id) return;
-    store.get(id).then((v) => {
-      if (!video.value) return;
-      console.log(v, "val time");
-      const progress = v?.progress;
-      if (progress) {
-        if (progress < video.value.duration * 0.9) {
-          console.log("seeking to time", progress);
-          setCurrentTime(progress);
-        }
+    const val = SyncedDB.history.findUnique(store()!, id);
+    const progress = val?.currentTime;
+    if (progress) {
+      if (progress < video.value.duration * 0.9) {
+        setCurrentTime(progress);
       }
-      console.timeEnd("init");
-    });
+    }
   });
 
   createEffect(() => {
@@ -416,6 +424,7 @@ export default function Player() {
       info: next,
     });
   }
+
   createEffect(() => {
     if (!video.value) return;
     if (!mediaPlayer) return;
@@ -436,6 +445,7 @@ export default function Player() {
     showToast();
     updateProgress();
   };
+
   const [showEndScreen, setShowEndScreen] = createSignal(false);
   const defaultCounter = 5;
   const [counter, setCounter] = createSignal(defaultCounter);
@@ -468,6 +478,7 @@ export default function Player() {
     console.log("showing end screen");
     setShowEndScreen(true);
   }
+
   function dismiss() {
     console.log("dismiss");
     clearInterval(timeoutCounter);
@@ -503,75 +514,35 @@ export default function Player() {
     console.log(error());
   };
 
-  //   function selectDefaultQuality() {
-  //     let preferredQuality = 1080; // TODO: get from user settings
-  //     if (!mediaPlayer.value) return;
-  //     console.log(mediaPlayer.value.qualities);
-  //     const q = mediaPlayer.value.qualities.toArray().find((q) => q.height >= preferredQuality);
-  //     console.log(q);
-  //     if (q) {
-  //       q.selected = true;
-  //     }
-  //   }
-  //   const pos = {
-  //     tl: "top-0 -left-72",
-  //   };
-  //   return (
-  //     <media-player
-  //   src="https://stream.mux.com/VZtzUzGRv02OhRnZCxcNg49OilvolTqdnFLEqBsTwaxU/low.mp4"
-  //   poster="https://image.mux.com/VZtzUzGRv02OhRnZCxcNg49OilvolTqdnFLEqBsTwaxU/thumbnail.webp?time=268&width=980"
-  //   thumbnails="https://media-files.vidstack.io/sprite-fight/thumbnails.vtt"
-  //   aspect-ratio="16/9"
-  //   crossorigin
-  // >
-  //   <media-outlet>
-  //     <media-poster
-  //       alt="Girl walks into sprite gnomes around her friend on a campfire in danger!"
-  //     ></media-poster>
-  //    <track
-  //       src="https://media-files.vidstack.io/sprite-fight/subs/english.vtt"
-  //       label="English"
-  //       srclang="en-US"
-  //       kind="subtitles"
-  //       default
-  //     />
-  //     <track
-  //       src="https://media-files.vidstack.io/sprite-fight/chapters.vtt"
-  //       srclang="en-US"
-  //       kind="chapters"
-  //       default
-  //     />
-  //   </media-outlet>
-  //   <media-community-skin></media-community-skin>
-  // </media-player>
-
-  //   )
-  let outlet: any;
-  function toggleFloating(floating: boolean) {
-    const container = document.getElementById("pip-container");
-    if (!container) return;
-    if (floating) {
-      container.append(outlet);
-      if (container.classList.contains("hidden")) {
-        container.classList.remove("hidden");
-      }
-    } else {
-      if (!container.classList.contains("hidden")) {
-        container.classList.add("hidden");
-      }
-      mediaPlayer?.prepend(outlet);
+  function selectDefaultQuality() {
+    let preferredQuality = 1080; // TODO: get from user settings
+    if (!mediaPlayer) return;
+    console.log(mediaPlayer.qualities);
+    const q = mediaPlayer.qualities
+      .toArray()
+      .find((q) => q.height >= preferredQuality);
+    console.log(q);
+    if (q) {
+      q.selected = true;
     }
   }
+  createEffect(() => {
+    if (!mediaPlayer) return;
+    if (!video.value) return;
+    selectDefaultQuality();
+  });
 
   onMount(() => {
     console.log("mount", mediaPlayer);
     document.addEventListener("beforeunload", updateProgress);
     document.addEventListener("visibilitychange", updateProgress);
   });
+
   onCleanup(() => {
     document.removeEventListener("beforeunload", updateProgress);
     document.removeEventListener("visibilitychange", updateProgress);
   });
+
   const isRouting = useIsRouting();
   const navigate = useNavigate();
   createEffect(() => {
@@ -585,11 +556,6 @@ export default function Player() {
       // }
       updateProgress();
     }
-    // if (route.pathname !== "/watch") {
-    //   toggleFloating(true);
-    // } else {
-    //   toggleFloating(false);
-    // }
   });
 
   const generateStoryboard = (
@@ -641,25 +607,26 @@ export default function Player() {
     return URL.createObjectURL(blob);
   };
   const [mediaPlayerConnected, setMediaPlayerConnected] = createSignal(false);
-  let unsubscribe: Dispose | undefined;
 
   createEffect(() => {
     if (!mediaPlayerConnected()) return;
     if (!video.value) return;
-    document.addEventListener("keydown", handleKeyDown);  
-    unsubscribe = mediaPlayer!.subscribe(({ paused, playing, }) => {
-      console.log('Paused:', paused);
-      // console.log('Playing:', playing);
-    });
+    document.addEventListener("keydown", handleKeyDown);
   });
+
   onCleanup(() => {
-    unsubscribe?.();
+    document.removeEventListener("keydown", handleKeyDown);
   });
+
+  const remote = new MediaRemoteControl();
+
   const handleKeyDown = (e: KeyboardEvent) => {
     console.log(e.key);
+    // if an input is focused
+    if (document.activeElement?.tagName === "INPUT") return;
     switch (e.key) {
       case "f":
-        mediaPlayer?.requestFullscreen();
+        remote.toggleFullscreen();
         e.preventDefault();
         break;
       case "m":
@@ -678,7 +645,7 @@ export default function Player() {
         e.preventDefault();
         break;
       case "c":
-        // mediaPlayer!.textTracks
+        remote.toggleCaptions();
         e.preventDefault();
         break;
       case "k":
@@ -687,62 +654,63 @@ export default function Player() {
         else mediaPlayer!.pause();
         e.preventDefault();
         break;
-      // case "up":
-      //   videoEl.volume = Math.min(videoEl.volume + 0.05, 1);
-      //   e.preventDefault();
-      //   break;
-      // case "down":
-      //   videoEl.volume = Math.max(videoEl.volume - 0.05, 0);
-      //   e.preventDefault();
-      //   break;
+      case "up":
+        mediaPlayer!.volume = Math.min(mediaPlayer!.volume + 0.05, 1);
+        e.preventDefault();
+        break;
+      case "down":
+        mediaPlayer!.volume = Math.max(mediaPlayer!.volume - 0.05, 0);
+        e.preventDefault();
+        break;
       case "ArrowLeft":
         mediaPlayer!.currentTime = Math.max(mediaPlayer!.currentTime - 5, 0);
+        remote.toggleUserIdle();
         e.preventDefault();
         break;
       case "ArrowRight":
         mediaPlayer!.currentTime = mediaPlayer!.currentTime + 5;
         e.preventDefault();
         break;
-      // case "0":
-      //   videoEl.currentTime = 0;
-      //   e.preventDefault();
-      //   break;
-      // case "1":
-      //   videoEl.currentTime = videoEl.duration * 0.1;
-      //   e.preventDefault();
-      //   break;
-      // case "2":
-      //   videoEl.currentTime = videoEl.duration * 0.2;
-      //   e.preventDefault();
-      //   break;
-      // case "3":
-      //   videoEl.currentTime = videoEl.duration * 0.3;
-      //   e.preventDefault();
-      //   break;
-      // case "4":
-      //   videoEl.currentTime = videoEl.duration * 0.4;
-      //   e.preventDefault();
-      //   break;
-      // case "5":
-      //   videoEl.currentTime = videoEl.duration * 0.5;
-      //   e.preventDefault();
-      //   break;
-      // case "6":
-      //   videoEl.currentTime = videoEl.duration * 0.6;
-      //   e.preventDefault();
-      //   break;
-      // case "7":
-      //   videoEl.currentTime = videoEl.duration * 0.7;
-      //   e.preventDefault();
-      //   break;
-      // case "8":
-      //   videoEl.currentTime = videoEl.duration * 0.8;
-      //   e.preventDefault();
-      //   break;
-      // case "9":
-      //   videoEl.currentTime = videoEl.duration * 0.9;
-      //   e.preventDefault();
-      //   break;
+      case "0":
+        mediaPlayer!.currentTime = 0;
+        e.preventDefault();
+        break;
+      case "1":
+        mediaPlayer!.currentTime = video.value!.duration * 0.1;
+        e.preventDefault();
+        break;
+      case "2":
+        mediaPlayer!.currentTime = video.value!.duration * 0.2;
+        e.preventDefault();
+        break;
+      case "3":
+        mediaPlayer!.currentTime = video.value!.duration * 0.3;
+        e.preventDefault();
+        break;
+      case "4":
+        mediaPlayer!.currentTime = video.value!.duration * 0.4;
+        e.preventDefault();
+        break;
+      case "5":
+        mediaPlayer!.currentTime = video.value!.duration * 0.5;
+        e.preventDefault();
+        break;
+      case "6":
+        mediaPlayer!.currentTime = video.value!.duration * 0.6;
+        e.preventDefault();
+        break;
+      case "7":
+        mediaPlayer!.currentTime = video.value!.duration * 0.7;
+        e.preventDefault();
+        break;
+      case "8":
+        mediaPlayer!.currentTime = video.value!.duration * 0.8;
+        e.preventDefault();
+        break;
+      case "9":
+        mediaPlayer!.currentTime = video.value!.duration * 0.9;
+        e.preventDefault();
+        break;
       case "N":
         if (e.shiftKey) {
           playNext();
@@ -750,11 +718,11 @@ export default function Player() {
         }
         break;
       case "Escape":
-        if (ended()) {
+        if (showEndScreen() && nextVideo()) {
           dismiss();
           e.preventDefault();
         } else if (document.fullscreenElement) {
-          mediaPlayer?.exitFullscreen();
+          // mediaPlayer?.exitFullscreen();
           e.preventDefault();
         }
         break;
@@ -766,7 +734,7 @@ export default function Player() {
         mediaPlayer!.currentTime += 0.04;
         break;
       // case "return":
-      //   self.skipSegment(videoEl);
+      //   self.skipSegment(mediaPlayer!);
       //   break;
     }
   };
@@ -812,8 +780,8 @@ export default function Player() {
       thumbnails={generateStoryboard(video.value?.previewFrames[1])}
       crossorigin="anonymous">
       <media-outlet
-        // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
-        ref={outlet}>
+      // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
+      >
         <media-poster alt={video.value?.title ?? ""} />
         {tracks().map((track) => {
           return (

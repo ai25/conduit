@@ -1,18 +1,36 @@
 import { createEffect, createSignal, useContext } from "solid-js";
-import { DBContext } from "~/root";
+import { DBContext, SolidStoreContext } from "~/root";
 import HLS from "hls.js";
 import { MediaPlayerElement } from "vidstack";
 import { Show } from "solid-js";
 import { A } from "solid-start";
+import { Playlist } from "~/types";
+import { SyncedDB } from "~/stores/syncedStore";
 
 export default function Playlists() {
   const [db] = useContext(DBContext);
-  createEffect(async () => {
-    if (!db()) return;
-    const tx = db()!.transaction("playlists", "readwrite");
-    const store = tx.objectStore("playlists");
-    const l = await store.put(list, list.id);
+  const solidStore = useContext(SolidStoreContext);
+  createEffect(() => {
+    if (!solidStore()) return;
+    let playlist = list;
+    const l: Playlist = {
+      id: playlist.id,
+      bannerUrl: playlist.thumbnail,
+      description: "",
+      name: playlist.name,
+      nextpage: "",
+      relatedStreams: playlist.videos,
+      thumbnailUrl: playlist.thumbnail,
+      uploader: "You",
+      uploaderUrl: "",
+      uploaderAvatar: "",
+      videos: playlist.videos.length,
+    };
     console.log(l);
+    SyncedDB.playlists.upsert(solidStore()!, {
+      where: { id: playlist.id },
+      data: l,
+    });
   });
 
   const list = {

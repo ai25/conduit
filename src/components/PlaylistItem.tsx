@@ -5,14 +5,17 @@ import {
   createEffect,
   createRenderEffect,
   createSignal,
+  onCleanup,
+  onMount,
   useContext,
 } from "solid-js";
-import { DBContext } from "~/root";
+import { DBContext, SolidStoreContext } from "~/root";
 import { videoId } from "~/routes/history";
 import { RelatedStream } from "~/types";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
 import DropdownItem from "./DropdownItem";
+import { SyncedDB } from "~/stores/syncedStore";
 
 const PlaylistItem = (props: {
   v: RelatedStream;
@@ -22,14 +25,11 @@ const PlaylistItem = (props: {
 }) => {
   const [db] = useContext(DBContext);
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
+  const solidStore = useContext(SolidStoreContext);
 
   createRenderEffect(async () => {
-    if (!db()) return;
-    const tx = db()!.transaction("watch_history", "readwrite");
-    const store = tx.objectStore("watch_history");
-    const id = videoId(props.v);
-    if (!id) return;
-    const val = await store.get(id);
+    if (!solidStore()) return;
+    const val = SyncedDB.history.findUnique(solidStore()!, videoId(props.v));
     // setThumbnail(
     //   v?.thumbnail?.replace("hqdefault", "mqdefault") ??
     //     `${instance().replace(
@@ -37,32 +37,15 @@ const PlaylistItem = (props: {
     //       "proxy"
     //     )}/vi/${id}/mqdefault.jpg?host=i.ytimg.com`
     // );
-    setProgress(val?.progress || val?.currentTime);
+    setProgress(val?.currentTime);
   });
   let card: HTMLAnchorElement | undefined = undefined;
-  createEffect(() => {
+  onMount(() => {
     console.log("effect");
     import("long-press-event");
     if (!card) return;
     props.index;
     props.active;
-    setTimeout(() => {
-      if (parseInt(props.active) === props.index) {
-      console.log("scrolling to", props.index);
-        card?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "start",
-
-        });
-        card?.focus();
-        document.querySelector("media-player")?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "start",
-        });
-      }
-    }, 1000);
     card.addEventListener("long-press", (e) => {
       e.preventDefault();
       console.log("long press");
@@ -72,15 +55,21 @@ const PlaylistItem = (props: {
       e.preventDefault();
     });
   });
+  onCleanup(() => {
+    if (!card) return;
+    card.removeEventListener("long-press", () => {});
+    card.removeEventListener("contextmenu", () => {});
+  });
   const [isOpen, setIsOpen] = createSignal(false);
 
   return (
     <A
+      draggable="false"
       data-long-press-delay="500"
       ref={card}
       href={`${props.v.url}&list=${props.list}&index=${props.index}`}
       // style={{ "background-image": `url(${props.v.thumbnail})` }}
-      class={`select-none relative min-h-[5rem] flex justify-between bg-bg2 hover:bg-bg1 px-1 mx-1 py-2 rounded-lg text-text1`}>
+      class={`select-none relative min-h-[5rem] flex justify-between bg-bg2 hover:bg-bg1 px-1 focus-visible:ring-2 focus-visible:ring-accent1 outline-none mx-1 py-2 rounded-lg text-text1`}>
       <div
         classList={{
           "bg-primary/50 ": parseInt(props.active) === props.index,
@@ -90,9 +79,9 @@ const PlaylistItem = (props: {
         <div
           classList={{
             "bg-primary text-text3 ": parseInt(props.active) === props.index,
-            "bg-bg1/80 text-text1": parseInt(props.active) !== props.index,
+            "bg-bg2 text-text1": parseInt(props.active) !== props.index,
           }}
-          class="flex absolute top-1 left-0 ring-1 ring-bg1 font-bold flex-col items-center justify-center min-w-[1rem] rounded px-1 text-xs">
+          class="flex absolute aspect-square -top-2 -left-1  py-2 font-bold flex-col items-center justify-center h-4 rounded-md rounded-bl-none rounded-tr-none px-3 text-xs">
           {props.index}
         </div>
         <div class="shadow-xl my-auto w-0 min-w-[6rem] @[20rem]:min-w-[7rem] @[35rem]:min-w-[9rem] @[50rem]:min-w-[11rem]max-w-[6rem] @[20rem]:max-w-[7rem] @[35rem]:max-w-[9rem] @[50rem]:max-w-[11rem] aspect-video max-h-full rounded-lg ">
@@ -124,8 +113,10 @@ const PlaylistItem = (props: {
             class="max-h-10 min-w-0 font-bold max-w-full text-sm overflow-hidden overflow-ellipsis ">
             {props.v.title}{" "}
           </div>
-          <div class="truncate text-xs">
-            <A href={props.v.uploaderUrl} class="inline-block mr-1 link">
+          <div class="truncate text-xs text-text2">
+            <A
+              href={props.v.uploaderUrl}
+              class="inline-block mr-1 link !text-text2">
               {props.v.uploaderName} •
             </A>
             <div class="inline-block mr-1">
@@ -161,4 +152,4 @@ const PlaylistItem = (props: {
   );
 };
 
-export default PlaylistItem
+export default PlaylistItem;

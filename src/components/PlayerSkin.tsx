@@ -261,7 +261,6 @@ export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
         {/* Centre Controls */}
         <div class="flex min-h-[48px] w-full p-2 items-center justify-center">
           <media-play-button
-            aria-keyshortcuts="k Space"
             class="group pointer-events-auto buffering:opacity-0 duration-500 text-white rounded-full bg-black/30 outline-none flex sm:hidden justify-center items-center transition-all relative h-20 w-20"
             aria-label="Play">
             <media-icon
@@ -312,7 +311,6 @@ export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
 
           <div class="flex items-center px-2 w-full z-10">
             <media-play-button
-              aria-keyshortcuts="k Space"
               class="group hidden sm:inline-flex"
               aria-label="Play">
               <media-icon
@@ -333,7 +331,6 @@ export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
               </media-tooltip>
             </media-play-button>
             <media-mute-button
-              aria-keyshortcuts="m"
               class="group peer hidden sm:flex">
               <media-icon
                 type="mute"
@@ -353,7 +350,6 @@ export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
               </media-tooltip>
             </media-mute-button>
             <media-volume-slider
-              aria-keyshortcuts="ArrowUp ArrowDown"
               key-step="5"
               shift-key-multiplier="2"
               class="group hidden sm:inline-block transition-all duration-200 max-w-0 hover:max-w-[5rem] peer-hover:max-w-[5rem] data-[hocus]:max-w-[5rem] peer-data-[hocus]:max-w-[5rem] "
@@ -394,7 +390,6 @@ export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
               </div>
             </div>
             <media-caption-button
-              aria-keyshortcuts="c"
               aria-label="Captions"
               class="group z-10 inline-flex h-10 w-10 items-center justify-center rounded-sm text-white outline-none ">
               <media-icon
@@ -417,7 +412,6 @@ export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
                   theatreMode: !state.theatreMode,
                 }));
               }}
-              aria-keyshortcuts="t"
               aria-label="Theatre Mode"
               class="group z-10 hidden lg:inline-flex fullscreen:hidden h-10 w-10 items-center justify-center rounded-sm text-white outline-none ">
               <media-icon
@@ -592,7 +586,6 @@ const CenterGesture = (props: {
 const FullscreenButton = () => {
   return (
     <media-fullscreen-button
-      aria-keyshortcuts="f"
       aria-label="Fullscreen"
       class="group z-10 h-10 w-10 ">
       <media-icon
