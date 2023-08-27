@@ -102,6 +102,9 @@ devDependencies:
   vitest:
     specifier: ^0.34.3
     version: 0.34.3
+  workbox-window:
+    specifier: ^7.0.0
+    version: 7.0.0
 
 packages:
 
@@ -2163,7 +2166,6 @@ packages:
 
   /@types/trusted-types@2.0.3:
     resolution: {integrity: sha512-NfQ4gyz38SL8sDNrSixxU2Os1a5xcdFxipAFxYEuLUlvU2uDwS4NUpsImcf1//SlWItCVMMLiylsxbmNMToV/g==}
-    dev: false
 
   /@vercel/nft@0.22.6:
     resolution: {integrity: sha512-gTsFnnT4mGxodr4AUlW3/urY+8JKKB452LwF3m477RFUJTAaDmcz2JqFuInzvdybYIeyIv1sSONEJxsxnbQ5JQ==}
@@ -5375,7 +5377,6 @@ packages:
 
   /workbox-core@7.0.0:
     resolution: {integrity: sha512-81JkAAZtfVP8darBpfRTovHg8DGAVrKFgHpOArZbdFd78VqHr5Iw65f2guwjE2NlCFbPFDoez3D3/6ZvhI/rwQ==}
-    dev: false
 
   /workbox-expiration@7.0.0:
     resolution: {integrity: sha512-MLK+fogW+pC3IWU9SFE+FRStvDVutwJMR5if1g7oBJx3qwmO69BNoJQVaMXq41R0gg3MzxVfwOGKx3i9P6sOLQ==}
@@ -5452,7 +5453,6 @@ packages:
     dependencies:
       '@types/trusted-types': 2.0.3
       workbox-core: 7.0.0
-    dev: false
 
   /wrap-ansi@7.0.0:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}

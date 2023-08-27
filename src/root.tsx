@@ -68,9 +68,9 @@ import { WebrtcProvider } from "y-webrtc";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { AppStateProvider, useAppState } from "./stores/appStateStore";
 
-// const updateSW = registerSW({
-//   onOfflineReady() {},
-// })
+registerSW({
+  onOfflineReady() {},
+})
 const theme = createSignal("monokai");
 export const ThemeContext = createContext(theme);
 

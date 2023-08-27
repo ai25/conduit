@@ -3,7 +3,6 @@ import { defineConfig } from "vite";
 import devtools from "solid-devtools/vite";
 import vercel from "solid-start-vercel";
 import { VitePWA } from "vite-plugin-pwa";
-import nodePolyfills from "rollup-plugin-polyfill-node";
 
 
 export default defineConfig({
