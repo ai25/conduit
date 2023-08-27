@@ -1,6 +1,13 @@
 import { PipedInstance } from "~/types";
 import Select from "~/components/Select";
-import { For, JSX, createEffect, createSignal, useContext } from "solid-js";
+import {
+  For,
+  JSX,
+  Show,
+  createEffect,
+  createSignal,
+  useContext,
+} from "solid-js";
 import { InstanceContext, PreferencesContext, ThemeContext } from "~/root";
 import { useCookie } from "~/utils/hooks";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
@@ -20,6 +27,9 @@ import {
 import Dropdown from "./Dropdown";
 import DropdownItem from "./DropdownItem";
 import Search from "./SearchInput";
+import Modal from "./Modal";
+import Button from "./Button";
+import Field from "./Field";
 
 function classNames(...classes: (string | boolean | undefined)[]): string {
   return classes.filter(Boolean).join(" ");
@@ -101,6 +111,15 @@ const Header = () => {
   });
 
   const navigate = useNavigate();
+  const [modalOpen, setModalOpen] = createSignal(false);
+  const [roomId, setRoomId] = createSignal("");
+  const [password, setPassword] = createSignal("");
+
+  createEffect(() => {
+    const room = JSON.parse(localStorage.getItem("room") || "{}");
+    setRoomId(room.id || "");
+    setPassword(room.password || "");
+  });
 
   return (
     <nav class="fixed bg-bg2 w-full z-[99999] -mx-2 h-10 flex items-center justify-between">
@@ -114,9 +133,7 @@ const Header = () => {
       <ul class="hidden lg:flex items-center justify-between px-2 mr-auto">
         <For each={links}>
           {(link) => (
-            <A
-              href={link.href}
-              class="link text-sm p-1 text-left transition ">
+            <A href={link.href} class="link text-sm p-1 text-left transition ">
               {link.label}
             </A>
           )}
@@ -125,6 +142,37 @@ const Header = () => {
           <Search />
         </div>
       </ul>
+      <div class="flex items-center justify-center">
+        <Show when={!roomId()}>
+          <Button label="Join" onClick={() => setModalOpen(true)} />
+        </Show>
+        <Show when={roomId()}>
+          <Dropdown
+            class="mx-2"
+            panelPosition="right"
+            iconPosition="left"
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-green-600"
+                viewBox="0 0 20 20"
+                fill="currentColor">
+                <circle cx="10" cy="10" r="10" />
+              </svg>
+            }>
+            <div class="text-sm p-1 text-left flex gap-2 items-center text-green-600">
+              Connected: {roomId()}
+              <Button
+                label="Leave"
+                onClick={() => {
+                  localStorage.removeItem("room");
+                  location.reload();
+                }}
+              />
+            </div>
+          </Dropdown>
+        </Show>
+      </div>
 
       <div class="w-80 hidden lg:flex items-center gap-2">
         <Sel
@@ -270,6 +318,40 @@ const Header = () => {
           </Popover>
         </div>
       </div>
+      <Modal
+        isOpen={modalOpen()}
+        onClose={() => setModalOpen(false)}
+        title="Join Room"
+        setIsOpen={setModalOpen}>
+        <div class="w-full h-full bg-bg1">
+          <div class="p-4 flex flex-col items-center justify-center gap-2">
+            <Field
+              name="room"
+              type="text"
+              placeholder="Room ID"
+              value={roomId()}
+              onInput={(e) => setRoomId(e.currentTarget!.value)}
+            />
+            <Field
+              name="password"
+              type="password"
+              placeholder="Password"
+              value={password()}
+              onInput={(e) => setPassword(e.currentTarget.value)}
+            />
+            <Button
+              onClick={() => {
+                localStorage.setItem(
+                  "room",
+                  JSON.stringify({ id: roomId(), password: password() })
+                );
+                location.reload();
+              }}
+              label="Join"
+            />
+          </div>
+        </div>
+      </Modal>
     </nav>
   );
 };
@@ -331,6 +413,13 @@ const Sel = (props: {
         </Dropdown>
       </div>
     </>
+  );
+};
+const StatusBar = () => {
+  if (roomId()) return <div class="py-2">Connected: {roomId()}</div>;
+
+  return (
+    <div class="fixed bottom-0 left-0 right-0 bg-bg2 p-2 flex items-center justify-between"></div>
   );
 };
 

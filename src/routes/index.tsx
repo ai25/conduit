@@ -26,7 +26,7 @@ const [error, setError] = createSignal();
 
 export default function Home() {
   const [db] = useContext(DBContext);
-  const store = useContext(SyncContext)
+  // const store = useContext(SyncContext)
   // const [doc, setDoc] = createSignal<Y.Doc>();
   // const [store, setStore] = createSignal<Store>({
   //   playlists: [],
@@ -43,7 +43,7 @@ export default function Home() {
     const request = await idbStore.getAll();
     console.log(request);
     if (!request) return;
-    SyncedDB.playlists.create(store, {...playlists[0], id: playlists[0].id});
+    // SyncedDB.playlists.create(store, {...playlists[0], id: playlists[0].id});
     // // wait 3 seconds between each related stream
     // playlists[0].relatedStreams.forEach((stream, index) => {
     //   setTimeout(() => {

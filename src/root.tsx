@@ -227,7 +227,7 @@ export default function Root() {
   createEffect(() => {
     if (!isServer) {
       console.log(clone(store()), "store");
-
+      if (!store()) return
       observeDeep(store(), () => {
         console.log("store changed");
         setSolidStore(clone(store()));
@@ -289,9 +289,6 @@ export default function Root() {
                               <Header />
                               <div aria-hidden="true" class="h-10" />
                               <div class="bg-bg2 py-2"></div>
-                              <Show when={!isServer}>
-                                <StatusBar />
-                              </Show>
                               <PlayerContainer />
                               {/* <PipContainer />{" "} */}
                               <Routes>
@@ -341,52 +338,6 @@ export default function Root() {
   );
 }
 
-const StatusBar = () => {
-  const [roomId, setRoomId] = createSignal("");
-  const [password, setPassword] = createSignal("");
-
-  createEffect(() => {
-    const room = JSON.parse(localStorage.getItem("room") || "{}");
-    setRoomId(room.id || "");
-    setPassword(room.password || "");
-  });
-
-  if (roomId()) return <div class="py-2">Connected: {roomId()}</div>;
-
-  return (
-    <div class="fixed bottom-0 left-0 right-0 bg-bg2 p-2 flex items-center justify-between">
-      <div class="flex items-center">
-        <label class="text-text1 mr-2">Room ID</label>
-        <input
-          type="text"
-          value={roomId()}
-          onInput={(e) => setRoomId(e.currentTarget.value)}
-          class="bg-bg1 text-text1 p-2 rounded-lg"
-        />
-      </div>
-      <div class="flex items-center">
-        <label class="text-text1 mr-2">Password</label>
-        <input
-          type="text"
-          value={password()}
-          onInput={(e) => setPassword(e.currentTarget.value)}
-          class="bg-bg1 text-text1 p-2 rounded-lg"
-        />
-      </div>
-      <button
-        onClick={() => {
-          localStorage.setItem(
-            "room",
-            JSON.stringify({ id: roomId(), password: password() })
-          );
-          location.reload();
-        }}
-        class="bg-primary text-text1 p-2 rounded-lg">
-        Join
-      </button>
-    </div>
-  );
-};
 // const PipContainer = () => {
 //   const [userIdle, setUserIdle] = createSignal(true);
 //   const [playing, setPlaying] = createSignal(false);
