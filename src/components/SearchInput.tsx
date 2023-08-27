@@ -1,42 +1,92 @@
-import { For, createEffect, createSignal, useContext } from "solid-js";
+import {
+  For,
+  Show,
+  createEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+  useContext,
+} from "solid-js";
 import { useNavigate } from "solid-start";
 import { InstanceContext } from "~/root";
 import Dropdown from "./Dropdown";
 import DropdownItem from "./DropdownItem";
+import { Combobox } from "@kobalte/core";
+import { BsCaretDown } from "solid-icons/bs";
 
 const Search = () => {
-  const [search, setSearch] = createSignal<string | null>(null);
-  const [suggestions, setSuggestions] = createSignal<string[]>([]);
+  const [search, setSearch] = createSignal<string>("");
+  // const [suggestions, setSuggestions] = createSignal<string[]>([]);
   const [instance] = useContext(InstanceContext);
   async function getSuggestions(value: string) {
+    if (!value) return;
     const res = await fetch(`${instance()}/suggestions?query=${value}`);
     console.log(res);
     if (res.status === 200) {
       const json = await res.json();
       console.log(json);
-      setSuggestions(json);
+      if (json.length > 0) {
+        setOptions(json);
+      } else {
+        setOptions([]);
+      }
     } else {
       console.error("Failed to fetch suggestions", res.text());
     }
   }
   const navigate = useNavigate();
-  createEffect(() => {
-    setSuggestions([]);
-    if (search() && search()!.length > 1) {
-      getSuggestions(search()!);
-    }
-  });
+  // createEffect(() => {
+  //   setSuggestions([]);
+  //   if (search() && search()!.length > 1) {
+  //     getSuggestions(search()!);
+  //   }
+  // });
 
   function handleSearch(input: string) {
-    setSuggestions([]);
-    setSearch(null);
+    // setSuggestions([]);
+    // setSearch(null);
     console.log(input);
     navigate(`/search?q=${input}`, { replace: false });
   }
-  const [hasFocus, setHasFocus] = createSignal(false);
+  const [options, setOptions] = createSignal([]);
+  const onOpenChange = (
+    isOpen: boolean,
+    triggerMode?: Combobox.ComboboxTriggerMode
+  ) => {
+    // Show all options on ArrowDown/ArrowUp and button click.
+    if (isOpen && triggerMode === "manual") {
+      // setOptions(suggestions());
+    }
+  };
+  const onInputChange = (value: string) => {
+    setSearch(value);
+    getSuggestions(value);
+    console.log(options(), "OPTIONS");
+  };
+  const [showPlaceholder, setShowPlaceholder] = createSignal(true);
+  let inputRef: HTMLInputElement | undefined = undefined;
+  onMount(() => {
+    document.addEventListener("keydown", handleKeyDown);
+  });
+  function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === "k" && e.ctrlKey) {
+      e.preventDefault();
+      inputRef?.focus();
+    }
+    if (e.key === "Enter") {
+      console.dir( inputRef?.getAttribute("aria-expanded"))
+      if (inputRef?.getAttribute("aria-expanded")) {
+        if (!search()) return;
+        handleSearch(search()!);
+      }
+    }
+  }
+  onCleanup(() => {
+    document.removeEventListener("keydown", handleKeyDown);
+  });
   return (
-    <div class="inline-block max-w-md">
-      <form
+    <>
+      {/* <form
         onSubmit={(e) => {
           e.preventDefault();
           handleSearch(search()!);
@@ -72,6 +122,7 @@ const Search = () => {
           />
         </svg>
         <Dropdown
+          panelPosition="center"
           showButton={false}
           show={suggestions().length > 0 && hasFocus()}>
           <For each={suggestions()}>
@@ -84,8 +135,44 @@ const Search = () => {
             )}
           </For>
         </Dropdown>
-      </form>
-    </div>
+      </form> */}
+      <Combobox.Root
+        // value={search()}
+        // onChange={setSearch}
+        options={options()}
+        onInputChange={onInputChange}
+        onOpenChange={onOpenChange}
+        triggerMode="focus"
+        placeholder="Search… (⌘+K)"
+        itemComponent={(props) => (
+          <Combobox.Item
+            onClick={() => {
+              console.log(props.item);
+              handleSearch(props.item.rawValue);
+            }}
+            item={props.item}
+            class="text-base data-[highlighted]:bg-bg1 leading-none text-text1 bg-bg2 rounded-md flex items-center justify-between h-8 px-2 relative select-none outline-none">
+            <Combobox.ItemLabel>{props.item.rawValue}</Combobox.ItemLabel>
+            {/* <Combobox.ItemIndicator class="combobox__item-indicator">
+              <CheckIcon />
+            </Combobox.ItemIndicator> */}
+          </Combobox.Item>
+        )}>
+        <Combobox.Control class="inline-flex text-sm justify-between w-50 rounded-md leading-none outline-none bg-bg1 border border-bg1 text-text1 transition-colors duration-250">
+          {({ selectedOptions }) => (
+            <Combobox.Input
+              ref={inputRef}
+              class="appearance-none focus-visible:ring-2 focus-visible:ring-primary text-text1 bg-bg1 inline-flex w-full min-h-10 pl-4 rounded-md outline-none"
+            />
+          )}
+        </Combobox.Control>
+        <Combobox.Portal>
+          <Combobox.Content class="bg-bg2 z-[999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-contentHide">
+            <Combobox.Listbox class="overflow-y-auto max-h-90 p-2 focus:outline-none" />
+          </Combobox.Content>
+        </Combobox.Portal>
+      </Combobox.Root>
+    </>
   );
 };
 

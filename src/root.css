@@ -8,7 +8,7 @@
 }
 
 body {
-  @apply overscroll-y-contain
+  @apply overscroll-y-contain;
 }
 
 svg {
@@ -23,23 +23,24 @@ svg {
 }
 
 .scrollbar::-webkit-scrollbar {
-  @apply w-1 overflow-hidden 
+  @apply w-1 overflow-hidden;
 }
 .scrollbar::-webkit-scrollbar-track {
-    @apply bg-bg2 mr-1;
+  @apply bg-bg2 mr-1;
 }
 .scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-primary rounded
+  @apply bg-primary rounded;
 }
 .scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-accent1;
+  @apply bg-accent1;
 }
 
-button, a{
-  -webkit-tap-highlight-color: transparent
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
 }
 .link {
-  @apply text-text1 hover:text-accent1 hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-accent1 outline-none rounded focus-visible:underline ;
+  @apply focus-visible:outline-none text-text1 hover:text-accent1 hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-accent1 outline-none rounded focus-visible:underline;
 }
 
 @keyframes stripe {
@@ -54,4 +55,17 @@ button, a{
 .animate-stripe {
   background-size: 50% 100%;
   animation: stripe 2s linear infinite;
+}
+.two-line-ellipsis {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: all 0.5s ease;
+  max-height: 3em;
+}
+.two-line-ellipsis:hover {
+  -webkit-line-clamp: none;
+  max-height: 100%;
+  overflow-y: auto;
 }

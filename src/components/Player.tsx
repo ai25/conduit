@@ -107,6 +107,10 @@ export default function Player() {
       isShort,
       currentTime,
       watchedAt: new Date().getTime(),
+      type: "stream",
+      uploaded: dayjs(video.value.uploadDate).unix(),
+      uploaderVerified: video.value.uploaderVerified,
+      views: video.value.views,
     };
     console.log("updating progress", val);
     SyncedDB.history.upsert(store()!, { where: { id }, data: val });

@@ -143,9 +143,6 @@ const Header = () => {
         </div>
       </ul>
       <div class="flex items-center justify-center">
-        <Show when={!roomId()}>
-          <Button label="Join" onClick={() => setModalOpen(true)} />
-        </Show>
         <Show when={roomId()}>
           <Dropdown
             class="mx-2"
@@ -171,6 +168,30 @@ const Header = () => {
               />
             </div>
           </Dropdown>
+        </Show>
+        <Show when={!roomId()}>
+          <Dropdown
+            class="mx-2"
+            panelPosition="right"
+            iconPosition="left"
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-red-600"
+                viewBox="0 0 20 20"
+                fill="currentColor">
+                <circle cx="10" cy="10" r="10" />
+              </svg>
+            }>
+            <div class="text-sm p-1 text-left flex flex-col gap-2 items-center text-red-600">
+              Disconnected
+              <Button
+                label="Join room"
+                onClick={() => setModalOpen(true)}
+              />
+            </div>
+          </Dropdown>
+          
         </Show>
       </div>
 
@@ -413,13 +434,6 @@ const Sel = (props: {
         </Dropdown>
       </div>
     </>
-  );
-};
-const StatusBar = () => {
-  if (roomId()) return <div class="py-2">Connected: {roomId()}</div>;
-
-  return (
-    <div class="fixed bottom-0 left-0 right-0 bg-bg2 p-2 flex items-center justify-between"></div>
   );
 };
 

@@ -6,6 +6,9 @@ import { VitePWA } from "vite-plugin-pwa";
 
 
 export default defineConfig({
+  ssr: {
+    noExternal: ["@kobalte/core", "@internationalized/message"],
+  },
   plugins: [
     // devtools({
     //   /* features options - all disabled by default */

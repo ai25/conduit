@@ -67,6 +67,9 @@ import syncedStore, { getYjsDoc, observeDeep } from "@syncedstore/core";
 import { WebrtcProvider } from "y-webrtc";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { AppStateProvider, useAppState } from "./stores/appStateStore";
+import BottomNav from "./components/BottomNav";
+import { TiHome } from "solid-icons/ti";
+import { AiOutlineFire, AiOutlineMenu } from "solid-icons/ai";
 
 // if (!isServer) {
 //   registerSW({
@@ -227,7 +230,7 @@ export default function Root() {
   createEffect(() => {
     if (!isServer) {
       console.log(clone(store()), "store");
-      if (!store()) return
+      if (!store()) return;
       observeDeep(store(), () => {
         console.log("store changed");
         setSolidStore(clone(store()));
@@ -253,6 +256,22 @@ export default function Root() {
     webrtcProvider?.disconnect();
   });
   const [appState] = useAppState();
+
+  // function handleKeyDown(e: KeyboardEvent) {
+  //   if (e.key === "K" && e.ctrlKey) {
+  //     e.preventDefault();
+  //     const input = document.querySelectorAll("input")[0]
+  //     input?.focus();
+  //   }
+  // }
+  // onMount(() => {
+  //   if(!isServer)
+  //   document.addEventListener("keydown", handleKeyDown);
+  // });
+  // onCleanup(() => {
+  //   if (!isServer)
+  //   document.removeEventListener("keydown", handleKeyDown);
+  // });
 
   return (
     <Html lang="en">
@@ -288,7 +307,6 @@ export default function Root() {
                               </Show>
                               <Header />
                               <div aria-hidden="true" class="h-10" />
-                              <div class="bg-bg2 py-2"></div>
                               <PlayerContainer />
                               {/* <PipContainer />{" "} */}
                               <Routes>
@@ -321,6 +339,51 @@ export default function Root() {
                         <Route path="/trending" element={<Trending />} />
                         <Route path="/import" element={<Import />} /> */}
                               </Routes>
+                              <Transition
+                                show={true}
+                                enter="transition ease-in-out duration-300 transform"
+                                enterFrom="translate-y-full"
+                                enterTo="translate-y-0"
+                                leave="transition ease-in-out duration-300 transform"
+                                leaveFrom="translate-y-0"
+                                leaveTo="translate-y-full">
+                                <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
+                                  <BottomNav
+                                    items={[
+                                      {
+                                        href: "/feed",
+                                        label: "Feed",
+                                        icon: (
+                                          <TiHome
+                                            fill="currentColor"
+                                            class="w-6 h-6 "
+                                          />
+                                        ),
+                                      },
+                                      {
+                                        href: "/trending",
+                                        label: "Trending",
+                                        icon: (
+                                          <AiOutlineFire
+                                            fill="currentColor"
+                                            class="w-6 h-6 "
+                                          />
+                                        ),
+                                      },
+                                      {
+                                        href: "/library",
+                                        label: "Library",
+                                        icon: (
+                                          <AiOutlineMenu
+                                            fill="currentColor"
+                                            class="w-6 h-6 "
+                                          />
+                                        ),
+                                      },
+                                    ]}
+                                  />
+                                </div>
+                              </Transition>
                             </ErrorBoundary>
                           </Suspense>
                           <Scripts />

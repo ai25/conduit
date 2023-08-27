@@ -21,6 +21,7 @@
     "workbox-window": "^7.0.0"
   },
   "dependencies": {
+    "@kobalte/core": "^0.11.0",
     "@solidjs/meta": "^0.28.2",
     "@solidjs/router": "^0.8.2",
     "@syncedstore/core": "^0.6.0-alpha.0",
@@ -34,6 +35,7 @@
     "media-icons": "^0.10.0",
     "numeral": "^2.0.6",
     "solid-headless": "^0.13.1",
+    "solid-icons": "^1.0.11",
     "solid-js": "^1.7.8",
     "solid-start": "^0.2.29",
     "solid-start-vercel": "^0.2.30",

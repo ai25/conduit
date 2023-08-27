@@ -2,6 +2,8 @@ import { useLocation } from "solid-start";
 import VideoCard from "~/components/VideoCard";
 import {
   For,
+  Show,
+  Switch,
   createRenderEffect,
   createSignal,
   onCleanup,
@@ -11,9 +13,21 @@ import {
 import { InstanceContext } from "~/root";
 import { z } from "zod";
 import { getStorageValue } from "~/utils/storage";
+import { RelatedChannel, RelatedPlaylist, RelatedStream } from "~/types";
+import { Match } from "solid-js";
+import PlaylistCard from "~/components/PlaylistCard";
+import { A } from "@solidjs/router";
+import { Checkmark } from "~/components/Description";
+import { assertType } from "~/utils/helpers";
+export interface SearchQuery {
+  items: RelatedStream[];
+  nextpage: string;
+  suggestion: any;
+  corrected: boolean;
+}
 
 export default function Search() {
-  const [results, setResults] = createSignal();
+  const [results, setResults] = createSignal<SearchQuery>();
   const availableFilters = [
     "all",
     "videos",
@@ -52,7 +66,9 @@ export default function Search() {
   }
   async function updateResults() {
     document.title = route.query.q + " - Conduit";
-    setResults(await fetchResults());
+    const results = await fetchResults();
+    console.log(results, "results");
+    setResults(results);
   }
   // function updateFilter() {
   //     this.$router.replace({
@@ -130,7 +146,52 @@ export default function Search() {
 
       <div class="flex flex-wrap">
         <For each={results()?.items}>
-          {(result) => <VideoCard v={result} />}
+          {(item) => (
+            <Switch>
+              <Match
+                when={assertType<RelatedStream>(item, "type", "stream")}
+                keyed>
+                {(item) => <VideoCard v={item} />}
+              </Match>
+              <Match
+                when={assertType<RelatedChannel>(item, "type", "channel")}
+                keyed>
+                {(item) => (
+                  <div class="w-44 mx-1 flex flex-col gap-2 items-start">
+                    <A href={item.url} class="group outline-none">
+                      <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
+                        <img
+                          class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
+                          src={item.thumbnail}
+                          loading="lazy"
+                        />
+                      </div>
+                    </A>
+                    <A class="link" href={item.url}>
+                      <div class="flex gap-1">
+                        <span>{item.name}</span>
+                        <Show when={item.verified}>
+                          <Checkmark />
+                        </Show>
+                      </div>
+                    </A>
+
+                    {/* <template v-if="props.item.videos >= 0">
+                      <br v-if="props.item.uploaderName" />
+                      <strong v-text="`${props.item.videos} ${$t('video.videos')}`" />
+                    </template> */}
+
+                    <br />
+                  </div>
+                )}
+              </Match>
+              <Match
+                when={assertType<RelatedPlaylist>(item, "type", "playlist")}
+                keyed>
+                {(item) => <PlaylistCard item={item} />}
+              </Match>
+            </Switch>
+          )}
         </For>
       </div>
     </>

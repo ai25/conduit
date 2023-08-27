@@ -17,7 +17,7 @@ import { InstanceContext } from "~/root";
 import { ContentItem, Channel as PipedChannel, RelatedChannel, RelatedPlaylist, RelatedStream } from "~/types";
 import Button from "~/components/Button";
 import { Spinner } from "~/components/PlayerContainer";
-import { fetchJson } from "~/utils/helpers";
+import { assertType, fetchJson } from "~/utils/helpers";
 import { A } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";
 import PlaylistCard from "~/components/PlaylistCard";
@@ -193,11 +193,6 @@ export default function Channel() {
 
     intersectionObserver.observe(intersection);
   });
-  function assertType<T>(item: any, property: string, value: string) {
-    if (item[property] === value){
-      return item as T;
-    } 
-}
 
 
   return (

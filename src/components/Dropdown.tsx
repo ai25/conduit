@@ -5,8 +5,9 @@ import {
   PopoverPanel,
   Transition,
 } from "solid-headless";
-import { Show } from "solid-js";
+import { Show, onMount } from "solid-js";
 import { JSX } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import { classNames } from "~/utils/helpers";
 
 export default function Dropdown(props: {
@@ -23,11 +24,10 @@ export default function Dropdown(props: {
 }) {
   return (
     <Popover defaultOpen={false} class={`relative ${props.class}`}>
-      {({ isOpen }) => (
+      {({ isOpen, setState }) => (
         <>
           <Show when={props.showButton !== false}>
             <PopoverButton
-              onClick={(e: any) => e.preventDefault()}
               class={`text-text3 group  focus:outline-none focus-visible:ring-4 focus-visible:ring-accent1 ${
                 props.buttonClass ?? ""
               }`}>
@@ -69,8 +69,27 @@ export default function Dropdown(props: {
                 props.panelPosition === "right" && "right-8 translate-x-full",
                 props.panelPosition === "center" && "left-1/2 -translate-x-1/2"
               )} absolute z-10 px-4 mt-3 transform sm:px-0 lg:max-w-3xl`}>
-              <Menu class="overflow-hidden w-64 rounded-lg shadow-lg ring-1 ring-black/5 bg-bg2 flex flex-col space-y-1 p-1">
-                {props.children}
+              <Menu
+                onClick={() => {
+                  console.log("click");
+                  setState(false);
+                }}
+                class="overflow-hidden w-64 rounded-lg shadow-lg ring-1 ring-black/5 bg-bg2 flex flex-col space-y-1 p-1">
+                {Array.isArray(props.children) ? (
+                  props.children.map((child) => {
+                    return (
+                      <Dynamic
+                        component={child as any}
+                        onClick={() => setState(false)}
+                      />
+                    );
+                  })
+                ) : (
+                  <Dynamic
+                    component={props.children as any}
+                    onClick={() => setState(false)}
+                  />
+                )}
               </Menu>
             </PopoverPanel>
           </Transition>

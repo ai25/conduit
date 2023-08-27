@@ -114,9 +114,11 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
     delete: (store: Store, filter: (item: T) => boolean) => {
       if (!filter) return undefined;
       const filteredItems = (store[name] as T[]).filter(filter);
+      console.log(filteredItems);
       if (filteredItems.length === 0) return undefined;
       filteredItems.forEach((item) => {
         const index = (store[name] as T[]).indexOf(item);
+        console.log(index);
         if (index !== -1) (store[name] as T[]).splice(index, 1);
       });
     },

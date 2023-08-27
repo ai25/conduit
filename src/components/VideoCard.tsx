@@ -5,6 +5,7 @@ import { extractVideoId } from "~/routes/watch";
 import { A } from "solid-start";
 import {
   Match,
+  Show,
   Switch,
   createEffect,
   createRenderEffect,
@@ -32,6 +33,7 @@ import { MenuButton, MenuItems } from "vidstack";
 import DropdownItem from "./DropdownItem";
 import Dropdown from "./Dropdown";
 import { SyncedDB } from "~/stores/syncedStore";
+import { BsInfoCircleFill, BsThreeDotsVertical } from "solid-icons/bs";
 
 dayjs.extend(relativeTime);
 
@@ -43,34 +45,22 @@ export default ({
   const [db] = useContext(DBContext);
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
   const [instance] = useContext(InstanceContext);
-  const [thumbnail, setThumbnail] = createSignal<string | undefined>(undefined);
   const solidStore = useContext(SolidStoreContext);
+  const [imgError, setImgError] = createSignal(false);
+  const writeStore = useContext(SyncContext);
 
-  createEffect(async () => {
+  createEffect(() => {
     if (!solidStore()) return;
-    // if (!db()) return;
-    // const tx = db()!.transaction("watch_history", "readwrite");
-    // const store = tx.objectStore("watch_history");
-    // const id = videoId(v);
-    // if (!id) return;
-    // const val = await store.get(id);
-    // // setThumbnail(
-    // //   v?.thumbnail?.replace("hqdefault", "mqdefault") ??
-    // //     `${instance().replace(
-    // //       "api",
-    // //       "proxy"
-    // //     )}/vi/${id}/mqdefault.jpg?host=i.ytimg.com`
-    // // );
     const val = SyncedDB.history.findUnique(solidStore()!, videoId(v));
-    console.log(val, "VAL")
-    setProgress(val?.progress || val?.currentTime);
+    console.log(val, "VAL");
+    setProgress(val?.currentTime ?? undefined);
   });
 
   if (!v)
     return (
       <div
-        class={` flex w-72 max-w-[18rem] flex-col items-start rounded-xl bg-bg1 `}>
-        <div class="animate-pulse w-64 h-32 bg-bg2 flex aspect-video max-w-fit flex-col overflow-hidden rounded text-text1">
+        class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}>
+        <div class="animate-pulse w-full h-full bg-bg2 flex aspect-video flex-col overflow-hidden rounded text-text1">
           <div class="bg-bg2 w-full h-full"></div>
         </div>
         <div class="animate-pulse w-3/4 h-4 bg-bg2 rounded mt-2"></div>
@@ -80,7 +70,7 @@ export default ({
 
   return (
     <div
-      class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-center rounded-xl bg-bg1 p-2`}>
+      class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}>
       <A
         href={v.url ?? `/watch?v=${videoId(v)}`}
         class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1">
@@ -91,22 +81,37 @@ export default ({
             </div>
           </div>
         )}
-        <img
-          class={`cursor-pointer w-full aspect-video max-w-md break-words ${
-            progress() !== undefined ? "saturate-[0.35] opacity-75" : ""
-          } `}
-          // src={v.thumbnail?.replace("hqdefault", "mqdefault")}
-          src={v.thumbnail?.replace("hqdefault", "mqdefault")}
-          // onError={() => setThumbnail("https://via.placeholder.com/352x198")}
-          // placeholder="blur"
-          width={2560}
-          height={1440}
-          alt={v.title}
-          loading="lazy"
-        />
+        <Show when={!imgError()}>
+          <img
+            class={`cursor-pointer w-full aspect-video max-w-md break-words ${
+              progress() !== undefined ? "saturate-[0.35] opacity-75" : ""
+            } `}
+            // src={v.thumbnail?.replace("hqdefault", "mqdefault")}
+            src={v.thumbnail?.replace("hqdefault", "mqdefault")}
+            onError={() => setImgError(true)}
+            // placeholder="blur"
+            width={2560}
+            height={1440}
+            alt=""
+            loading="lazy"
+          />
+        </Show>
+        <Show when={imgError()}>
+          <div class="flex w-full h-full items-center justify-center">
+            <div class="text-text2">Image not found</div>
+          </div>
+        </Show>
         <div class="relative h-0 w-12 place-self-end text-sm lg:w-16 lg:text-base">
-          <div class="absolute bottom-2 right-2 rounded bg-bg1/80 px-1">
-            {numeral(v.duration).format("00:00:00").replace(/^0:/, "")}
+          <div
+            classList={{
+              "bg-bg1/80": v.duration !== -1,
+              "bg-primary": v.duration === -1,
+            }}
+            class="absolute bottom-2 right-2 rounded px-1">
+            <Show when={v.duration === -1}>Live</Show>
+            <Show when={v.duration !== -1}>
+              {numeral(v.duration).format("00:00:00").replace(/^0:/, "")}
+            </Show>
           </div>
         </div>
         {!!progress() && (
@@ -119,66 +124,103 @@ export default ({
           </div>
         )}
       </A>
-      <div class="mt-2 flex w-full flex-col ">
+      <div class="mt-2 flex w-full justify-between ">
         <div class="flex flex-col gap-2 pr-2 ">
           <A
             href={v.url ?? `/watch?v=${videoId(v)}`}
-            class="break-words text-lg leading-tight">
+            class="h-10 max-w-full two-line-ellipsis">
             {v.title}
           </A>
 
           <div class="flex gap-2 text-text2">
-            <div class="group mb-1 w-max underline ">
-              <A
-                href={v.uploaderUrl || ""}
-                class="flex max-w-max items-center gap-2">
-                {v.uploaderAvatar && (
+            <Show when={v.uploaderAvatar}>
+              <div class="group mb-1 w-max underline ">
+                <A
+                  href={v.uploaderUrl || ""}
+                  class="flex max-w-max items-center gap-2">
                   <img
-                    src={v.uploaderAvatar}
+                    src={v.uploaderAvatar!}
                     width={32}
                     height={32}
                     class="rounded-full"
-                    alt={v.uploaderName}
+                    alt=""
                   />
-                )}
-              </A>
-            </div>
+                </A>
+              </div>
+            </Show>
 
-            <div class="flex w-full flex-col">
-              <Dropdown>
-                <DropdownItem as="button" label="Add to queue" />
-                <Switch>
-                  <Match when={progress() === undefined}>
-                    <DropdownItem
-                      as="button"
-                      label="Remove from history"
-                      // onClick={() => setProgress(undefined)}
-                    />
-                  </Match>
-                  <Match when={progress() !== undefined}>
-                    <DropdownItem
-                      as="button"
-                      label="Mark as watched"
-                      // onClick={() => setProgress(0)}
-                    />
-                  </Match>
-                </Switch>
-              </Dropdown>
+            <div class="flex w-full flex-col text-xs">
               <A href={v.uploaderUrl || ""}>
-                <div class="peer w-fit text-sm">{v.uploaderName}</div>
+                <div class="peer w-fit ">{v.uploaderName}</div>
               </A>
               <div class="flex ">
-                <div class="w-fit text-sm ">
+                <div class="w-fit  ">
                   {" "}
                   {numeral(v.views).format("0a").toUpperCase()} views
                 </div>
 
-                <div class="group w-fit pl-1 text-sm">
-                  <div class=""> • {dayjs(v.uploaded).fromNow()} </div>
+                <div class="group w-fit pl-1">
+                  <Show when={v.uploaded && v.uploaded !== -1}>
+                    <div class=""> • {dayjs(v.uploaded).fromNow()} </div>
+                  </Show>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+        <div class="flex flex-col justify-between">
+          <Dropdown
+            icon={
+              <BsThreeDotsVertical
+                fill="currentColor"
+                class="text-text2 w-6 h-6 group-hover:text-text1"
+              />
+            }
+            iconPosition="right"
+            panelPosition="left">
+            <DropdownItem as="button" label="Add to queue" />
+            <Switch>
+              <Match when={progress()}>
+                <DropdownItem
+                  as="button"
+                  label="Remove from history"
+                  onClick={() =>
+                    SyncedDB.history.delete(writeStore()!, (item) => {
+                      console.log(item.id, videoId(v));
+                      return item.id === videoId(v);
+                    })
+                  }
+                />
+              </Match>
+              <Match when={!progress()}>
+                <DropdownItem
+                  as="button"
+                  label="Mark as watched"
+                  onClick={() =>
+                    SyncedDB.history.create(writeStore()!, {
+                      ...v,
+                      id: videoId(v),
+                      watchedAt: Date.now(),
+                      currentTime: v.duration,
+                    })
+                  }
+                />
+              </Match>
+            </Switch>
+          </Dropdown>
+          <Show when={(v as any).watchedAt}>
+            <div class="relative w-0 h-0 self-end ">
+              <button class="peer absolute right-1 -top-8 z-[1] link ">
+                <BsInfoCircleFill
+                  fill="currentColor"
+                  class="w-5 h-5 text-text2"
+                />
+              </button>
+              <div class=" absolute right-0 -top-2 z-[1] bg-bg1/80 w-44 flex items-center rounded px-2 opacity-0 scale-0 transition peer-hover:scale-100 peer-hover:opacity-100 peer-focus-visible:scale-100 peer-focus-visible:opacity-100 ">
+                Watched: {dayjs((v as any).watchedAt).fromNow()}
+              </div>
+            </div>
+          </Show>
         </div>
       </div>
     </div>

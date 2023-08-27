@@ -21,3 +21,9 @@ export async function fetchJson(
 export function classNames(...classes: (string | boolean | undefined)[]): string {
     return classes.filter(Boolean).join(" ");
   }
+
+export function assertType<T>(item: any, property: string, value: string) {
+    if (item[property] === value){
+      return item as T;
+    } 
+}

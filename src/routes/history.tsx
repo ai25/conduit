@@ -1,9 +1,11 @@
 import { For, Show, createEffect, createSignal, useContext } from "solid-js";
-import { DBContext, InstanceContext } from "~/root";
+import { DBContext, InstanceContext, SolidStoreContext } from "~/root";
 import { extractVideoId } from "./watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
 import dayjs from "dayjs";
+import { SyncedDB } from "~/stores/syncedStore";
+import { BsInfoCircleFill } from "solid-icons/bs";
 export const videoId = (item: any) => {
   if (!item) return undefined;
   if (item.videoId) return item.videoId;
@@ -170,12 +172,11 @@ export default function History() {
       });
     }
   }
+  const solidStore = useContext(SolidStoreContext);
 
   createEffect(async () => {
-    if (db()) {
-      const tx = db()?.transaction("watch_history", "readwrite");
-      const store = tx?.objectStore("watch_history");
-      const items = await store?.getAll();
+    if (solidStore()) {
+      const items = SyncedDB.history.findMany(solidStore()!) || [];
       if (!items || items.length === 0) return;
       setAll(items);
       setHistoryItems(all().slice(0, limit()));
@@ -220,26 +221,35 @@ export default function History() {
         </div>
       </form>
       <div class="flex flex-wrap justify-center">
-        <For each={historyItems()}>
-          {(item) => (
-            <div class="flex flex-col">
-              {dayjs(item.watchedAt).fromNow()}
-              <VideoCard
-                v={{
-                  ...item,
-                  url: `/watch?v=${videoId(item)}}`,
-                  thumbnail: `${instance().replace(
-                    "api",
-                    "proxy"
-                  )}/vi/${videoId(item)}/mqdefault.jpg?host=i.ytimg.com`,
-                }}
-              />
-            </div>
-          )}
-        </For>
-        <button class="btn" onClick={() => setLimit(limit() + 10)}>
-          Load More
-        </button>
+        <Show when={solidStore()}>
+          <For
+            each={SyncedDB.history.findMany(solidStore()!, {
+              sort: (a, b) => {
+                if (!a.watchedAt && !b.watchedAt) return 0;
+                if (!a.watchedAt) return 1;
+                if (!b.watchedAt) return -1;
+                return b.watchedAt - a.watchedAt;
+              },
+            })}>
+            {(item) => (
+              <div class="flex flex-col max-w-xs w-72 sm:max-w-72">
+                <VideoCard
+                  v={{
+                    ...item,
+                    url: `/watch?v=${videoId(item)}}`,
+                    thumbnail: `${instance().replace(
+                      "api",
+                      "proxy"
+                    )}/vi/${videoId(item)}/mqdefault.jpg?host=i.ytimg.com`,
+                  }}
+                />
+              </div>
+            )}
+          </For>
+          {/* <button class="btn" onClick={() => setLimit(limit() + 10)}>
+            Load More
+          </button> */}
+        </Show>
       </div>
     </div>
   );
