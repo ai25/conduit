@@ -18,7 +18,9 @@ export default defineConfig({
     solid({ adapter: vercel() }),
     VitePWA({
       registerType: "autoUpdate",
-      
+      devOptions: {
+        enabled: true,
+      },
       workbox: {
         globPatterns: [
           "**/*.{js,css,html,ico,svg,png}",

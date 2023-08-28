@@ -1,4 +1,7 @@
 // @refresh reload
+registerSW({
+  onOfflineReady() {},
+});
 import {
   Accessor,
   Match,
@@ -71,11 +74,6 @@ import BottomNav from "./components/BottomNav";
 import { TiHome } from "solid-icons/ti";
 import { AiOutlineFire, AiOutlineMenu } from "solid-icons/ai";
 
-// if (!isServer) {
-//   registerSW({
-//     onOfflineReady() {},
-//   });
-// }
 const theme = createSignal("monokai");
 export const ThemeContext = createContext(theme);
 
@@ -211,6 +209,19 @@ export default function Root() {
       JSON.stringify(preferences[0]),
       "localStorage"
     );
+    try {
+      registerSW({
+        onOfflineReady() {},
+        onRegisterError(error) {
+          console.error(error, "worker");
+        },
+        onRegisteredSW(swScriptUrl, registration) {
+          console.log(swScriptUrl, registration, "worker");
+        },
+      });
+    } catch (e) {
+      console.error(e, "worker");
+    }
   });
 
   const doc = () => (store() ? getYjsDoc(store()) : null);

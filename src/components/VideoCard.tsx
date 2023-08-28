@@ -52,7 +52,6 @@ export default ({
   createEffect(() => {
     if (!solidStore()) return;
     const val = SyncedDB.history.findUnique(solidStore()!, videoId(v));
-    console.log(val, "VAL");
     setProgress(val?.currentTime ?? undefined);
   });
 

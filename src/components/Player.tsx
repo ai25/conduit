@@ -108,7 +108,7 @@ export default function Player() {
       currentTime,
       watchedAt: new Date().getTime(),
       type: "stream",
-      uploaded: dayjs(video.value.uploadDate).unix(),
+      uploaded: new Date(video.value.uploadDate).getTime(),
       uploaderVerified: video.value.uploaderVerified,
       views: video.value.views,
     };

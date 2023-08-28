@@ -1,5 +1,17 @@
-import { For, Show, createEffect, createSignal, useContext } from "solid-js";
-import { DBContext, InstanceContext, SolidStoreContext, SyncContext } from "~/root";
+import {
+  For,
+  Show,
+  createEffect,
+  createSignal,
+  onMount,
+  useContext,
+} from "solid-js";
+import {
+  DBContext,
+  InstanceContext,
+  SolidStoreContext,
+  SyncContext,
+} from "~/root";
 import { extractVideoId } from "./watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
@@ -174,17 +186,17 @@ export default function History() {
     }
   }
   const solidStore = useContext(SolidStoreContext);
-  const writeStore = useContext(SyncContext)
+  const writeStore = useContext(SyncContext);
 
-  createEffect(async () => {
-    if (solidStore()) {
-      const items = SyncedDB.history.findMany(solidStore()!) || [];
-      if (!items || items.length === 0) return;
-      setAll(items);
-      setHistoryItems(all().slice(0, limit()));
-      console.log(all().length);
-    }
-  });
+  // createEffect(async () => {
+  //   if (solidStore()) {
+  //     const items = SyncedDB.history.findMany(solidStore()!) || [];
+  //     if (!items || items.length === 0) return;
+  //     setAll(items);
+  //     setHistoryItems(all().slice(0, limit()));
+  //     console.log(all().length);
+  //   }
+  // });
   createEffect(() => {
     setHistoryItems(
       all()
@@ -200,60 +212,107 @@ export default function History() {
   });
   const [errorMessage, setErrorMessage] = createSignal("");
   const [statusMessage, setStatusMessage] = createSignal("Status:\n");
+  const [importing, setImporting] = createSignal(false);
+  const [importProgress, setImportProgress] = createSignal(0);
+  let preRef: HTMLPreElement | undefined = undefined;
   async function importFromDb() {
-    setStatusMessage((s)=>s+"\nImporting from db");
+    setImporting(true);
+    setStatusMessage((s) => s + "\nImporting from db");
     if (!("indexedDB" in globalThis)) {
       setErrorMessage("No indexedDB found");
-      return
+      return;
     }
-    setStatusMessage((s)=>s+"\nIndexedDB found");
+    setStatusMessage((s) => s + "\nIndexedDB found");
     if (!db()) {
       setErrorMessage("No database found");
-      return
+      return;
     }
-    setStatusMessage((s)=>s+"\nDatabase found");
+    setStatusMessage((s) => s + "\nDatabase found");
     const tx = db()!.transaction("watch_history", "readwrite");
     if (!tx) {
       setErrorMessage("No transaction found");
-      return
+      return;
     }
-    setStatusMessage((s)=>s+"\nTransaction found");
+    setStatusMessage((s) => s + "\nTransaction found");
     const store = tx.objectStore("watch_history");
     if (!store) {
       setErrorMessage("No store found");
-      return
+      return;
     }
-    setStatusMessage((s)=>s+"\nStore found");
-    const data =await store?.getAll();
+    setStatusMessage((s) => s + "\nStore found");
+    const data = await store?.getAll();
     if (!data) {
       setErrorMessage("No data found");
-      return
+      return;
     }
-    setStatusMessage((s)=>s+`\nFound ${data.length} items`);
-    const items = data?.map((item:any) => {
+    setStatusMessage((s) => s + `\nFound ${data.length} items`);
+    const items = data?.map((item: any) => {
       return {
         ...item,
         watchedAt: item.watchedAt ?? 0,
         currentTime: item.currentTime ?? 0,
-        id: videoId(item)
+        id: videoId(item),
       };
     });
     console.log(items);
     if (!writeStore()) {
       setErrorMessage("No write store found");
-      return
+      return;
     }
-    setStatusMessage((s)=>s+"\nWrite store found, writing");
+    setStatusMessage((s) => s + "\nWrite store found, writing\n\n");
     try {
-
-    SyncedDB.history.createMany(writeStore()!, items);
-    setStatusMessage((s)=>s+"\nDone");
+      SyncedDB.history
+        .upsertMany(writeStore()!, data, (processed, total) => {
+          setImportProgress((processed / total) * 100);
+          // add new status message "importing 1/100" or replace the last one if it exists
+          setStatusMessage((s) => {
+            const lines = s.split("\n");
+            if (lines[lines.length - 1].includes("importing")) {
+              lines[lines.length - 1] = `Importing ${processed}/${total}`;
+            } else {
+              lines.push(`Importing ${processed}/${total}`);
+            }
+            //scroll to end
+            preRef?.scrollTo(0, preRef?.scrollHeight);
+            return lines.join("\n");
+          });
+        })
+        .then(() => {
+          setStatusMessage((s) => s + "\nDone");
+        })
+        .catch((err) => {
+          setStatusMessage((s) => s + "\nError: " + err.message);
+        })
+        .finally(() => {
+          setImporting(false);
+        });
     } catch (err) {
       console.error(err);
       setErrorMessage((err as any).message);
+    } finally {
+      setImporting(false);
+    }
+  }
+  const [intersectionRef, setIntersectionRef] = createSignal<
+    HTMLDivElement | undefined
+  >(undefined);
+  function handleScroll(e: any) {
+    const entry = e[0];
+    if (entry?.isIntersecting) {
+      setLimit((l) => l + 10);
     }
   }
 
+  createEffect(() => {
+    console.log(intersectionRef(), "intersection");
+    if (!intersectionRef()) return;
+
+    const intersectionObserver = new IntersectionObserver(handleScroll, {
+      threshold: 0.1,
+    });
+
+    intersectionObserver.observe(intersectionRef()!);
+  });
 
   return (
     <div class="">
@@ -280,18 +339,32 @@ export default function History() {
       </form>
       <div class="text-red-500">{errorMessage()}</div>
       <Button label="Import from db" onClick={() => importFromDb()} />
-      <pre>{statusMessage()}</pre>
+      <Button
+        label="Remove duplicates"
+        onClick={() =>
+          console.log(
+            `removed ${SyncedDB.history.removeDuplicates(writeStore()!)} items`
+          )
+        }
+      />
+      <pre
+        class="text-start overflow-y-auto h-96 bg-bg2 rounded-md p-2"
+        ref={preRef}>
+        {statusMessage()}
+      </pre>
       <div class="flex flex-wrap justify-center">
         <Show when={solidStore()}>
           <For
-            each={SyncedDB.history.findMany(solidStore()!, {
-              sort: (a, b) => {
-                if (!a.watchedAt && !b.watchedAt) return 0;
-                if (!a.watchedAt) return 1;
-                if (!b.watchedAt) return -1;
-                return b.watchedAt - a.watchedAt;
-              },
-            })}>
+            each={SyncedDB.history
+              .findMany(solidStore()!, {
+                sort: (a, b) => {
+                  if (!a.watchedAt && !b.watchedAt) return 0;
+                  if (!a.watchedAt) return 1;
+                  if (!b.watchedAt) return -1;
+                  return b.watchedAt - a.watchedAt;
+                },
+              })
+              ?.slice(0, limit())}>
             {(item) => (
               <div class="flex flex-col max-w-xs w-72 sm:max-w-72">
                 <VideoCard
@@ -307,9 +380,10 @@ export default function History() {
               </div>
             )}
           </For>
-          {/* <button class="btn" onClick={() => setLimit(limit() + 10)}>
-            Load More
-          </button> */}
+          <div
+            ref={(ref) => setIntersectionRef(ref)}
+            class="w-full h-10 mt-2"
+          />
         </Show>
       </div>
     </div>

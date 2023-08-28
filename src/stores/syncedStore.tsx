@@ -40,6 +40,23 @@ interface UpdateCriteria<T> {
   where: { id: string };
   data: Partial<T>;
 }
+async function* asyncBatchItems<T>(
+  items: T[],
+  batchSize: number,
+  progressCallback: (progress: number) => void
+) {
+  let index = 0;
+  while (index < items.length) {
+    yield new Promise<T[]>((resolve) => {
+      setTimeout(() => {
+        const batch = items.slice(index, index + batchSize);
+        resolve(batch);
+        progressCallback(index + batch.length);
+      }, 0);
+    });
+    index += batchSize;
+  }
+}
 
 function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
   return {
@@ -47,9 +64,23 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
       if (!data) return;
       (store[name] as T[]).push(clone(data));
     },
-    createMany: (store: Store, datas: T[]) => {
-      if (!datas) return;
-      datas.forEach((data) => (store[name] as T[]).push(clone(data)));
+    createMany: async (
+      store: Store,
+      datas: T[],
+      progressCallback: (progress: number) => void
+    ) => {
+      const batchSize = 100;
+      let progress = 0;
+      for await (const batch of asyncBatchItems(
+        datas,
+        batchSize,
+        (newProgress) => {
+          progress = newProgress;
+          progressCallback(progress);
+        }
+      )) {
+        (store[name] as T[]).push(...batch.map((data) => clone(data)));
+      }
     },
     findUnique: (store: Store, id: string) => {
       if (!id) return;
@@ -110,6 +141,39 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
         (store[name] as T[]).push(upsertedItem as T);
       }
     },
+    upsertMany: async (
+      store: Store,
+      data: T[],
+      progressCallback?: (processed: number, total: number) => void
+    ) => {
+      const totalItems = data.length;
+      const batchSize = 100;
+      let progress = 0;
+
+      for await (const batch of asyncBatchItems(
+        data,
+        batchSize,
+        (newProgress) => {
+          console.log(newProgress);
+          progress = newProgress;
+          progressCallback?.(progress, totalItems);
+        }
+      )) {
+        batch.forEach((newItem) => {
+          const index = (store[name] as T[]).findIndex(
+            (item) => item.id === newItem.id
+          );
+          if (index !== -1) {
+            const item = clone((store[name] as T[])[index]) as T;
+            const upsertedItem = { ...item, ...newItem } as T;
+            (store[name] as T[]).splice(index, 1, upsertedItem);
+          } else {
+            const upsertedItem = newItem;
+            (store[name] as T[]).push(upsertedItem);
+          }
+        });
+      }
+    },
 
     delete: (store: Store, filter: (item: T) => boolean) => {
       if (!filter) return undefined;
@@ -135,6 +199,23 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
         });
       });
       if (!deleted) return undefined;
+    },
+    removeDuplicates: (store: Store) => {
+      const seen = new Set<string>();
+      let index = 0;
+      let duplicates = 0;
+
+      while (index < (store[name] as T[]).length) {
+        const item = (store[name] as T[])[index];
+        if (seen.has(item.id!)) {
+          (store[name] as T[]).splice(index, 1);
+          duplicates++;
+        } else {
+          seen.add(item.id!);
+          index++;
+        }
+      }
+      return duplicates;
     },
   };
 }
