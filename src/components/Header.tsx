@@ -30,6 +30,7 @@ import Search from "./SearchInput";
 import Modal from "./Modal";
 import Button from "./Button";
 import Field from "./Field";
+import { Popover as KobaltePopover } from "@kobalte/core";
 
 function classNames(...classes: (string | boolean | undefined)[]): string {
   return classes.filter(Boolean).join(" ");
@@ -144,11 +145,8 @@ const Header = () => {
       </ul>
       <div class="flex items-center justify-center">
         <Show when={roomId()}>
-          <Dropdown
-            class="mx-2"
-            panelPosition="right"
-            iconPosition="left"
-            icon={
+          <KobaltePopover.Root>
+            <KobaltePopover.Trigger class="mx-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="h-5 w-5 text-green-600"
@@ -156,25 +154,27 @@ const Header = () => {
                 fill="currentColor">
                 <circle cx="10" cy="10" r="10" />
               </svg>
-            }>
-            <div class="text-sm p-1 text-left flex gap-2 items-center text-green-600">
-              Connected: {roomId()}
-              <Button
-                label="Leave"
-                onClick={() => {
-                  localStorage.removeItem("room");
-                  location.reload();
-                }}
-              />
-            </div>
-          </Dropdown>
+            </KobaltePopover.Trigger>
+            <KobaltePopover.Portal>
+              <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
+                <KobaltePopover.Arrow />
+              <KobaltePopover.Description class=" text-sm p-1 text-left flex flex-col gap-2 items-center text-green-600">
+                Connected: {roomId()}
+                <Button
+                  label="Leave"
+                  onClick={() => {
+                    localStorage.removeItem("room");
+                    location.reload();
+                  }}
+                />
+              </KobaltePopover.Description>
+              </KobaltePopover.Content>
+            </KobaltePopover.Portal>
+          </KobaltePopover.Root>
         </Show>
         <Show when={!roomId()}>
-          <Dropdown
-            class="mx-2"
-            panelPosition="right"
-            iconPosition="left"
-            icon={
+          <KobaltePopover.Root>
+            <KobaltePopover.Trigger class="mx-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="h-5 w-5 text-red-600"
@@ -182,16 +182,17 @@ const Header = () => {
                 fill="currentColor">
                 <circle cx="10" cy="10" r="10" />
               </svg>
-            }>
-            <div class="text-sm p-1 text-left flex flex-col gap-2 items-center text-red-600">
+            </KobaltePopover.Trigger>
+            <KobaltePopover.Portal>
+              <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
+                <KobaltePopover.Arrow />
+              <KobaltePopover.Description class=" text-sm p-1 text-left flex flex-col gap-2 items-center text-red-600">
               Disconnected
-              <Button
-                label="Join room"
-                onClick={() => setModalOpen(true)}
-              />
-            </div>
-          </Dropdown>
-          
+              <Button label="Join room" onClick={() => setModalOpen(true)} />
+            </KobaltePopover.Description>
+          </KobaltePopover.Content>
+          </KobaltePopover.Portal>
+          </KobaltePopover.Root>
         </Show>
       </div>
 

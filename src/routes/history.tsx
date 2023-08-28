@@ -1,11 +1,12 @@
 import { For, Show, createEffect, createSignal, useContext } from "solid-js";
-import { DBContext, InstanceContext, SolidStoreContext } from "~/root";
+import { DBContext, InstanceContext, SolidStoreContext, SyncContext } from "~/root";
 import { extractVideoId } from "./watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
 import dayjs from "dayjs";
 import { SyncedDB } from "~/stores/syncedStore";
 import { BsInfoCircleFill } from "solid-icons/bs";
+import Button from "~/components/Button";
 export const videoId = (item: any) => {
   if (!item) return undefined;
   if (item.videoId) return item.videoId;
@@ -173,6 +174,7 @@ export default function History() {
     }
   }
   const solidStore = useContext(SolidStoreContext);
+  const writeStore = useContext(SyncContext)
 
   createEffect(async () => {
     if (solidStore()) {
@@ -196,6 +198,62 @@ export default function History() {
     );
     console.log(historyItems()[0]);
   });
+  const [errorMessage, setErrorMessage] = createSignal("");
+  const [statusMessage, setStatusMessage] = createSignal("Status:\n");
+  async function importFromDb() {
+    setStatusMessage((s)=>s+"\nImporting from db");
+    if (!("indexedDB" in globalThis)) {
+      setErrorMessage("No indexedDB found");
+      return
+    }
+    setStatusMessage((s)=>s+"\nIndexedDB found");
+    if (!db()) {
+      setErrorMessage("No database found");
+      return
+    }
+    setStatusMessage((s)=>s+"\nDatabase found");
+    const tx = db()!.transaction("watch_history", "readwrite");
+    if (!tx) {
+      setErrorMessage("No transaction found");
+      return
+    }
+    setStatusMessage((s)=>s+"\nTransaction found");
+    const store = tx.objectStore("watch_history");
+    if (!store) {
+      setErrorMessage("No store found");
+      return
+    }
+    setStatusMessage((s)=>s+"\nStore found");
+    const data =await store?.getAll();
+    if (!data) {
+      setErrorMessage("No data found");
+      return
+    }
+    setStatusMessage((s)=>s+`\nFound ${data.length} items`);
+    const items = data?.map((item:any) => {
+      return {
+        ...item,
+        watchedAt: item.watchedAt ?? 0,
+        currentTime: item.currentTime ?? 0,
+        id: videoId(item)
+      };
+    });
+    console.log(items);
+    if (!writeStore()) {
+      setErrorMessage("No write store found");
+      return
+    }
+    setStatusMessage((s)=>s+"\nWrite store found, writing");
+    try {
+
+    SyncedDB.history.createMany(writeStore()!, items);
+    setStatusMessage((s)=>s+"\nDone");
+    } catch (err) {
+      console.error(err);
+      setErrorMessage((err as any).message);
+    }
+  }
+
 
   return (
     <div class="">
@@ -220,6 +278,9 @@ export default function History() {
           </button>
         </div>
       </form>
+      <div class="text-red-500">{errorMessage()}</div>
+      <Button label="Import from db" onClick={() => importFromDb()} />
+      <pre>{statusMessage()}</pre>
       <div class="flex flex-wrap justify-center">
         <Show when={solidStore()}>
           <For

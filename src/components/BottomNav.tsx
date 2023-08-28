@@ -15,8 +15,9 @@ export default function BottomNav(props: {
             {(item) => (
               <A
                 activeClass="text-primary"
+                inactiveClass="text-text2"
                 href={item.href}
-                class="flex flex-col items-center justify-center text-sm text-text2">
+                class="flex flex-col items-center justify-center text-sm ">
                 <div class="w-6 h-6">{item.icon}</div>
                 <span class="mt-1 text-xs font-semibold ">
                   {item.label}
