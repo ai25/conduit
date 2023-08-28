@@ -1,7 +1,4 @@
 // @refresh reload
-registerSW({
-  onOfflineReady() {},
-});
 import {
   Accessor,
   Match,
@@ -52,7 +49,6 @@ import { MediaOutletElement, MediaPlayerElement } from "vidstack";
 import History, { videoId } from "./routes/history";
 import { getStorageValue, setStorageValue } from "./utils/storage";
 import PlayerContainer from "./components/PlayerContainer";
-import { registerSW } from "virtual:pwa-register";
 import Modal from "./components/Modal";
 import { Transition } from "solid-headless";
 import Watch from "./routes/watch";
@@ -209,7 +205,10 @@ export default function Root() {
       JSON.stringify(preferences[0]),
       "localStorage"
     );
+  });
+  createEffect(async () => {
     try {
+      const { registerSW } = await import("virtual:pwa-register");
       registerSW({
         onOfflineReady() {},
         onRegisterError(error) {
