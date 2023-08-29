@@ -13,6 +13,7 @@ import {
   from,
   onCleanup,
   onMount,
+  untrack,
   useContext,
 } from "solid-js";
 import {
@@ -36,10 +37,10 @@ import {
   Route,
 } from "solid-start";
 import "./root.css";
-import { isServer } from "solid-js/web";
+import { Portal, isServer } from "solid-js/web";
 import Select from "./components/Select";
 import Player from "./components/Player";
-import { SetStoreFunction, createStore } from "solid-js/store";
+import { SetStoreFunction, createStore, unwrap } from "solid-js/store";
 import { PipedVideo } from "./types";
 import { defineCustomElements } from "vidstack/elements";
 import { IDBPDatabase, openDB } from "idb";
@@ -69,6 +70,7 @@ import { AppStateProvider, useAppState } from "./stores/appStateStore";
 import BottomNav from "./components/BottomNav";
 import { TiHome } from "solid-icons/ti";
 import { AiOutlineFire, AiOutlineMenu } from "solid-icons/ai";
+import { Toast } from "@kobalte/core";
 
 const theme = createSignal("monokai");
 export const ThemeContext = createContext(theme);
@@ -239,13 +241,15 @@ export default function Root() {
   });
   createEffect(() => {
     if (!isServer) {
-      console.log(clone(store()), "store");
       if (!store()) return;
       observeDeep(store(), () => {
         console.log("store changed");
         setSolidStore(clone(store()));
       });
     }
+  });
+  createEffect(() => {
+    if (!store()) return;
   });
   let webrtcProvider: WebrtcProvider | null = null;
   let idbProvider: IndexeddbPersistence | null = null;
@@ -317,6 +321,11 @@ export default function Root() {
                               </Show>
                               <Header />
                               <div aria-hidden="true" class="h-10" />
+                              <Portal>
+                                <Toast.Region>
+                                  <Toast.List class="toast__list" />
+                                </Toast.Region>
+                              </Portal>
                               <PlayerContainer />
                               {/* <PipContainer />{" "} */}
                               <Routes>

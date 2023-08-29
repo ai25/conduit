@@ -1,15 +1,4 @@
-import syncedStore, { getYjsDoc, observeDeep } from "@syncedstore/core";
 import { DocTypeDescription } from "@syncedstore/core/types/doc";
-import {
-  createContext,
-  createEffect,
-  from,
-  Accessor,
-  createSignal,
-} from "solid-js";
-import { isServer } from "solid-js/web";
-import { IndexeddbPersistence } from "y-indexeddb";
-import { WebrtcProvider } from "y-webrtc";
 import { Playlist, RelatedStream } from "~/types";
 
 export type HistoryItem = RelatedStream & {
@@ -28,6 +17,10 @@ export interface Store extends DocTypeDescription {
 }
 
 export function clone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+export function jsonClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
@@ -67,7 +60,7 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
     createMany: async (
       store: Store,
       datas: T[],
-      progressCallback: (progress: number) => void
+      progressCallback?: (progress: number) => void
     ) => {
       const batchSize = 100;
       let progress = 0;
@@ -76,7 +69,7 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
         batchSize,
         (newProgress) => {
           progress = newProgress;
-          progressCallback(progress);
+          progressCallback?.(progress);
         }
       )) {
         (store[name] as T[]).push(...batch.map((data) => clone(data)));
@@ -144,33 +137,42 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
     upsertMany: async (
       store: Store,
       data: T[],
-      progressCallback?: (processed: number, total: number) => void
+      progressCallback?: (
+        processed: number,
+        currentTitle: string,
+        updated: number
+      ) => void,
+      options?: {
+        skipExisting?: boolean;
+      }
     ) => {
       const totalItems = data.length;
-      const batchSize = 100;
+      const batchSize = 1;
       let progress = 0;
+      let updated = 0;
+      const skipDuplicates = options?.skipExisting || false;
 
       for await (const batch of asyncBatchItems(
         data,
         batchSize,
         (newProgress) => {
-          console.log(newProgress);
           progress = newProgress;
-          progressCallback?.(progress, totalItems);
         }
       )) {
         batch.forEach((newItem) => {
           const index = (store[name] as T[]).findIndex(
             (item) => item.id === newItem.id
           );
-          if (index !== -1) {
+          if (index !== -1 && !skipDuplicates) {
             const item = clone((store[name] as T[])[index]) as T;
             const upsertedItem = { ...item, ...newItem } as T;
             (store[name] as T[]).splice(index, 1, upsertedItem);
+            updated++;
           } else {
             const upsertedItem = newItem;
             (store[name] as T[]).push(upsertedItem);
           }
+          progressCallback?.(progress, (newItem as any).title, updated);
         });
       }
     },
