@@ -139,8 +139,7 @@ const Search = () => {
         </Dropdown>
       </form> */}
       <Combobox.Root
-        // value={search()}
-        // onChange={setSearch}
+      class="w-full max-w-full flex px-2"
         options={options()}
         onInputChange={onInputChange}
         onOpenChange={onOpenChange}
@@ -155,16 +154,13 @@ const Search = () => {
             item={props.item}
             class="text-base data-[highlighted]:bg-bg1 leading-none text-text1 bg-bg2 rounded-md flex items-center justify-between h-8 px-2 relative select-none outline-none">
             <Combobox.ItemLabel>{props.item.rawValue}</Combobox.ItemLabel>
-            {/* <Combobox.ItemIndicator class="combobox__item-indicator">
-              <CheckIcon />
-            </Combobox.ItemIndicator> */}
           </Combobox.Item>
         )}>
-        <Combobox.Control class="inline-flex text-sm justify-between w-50 rounded-md leading-none outline-none bg-bg1 border border-bg1 text-text1 transition-colors duration-250">
+        <Combobox.Control class="">
           {({ selectedOptions }) => (
             <Combobox.Input
               ref={inputRef}
-              class="appearance-none focus-visible:ring-2 focus-visible:ring-primary text-text1 bg-bg1 inline-flex w-full min-h-10 pl-4 rounded-md outline-none"
+              class="w-full max-w-full outline-none bg-bg1 border border-bg2 focus:ring-2 text-text1 text-sm rounded-lg focus:ring-primary focus:border-primary py-1 px-2.5"
             />
           )}
         </Combobox.Control>

@@ -72,7 +72,7 @@ export default ({
       class={` flex w-full max-w-md lg:mx-4 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}>
       <A
         href={v.url ?? `/watch?v=${videoId(v)}`}
-        class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1">
+        class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary">
         {progress() !== undefined && (
           <div class="relative h-0 w-0 ">
             <div class="absolute left-0 top-0 z-[1] bg-bg1/80 rounded-br px-2 uppercase">
@@ -127,7 +127,7 @@ export default ({
         <div class="flex flex-col gap-2 pr-2 ">
           <A
             href={v.url ?? `/watch?v=${videoId(v)}`}
-            class=" two-line-ellipsis min-w-0 ">
+            class=" two-line-ellipsis min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-primary">
             {v.title}
           </A>
 
@@ -136,7 +136,7 @@ export default ({
               <div class="group mb-1 w-max underline ">
                 <A
                   href={v.uploaderUrl || ""}
-                  class="flex max-w-max items-center gap-2">
+                  class="flex max-w-max items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary">
                   <img
                     src={v.uploaderAvatar!}
                     width={32}
@@ -149,7 +149,7 @@ export default ({
             </Show>
 
             <div class="flex w-full flex-col text-xs">
-              <A href={v.uploaderUrl || ""}>
+              <A href={v.uploaderUrl || ""} class="outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 <div class="peer w-fit ">{v.uploaderName}</div>
               </A>
               <div class="flex ">

@@ -30,7 +30,8 @@ import Search from "./SearchInput";
 import Modal from "./Modal";
 import Button from "./Button";
 import Field from "./Field";
-import { Popover as KobaltePopover } from "@kobalte/core";
+import { Popover as KobaltePopover, DropdownMenu } from "@kobalte/core";
+import { FaSolidBrush, FaSolidCheck, FaSolidGlobe } from "solid-icons/fa";
 
 function classNames(...classes: (string | boolean | undefined)[]): string {
   return classes.filter(Boolean).join(" ");
@@ -122,6 +123,9 @@ const Header = () => {
     setPassword(room.password || "");
   });
 
+  const [themeOpen, setThemeOpen] = createSignal(false);
+  const [instanceOpen, setInstanceOpen] = createSignal(false);
+
   return (
     <nav class="fixed bg-bg2 w-full z-[99999] -mx-2 h-10 flex items-center justify-between">
       <button
@@ -131,213 +135,154 @@ const Header = () => {
         }}>
         Skip navigation
       </button>
-      <ul class="hidden lg:flex items-center justify-between px-2 mr-auto">
-        <For each={links}>
-          {(link) => (
-            <A href={link.href} class="link text-sm p-1 text-left transition ">
-              {link.label}
-            </A>
-          )}
-        </For>
-        <div class="w-80 flex justify-start">
-          <Search />
-        </div>
-      </ul>
-      <div class="flex items-center justify-center">
-        <Show when={roomId()}>
-          <KobaltePopover.Root>
-            <KobaltePopover.Trigger class="mx-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-green-600"
-                viewBox="0 0 20 20"
-                fill="currentColor">
-                <circle cx="10" cy="10" r="10" />
-              </svg>
-            </KobaltePopover.Trigger>
-            <KobaltePopover.Portal>
-              <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
-                <KobaltePopover.Arrow />
-              <KobaltePopover.Description class=" text-sm p-1 text-left flex flex-col gap-2 items-center text-green-600">
-                Connected: {roomId()}
-                <Button
-                  label="Leave"
-                  onClick={() => {
-                    localStorage.removeItem("room");
-                    location.reload();
-                  }}
-                />
-              </KobaltePopover.Description>
-              </KobaltePopover.Content>
-            </KobaltePopover.Portal>
-          </KobaltePopover.Root>
-        </Show>
-        <Show when={!roomId()}>
-          <KobaltePopover.Root>
-            <KobaltePopover.Trigger class="mx-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-red-600"
-                viewBox="0 0 20 20"
-                fill="currentColor">
-                <circle cx="10" cy="10" r="10" />
-              </svg>
-            </KobaltePopover.Trigger>
-            <KobaltePopover.Portal>
-              <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
-                <KobaltePopover.Arrow />
-              <KobaltePopover.Description class=" text-sm p-1 text-left flex flex-col gap-2 items-center text-red-600">
-              Disconnected
-              <Button label="Join room" onClick={() => setModalOpen(true)} />
-            </KobaltePopover.Description>
-          </KobaltePopover.Content>
-          </KobaltePopover.Portal>
-          </KobaltePopover.Root>
-        </Show>
-      </div>
-
-      <div class="w-80 hidden lg:flex items-center gap-2">
-        <Sel
-          name="theme"
-          value={theme() ?? ""}
-          onChange={(v) => {
-            setThemeContext(v);
-            setTheme(v);
-          }}
-          options={[
-            { value: "monokai", label: "Monokai" },
-            { value: "dracula", label: "Dracula" },
-            { value: "kawaii", label: "Kawaii" },
-            { value: "discord", label: "Discord" },
-            { value: "github", label: "Github" },
-          ]}
-        />
-        <Sel
-          name="instance"
-          value={
-            (instances() as PipedInstance[])?.find(
-              (i) => i.api_url === instance()
-            )?.name ?? `DOWN - ${instance()}`
-          }
-          onChange={(v) => {
-            setInstance(v);
-            setInstanceContext(v);
-          }}
-          options={(instances() as PipedInstance[])?.map((instance) => {
-            return {
-              value: instance.api_url,
-              label: instance.name,
-            };
-          })}
-        />
-      </div>
-      <div class="w-full flex items-center justify-between lg:hidden">
-        <Search />
-        <div class="w flex items-center justify-center ">
-          <Popover defaultOpen={false} class="relative ">
-            {({ isOpen }) => (
-              <>
-                <PopoverButton
-                  class={classNames(
-                    isOpen() && "text-opacity-90",
-                    "group px-3 py-2 rounded-md inline-flex items-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
-                  )}>
-                  {/* <ChevronDownIcon
-                class={classNames(
-                  isOpen() && 'text-opacity-0',
-                  'h-8 w-8 rounded-sm transition-transform duration-200 ease-out group-aria-expanded:rotate-90 group-data-[focus]:ring-4 group-data-[focus]:ring-primary',
-                )}
-                aria-hidden="true"
-              />  */}
-                  {/* u/surjithctly -> https://tailwindcomponents.com/component/wip-hamburger-menu-animation */}
-                  <div class="block w-5 absolute left-1/2 top-1/2   transform  -translate-x-1/2 -translate-y-1/2">
-                    <span
-                      classList={{
-                        "rotate-45": isOpen(),
-                        " -translate-y-1.5": !isOpen(),
-                      }}
-                      aria-hidden="true"
-                      class="block absolute h-0.5 w-5 bg-current transform transition duration-500 ease-in-out"></span>
-                    <span
-                      classList={{ "opacity-0": isOpen() }}
-                      aria-hidden="true"
-                      class="block absolute  h-0.5 w-5 bg-current   transform transition duration-500 ease-in-out"></span>
-                    <span
-                      classList={{
-                        "-rotate-45": isOpen(),
-                        " translate-y-1.5": !isOpen(),
-                      }}
-                      aria-hidden="true"
-                      class="block absolute  h-0.5 w-5 bg-current transform  transition duration-500 ease-in-out"></span>
-                  </div>
-                </PopoverButton>
-                <Transition
-                  show={isOpen()}
-                  enter="transition duration-200"
-                  enterFrom="opacity-0 -translate-y-1 scale-50"
-                  enterTo="opacity-100 translate-y-0 scale-100"
-                  leave="transition duration-150"
-                  leaveFrom="opacity-100 translate-y-0 scale-100"
-                  leaveTo="opacity-0 -translate-y-1 scale-50">
-                  <PopoverPanel
-                    unmount={false}
-                    class="absolute w-[calc(100vw-2px)] h-screen backdrop-blur px-4 mt-2 transform -translate-x-[calc(100%-1.25rem)] left-1/2 ">
-                    <Menu class="overflow-hidden w-full rounded-lg shadow-lg ring-1 ring-text1/5 py-4 px-2 bg-bg1/95 flex flex-col space-y-1">
-                      <For each={links}>
-                        {(link) => (
-                          <MenuItem
-                            onClick={() => navigate(link.href)}
-                            as="button"
-                            classList={{
-                              "-translate-x-50": !isOpen(),
-                              "translate-x-0": isOpen(),
-                            }}
-                            class="text-sm p-1 text-left rounded hover:bg-highlight hover:text-text3 focus:outline-none focus:bg-highlight focus:text-text3 transition">
-                            {link.label}
-                          </MenuItem>
-                        )}
-                      </For>
-                      <Sel
-                        name="theme"
-                        value={theme() ?? ""}
-                        onChange={(v) => {
-                          setThemeContext(v);
-                          setTheme(v);
-                        }}
-                        options={[
-                          { value: "monokai", label: "Monokai" },
-                          { value: "dracula", label: "Dracula" },
-                          { value: "kawaii", label: "Kawaii" },
-                          { value: "discord", label: "Discord" },
-                          { value: "github", label: "Github" },
-                        ]}
-                      />
-                      <Sel
-                        name="instance"
-                        value={
-                          (instances() as PipedInstance[])?.find(
-                            (i) => i.api_url === instance()
-                          )?.name ?? `DOWN - ${instance()}`
-                        }
-                        onChange={(v) => {
-                          setInstance(v);
-                          setInstanceContext(v);
-                        }}
-                        options={(instances() as PipedInstance[])?.map(
-                          (instance) => {
-                            return {
-                              value: instance.api_url,
-                              label: instance.name,
-                            };
-                          }
-                        )}
-                      />
-                    </Menu>
-                  </PopoverPanel>
-                </Transition>
-              </>
+      <div class="flex items-center justify-between w-full max-w-full min-w-0">
+        <A href="/" class="text-text1 link px-2">
+          Conduit
+        </A>
+        <ul class="hidden md:inline">
+          <For each={links}>
+            {(link) => (
+              <A
+                href={link.href}
+                class="link text-sm p-1 text-left transition ">
+                {link.label}
+              </A>
             )}
-          </Popover>
+          </For>
+        </ul>
+          <Search />
+        <div class="flex items-center gap-2 ">
+          <Show when={roomId()}>
+            <KobaltePopover.Root>
+              <KobaltePopover.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-green-600 rounded-full"
+                  viewBox="0 0 20 20"
+                  fill="currentColor">
+                  <circle cx="10" cy="10" r="10" />
+                </svg>
+              </KobaltePopover.Trigger>
+              <KobaltePopover.Portal>
+                <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
+                  <KobaltePopover.Arrow />
+                  <KobaltePopover.Description class=" text-sm p-1 text-left flex flex-col gap-2 items-center text-green-600">
+                    Connected: {roomId()}
+                    <Button
+                      label="Leave"
+                      onClick={() => {
+                        localStorage.removeItem("room");
+                        location.reload();
+                      }}
+                    />
+                  </KobaltePopover.Description>
+                </KobaltePopover.Content>
+              </KobaltePopover.Portal>
+            </KobaltePopover.Root>
+          </Show>
+          <Show when={!roomId()}>
+            <KobaltePopover.Root>
+              <KobaltePopover.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-red-600 rounded-full"
+                  viewBox="0 0 20 20"
+                  fill="currentColor">
+                  <circle cx="10" cy="10" r="10" />
+                </svg>
+              </KobaltePopover.Trigger>
+              <KobaltePopover.Portal>
+                <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
+                  <KobaltePopover.Arrow />
+                  <KobaltePopover.Description class=" text-sm p-1 text-left flex flex-col gap-2 items-center text-red-600">
+                    Disconnected
+                    <Button
+                      label="Join room"
+                      onClick={() => setModalOpen(true)}
+                    />
+                  </KobaltePopover.Description>
+                </KobaltePopover.Content>
+              </KobaltePopover.Portal>
+            </KobaltePopover.Root>
+          </Show>
+
+          <DropdownMenu.Root open={themeOpen()} onOpenChange={setThemeOpen}>
+            <DropdownMenu.Trigger class=" p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+              <DropdownMenu.Icon>
+                <FaSolidBrush fill="currentColor" class="h-5 w-5 text-text1" />
+              </DropdownMenu.Icon>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
+                <DropdownMenu.Arrow />
+                <DropdownMenu.RadioGroup
+                  value={theme()}
+                  onChange={(value) => {
+                    setThemeContext(value);
+                    setTheme(value);
+                  }}>
+                  <For
+                    each={[
+                      { value: "monokai", label: "Monokai" },
+                      { value: "dracula", label: "Dracula" },
+                      { value: "kawaii", label: "Kawaii" },
+                      { value: "discord", label: "Discord" },
+                      { value: "github", label: "Github" },
+                    ]}>
+                    {(option) => (
+                      <DropdownMenu.RadioItem
+                        value={option.value}
+                        class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">
+                        <DropdownMenu.ItemIndicator class="inline-flex absolute left-0">
+                          <FaSolidCheck
+                            fill="currentColor"
+                            class="h-4 w-4 mx-1 text-text1"
+                          />
+                        </DropdownMenu.ItemIndicator>
+                        {option.label}
+                      </DropdownMenu.RadioItem>
+                    )}
+                  </For>
+                </DropdownMenu.RadioGroup>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+          <DropdownMenu.Root
+            open={instanceOpen()}
+            onOpenChange={setInstanceOpen}>
+            <DropdownMenu.Trigger class="mr-2 p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+              <DropdownMenu.Icon>
+                <FaSolidGlobe fill="currentColor" class="h-5 w-5 text-text1" />
+              </DropdownMenu.Icon>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
+                <DropdownMenu.Arrow />
+                <DropdownMenu.RadioGroup
+                  value={instance()}
+                  onChange={(value) => {
+                    setInstanceContext(value);
+                    setInstance(value);
+                  }}>
+                  <For each={instances() as PipedInstance[]}>
+                    {(instance) => (
+                      <DropdownMenu.RadioItem
+                        value={instance.api_url}
+                        class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">
+                        <DropdownMenu.ItemIndicator class="inline-flex absolute left-0">
+                          <FaSolidCheck
+                            fill="currentColor"
+                            class="h-4 w-4 mx-1 text-text1"
+                          />
+                        </DropdownMenu.ItemIndicator>
+                        {instance.name}
+                      </DropdownMenu.RadioItem>
+                    )}
+                  </For>
+                </DropdownMenu.RadioGroup>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         </div>
       </div>
       <Modal

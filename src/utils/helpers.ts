@@ -1,4 +1,3 @@
-
 export async function fetchJson(
   url: string,
   params?: Record<string, string>,
@@ -18,12 +17,18 @@ export async function fetchJson(
   return response.json();
 }
 
-export function classNames(...classes: (string | boolean | undefined)[]): string {
-    return classes.filter(Boolean).join(" ");
-  }
+export function classNames(
+  ...classes: (string | boolean | undefined)[]
+): string {
+  return classes.filter(Boolean).join(" ");
+}
 
 export function assertType<T>(item: any, property: string, value: string) {
-    if (item[property] === value){
-      return item as T;
-    } 
+  if (item[property] === value) {
+    return item as T;
+  }
+}
+
+export function generateThumbnailUrl(proxyUrl: string, videoId: string) {
+  return `${proxyUrl}/vi/${videoId}/mqdefault.jpg?host=i.ytimg.com`;
 }

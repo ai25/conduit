@@ -233,16 +233,15 @@ export default function Watch() {
 
   return (
     <div
-      // classList={{
-      //   "": !theatre(),
-      //   "": theatre(),
-      // }}
-      class="flex flex-col md:flex-row max-w-full ">
-      <div classList={{ "": !preferences.theatreMode }} class="w-full">
-        <div class="min-h-full max-w-full">
-          <Show when={video.value} keyed>
-            {(video) => <Description video={video} />}
-          </Show>
+      class="flex flex-col lg:flex-row w-full max-w-full ">
+      <div
+        // classList={{
+        //   "": !preferences.theatreMode,
+        //   "w-full": preferences.theatreMode,
+        // }} 
+        class="w-full">
+        <div class="min-h-full w-full max-w-full">
+            <Description video={video.value} />
         </div>
       </div>
       <div
@@ -250,16 +249,15 @@ export default function Watch() {
           "md:min-w-[22rem] md:w-[22rem] md:max-w-[29rem] h-full":
             !preferences.theatreMode,
         }}
-        class="flex min-w-0 flex-col items-center gap-2">
+        class="w-full">
         <div
           classList={{
-            "lg:absolute lg:top-10 lg:right-0":
-              !preferences.theatreMode,
+            "lg:absolute lg:top-10 lg:right-0": !preferences.theatreMode,
             "lg:pl-4 md:mr-4": preferences.theatreMode,
           }}>
           <Show when={playlist()} keyed>
             {(list) => (
-              <Show when={rowVirtualizer()} fallback={<div>Loading</div>}>
+              <Show when={rowVirtualizer()}>
                 <div class="overflow-hidden rounded-xl mx-2 mr-3 my-4 ">
                   <div
                     ref={(ref) => setParentRef(ref)}
