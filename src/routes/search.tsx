@@ -19,6 +19,9 @@ import PlaylistCard from "~/components/PlaylistCard";
 import { A } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";
 import { assertType } from "~/utils/helpers";
+import numeral from "numeral";
+import Button from "~/components/Button";
+import SubscribeButton from "~/components/SubscribeButton";
 export interface SearchQuery {
   items: RelatedStream[];
   nextpage: string;
@@ -157,31 +160,45 @@ export default function Search() {
                 when={assertType<RelatedChannel>(item, "type", "channel")}
                 keyed>
                 {(item) => (
-                  <div class="w-44 mx-1 flex flex-col gap-2 items-start">
-                    <A href={item.url} class="group outline-none">
-                      <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
-                        <img
-                          class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
-                          src={item.thumbnail}
-                          loading="lazy"
-                        />
-                      </div>
-                    </A>
-                    <A class="link" href={item.url}>
-                      <div class="flex gap-1">
-                        <span>{item.name}</span>
-                        <Show when={item.verified}>
-                          <Checkmark />
+                  <div class="mx-4 my-2 flex flex-col gap-2 items-start w-full lg:w-72 max-h-20 lg:max-h-full max-w-md">
+                    <div class="flex items-center gap-2 w-full lg:flex-col lg:items-start">
+                      <A href={item.url} class="group outline-none">
+                        <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
+                          <img
+                            class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
+                            src={item.thumbnail}
+                            loading="lazy"
+                          />
+                        </div>
+                      </A>
+                      <div class="flex flex-col justify-center gap-1 min-w-0 w-full h-20 max-h-20 text-text2 text-xs self-end">
+                        <div class="flex items-center gap-1">
+                          <A class="link text-sm" href={item.url}>
+                            <div class="flex gap-1">
+                              <span>{item.name}</span>
+                              <Show when={item.verified}>
+                                <Checkmark />
+                              </Show>
+                            </div>
+                          </A>
+                          <Show when={item.videos >= 0}>
+                            <p>&#183; {item.videos} videos</p>
+                          </Show>
+                        </div>
+                        <Show when={item.description}>
+                          <p class="two-line-ellipsis ">{item.description}</p>
+                        </Show>
+                        <Show when={item.subscribers >= 0} fallback={<p></p>}>
+                          <p>
+                            {numeral(item.subscribers)
+                              .format("0a")
+                              .toUpperCase()}{" "}
+                            subscribers
+                          </p>
                         </Show>
                       </div>
-                    </A>
-
-                    {/* <template v-if="props.item.videos >= 0">
-                      <br v-if="props.item.uploaderName" />
-                      <strong v-text="`${props.item.videos} ${$t('video.videos')}`" />
-                    </template> */}
-
-                    <br />
+                      <SubscribeButton id={item.url.split("/").pop()!} />
+                    </div>
                   </div>
                 )}
               </Match>

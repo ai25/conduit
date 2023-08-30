@@ -630,7 +630,11 @@ export default function Player() {
     if (document.activeElement?.tagName === "INPUT") return;
     switch (e.key) {
       case "f":
-        remote.toggleFullscreen();
+        if (document.fullscreenElement) {
+          mediaPlayer?.exitFullscreen();
+        } else {
+          mediaPlayer?.requestFullscreen();
+        }
         e.preventDefault();
         break;
       case "m":

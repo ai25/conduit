@@ -253,7 +253,7 @@ export default function Watch() {
         class="flex min-w-0 flex-col items-center gap-2">
         <div
           classList={{
-            "lg:absolute lg:top-10 lg:right-0 -mx-2 mx-auto":
+            "lg:absolute lg:top-10 lg:right-0":
               !preferences.theatreMode,
             "lg:pl-4 md:mr-4": preferences.theatreMode,
           }}>

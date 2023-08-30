@@ -21,6 +21,7 @@ import { BsInfoCircleFill, BsXCircle } from "solid-icons/bs";
 import Button from "~/components/Button";
 import { toaster, Toast } from "@kobalte/core";
 import { Portal } from "solid-js/web";
+import { Title } from "solid-start";
 
 export const videoId = (item: any) => {
   if (!item) return undefined;
@@ -361,6 +362,7 @@ export default function History() {
 
   return (
     <div class="">
+      <Title>History | Conduit</Title>
       <form>
         <br />
         <div>

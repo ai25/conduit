@@ -69,12 +69,14 @@ const Search = () => {
     document.addEventListener("keydown", handleKeyDown);
   });
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === "k" && e.ctrlKey) {
-      e.preventDefault();
-      inputRef?.focus();
+    if (e.ctrlKey) {
+      if (e.key === "k") {
+        e.preventDefault();
+        inputRef?.focus();
+      }
     }
     if (e.key === "Enter") {
-      console.dir( inputRef?.getAttribute("aria-expanded"))
+      console.dir(inputRef?.getAttribute("aria-expanded"));
       if (inputRef?.getAttribute("aria-expanded")) {
         if (!search()) return;
         handleSearch(search()!);

@@ -513,11 +513,11 @@ const ActionDisplay = (props: { action: { name: string; value: string } }) => {
             type="fast-backward"
             classList={{ "opacity-0": name() !== "seek-" }}></media-icon>
           <media-icon
-            class="absolute w-16 h-16"
+            class="hidden md:block absolute w-16 h-16"
             type="play"
             classList={{ "opacity-0": name() !== "play" }}></media-icon>
           <media-icon
-            class="absolute w-16 h-16"
+            class="hidden md:block absolute w-16 h-16"
             type="pause"
             classList={{ "opacity-0": name() !== "pause" }}></media-icon>
         </div>

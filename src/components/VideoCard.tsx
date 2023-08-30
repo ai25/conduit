@@ -69,7 +69,7 @@ export default ({
 
   return (
     <div
-      class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}>
+      class={` flex w-full max-w-md lg:mx-4 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}>
       <A
         href={v.url ?? `/watch?v=${videoId(v)}`}
         class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1">
@@ -123,11 +123,11 @@ export default ({
           </div>
         )}
       </A>
-      <div class="mt-2 flex w-full justify-between ">
+      <div class="mt-2 flex w-full max-h-20 min-w-0 max-w-full justify-between ">
         <div class="flex flex-col gap-2 pr-2 ">
           <A
             href={v.url ?? `/watch?v=${videoId(v)}`}
-            class="h-10 max-w-full two-line-ellipsis">
+            class=" two-line-ellipsis min-w-0 ">
             {v.title}
           </A>
 

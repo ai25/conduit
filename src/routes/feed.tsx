@@ -4,6 +4,7 @@ import { InstanceContext} from "~/root";
 import { Spinner } from "~/components/PlayerContainer";
 import { RelatedStream } from "~/types";
 import { getStorageValue } from "~/utils/storage";
+import { Title } from "solid-start";
 
 export default function Feed() {
   // const { data, refetch } = trpc.useQuery([
@@ -90,6 +91,7 @@ export default function Feed() {
   //   }
   return (
     <>
+    <Title>Feed | Conduit</Title>
       {/* {isLoading&&<div class="fixed flex justify-center w-full text-5xl text-text"><ImSpinner2 class="animate-spin"/></div>} */}
       <div class="mx-2 flex flex-wrap justify-center">
         <Show when={videos()} keyed>

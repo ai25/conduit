@@ -245,6 +245,7 @@ export default function Root() {
       observeDeep(store(), () => {
         console.log("store changed");
         setSolidStore(clone(store()));
+        console.log(clone(store())?.history.length, "history length");
       });
     }
   });
@@ -290,7 +291,7 @@ export default function Root() {
   return (
     <Html lang="en">
       <Head>
-        <Title>SolidStart - With TailwindCSS</Title>
+        <Title>Conduit</Title>
         <Meta charset="utf-8" />
         <Meta
           name="viewport"
@@ -299,17 +300,17 @@ export default function Root() {
 
         <Link rel="manifest" href="manifest.webmanifest" />
       </Head>
-      <ThemeContext.Provider value={theme}>
-        <DBContext.Provider value={db}>
-          <InstanceContext.Provider value={instance}>
-            <QueueProvider>
+      <QueueProvider>
+        <ThemeContext.Provider value={theme}>
+          <DBContext.Provider value={db}>
+            <InstanceContext.Provider value={instance}>
               <AppStateProvider>
                 <PlaylistProvider>
                   <PlayerContext.Provider value={video}>
                     <PlayerStateProvider>
                       <SyncContext.Provider value={store}>
                         <Body
-                          class={`${theme[0]()} bg-bg1 font-poppins text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}>
+                          class={`${theme[0]()} bg-bg1 font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}>
                           <Suspense>
                             <ErrorBoundary>
                               <Show when={appState.loading}>
@@ -412,10 +413,10 @@ export default function Root() {
                   </PlayerContext.Provider>
                 </PlaylistProvider>
               </AppStateProvider>
-            </QueueProvider>
-          </InstanceContext.Provider>
-        </DBContext.Provider>
-      </ThemeContext.Provider>
+            </InstanceContext.Provider>
+          </DBContext.Provider>
+        </ThemeContext.Provider>
+      </QueueProvider>
     </Html>
   );
 }

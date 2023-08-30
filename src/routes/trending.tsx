@@ -1,6 +1,6 @@
 import { Match, createEffect } from "solid-js";
 import { For, Switch, createSignal } from "solid-js";
-import { createRouteData, useRouteData } from "solid-start";
+import { Title, createRouteData, useRouteData } from "solid-start";
 import VideoCard from "~/components/VideoCard";
 import type { TrendingStream } from "~/types";
 import { fetchWithTimeout } from "./watch";
@@ -30,6 +30,7 @@ export default function Trending() {
   })
   return (
     <div class="flex min-h-full flex-wrap justify-center bg-bg1">
+      <Title>Trending | Conduit</Title>
       {/* {loading.value && (
           <div class="absolute left-0 top-0 flex h-full w-full items-center justify-center bg-black bg-opacity-50">
             <div class="text-2xl text-white">Loading...</div>
