@@ -327,7 +327,7 @@ export default function Root() {
                                   <Toast.List class="toast__list" />
                                 </Toast.Region>
                               </Portal>
-                              <PlayerContainer />
+                              {/* <PlayerContainer /> */}
                               {/* <PipContainer />{" "} */}
                               <Routes>
                                 <FileRoutes />

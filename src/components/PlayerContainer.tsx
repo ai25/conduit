@@ -19,10 +19,6 @@ export default function PlayerContainer() {
   const [video] = useContext(PlayerContext);
   const [preferences] = useContext(PreferencesContext);
 
-  createRenderEffect(() => {
-    console.log(preferences.theatreMode, "theatre mode");
-  });
-
   const Loading = () =>
     route.pathname === "/watch" ? <LoadingState /> : <></>;
   const Error = (props: any) =>
@@ -33,26 +29,16 @@ export default function PlayerContainer() {
     );
 
   const [theatre, setTheatre] = createSignal(true);
-  const navigate = useNavigate();
-  createEffect(() => {
-    console.log(
-      "render effect in watch page, theatre is:",
-      preferences
-    );
-    setTheatre(preferences.theatreMode);
-    console.log("theatre() is set to ", theatre());
-  });
 
   return (
     <div
-      class="flex sticky md:relative top-12 md:top-0 z-50 md:z-0 "
+      class="flex md:relative md:top-0"
       classList={{
         "fixed md:fixed bottom-0": route.pathname !== "/watch",
-        "lg:max-w-[calc(100%-20.8rem)]": !theatre(),
+        // "lg:max-w-[calc(100%-20.8rem)]": !theatre(),
 
         // "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
-      }}
-      >
+      }}>
       <Switch fallback={<Loading />}>
         <Match when={video.error} keyed>
           <Error message={video.error!.message} name={video.error!.name} />
@@ -63,6 +49,13 @@ export default function PlayerContainer() {
           }}
         </Match>
       </Switch>
+      <div
+        id="column"
+        classList={{
+          "w-0 h-0": !preferences.theatreMode,
+          "w-max min-w-max h-max overflow-y-auto": preferences.theatreMode,
+        }}
+      />
       {/* <div
         classList={{
           "hidden lg:flex": !preferences.theatreMode,
@@ -130,8 +123,7 @@ const LoadingState = () => {
 
 function ErrorState(error: Error) {
   return (
-    <div
-     class="pointer-events-none flex-col text-center gap-2 col-span-3 aspect-video bg-black  flex h-full w-full items-center justify-center">
+    <div class="pointer-events-none flex-col text-center gap-2 col-span-3 aspect-video bg-black  flex h-full w-full items-center justify-center">
       <div class="text-lg sm:text-2xl font-bold text-red-300">
         {error.name} :(
       </div>

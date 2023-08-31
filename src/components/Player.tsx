@@ -659,6 +659,7 @@ export default function Player() {
       case "k":
       case " ":
         if (document.activeElement?.tagName === "BUTTON") return;
+        if (document.activeElement?.tagName.startsWith("MEDIA-")) return;
         if (mediaPlayer!.paused) mediaPlayer!.play();
         else mediaPlayer!.pause();
         e.preventDefault();

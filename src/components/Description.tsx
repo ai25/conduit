@@ -150,7 +150,7 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
 
   return (
     <Show when={props.video} fallback={<Placeholder />}>
-      <div class="mb-2 max-w-5xl bg-bg1 p-4 ">
+      <div class="mb-2 bg-bg1 p-4 ">
         <div class="flex flex-col justify-between gap-2 lg:flex-row">
           <div class="flex flex-col gap-2 ">
             <h1 class="text-lg font-bold sm:text-xl ">{props.video!.title}</h1>

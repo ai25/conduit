@@ -21,12 +21,13 @@ import { videoId } from "./history";
 import { getHlsManifest } from "~/utils/hls";
 import PlaylistItem from "~/components/PlaylistItem";
 import { createVirtualizer } from "@tanstack/solid-virtual";
-import { fetchJson } from "~/utils/helpers";
+import { classNames, fetchJson } from "~/utils/helpers";
 import { usePlaylist } from "~/stores/playlistStore";
 import { SyncedDB } from "~/stores/syncedStore";
 import type { Virtualizer } from "@tanstack/virtual-core";
 import Button from "~/components/Button";
 import { useAppState } from "~/stores/appStateStore";
+import PlayerContainer from "~/components/PlayerContainer";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
@@ -57,6 +58,9 @@ export async function fetchWithTimeout(
 
   return response;
 }
+
+const VIDEO_CARD_WIDTH = 300;
+const PLAYLIST_WIDTH = 400;
 
 export default function Watch() {
   console.log(new Date().toISOString().split("T")[1], "rendering watch page");
@@ -233,32 +237,49 @@ export default function Watch() {
 
   return (
     <div
-      class="flex flex-col lg:flex-row w-full max-w-full ">
+      class="flex"
+      classList={{
+        "flex-col": preferences.theatreMode,
+        "flex-col lg:flex-row": !preferences.theatreMode,
+      }}>
       <div
-        // classList={{
-        //   "": !preferences.theatreMode,
-        //   "w-full": preferences.theatreMode,
-        // }} 
-        class="w-full">
-        <div class="min-h-full w-full max-w-full">
+        class="flex flex-col"
+        classList={{
+          "flex-grow": !preferences.theatreMode,
+          "w-full": preferences.theatreMode,
+        }}>
+        <PlayerContainer />
+        <Show when={!preferences.theatreMode}>
+          <div>
             <Description video={video.value} />
-        </div>
+          </div>
+        </Show>
       </div>
       <div
+        class="flex"
         classList={{
-          "md:min-w-[22rem] md:w-[22rem] md:max-w-[29rem] h-full":
-            !preferences.theatreMode,
-        }}
-        class="w-full">
+          "flex-col": !preferences.theatreMode,
+          "flex-row": preferences.theatreMode,
+          "w-full": preferences.theatreMode,
+        }}>
+        <Show when={preferences.theatreMode}>
+          <div class="w-full max-w-full">
+            <Description video={video.value} />
+          </div>
+        </Show>
         <div
+          class={`flex flex-col gap-2 items-center w-full min-w-0`}
           classList={{
-            "lg:absolute lg:top-10 lg:right-0": !preferences.theatreMode,
-            "lg:pl-4 md:mr-4": preferences.theatreMode,
-          }}>
+            [` lg:max-w-[${playlist()?PLAYLIST_WIDTH:VIDEO_CARD_WIDTH}px]`]: !preferences.theatreMode,
+          }}
+          >
           <Show when={playlist()} keyed>
             {(list) => (
               <Show when={rowVirtualizer()}>
-                <div class="overflow-hidden rounded-xl mx-2 mr-3 my-4 ">
+                <div
+                role="group"
+                aria-label="Playlist"
+                 class="overflow-hidden rounded-xl w-full p-2 max-w-full min-w-0">
                   <div
                     ref={(ref) => setParentRef(ref)}
                     class="relative flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar">
@@ -294,18 +315,6 @@ export default function Watch() {
                         }}
                       </For>
                     </div>
-                    {/* <For each={list.relatedStreams}>
-                    {(item, index) => {
-                      return (
-                        <PlaylistItem
-                          list={route.query.list}
-                          index={index() + 1}
-                          v={item}
-                          active={route.query.index ?? 1}
-                        />
-                      );
-                    }}
-                  </For> */}
                   </div>
                 </div>
               </Show>
