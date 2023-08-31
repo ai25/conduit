@@ -20,11 +20,11 @@ import VideoCard from "~/components/VideoCard";
 import { videoId } from "./history";
 import { getHlsManifest } from "~/utils/hls";
 import PlaylistItem from "~/components/PlaylistItem";
-import { createVirtualizer } from "@tanstack/solid-virtual";
+import { createVirtualizer, elementScroll } from "@tanstack/solid-virtual";
 import { classNames, fetchJson } from "~/utils/helpers";
 import { usePlaylist } from "~/stores/playlistStore";
 import { SyncedDB } from "~/stores/syncedStore";
-import type { Virtualizer } from "@tanstack/virtual-core";
+import type { Virtualizer, VirtualizerOptions } from "@tanstack/virtual-core";
 import Button from "~/components/Button";
 import { useAppState } from "~/stores/appStateStore";
 import PlayerContainer from "~/components/PlayerContainer";
@@ -205,6 +205,41 @@ export default function Watch() {
     // setPlaylist(l);
     // console.log(l);
   });
+
+  function easeInOutQuint(t: number): number {
+    return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
+  }
+
+  const [scrollingRef, setScrollingRef] = createSignal<number>(0);
+
+  const scrollToFn: VirtualizerOptions<any, any>["scrollToFn"] = (
+    offset,
+    canSmooth,
+    instance
+  ) => {
+    const duration = 40 * Number(route.query.index );
+    const start = parentRef()!.scrollTop;
+    setScrollingRef(Date.now());
+    const startTime = scrollingRef();
+
+    const run = () => {
+      if (scrollingRef() !== startTime) return;
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
+      const interpolated = start + (offset  - start) * progress;
+
+      if (elapsed < duration) {
+        elementScroll(interpolated, canSmooth, instance);
+        requestAnimationFrame(run);
+      } else {
+        elementScroll(interpolated, canSmooth, instance);
+      }
+    };
+
+    requestAnimationFrame(run);
+  };
+
   const [parentRef, setParentRef] = createSignal<HTMLDivElement | undefined>(
     undefined
   );
@@ -221,6 +256,7 @@ export default function Watch() {
         estimateSize: () => 85,
         overscan: 5,
         debug: true,
+        scrollToFn,
         // initialOffset: 85 * (Number(route.query.index) - 1),
       })
     );
@@ -230,8 +266,8 @@ export default function Watch() {
     if (!parentRef()) return;
     if (!rowVirtualizer()) return;
     console.log("scrolling");
-    requestAnimationFrame(() => {
-      rowVirtualizer()!.scrollToIndex(Number(route.query.index) - 1);
+    rowVirtualizer()!.scrollToIndex(Number(route.query.index) - 1, {
+      align: "start",
     });
   });
 
@@ -270,16 +306,16 @@ export default function Watch() {
         <div
           class={`flex flex-col gap-2 items-center w-full min-w-0`}
           classList={{
-            [` lg:max-w-[${playlist()?PLAYLIST_WIDTH:VIDEO_CARD_WIDTH}px]`]: !preferences.theatreMode,
-          }}
-          >
+            [` lg:max-w-[${playlist() ? PLAYLIST_WIDTH : VIDEO_CARD_WIDTH}px]`]:
+              !preferences.theatreMode,
+          }}>
           <Show when={playlist()} keyed>
             {(list) => (
               <Show when={rowVirtualizer()}>
                 <div
-                role="group"
-                aria-label="Playlist"
-                 class="overflow-hidden rounded-xl w-full p-2 max-w-full min-w-0">
+                  role="group"
+                  aria-label="Playlist"
+                  class="overflow-hidden rounded-xl w-full p-2 max-w-full min-w-0">
                   <div
                     ref={(ref) => setParentRef(ref)}
                     class="relative flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar">

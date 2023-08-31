@@ -459,7 +459,7 @@ export default function History() {
           </For>
           <div
             ref={(ref) => setIntersectionRef(ref)}
-            class="w-full h-10 mt-2"
+            class="w-full h-20 mt-2 bg-primary"
           />
         </Show>
       </div>

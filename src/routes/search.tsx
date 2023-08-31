@@ -4,6 +4,7 @@ import {
   For,
   Show,
   Switch,
+  createEffect,
   createRenderEffect,
   createSignal,
   onCleanup,
@@ -18,15 +19,16 @@ import { Match } from "solid-js";
 import PlaylistCard from "~/components/PlaylistCard";
 import { A } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";
-import { assertType } from "~/utils/helpers";
+import { assertType, fetchJson } from "~/utils/helpers";
 import numeral from "numeral";
 import Button from "~/components/Button";
 import SubscribeButton from "~/components/SubscribeButton";
+import { Spinner } from "~/components/PlayerContainer";
 export interface SearchQuery {
   items: RelatedStream[];
   nextpage: string;
-  suggestion: any;
-  corrected: boolean;
+  suggestion?: any;
+  corrected?: boolean;
 }
 
 export default function Search() {
@@ -44,12 +46,12 @@ export default function Search() {
   const route = useLocation();
   const selectedFilter = route.query.filter ?? "all";
   const [instance] = useContext(InstanceContext);
+  const [loading, setLoading] = createSignal(true);
   createRenderEffect(() => {
     console.log(route, "route");
   });
   onMount(() => {
     console.log(route);
-    handleRedirect();
     window.addEventListener("scroll", handleScroll);
     // if (this.handleRedirect()) return;
     updateResults();
@@ -68,10 +70,12 @@ export default function Search() {
     ).json();
   }
   async function updateResults() {
+    setLoading(true);
     document.title = route.query.q + " - Conduit";
     const results = await fetchResults();
     console.log(results, "results");
     setResults(results);
+    setLoading(false);
   }
   // function updateFilter() {
   //     this.$router.replace({
@@ -81,34 +85,23 @@ export default function Search() {
   //         },
   //     });
   // }
-  function handleScroll() {
-    // if (this.loading || !this.results || !this.results.nextpage) return;
-    // if (window.innerHeight + window.scrollY >= document.body.offsetHeight - window.innerHeight) {
-    //     this.loading = true;
-    //     this.fetchJson(this.apiUrl() + "/nextpage/search", {
-    //         nextpage: this.results.nextpage,
-    //         q: this.$route.query.search_query,
-    //         filter: this.$route.query.filter ?? "all",
-    //     }).then(json => {
-    //         this.results.nextpage = json.nextpage;
-    //         this.results.id = json.id;
-    //         this.loading = false;
-    //         json.items.map(stream => this.results.items.push(stream));
-    //     });
-    // }
+  async function fetchNextPage() {
+    if (!results()?.nextpage) return;
+    setLoading(true);
+    const nextPage = await fetchJson(`${instance()}/nextpage/search`, {
+      nextpage: results()!.nextpage,
+      q: route.query.q,
+      filter: route.query.filter ?? "all",
+    });
+    console.log(nextPage, "nextPage");
+    setResults((results) => ({
+      ...results,
+      items: [...results!.items, ...nextPage.items],
+      nextpage: nextPage.nextpage,
+    }));
+    setLoading(false);
   }
-  function handleRedirect() {
-    // const query = this.$route.query.search_query;
-    // const url =
-    //     /(?:http(?:s)?:\/\/)?(?:www\.)?youtube\.com(\/[/a-zA-Z0-9_?=&-]*)/gm.exec(query)?.[1] ??
-    //     /(?:http(?:s)?:\/\/)?(?:www\.)?youtu\.be\/(?:watch\?v=)?([/a-zA-Z0-9_?=&-]*)/gm
-    //         .exec(query)?.[1]
-    //         .replace(/^/, "/watch?v=");
-    // if (url) {
-    //     this.$router.push(url);
-    //     return true;
-    // }
-  }
+
   function saveQueryToHistory() {
     const query = route.query.q;
     if (!query) return;
@@ -126,6 +119,27 @@ export default function Search() {
     if (searchHistory.length > 10) searchHistory.shift();
     localStorage.setItem("search_history", JSON.stringify(searchHistory));
   }
+
+  const [intersectionRef, setIntersectionRef] = createSignal<
+    HTMLDivElement | undefined
+  >(undefined);
+  function handleScroll(e: any) {
+    const entry = e[0];
+    if (entry?.isIntersecting) {
+      fetchNextPage();
+    }
+  }
+
+  createEffect(() => {
+    console.log(intersectionRef(), "intersection");
+    if (!intersectionRef()) return;
+
+    const intersectionObserver = new IntersectionObserver(handleScroll, {
+      threshold: 0.1,
+    });
+
+    intersectionObserver.observe(intersectionRef()!);
+  });
   return (
     <>
       <h1 class="text-center my-2" v-text="$route.query.search_query" />
@@ -139,16 +153,30 @@ export default function Search() {
 
       <hr />
 
-      <div v-if="results && results.corrected">
-        {/* <i18n-t keypath="search.did_you_mean" tag="div" class="text-lg">
-            <router-link to="{ name: 'SearchResults', query: { search_query: results.suggestion } }">
-                <em v-text="results.suggestion" />
-            </router-link>
-        </i18n-t> */}
-      </div>
+      <Show when={results()?.corrected}>
+        <div class="mt-2">
+          <p class="">
+            Did you mean{" "}
+            <A
+              href={`/search?q=${
+                results()!.suggestion
+              }&filter=${selectedFilter}`}
+              class="link !text-accent1">
+              {results()!.suggestion}
+            </A>
+            ?
+          </p>
+        </div>
+      </Show>
 
-      <div class="flex flex-wrap">
-        <For each={results()?.items}>
+      <div class="flex flex-wrap justify-center">
+        <For
+          each={results()?.items}
+          fallback={
+            <For each={Array(20).fill(0)}>
+              {() => <VideoCard v={undefined} />}
+            </For>
+          }>
           {(item) => (
             <Switch>
               <Match
@@ -210,6 +238,13 @@ export default function Search() {
             </Switch>
           )}
         </For>
+
+        <Show when={loading()}>
+          <div class="w-full flex justify-center">
+            <Spinner />
+          </div>
+        </Show>
+        <div ref={(ref) => setIntersectionRef(ref)} class="w-full h-20 mt-2" />
       </div>
     </>
   );
