@@ -75,22 +75,6 @@ export interface VideoStream {
   contentLength: number;
 }
 
-export interface RelatedStream {
-  url: string;
-  type: string;
-  title: string;
-  thumbnail: string;
-  uploaderName: string;
-  uploaderUrl: string;
-  uploaderAvatar: string | null;
-  uploadedDate: string;
-  shortDescription: string | null;
-  duration: number;
-  views: number;
-  uploaded: number;
-  uploaderVerified: boolean;
-  isShort: boolean;
-}
 
 export interface Subtitle {
   url: string;
@@ -163,28 +147,6 @@ export interface Channel {
   tabs?: Tab[];
 }
 
-export interface RelatedChannel {
-  url: string
-  type: "channel"
-  name: string
-  thumbnail: string
-  description: any
-  subscribers: number
-  videos: number
-  verified: boolean
-}
-
-export interface RelatedPlaylist {
-  url: string
-  type: "playlist"
-  name: string
-  thumbnail: string
-  uploaderName: string
-  uploaderUrl: string
-  uploaderVerified: boolean
-  playlistType: string
-  videos: number
-}
 
 
 export interface Tab {
@@ -210,6 +172,44 @@ export interface Playlist {
   uploaderAvatar: string
   videos: number
   relatedStreams: RelatedStream[]
+}
+export interface RelatedStream {
+  url: string;
+  type: string;
+  title: string;
+  thumbnail: string;
+  uploaderName: string;
+  uploaderUrl: string;
+  uploaderAvatar: string | null;
+  uploadedDate: string;
+  shortDescription: string | null;
+  duration: number;
+  views: number;
+  uploaded: number;
+  uploaderVerified: boolean;
+  isShort: boolean;
+}
+export interface RelatedChannel {
+  url: string
+  type: "channel"
+  name: string
+  thumbnail: string
+  description: any
+  subscribers: number
+  videos: number
+  verified: boolean
+}
+
+export interface RelatedPlaylist {
+  url: string
+  type: "playlist"
+  name: string
+  thumbnail: string
+  uploaderName: string
+  uploaderUrl: string
+  uploaderVerified: boolean
+  playlistType: string
+  videos: number
 }
 
 export type ContentItem = RelatedStream | RelatedChannel | RelatedPlaylist

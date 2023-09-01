@@ -106,7 +106,7 @@ export default ({
               "bg-bg1/80": v.duration !== -1,
               "bg-primary": v.duration === -1,
             }}
-            class="absolute bottom-2 right-2 rounded px-1">
+            class="absolute bottom-2 right-2 rounded px-1 text-xs">
             <Show when={v.duration === -1}>Live</Show>
             <Show when={v.duration !== -1}>
               {numeral(v.duration).format("00:00:00").replace(/^0:/, "")}
