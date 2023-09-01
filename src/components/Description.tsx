@@ -33,7 +33,7 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
   const [isSubscribed, setIsSubscribed] = createSignal(false);
 
   const [comments, setComments] = createSignal<PipedCommentResponse>();
-  const [instance, setInstance] = useContext(InstanceContext);
+  const [instance] = useContext(InstanceContext);
 
   function rewriteDescription(text: string) {
     const t = text
@@ -106,7 +106,7 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
   };
 
   async function loadComments() {
-    const res = await fetch(`${instance()}/comments/${videoId(props.video)}`);
+    const res = await fetch(`${instance().api_url}/comments/${videoId(props.video)}`);
     const data = await res.json();
     console.log(data, "comments");
     setComments(data);
@@ -114,7 +114,7 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
   async function loadMoreComments() {
     if (!comments()?.nextpage) return;
     const res = await fetch(
-      `${instance()}/nextpage/comments/${videoId(props.video)}?nextpage=${
+      `${instance().api_url}/nextpage/comments/${videoId(props.video)}?nextpage=${
         comments()!.nextpage
       }`
     );

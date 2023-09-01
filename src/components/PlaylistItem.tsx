@@ -9,13 +9,14 @@ import {
   onMount,
   useContext,
 } from "solid-js";
-import { DBContext, SolidStoreContext } from "~/root";
+import { DBContext, InstanceContext, SolidStoreContext } from "~/root";
 import { videoId } from "~/routes/history";
 import { RelatedStream } from "~/types";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
 import DropdownItem from "./DropdownItem";
 import { SyncedDB } from "~/stores/syncedStore";
+import { generateThumbnailUrl } from "~/utils/helpers";
 
 const PlaylistItem = (props: {
   v: RelatedStream;
@@ -25,18 +26,12 @@ const PlaylistItem = (props: {
 }) => {
   const [db] = useContext(DBContext);
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
+  const [instance] = useContext(InstanceContext)
   const solidStore = useContext(SolidStoreContext);
 
   createRenderEffect(async () => {
     if (!solidStore()) return;
     const val = SyncedDB.history.findUnique(solidStore()!, videoId(props.v));
-    // setThumbnail(
-    //   v?.thumbnail?.replace("hqdefault", "mqdefault") ??
-    //     `${instance().replace(
-    //       "api",
-    //       "proxy"
-    //     )}/vi/${id}/mqdefault.jpg?host=i.ytimg.com`
-    // );
     setProgress(val?.currentTime);
   });
   let card: HTMLAnchorElement | undefined = undefined;
@@ -87,7 +82,7 @@ const PlaylistItem = (props: {
         <div class="shadow-xl my-auto w-0 min-w-[6rem] @[20rem]:min-w-[7rem] @[35rem]:min-w-[9rem] @[50rem]:min-w-[11rem]max-w-[6rem] @[20rem]:max-w-[7rem] @[35rem]:max-w-[9rem] @[50rem]:max-w-[11rem] aspect-video max-h-full rounded-lg ">
           <img
             class="object-cover w-full h-full max-w-full max-h-full rounded-lg "
-            src={props.v.thumbnail}
+            src={generateThumbnailUrl(instance().image_proxy_url, videoId(props.v))}
           />
           {!!progress() && (
             <div class="relative h-0 w-full">

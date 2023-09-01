@@ -43,7 +43,7 @@ export default function Comment(props: Props) {
     setLoadingReplies(true);
     setShowingReplies(true);
     const res = await fetch(
-      `${instance()}/nextpage/comments/${props.videoId}?nextpage=${nextpage()}`
+      `${instance().api_url}/nextpage/comments/${props.videoId}?nextpage=${nextpage()}`
     );
     const data = await res.json();
     setReplies(replies().concat(data.comments));

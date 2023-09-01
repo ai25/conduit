@@ -107,7 +107,7 @@ export default function Watch() {
     const v = route.query.v;
     console.log(v, "v");
     if (!v) return;
-    const origin = new URL(instance()).hostname.split(".").slice(-2).join(".");
+    const origin = new URL(instance().api_url).hostname.split(".").slice(-2).join(".");
     const newOrigin = untrack(() =>
       new URL(video.value?.hls ?? "https://example.com").hostname
         .split(".")
@@ -140,7 +140,7 @@ export default function Watch() {
     let data;
 
     try {
-      const res = await fetch(`${instance()}/streams/${v}`, {
+      const res = await fetch(`${instance().api_url}/streams/${v}`, {
         signal: abortController.signal,
       });
       data = await res.json();
@@ -177,7 +177,7 @@ export default function Watch() {
   createEffect(async () => {
     if (!route.query.list) return;
     if (isLocalPlaylist()) return;
-    const json = await fetchJson(`${instance()}/playlists/${route.query.list}`);
+    const json = await fetchJson(`${instance().api_url}/playlists/${route.query.list}`);
     setPlaylist({ ...json, id: route.query.list });
     console.log(json);
   });

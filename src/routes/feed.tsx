@@ -30,48 +30,16 @@ export default function Feed() {
       "json",
       "localStorage"
     );
-    const cache = await caches.open("conduit-v1");
-    const cachedResponse = await cache.match(
-      `${instance()}/feed/unauthenticated`
-    );
-    if (cachedResponse) {
-      console.log("cached response");
-      const stale = () => {
-        const headers = cachedResponse.headers;
-        const date = headers.get("date");
-        const age = (Date.now() - new Date(date!).getTime()) / 1000;
-        return age > 60;
-      };
-      if (!stale()) {
-        console.log("cache is not stale");
-        const data = await cachedResponse.json();
-        setVideos(data);
-        setIsLoading(false);
-        return;
-      }
-      await cache.delete(`${instance()}/feed/unauthenticated`);
-      console.log("cache is stale");
-    }
 
     try {
       console.log("cache was stale, refetching");
-      const res = await fetch(`${instance()}/feed/unauthenticated`, {
+      const res = await fetch(`${instance().api_url}/feed/unauthenticated`, {
         method: "POST",
         body: JSON.stringify(channels),
       });
       const data = (await res.json()) as RelatedStream[] | Error;
       console.log(data, "subs");
       if (!(data as Error).message) {
-        cache.put(
-          `${instance()}/feed/unauthenticated`,
-          new Response(JSON.stringify(data), {
-            headers: {
-              "Cache-Control": "max-age=60",
-              "Content-Type": "application/json",
-              date: new Date().toISOString(),
-            },
-          })
-        );
         setVideos(data as RelatedStream[]);
       }
       setIsLoading(false);

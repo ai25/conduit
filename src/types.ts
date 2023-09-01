@@ -128,6 +128,7 @@ export interface PipedInstance {
   last_checked: number;
   cache: boolean;
   s3_enabled: boolean;
+  image_proxy_url: string;
 }
 
 export interface PipedChannelResponse {

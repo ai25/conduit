@@ -65,9 +65,8 @@ function ChevronDownIcon(props: JSX.IntrinsicElements["svg"]): JSX.Element {
 const Header = () => {
   const [isOpen, setIsOpen] = createSignal(false);
   const [theme, setThemeContext] = useContext(ThemeContext);
-  const [instance, setInstanceContext] = useContext(InstanceContext);
+  const [instance, setInstance] = useContext(InstanceContext);
   const [, setTheme] = useCookie("theme", "monokai");
-  const [, setInstance] = useCookie("instance", "https://pipedapi.kavin.rocks");
   const [instances, setInstances] = createSignal<PipedInstance[] | Error>();
   const route = useLocation();
   const [preferences] = useContext(PreferencesContext);
@@ -259,10 +258,9 @@ const Header = () => {
               <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
                 <DropdownMenu.Arrow />
                 <DropdownMenu.RadioGroup
-                  value={instance()}
+                  value={instance().api_url}
                   onChange={(value) => {
-                    setInstanceContext(value);
-                    setInstance(value);
+                    setInstance((instances() as PipedInstance[]).find((i) => i.api_url === value)!);
                   }}>
                   <For each={instances() as PipedInstance[]}>
                     {(instance) => (
@@ -297,14 +295,14 @@ const Header = () => {
               type="text"
               placeholder="Room ID"
               value={roomId()}
-              onInput={(e) => setRoomId(e.currentTarget!.value)}
+              onInput={(e) => setRoomId(e)}
             />
             <Field
               name="password"
               type="password"
               placeholder="Password"
               value={password()}
-              onInput={(e) => setPassword(e.currentTarget.value)}
+              onInput={(e) => setPassword(e)}
             />
             <Button
               onClick={() => {

@@ -448,10 +448,6 @@ export default function History() {
                   v={{
                     ...item,
                     url: `/watch?v=${videoId(item)}}`,
-                    thumbnail: `${instance().replace(
-                      "api",
-                      "proxy"
-                    )}/vi/${videoId(item)}/mqdefault.jpg?host=i.ytimg.com`,
                   }}
                 />
               </div>

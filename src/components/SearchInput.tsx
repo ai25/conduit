@@ -20,7 +20,7 @@ const Search = () => {
   const [instance] = useContext(InstanceContext);
   async function getSuggestions(value: string) {
     if (!value) return;
-    const res = await fetch(`${instance()}/suggestions?query=${value}`);
+    const res = await fetch(`${instance().api_url}/suggestions?query=${value}`);
     console.log(res);
     if (res.status === 200) {
       const json = await res.json();

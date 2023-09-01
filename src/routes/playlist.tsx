@@ -7,47 +7,49 @@ import {
   Show,
   useContext,
 } from "solid-js";
-import { useLocation } from "solid-start";
+import { Title, useLocation } from "solid-start";
 import VideoCard from "~/components/VideoCard";
-import { DBContext, InstanceContext } from "~/root";
-import { RelatedStream } from "~/types";
+import { DBContext, InstanceContext, SyncContext } from "~/root";
+import { Playlist as PlaylistType, RelatedStream } from "~/types";
 import dayjs from "dayjs";
 import { videoId } from "./history";
 import { A } from "@solidjs/router";
 import PlaylistItem from "~/components/PlaylistItem";
 import { fetchJson } from "~/utils/helpers";
+import { SyncedDB } from "~/stores/syncedStore";
 
 export default function Playlist() {
   const [playlist, setPlaylist] = createSignal(null);
   const [admin, setAdmin] = createSignal(false);
   const [isBookmarked, setIsBookmarked] = createSignal(false);
-  const [list, setList] = createSignal<{
-    videos: RelatedStream[];
-    id: string;
-  }>();
+  const [list, setList] = createSignal<PlaylistType>();
   const [db] = useContext(DBContext);
   const route = useLocation();
   const isLocal = () => route.query.list?.startsWith("conduit-");
   const id = route.query.list;
   const [instance] = useContext(InstanceContext);
+  const readStore = useContext(SyncContext);
 
-  createEffect(async () => {
+  createEffect(async() => {
     if (!id) return;
     if (!isLocal()) return;
-    if (!db()) return;
+    if (!readStore()) return;
+    await new Promise((r) => setTimeout(r, 100));
+    const l = SyncedDB.playlists.findUnique(readStore()!, id);
+    // if (!db()) return;
 
-    const tx = db()!.transaction("playlists", "readonly");
-    const store = tx.objectStore("playlists");
-    const l = await store.get(id);
-    console.log(l, id);
+    // const tx = db()!.transaction("playlists", "readonly");
+    // const store = tx.objectStore("playlists");
+    // const l = await store.get(id);
+    // console.log(l, id);
     setList(l);
-    console.log(l);
+    console.log(l,SyncedDB.playlists.findUnique(readStore()!,id),id)
   });
 
   createEffect(async () => {
     if (!id) return;
     if (isLocal()) return;
-    const json = await fetchJson(`${instance()}/playlists/${id}`);
+    const json = await fetchJson(`${instance().api_url}/playlists/${id}`);
     setList(json);
     console.log(json);
   });
@@ -167,6 +169,7 @@ export default function Playlist() {
 
   return (
     <>
+    <Title>{list() ? list()!.name : "Playlist"}</Title>
       <Show when={list()} keyed>
         {(l) => {
           return (
@@ -174,25 +177,10 @@ export default function Playlist() {
               <h1 class="text-2xl font-bold mb-4">{list()!.name}</h1>
 
               <div class="grid grid-cols-1 gap-4 ">
-                <Show when={isLocal() && l.videos.length > 0}>
-                  <For each={l.videos}>
-                    {(video, index) => (
-                      <PlaylistItem
-                        v={video}
-                        index={index() + 1}
-                        list={id}
-                      />
-                    )}
-                  </For>
-                </Show>
-                <Show when={!isLocal() && l.relatedStreams.length > 0}>
+                <Show when={l.relatedStreams.length > 0}>
                   <For each={l.relatedStreams}>
                     {(video, index) => (
-                      <PlaylistItem
-                        v={video}
-                        index={index() + 1}
-                        list={id}
-                      />
+                      <PlaylistItem active="" v={video} index={index() + 1} list={id} />
                     )}
                   </For>
                 </Show>

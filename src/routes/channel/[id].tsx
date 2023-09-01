@@ -49,7 +49,7 @@ export default function Channel() {
 
   async function fetchChannel() {
     console.log(route, "fetching channel");
-    const url = instance() + route.pathname + "/";
+    const url = instance().api_url + route.pathname + "/";
     return await fetch(url).then((res) => res.json());
   }
 
@@ -101,7 +101,7 @@ export default function Channel() {
   async function fetchChannelNextPage() {
     setLoading(true);
     const json = await fetchJson(
-      `${instance()}/nextpage/channel/${channel()!.id}`,
+      `${instance().api_url}/nextpage/channel/${channel()!.id}`,
       {
         nextpage: channel()!.nextpage,
       }
@@ -115,7 +115,7 @@ export default function Channel() {
   }
   async function fetchChannelTabNextPage() {
     setLoading(true);
-    const json = await fetchJson(`${instance()}/channels/tabs`, {
+    const json = await fetchJson(`${instance().api_url}/channels/tabs`, {
       data: tabs()[selectedTab()].data,
       nextpage: tabs()[selectedTab()].tabNextPage,
     });
@@ -168,7 +168,7 @@ export default function Channel() {
       return;
     }
 
-    let u = new URL(`${instance()}/channels/tabs?data=${tabs()[index].data}`);
+    let u = new URL(`${instance().api_url}/channels/tabs?data=${tabs()[index].data}`);
     fetch(u)
       .then((res) => res.json())
       .then((tab) => {

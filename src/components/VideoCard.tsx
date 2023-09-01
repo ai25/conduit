@@ -34,6 +34,7 @@ import DropdownItem from "./DropdownItem";
 import Dropdown from "./Dropdown";
 import { SyncedDB } from "~/stores/syncedStore";
 import { BsInfoCircleFill, BsThreeDotsVertical } from "solid-icons/bs";
+import { generateThumbnailUrl } from "~/utils/helpers";
 
 dayjs.extend(relativeTime);
 
@@ -85,8 +86,7 @@ export default ({
             class={`cursor-pointer w-full aspect-video max-w-md break-words ${
               progress() !== undefined ? "saturate-[0.35] opacity-75" : ""
             } `}
-            // src={v.thumbnail?.replace("hqdefault", "mqdefault")}
-            src={v.thumbnail?.replace("hqdefault", "mqdefault")}
+            src={generateThumbnailUrl(instance().image_proxy_url, videoId(v))}
             onError={() => setImgError(true)}
             // placeholder="blur"
             width={2560}
@@ -149,7 +149,9 @@ export default ({
             </Show>
 
             <div class="flex w-full flex-col text-xs">
-              <A href={v.uploaderUrl || ""} class="outline-none focus-visible:ring-2 focus-visible:ring-primary">
+              <A
+                href={v.uploaderUrl || ""}
+                class="outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 <div class="peer w-fit ">{v.uploaderName}</div>
               </A>
               <div class="flex ">

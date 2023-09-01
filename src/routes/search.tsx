@@ -482,7 +482,7 @@ export default function Search() {
   async function fetchResults() {
     return await (
       await fetch(
-        `${instance()}/search?q=${route.query.q}&filter=${
+        `${instance().api_url}/search?q=${route.query.q}&filter=${
           route.query.filter ?? "all"
         }`
       )
@@ -507,7 +507,7 @@ export default function Search() {
   async function fetchNextPage() {
     if (!results()?.nextpage) return;
     setLoading(true);
-    const nextPage = await fetchJson(`${instance()}/nextpage/search`, {
+    const nextPage = await fetchJson(`${instance().api_url}/nextpage/search`, {
       nextpage: results()!.nextpage,
       q: route.query.q,
       filter: route.query.filter ?? "all",

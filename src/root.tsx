@@ -41,7 +41,7 @@ import { Portal, isServer } from "solid-js/web";
 import Select from "./components/Select";
 import Player from "./components/Player";
 import { SetStoreFunction, createStore, unwrap } from "solid-js/store";
-import { PipedVideo } from "./types";
+import { PipedInstance, PipedVideo } from "./types";
 import { defineCustomElements } from "vidstack/elements";
 import { IDBPDatabase, openDB } from "idb";
 import Header from "./components/Header";
@@ -99,7 +99,19 @@ const db = createSignal<IDBPDatabase<unknown> | undefined>(undefined);
 export const DBContext =
   createContext<Signal<IDBPDatabase<unknown> | undefined>>(db);
 
-const instance = createSignal("https://pipedapi.kavin.rocks");
+const instance = createSignal<PipedInstance>({
+  name: "Piped",
+  api_url: "https://pipedapi.kavin.rocks",
+  cache: true,
+  cdn: true,
+  last_checked: new Date().getTime(),
+  locations: "",
+  version: "0.0.0",
+  registered: 0,
+  s3_enabled: false,
+  up_to_date: false,
+  image_proxy_url: "https://pipedproxy.kavin.rocks"
+});
 export const InstanceContext = createContext(instance);
 
 const preferences = createStore({
@@ -135,9 +147,7 @@ export default function Root() {
       );
     };
     const t = cookie().theme ?? "monokai";
-    const i = cookie().instance ?? "https://pipedapi.kavin.rocks";
     theme[1](t);
-    instance[1](i);
   });
   createEffect(async () => {
     console.log(
