@@ -110,7 +110,7 @@ const instance = createSignal<PipedInstance>({
   registered: 0,
   s3_enabled: false,
   up_to_date: false,
-  image_proxy_url: "https://pipedproxy.kavin.rocks"
+  image_proxy_url: "https://pipedproxy.kavin.rocks",
 });
 export const InstanceContext = createContext(instance);
 
@@ -339,9 +339,10 @@ export default function Root() {
                               </Portal>
                               {/* <PlayerContainer /> */}
                               {/* <PipContainer />{" "} */}
-                              <Routes>
-                                <FileRoutes />
-                                {/* <Transition
+                              <main tabIndex={0}>
+                                <Routes>
+                                  <FileRoutes />
+                                  {/* <Transition
                         show={!isRouting()}
                         enter="transition-opacity duration-200"
                         enterFrom="opacity-0 translate-y-1"
@@ -368,7 +369,8 @@ export default function Root() {
                         <Route path="/search" element={<Search />} />
                         <Route path="/trending" element={<Trending />} />
                         <Route path="/import" element={<Import />} /> */}
-                              </Routes>
+                                </Routes>
+                              </main>
                               <Transition
                                 show={true}
                                 enter="transition ease-in-out duration-300 transform"

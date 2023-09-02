@@ -130,7 +130,7 @@ const Header = () => {
       <button
         class="sr-only focus:not-sr-only absolute top-0 left-0"
         onClick={() => {
-          document.querySelector("media-player")?.focus();
+          document.querySelector("main")?.focus();
         }}>
         Skip navigation
       </button>
@@ -285,7 +285,6 @@ const Header = () => {
       </div>
       <Modal
         isOpen={modalOpen()}
-        onClose={() => setModalOpen(false)}
         title="Join Room"
         setIsOpen={setModalOpen}>
         <div class="w-full h-full bg-bg1">
@@ -321,64 +320,5 @@ const Header = () => {
   );
 };
 
-const Sel = (props: {
-  name: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-}) => {
-  return (
-    <>
-      <Disclosure class="lg:hidden" defaultOpen={false} as="div">
-        <DisclosureButton
-          as="button"
-          class="flex justify-between w-full px-4 py-2 text-sm font-medium text-left bg-bg2 text-primary rounded-lg hover:bg-text2 focus:outline-none focus-visible:ring focus-visible:ring-highlight/75">
-          {({ isOpen }) => (
-            <>
-              <span>{props.name}</span>
-              <ChevronDownIcon
-                class={`${isOpen() ? "transform rotate-180" : ""} w-5 h-5`}
-              />
-            </>
-          )}
-        </DisclosureButton>
-        <DisclosurePanel class="relative px-1 pt-4 pb-2 mt-1 text-sm bg-bg2 max-h-32 overflow-auto scrollbar rounded-lg">
-          <For each={props.options}>
-            {(option) => (
-              <button
-                onClick={() => props.onChange(option.value)}
-                class="cursor-pointer w-full border-bg3 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">
-                <div class="flex w-full items-center p-2 pl-2 border-transparent border-l-2 relative ">
-                  <div class="w-full items-center flex">
-                    <div class="mx-2">{option.label}</div>
-                  </div>
-                </div>
-              </button>
-            )}
-          </For>
-        </DisclosurePanel>
-      </Disclosure>
-      <div class="hidden lg:block">
-        <Dropdown
-          label={props.value}
-          icon={<ChevronDownIcon class="w-5 h-5" />}
-          iconPosition="right"
-          buttonClass="max-w-[10rem] bg-primary rounded-lg flex px-3 py-1 text-sm font-medium text-left text-bg2 hover:bg-text2 focus:outline-none focus-visible:ring focus-visible:ring-accent1"
-          rotateIcon={true}>
-          <For each={props.options}>
-            {(option) => (
-              <DropdownItem
-                onClick={() => props.onChange(option.value)}
-                as="button"
-                label={option.label}
-                selected={option.value === props.value}
-              />
-            )}
-          </For>
-        </Dropdown>
-      </div>
-    </>
-  );
-};
 
 export default Header;

@@ -1,61 +1,73 @@
-import {
-  Dialog,
-  DialogPanel,
-  DialogTitle,
-  Transition,
-  TransitionChild,
-  DialogOverlay,
-} from "solid-headless";
+import { Dialog } from "@kobalte/core";
+import { FaSolidX } from "solid-icons/fa";
 import { createSignal, JSX } from "solid-js";
 
 export default function Modal(props: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onClose: () => void;
   title: string;
   children: JSX.Element;
 }): JSX.Element {
   return (
     <>
-      <Transition appear show={props.isOpen}>
-        <Dialog
-          isOpen
-          class="fixed inset-0 z-10 overflow-y-auto"
-          onClose={props.onClose}>
-          <div class="min-h-screen px-4 flex items-center justify-center">
-            <TransitionChild
-              enter="ease-out duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0">
-              <DialogOverlay class="fixed inset-0 bg-gray-900 bg-opacity-50" />
-            </TransitionChild>
-
-            {/* This element is to trick the browser into centering the modal contents. */}
-            <span class="inline-block h-screen align-middle" aria-hidden="true">
-              &#8203;
-            </span>
-            <TransitionChild
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95">
-              <DialogPanel class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-                <DialogTitle
-                  as="h3"
-                  class="text-lg font-medium leading-6 text-gray-900">
+      <Dialog.Root open={props.isOpen} onOpenChange={props.setIsOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay
+            class=" fixed 
+    inset-0 
+    z-50 
+    bg-black/20
+    animate-[overlayHide] 
+    duration-250 
+    ease-linear 
+    delay-100
+    data-[expanded]:animate-[overlayShow]
+    data-[expanded]:duration-500
+    data-[expanded]:ease-linear
+    "
+          />
+          <div
+            class="fixed 
+    inset-0 
+    z-50 
+    flex 
+    items-center 
+    justify-center">
+            <Dialog.Content
+              class=" z-50 
+    max-w-[calc(100vw-16px)] 
+    border 
+    border-bg3
+    rounded-md 
+    p-4 
+    bg-bg1
+    shadow-md 
+    animate-[contentHide] 
+    duration-300 
+    ease-in
+    data-[expanded]:animate-[contentShow]
+    data-[expanded]:duration-500
+    data-[expanded]:ease-out
+    ">
+              <div
+                class="flex 
+    items-baseline 
+    justify-between 
+    mb-3">
+                <Dialog.Title class="text-xl font-semibold">
                   {props.title}
-                </DialogTitle>
+                </Dialog.Title>
+                <Dialog.CloseButton class="">
+                  <FaSolidX fill="currentColor" class="w-4 h-4" />
+                </Dialog.CloseButton>
+              </div>
+              <Dialog.Description class="text-base">
                 {props.children}
-              </DialogPanel>
-            </TransitionChild>
+              </Dialog.Description>
+            </Dialog.Content>
           </div>
-        </Dialog>
-      </Transition>
+        </Dialog.Portal>
+      </Dialog.Root>
     </>
   );
 }
