@@ -74,7 +74,7 @@ export default function Player() {
   let mediaPlayer: MediaPlayerElement | undefined = undefined;
   const [db] = useContext(DBContext);
   const store = useContext(SyncContext);
-  const updateProgress = () => {
+  const updateProgress = async () => {
     console.log("updating progress");
     if (!video.value) return;
     if (!started()) {
@@ -87,6 +87,7 @@ export default function Player() {
     if (!store()) return;
     const id = videoId(video.value);
     if (!id) return;
+    console.time("updating progress");
 
     let isShort = false;
     let width = video.value.videoStreams?.[0]?.width;
@@ -113,10 +114,16 @@ export default function Player() {
       views: video.value.views,
     };
     console.log("updating progress", val);
-    SyncedDB.history.upsert(store()!, { where: { id }, data: val });
-    console.log(
-      `updated progress for ${video.value.title}. ${id} to ${currentTime}`
-    );
+
+    await new Promise((resolve) => {
+      SyncedDB.history.upsert(store()!, { where: { id }, data: val });
+
+      console.log(
+        `updated progress for ${video.value?.title}. ${id} to ${currentTime}`
+      );
+      resolve(null);
+    });
+    console.timeEnd("updating progress");
   };
   const state = usePlayerState();
 
@@ -288,6 +295,7 @@ export default function Player() {
       chapters.push({ name, timestamp, seconds });
     }
 
+    console.time("chapters vtt");
     setVtt(chaptersVtt(chapters, video.value.duration));
     if (vtt()) {
       mediaPlayer.textTracks.add({
@@ -297,6 +305,7 @@ export default function Player() {
         type: "vtt",
       });
     }
+    console.timeEnd("chapters vtt");
 
     if (time) {
       let start = 0;
@@ -335,6 +344,7 @@ export default function Player() {
     if (time) return;
     const id = videoId(video.value);
     if (!id) return;
+    console.time("getting progress");
     const val = SyncedDB.history.findUnique(store()!, id);
     const progress = val?.currentTime;
     if (progress) {
@@ -342,6 +352,7 @@ export default function Player() {
         setCurrentTime(progress);
       }
     }
+    console.timeEnd("getting progress");
   });
 
   createEffect(() => {
@@ -538,13 +549,18 @@ export default function Player() {
 
   onMount(() => {
     console.log("mount", mediaPlayer);
-    document.addEventListener("beforeunload", updateProgress);
     document.addEventListener("visibilitychange", updateProgress);
+    document.addEventListener("pagehide", updateProgress);
   });
 
   onCleanup(() => {
-    document.removeEventListener("beforeunload", updateProgress);
     document.removeEventListener("visibilitychange", updateProgress);
+    document.removeEventListener("pagehide", updateProgress);
+  });
+
+  createEffect(() => {
+    if (!started()) return;
+    updateProgress();
   });
 
   const isRouting = useIsRouting();
@@ -775,8 +791,6 @@ export default function Player() {
       on:can-play={onCanPlay}
       on:provider-change={onProviderChange}
       on:hls-error={handleHlsError}
-      on:pause={updateProgress}
-      on:seeked={updateProgress}
       on:ended={handleEnded}
       on:play={() => setStarted(true)}
       on:media-player-connect={() => setMediaPlayerConnected(true)}

@@ -1,4 +1,6 @@
 import { DocTypeDescription } from "@syncedstore/core/types/doc";
+import { IndexeddbPersistence } from "y-indexeddb";
+import { videoId } from "~/routes/history";
 import { Playlist, RelatedStream } from "~/types";
 
 export type HistoryItem = RelatedStream & {
@@ -126,55 +128,80 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
         (p) => p.id === criteria.where.id
       );
       if (index !== -1) {
+        console.time("clone");
         const item = clone((store[name] as T[])[index]);
+        console.timeEnd("clone");
         const upsertedItem = { ...item, ...criteria.data };
-        (store[name] as T[]).splice(index, 1, upsertedItem);
+        console.time("splice");
+        setTimeout(() => {
+          (store[name] as T[]).splice(index, 1, upsertedItem);
+        }, 0);
+        console.timeEnd("splice");
       } else {
         const upsertedItem = criteria.data;
         (store[name] as T[]).push(upsertedItem as T);
       }
     },
-    upsertMany: async (
-      store: Store,
-      data: T[],
-      progressCallback?: (
-        processed: number,
-        currentTitle: string,
-        updated: number
-      ) => void,
-      options?: {
-        skipExisting?: boolean;
-      }
-    ) => {
-      const totalItems = data.length;
-      const batchSize = 1;
-      let progress = 0;
-      let updated = 0;
-      const skipDuplicates = options?.skipExisting || false;
+    // upsertMany: async (
+    //   store: Store,
+    //   data: T[],
+    //   progressCallback?: (
+    //     processed: number,
+    //     currentTitle: string,
+    //     updated: number
+    //   ) => void,
+    //   options?: {
+    //     skipExisting?: boolean;
+    //   }
+    // ) => {
+    //   const totalItems = data.length;
+    //   const batchSize = 1;
+    //   let progress = 0;
+    //   let updated = 0;
+    //   const skipDuplicates = options?.skipExisting || false;
 
-      for await (const batch of asyncBatchItems(
-        data,
-        batchSize,
-        (newProgress) => {
-          progress = newProgress;
+    //   for await (const batch of asyncBatchItems(
+    //     data,
+    //     batchSize,
+    //     (newProgress) => {
+    //       progress = newProgress;
+    //     }
+    //   )) {
+    //     batch.forEach((newItem) => {
+    //       const index = (store[name] as T[]).findIndex(
+    //         (item) => item.id === newItem.id
+    //       );
+    //       if (index !== -1 && !skipDuplicates) {
+    //         const item = clone((store[name] as T[])[index]) as T;
+    //         const upsertedItem = { ...item, ...newItem } as T;
+    //         (store[name] as T[]).splice(index, 1, upsertedItem);
+    //         updated++;
+    //       } else {
+    //         const upsertedItem = newItem;
+    //         (store[name] as T[]).push(upsertedItem);
+    //       }
+    //       progressCallback?.(progress, (newItem as any).title, updated);
+    //     });
+    //   }
+    // },
+    upsertMany: (store: Store, data: T[]) => {
+      if (!data || data.length === 0) return undefined;
+      console.time("spliceMany");
+      const prevData = clone(store[name]) as T[];
+      let newData;
+      //remove duplicates
+      newData = data.filter((item) => {
+        const index = prevData.findIndex((prevItem) => prevItem.id === item.id);
+        if (index !== -1) {
+          prevData.splice(index, 1);
+          return false;
         }
-      )) {
-        batch.forEach((newItem) => {
-          const index = (store[name] as T[]).findIndex(
-            (item) => item.id === newItem.id
-          );
-          if (index !== -1 && !skipDuplicates) {
-            const item = clone((store[name] as T[])[index]) as T;
-            const upsertedItem = { ...item, ...newItem } as T;
-            (store[name] as T[]).splice(index, 1, upsertedItem);
-            updated++;
-          } else {
-            const upsertedItem = newItem;
-            (store[name] as T[]).push(upsertedItem);
-          }
-          progressCallback?.(progress, (newItem as any).title, updated);
-        });
-      }
+        return true;
+      });
+      //add new items
+      newData = [...prevData, ...newData];
+      (store[name] as T[]).splice(0, (store[name] as T[]).length, ...newData);
+      console.timeEnd("spliceMany");
     },
 
     delete: (store: Store, filter: (item: T) => boolean) => {
@@ -203,22 +230,32 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
       if (!deleted) return undefined;
     },
     removeDuplicates: (store: Store) => {
-      const seen = new Set<string>();
-      let index = 0;
-      let duplicates = 0;
+      const seen = new Map<string, number>();
+      const toRemove: [number, number][] = [];
+      let rangeStart = -1;
 
-      while (index < (store[name] as T[]).length) {
-        const item = (store[name] as T[])[index];
-        if (seen.has(item.id!)) {
-          (store[name] as T[]).splice(index, 1);
-          duplicates++;
-        } else {
-          seen.add(item.id!);
-          index++;
+      (store[name] as T[]).forEach((item, index) => {
+        const id =videoId(item)
+        console.log(!!videoId(item));
+        if (!seen.has(id)) {
+          seen.set(id, index);
+          if (rangeStart !== -1) {
+            toRemove.push([rangeStart, index - rangeStart]);
+            rangeStart = -1;
+          }
+        } else if (rangeStart === -1) {
+          rangeStart = index;
         }
+      });
+      console.log(toRemove);
+      let removed = 0;
+      for (const [start, length] of toRemove.reverse()) {
+        (store[name] as T[]).splice(start, length);
+        removed += length;
       }
-      return duplicates;
+      return removed;
     },
+    
   };
 }
 
@@ -249,4 +286,15 @@ export const SyncedDB = {
       }
     },
   },
+  dangerousClearDb: (store: Store, idb:IndexeddbPersistence) => {
+    const data = clone(store);
+    idb.clearData();
+    return data;
+  },
+  restoreData: (store: Store, data: Store) => {
+    SyncedDB.playlists.upsertMany(store, data.playlists);
+    SyncedDB.history.upsertMany(store, data.history);
+    SyncedDB.subscriptions.createMany(store, data.subscriptions);
+  }
+
 };

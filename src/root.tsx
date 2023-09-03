@@ -62,7 +62,7 @@ import Import from "./routes/import";
 import { PlaylistProvider } from "./stores/playlistStore";
 import { QueueProvider } from "./stores/queueStore";
 import { PlayerStateProvider } from "./stores/playerStateStore";
-import { Store, clone } from "./stores/syncedStore";
+import { Store, SyncedDB, clone } from "./stores/syncedStore";
 import syncedStore, { getYjsDoc, observeDeep } from "@syncedstore/core";
 import { WebrtcProvider } from "y-webrtc";
 import { IndexeddbPersistence } from "y-indexeddb";
@@ -71,6 +71,7 @@ import BottomNav from "./components/BottomNav";
 import { TiHome } from "solid-icons/ti";
 import { AiOutlineFire, AiOutlineMenu } from "solid-icons/ai";
 import { Toast } from "@kobalte/core";
+import Button from "./components/Button";
 
 const theme = createSignal("monokai");
 export const ThemeContext = createContext(theme);
@@ -149,34 +150,32 @@ export default function Root() {
     const t = cookie().theme ?? "monokai";
     theme[1](t);
   });
-  // createEffect(async () => {
-  //   console.log(
-  //     new Date().toISOString().split("T")[1],
-  //     "visible task waiting for db"
-  //   );
-  //   console.time("db");
-  //   const odb = await openDB("conduit", 2, {
-  //     upgrade(db) {
-  //       console.log("upgrading");
-  //       try {
-  //         db.createObjectStore("watch_history");
-  //       } catch (e) {}
-  //       try {
-  //         db.createObjectStore("playlists");
-  //       } catch (e) {}
-  //     },
-  //   });
-  //   console.log("setting db visible");
-  //   db[1](odb);
-  //   console.timeEnd("db");
-  // });
+  createEffect(async () => {
+    console.log(
+      new Date().toISOString().split("T")[1],
+      "visible task waiting for db"
+    );
+    console.time("db");
+    const odb = await openDB("conduit", 2, {
+      upgrade(db) {
+        console.log("upgrading");
+        try {
+          db.createObjectStore("watch_history");
+        } catch (e) {}
+        try {
+          db.createObjectStore("playlists");
+        } catch (e) {}
+      },
+    });
+    console.log("setting db visible");
+    db[1](odb);
+    console.timeEnd("db");
+  });
   const [progress, setProgress] = createSignal(0);
 
-  onMount(() => {
-    console.log(
-      "render effect setting context, theatre is:",
-      preferences[0].theatreMode
-    );
+  createEffect(() => {
+    console.time("prefs");
+    console.log("render effect setting context, theatre is:");
     preferences[1](
       getStorageValue(
         "preferences",
@@ -193,6 +192,7 @@ export default function Root() {
         "localStorage"
       )
     );
+    console.timeEnd("prefs");
   });
 
   createEffect(() => {
@@ -244,15 +244,26 @@ export default function Root() {
       if (!store()) return;
       observeDeep(store(), () => {
         console.log("store changed");
-        setSolidStore(clone(store()));
+        console.time("store");
+        setTimeout(() => setSolidStore(clone(store())), 0);
         console.log(clone(store())?.history.length, "history length");
+        console.timeEnd("store");
       });
     }
     console.timeEnd("room");
   });
   let webrtcProvider: WebrtcProvider | null = null;
   let idbProvider: IndexeddbPersistence | null = null;
-  createEffect(() => {
+  async function initializeIndexedDB(): Promise<IndexeddbPersistence | null> {
+    return new Promise((resolve) => {
+      const tempProvider =
+        doc() && room().id
+          ? new IndexeddbPersistence(room().id!, doc()!)
+          : null;
+      resolve(tempProvider);
+    });
+  }
+  createEffect(async () => {
     console.time("webrtc");
     if (!doc() || !room().id) return;
     console.log(room().id, "setting webrtc provider");
@@ -262,8 +273,9 @@ export default function Root() {
     });
     console.log(webrtcProvider, "webrtc provider");
     webrtcProvider.connect();
-    idbProvider =
-      doc() && room().id ? new IndexeddbPersistence(room().id!, doc()!) : null;
+
+    idbProvider = await initializeIndexedDB();
+
     console.log(idbProvider, "provider");
     console.timeEnd("webrtc");
   });
@@ -287,6 +299,12 @@ export default function Root() {
   //   if (!isServer)
   //   document.removeEventListener("keydown", handleKeyDown);
   // });
+  const dangerouslyClearDb = () => {
+    const data = SyncedDB.dangerousClearDb(store()!, idbProvider!);
+    console.log(data, "data");
+    SyncedDB.restoreData(store()!, data);
+  };
+  const [x, setX] = createSignal("");
 
   return (
     <Html lang="en">
@@ -329,7 +347,19 @@ export default function Root() {
                               </Portal>
                               {/* <PlayerContainer /> */}
                               {/* <PipContainer />{" "} */}
-                              <main tabIndex={0}>
+                              <main>
+        <Button label="Dangerously clear db" onClick={dangerouslyClearDb} />
+        <Button label="Restore" onClick={() => SyncedDB.restoreData(store()!, JSON.parse(x()))} />
+        <Button label="Backup" onClick={() => {
+          const date = new Date();
+          const dateString =  date.toISOString().replaceAll(":", "_").substring(0, 19)
+                    const filename = `conduit-backup-${dateString}.json`
+          const file = new File([JSON.stringify((store()!))], filename, {type: "application/json"})
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(file);
+          a.download = filename;
+          a.click();
+        }} />
                                 <Routes>
                                   <FileRoutes />
                                   {/* <Transition

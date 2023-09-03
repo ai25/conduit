@@ -266,72 +266,16 @@ export default function History() {
     setStatusMessage((s) => s + "\nWrite store found, writing\n\n");
     let toastId: number | undefined = undefined;
     try {
-      SyncedDB.history
-        .upsertMany(
-          writeStore()!,
-          data,
-          (processed, title, updated) => {
-            let total = data.length;
-            const newItems = processed - updated;
-            setImportProgress((processed / total) * 100);
-            // add new status message "importing 1/100" or replace the last one if it exists
-            // setStatusMessage((s) => {
-            //   const lines = s.split("\n");
-            //   if (lines[lines.length - 1].includes("importing")) {
-            //     lines[lines.length - 1] = `Importing ${processed}/${total}`;
-            //   } else {
-            //     lines.push(`Importing ${processed}/${total}`);
-            //   }
-            //   //scroll to end
-            //   preRef?.scrollTo(0, preRef?.scrollHeight);
-            //   return lines.join("\n");
-            // });
-            const toast = (props: any) => (
-              <Toast.Root toastId={props.toastId} class="toast">
-                <div class="toast__content">
-                  <div>
-                    <Toast.Title class="toast__title">
-                      Processing: {processed} / {total}
-                    </Toast.Title>
-                    <Toast.Description class="toast__description">
-                      Importing: {title}
-                      <br />
-                      {newItems} new
-                      <br />
-                      {updated} updated
-                    </Toast.Description>
-                  </div>
-                  <Toast.CloseButton class="toast__close-button">
-                    <BsXCircle />
-                  </Toast.CloseButton>
-                </div>
-                <Toast.ProgressTrack class="toast__progress-track">
-                  <Toast.ProgressFill class="toast__progress-fill" />
-                </Toast.ProgressTrack>
-              </Toast.Root>
-            );
-            if (toastId) {
-              toaster.update(toastId, (props) => {
-                return toast(props);
-              });
-            } else
-              toastId = toaster.show((props) => {
-                return toast(props);
-              });
-          },
-          {
-            skipExisting: true,
-          }
-        )
-        .then(() => {
-          setStatusMessage((s) => s + "\nDone");
-        })
-        .catch((err) => {
-          setStatusMessage((s) => s + "\nError: " + err.message);
-        })
-        .finally(() => {
-          setImporting(false);
-        });
+      SyncedDB.history.upsertMany( writeStore()!, data!)
+        // .then(() => {
+        //   setStatusMessage((s) => s + "\nDone");
+        // })
+        // .catch((err) => {
+        //   setStatusMessage((s) => s + "\nError: " + err.message);
+        // })
+        // .finally(() => {
+        //   setImporting(false);
+        // });
     } catch (err) {
       console.error(err);
       setErrorMessage((err as any).message);
@@ -359,6 +303,8 @@ export default function History() {
 
     intersectionObserver.observe(intersectionRef()!);
   });
+
+
 
   return (
     <div class="">

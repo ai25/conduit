@@ -130,7 +130,13 @@ const Header = () => {
       <button
         class="sr-only focus:not-sr-only absolute top-0 left-0"
         onClick={() => {
-          document.querySelector("main")?.focus();
+          const main = document.querySelector("main");
+          const focusable = main?.querySelectorAll(
+            "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
+          );
+          if (focusable) {
+            (focusable[0] as HTMLElement).focus();
+          }
         }}>
         Skip navigation
       </button>
@@ -149,7 +155,7 @@ const Header = () => {
             )}
           </For>
         </ul>
-          <Search />
+        <Search />
         <div class="flex items-center gap-2 ">
           <Show when={roomId()}>
             <KobaltePopover.Root>
@@ -260,7 +266,11 @@ const Header = () => {
                 <DropdownMenu.RadioGroup
                   value={instance().api_url}
                   onChange={(value) => {
-                    setInstance((instances() as PipedInstance[]).find((i) => i.api_url === value)!);
+                    setInstance(
+                      (instances() as PipedInstance[]).find(
+                        (i) => i.api_url === value
+                      )!
+                    );
                   }}>
                   <For each={instances() as PipedInstance[]}>
                     {(instance) => (
@@ -283,10 +293,7 @@ const Header = () => {
           </DropdownMenu.Root>
         </div>
       </div>
-      <Modal
-        isOpen={modalOpen()}
-        title="Join Room"
-        setIsOpen={setModalOpen}>
+      <Modal isOpen={modalOpen()} title="Join Room" setIsOpen={setModalOpen}>
         <div class="w-full h-full bg-bg1">
           <div class="p-4 flex flex-col items-center justify-center gap-2">
             <Field
@@ -319,6 +326,5 @@ const Header = () => {
     </nav>
   );
 };
-
 
 export default Header;

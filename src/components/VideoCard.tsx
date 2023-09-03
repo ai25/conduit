@@ -52,8 +52,10 @@ export default ({
 
   createEffect(() => {
     if (!solidStore()) return;
+    console.time("history");
     const val = SyncedDB.history.findUnique(solidStore()!, videoId(v));
     setProgress(val?.currentTime ?? undefined);
+    console.timeEnd("history");
   });
 
   if (!v)
@@ -219,6 +221,7 @@ export default ({
               </button>
               <div class=" absolute right-0 -top-2 z-[1] bg-bg1/80 w-44 flex items-center rounded px-2 opacity-0 scale-0 transition peer-hover:scale-100 peer-hover:opacity-100 peer-focus-visible:scale-100 peer-focus-visible:opacity-100 ">
                 Watched: {dayjs((v as any).watchedAt).fromNow()}
+                <p>{videoId(v)}</p>
               </div>
             </div>
           </Show>
