@@ -167,18 +167,18 @@ export default function Search() {
     }
   }
 
-  createEffect(() => {
-    console.log(intersectionRef(), "intersection");
-    if (!intersectionRef()) return;
+  // createEffect(() => {
+  //   console.log(intersectionRef(), "intersection");
+  //   if (!intersectionRef()) return;
 
-    setIntersectionObserver(
-      new IntersectionObserver(handleScroll, {
-        threshold: 0.1,
-      })
-    );
+  //   setIntersectionObserver(
+  //     new IntersectionObserver(handleScroll, {
+  //       threshold: 0.1,
+  //     })
+  //   );
 
-    intersectionObserver()!.observe(intersectionRef()!);
-  });
+  //   intersectionObserver()!.observe(intersectionRef()!);
+  // });
 
   const [filtersModalOpen, setFiltersModalOpen] = createSignal(false);
   const [filterErrors, setFilterErrors] = createSignal<string[]>([]);
@@ -186,6 +186,15 @@ export default function Search() {
     conditions: [],
     operators: [],
   });
+
+  // const intersecting = useIntersectionObserver({
+  //   setTarget: () => intersectionRef(),
+  //   threshold: 0.1,
+  // });
+  // createEffect(() => {
+  //   console.log(intersecting(), intersectionRef(), "intersecting");
+  // });
+
   return (
     <>
       <h1 class="text-center my-2" v-text="$route.query.search_query" />

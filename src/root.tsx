@@ -149,39 +149,28 @@ export default function Root() {
     const t = cookie().theme ?? "monokai";
     theme[1](t);
   });
-  createEffect(async () => {
-    console.log(
-      new Date().toISOString().split("T")[1],
-      "visible task waiting for db"
-    );
-    console.time("db");
-    const odb = await openDB("conduit", 2, {
-      upgrade(db) {
-        console.log("upgrading");
-        try {
-          db.createObjectStore("watch_history");
-        } catch (e) {}
-        try {
-          db.createObjectStore("playlists");
-        } catch (e) {}
-      },
-    });
-    console.log("setting db visible");
-    db[1](odb);
-    console.timeEnd("db");
-  });
+  // createEffect(async () => {
+  //   console.log(
+  //     new Date().toISOString().split("T")[1],
+  //     "visible task waiting for db"
+  //   );
+  //   console.time("db");
+  //   const odb = await openDB("conduit", 2, {
+  //     upgrade(db) {
+  //       console.log("upgrading");
+  //       try {
+  //         db.createObjectStore("watch_history");
+  //       } catch (e) {}
+  //       try {
+  //         db.createObjectStore("playlists");
+  //       } catch (e) {}
+  //     },
+  //   });
+  //   console.log("setting db visible");
+  //   db[1](odb);
+  //   console.timeEnd("db");
+  // });
   const [progress, setProgress] = createSignal(0);
-
-  createEffect(() => {
-    console.log(isRouting(), "isRouting");
-    setProgress(0);
-    if (isRouting()) {
-      const interval = setInterval(() => {
-        setProgress((p) => Math.min(p + 5, 90));
-      }, 100);
-      return () => clearInterval(interval);
-    }
-  });
 
   onMount(() => {
     console.log(
@@ -218,22 +207,22 @@ export default function Root() {
       "localStorage"
     );
   });
-  createEffect(async () => {
-    try {
-      const { registerSW } = await import("virtual:pwa-register");
-      registerSW({
-        onOfflineReady() {},
-        onRegisterError(error) {
-          console.error(error, "worker");
-        },
-        onRegisteredSW(swScriptUrl, registration) {
-          console.log(swScriptUrl, registration, "worker");
-        },
-      });
-    } catch (e) {
-      console.error(e, "worker");
-    }
-  });
+  // createEffect(async () => {
+  //   try {
+  //     const { registerSW } = await import("virtual:pwa-register");
+  //     registerSW({
+  //       onOfflineReady() {},
+  //       onRegisterError(error) {
+  //         console.error(error, "worker");
+  //       },
+  //       onRegisteredSW(swScriptUrl, registration) {
+  //         console.log(swScriptUrl, registration, "worker");
+  //       },
+  //     });
+  //   } catch (e) {
+  //     console.error(e, "worker");
+  //   }
+  // });
 
   const doc = () => (store() ? getYjsDoc(store()) : null);
   const [room, setRoom] = createSignal(
@@ -250,6 +239,7 @@ export default function Root() {
     }
   });
   createEffect(() => {
+    console.time("room");
     if (!isServer) {
       if (!store()) return;
       observeDeep(store(), () => {
@@ -258,13 +248,12 @@ export default function Root() {
         console.log(clone(store())?.history.length, "history length");
       });
     }
-  });
-  createEffect(() => {
-    if (!store()) return;
+    console.timeEnd("room");
   });
   let webrtcProvider: WebrtcProvider | null = null;
   let idbProvider: IndexeddbPersistence | null = null;
   createEffect(() => {
+    console.time("webrtc");
     if (!doc() || !room().id) return;
     console.log(room().id, "setting webrtc provider");
     webrtcProvider = new WebrtcProvider(room().id!, doc()!, {
@@ -276,6 +265,7 @@ export default function Root() {
     idbProvider =
       doc() && room().id ? new IndexeddbPersistence(room().id!, doc()!) : null;
     console.log(idbProvider, "provider");
+    console.timeEnd("webrtc");
   });
   onCleanup(() => {
     webrtcProvider?.disconnect();

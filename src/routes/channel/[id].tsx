@@ -14,13 +14,22 @@ import {
 import { useLocation } from "solid-start";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { InstanceContext } from "~/root";
-import { ContentItem, Channel as PipedChannel, RelatedChannel, RelatedPlaylist, RelatedStream } from "~/types";
+import {
+  ContentItem,
+  Channel as PipedChannel,
+  RelatedChannel,
+  RelatedPlaylist,
+  RelatedStream,
+} from "~/types";
 import Button from "~/components/Button";
 import { Spinner } from "~/components/PlayerContainer";
 import { assertType, fetchJson } from "~/utils/helpers";
 import { A } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";
 import PlaylistCard from "~/components/PlaylistCard";
+import useIntersectionObserver from "~/hooks/useIntersectionObserver";
+import { useAppState } from "~/stores/appStateStore";
+import SubscribeButton from "~/components/SubscribeButton";
 
 export default function Channel() {
   const [channel, setChannel] = createSignal<PipedChannel | undefined>();
@@ -30,7 +39,6 @@ export default function Channel() {
   const [selectedTab, setSelectedTab] = createSignal(0);
   const [contentItems, setContentItems] = createSignal<ContentItem[]>([]);
   const [instance] = useContext(InstanceContext);
-  const [loading, setLoading] = createSignal(true);
   const route = useLocation();
   onMount(() => {
     getChannelData();
@@ -54,10 +62,10 @@ export default function Channel() {
   }
 
   async function getChannelData() {
+    setAppState({ loading: true });
     fetchChannel()
       .then((data) => {
         console.log(data, "data");
-        setLoading(false);
         if (data.error) {
           setError(data);
         } else {
@@ -67,46 +75,60 @@ export default function Channel() {
       .then(() => {
         if (!error()) {
           document.title = channel()!.name + " - Conduit";
-          setContentItems(channel()!.relatedStreams);
+          setContentItems(channel()!.relatedStreams as ContentItem[]);
           fetchSubscribedStatus();
           setTabs([{ name: "videos" }]);
           const tabQuery = route.query.tab;
-          for (let i = 0; i < channel()!.tabs.length; i++) {
-            let tab = channel()!.tabs[i];
+          for (let i = 0; i < channel()!.tabs!.length; i++) {
+            const tabs = channel()!.tabs;
+            const tab = tabs?.[i];
+
             setTabs((tabs) => [...tabs, tab]);
-            if (tab.name === tabQuery) loadTab(i + 1);
+            if (tab?.name === tabQuery) loadTab(i + 1);
           }
         }
+      })
+      .finally(() => {
+        setAppState({ loading: false });
       });
   }
-  function handleScroll(e: any) {
-    console.log(e[0], selectedTab(), tabs()[selectedTab()]);
-    const entry = e[0];
+  const [appState, setAppState] = useAppState();
+  async function handleScroll() {
     if (
       !channel() ||
       !channel()!.nextpage ||
       (selectedTab() != 0 && !tabs()[selectedTab()!]?.tabNextPage)
-    )
+    ){
+      console.log("no more items");
       return;
-    if (entry?.isIntersecting) {
-      // this.loading = true;
-      if (selectedTab() == 0) {
-        fetchChannelNextPage();
-      } else {
-        fetchChannelTabNextPage();
-      }
     }
+    setAppState({ loading: true });
+    if (selectedTab() == 0) {
+      await fetchChannelNextPage();
+    } else {
+      await fetchChannelTabNextPage();
+    }
+    setAppState({ loading: false });
   }
+  const isIntersecting = useIntersectionObserver({
+    setTarget: () => intersection(),
+    threshold: 0.1,
+  });
+
+  createEffect(() => {
+    if (isIntersecting()) {
+      console.log("intersecting");
+      handleScroll();
+    }
+  });
 
   async function fetchChannelNextPage() {
-    setLoading(true);
     const json = await fetchJson(
       `${instance().api_url}/nextpage/channel/${channel()!.id}`,
       {
         nextpage: channel()!.nextpage,
       }
     );
-    setLoading(false);
     console.log(json.relatedStreams);
     if (json.error) return;
     setChannel((c) => ({ ...c, nextpage: json.nextpage }));
@@ -114,40 +136,15 @@ export default function Channel() {
     setContentItems((items) => [...items, ...json.relatedStreams]);
   }
   async function fetchChannelTabNextPage() {
-    setLoading(true);
     const json = await fetchJson(`${instance().api_url}/channels/tabs`, {
       data: tabs()[selectedTab()].data,
       nextpage: tabs()[selectedTab()].tabNextPage,
     });
-    setLoading(false);
     const newTabs = tabs();
     newTabs[selectedTab()].tabNextPage = json.nextpage;
     newTabs[selectedTab()].content = [...contentItems(), ...json.content];
     setTabs(newTabs);
   }
-  const toggleSubscribed = () => {
-    const channels = getStorageValue(
-      "localSubscriptions",
-      [],
-      "json",
-      "localStorage"
-    ) as string[];
-    if (!isSubscribed()) {
-      setStorageValue(
-        "localSubscriptions",
-        JSON.stringify([...channels, channel()!.id]),
-        "localStorage"
-      );
-      setIsSubscribed(true);
-    } else {
-      setStorageValue(
-        "localSubscriptions",
-        JSON.stringify(channels.filter((c) => c !== channel()!.id)),
-        "localStorage"
-      );
-      setIsSubscribed(false);
-    }
-  };
 
   function loadTab(index: number) {
     setSelectedTab(index);
@@ -168,7 +165,9 @@ export default function Channel() {
       return;
     }
 
-    let u = new URL(`${instance().api_url}/channels/tabs?data=${tabs()[index].data}`);
+    let u = new URL(
+      `${instance().api_url}/channels/tabs?data=${tabs()[index].data}`
+    );
     fetch(u)
       .then((res) => res.json())
       .then((tab) => {
@@ -181,19 +180,9 @@ export default function Channel() {
       });
   }
 
-  let intersection: HTMLDivElement | undefined = undefined;
-
-  onMount(() => {
-    console.log(intersection, "intersection");
-    if (!intersection) return;
-
-    const intersectionObserver = new IntersectionObserver(handleScroll, {
-      threshold: 0.1,
-    });
-
-    intersectionObserver.observe(intersection);
-  });
-
+  const [intersection, setIntersection] = createSignal<
+    HTMLDivElement | undefined
+  >(undefined);
 
   return (
     <div>
@@ -214,86 +203,91 @@ export default function Channel() {
         <span innerHTML={channel()?.description} />
       </p>
 
-      <Button
-        onClick={toggleSubscribed}
-        activated={isSubscribed()}
-        label={`Subscribe${isSubscribed() ? "d" : ""}`}
-      />
+      <Show when={channel()?.id}>
+        <SubscribeButton id={channel()!.id!} />
+      </Show>
 
       <div class="flex mt-4 mb-2">
         <For each={tabs()}>
           {(tab, index) => {
             console.log(selectedTab(), index(), tab.name);
-            return(
-            <Button
-              label={tab.name}
-              activated={selectedTab() === index()}
-              onClick={() => loadTab(index())}
-            />
-          )}}
+            return (
+              <Button
+                label={tab.name}
+                activated={selectedTab() === index()}
+                onClick={() => loadTab(index())}
+              />
+            );
+          }}
         </For>
       </div>
 
       <hr />
 
       <div class="flex flex-wrap justify-center">
-        <For
-          each={
-            contentItems()
-          }>
-          {(item) =>{
-             return (
-            <Switch>
-              <Match when={assertType<RelatedStream>(item, "type", "stream")} keyed>
-                {(item)=><VideoCard v={item} />}
-              </Match>
-              <Match when={assertType<RelatedChannel>(item, "type", "channel")} keyed>
-                {(item)=>
-                  <div class="w-44 mx-1 flex flex-col gap-2 items-start">
-                    <A href={item.url} class="group outline-none">
-                      <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
-                        <img
-                          class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
-                          src={item.thumbnail}
-                          loading="lazy"
-                        />
-                      </div>
-                    </A>
+        <For each={contentItems()}>
+          {(item) => {
+            return (
+              <Switch>
+                <Match
+                  when={assertType<RelatedStream>(item, "type", "stream")}
+                  keyed>
+                  {(item) => <VideoCard v={item} />}
+                </Match>
+                <Match
+                  when={assertType<RelatedChannel>(item, "type", "channel")}
+                  keyed>
+                  {(item) => (
+                    <div class="w-44 mx-1 flex flex-col gap-2 items-start">
+                      <A href={item.url} class="group outline-none">
+                        <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
+                          <img
+                            class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
+                            src={item.thumbnail}
+                            loading="lazy"
+                          />
+                        </div>
+                      </A>
                       <A class="link" href={item.url}>
                         <div class="flex gap-1">
                           <span>{item.name}</span>
                           <Show when={item.verified}>
                             <Checkmark />
                           </Show>
-                          
                         </div>
                       </A>
 
-                    {/* <template v-if="props.item.videos >= 0">
+                      {/* <template v-if="props.item.videos >= 0">
                       <br v-if="props.item.uploaderName" />
                       <strong v-text="`${props.item.videos} ${$t('video.videos')}`" />
                     </template> */}
 
-                    <br />
-                  </div>}
-              </Match>
-              <Match when={assertType<RelatedPlaylist>(item, "type", "playlist")} keyed>
-                {(item)=> <PlaylistCard item={item} />}
-              </Match>
-
-            </Switch>
-          )}}
+                      <br />
+                    </div>
+                  )}
+                </Match>
+                <Match
+                  when={assertType<RelatedPlaylist>(item, "type", "playlist")}
+                  keyed>
+                  {(item) => <PlaylistCard item={item} />}
+                </Match>
+              </Switch>
+            );
+          }}
         </For>
-        <Show when={loading()}>
+        <Show when={appState.loading}>
           <div class="w-full flex justify-center">
             <Spinner />
           </div>
         </Show>
-        <Show when={(!channel()?.nextpage || !tabs()?.[selectedTab()]?.tabNextPage) && !loading()}>no more items</Show>
-        <div
-          ref={intersection}
-          class="w-full h-10 mt-2"
-        />
+        <Show
+          when={
+            (!channel()?.nextpage || !tabs()?.[selectedTab()]?.tabNextPage) &&
+            !appState.loading
+          }>
+          no more items
+        </Show>
+        <div ref={(ref) => setIntersection(ref)} class="w-full h-20 mt-2" />
       </div>
     </div>
   );
