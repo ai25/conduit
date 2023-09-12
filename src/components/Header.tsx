@@ -45,18 +45,11 @@ const Header = () => {
         res.json()
       ),
     {
-      get enabled() {
-        return true;
-      },
       get initialData() {
         console.log("getting init");
         return getStorageValue("instances", [], "json", "localStorage");
       },
       retry: (failureCount) => failureCount < 3,
-      get staleTime() {
-        console.log("getting stale time");
-        return 1000 * 60;
-      },
     }
   );
 
