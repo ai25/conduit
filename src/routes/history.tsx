@@ -5,23 +5,21 @@ import {
   createSignal,
   onMount,
   useContext,
+  batch,
 } from "solid-js";
-import {
-  DBContext,
-  InstanceContext,
-  SolidStoreContext,
-  SyncContext,
-} from "~/root";
+import { DBContext } from "~/root";
 import { extractVideoId } from "./watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
 import dayjs from "dayjs";
-import { SyncedDB } from "~/stores/syncedStore";
+import { HistoryItem, SyncedDB, useSyncedStore } from "~/stores/syncedStore";
 import { BsInfoCircleFill, BsXCircle } from "solid-icons/bs";
 import Button from "~/components/Button";
 import { toaster, Toast } from "@kobalte/core";
 import { Portal } from "solid-js/web";
 import { Title } from "solid-start";
+import useIntersectionObserver from "~/hooks/useIntersectionObserver";
+import { clone } from "../stores/syncedStore";
 
 export const videoId = (item: any) => {
   if (!item) return undefined;
@@ -44,23 +42,31 @@ export default function History() {
   const [db] = useContext(DBContext);
   const [all, setAll] = createSignal<RelatedStream[]>([]);
   const [historyItems, setHistoryItems] = createSignal<RelatedStream[]>([]);
-  const [limit, setLimit] = createSignal(100);
-  const [instance] = useContext(InstanceContext);
+  const [limit, setLimit] = createSignal(50);
+
   function fileChange() {
     if (!fileSelector?.files?.[0]) return;
     const file = fileSelector.files[0];
     file.text().then((text) => {
+      console.log(text);
       setItems([]);
       // Piped
 
       if (text.includes("watchHistory")) {
         const json = JSON.parse(text);
+        console.log(json);
         const items = json.watchHistory.map((video: any) => {
-          return {
-            ...video,
+          const item = {
+            id: videoId(video),
+            duration: video.duration,
+            url: video.url,
+            title: video.title,
+            uploaderName: video.uploaderName,
+            uploaderUrl: video.uploaderUrl,
             watchedAt: video.watchedAt ?? 0,
             currentTime: video.currentTime ?? 0,
           };
+          return item;
         });
         setItems(items.sort((a: any, b: any) => b.watchedAt - a.watchedAt));
       }
@@ -147,165 +153,122 @@ export default function History() {
           };
         });
         setItems(iv);
+      } else {
+        const json = JSON.parse(text);
+        console.log(json);
+        const history = json.history;
+        console.log(history);
+        setItems(history);
       }
       console.log(items());
     });
   }
+  const sync = useSyncedStore();
   async function handleImport(e: any) {
     e.preventDefault();
-    if (db()) {
-      console.log("Importing");
-      const tx = db()?.transaction("watch_history", "readwrite");
-      const store = tx?.objectStore("watch_history");
-      console.log(store);
-      if (!store) return;
-      items().forEach(async (item: any) => {
-        console.log(item);
-        // Don't override invidious items since they don't have all the data
-        const dbItem = await store.get(videoId(item));
-        if (dbItem && dbItem.videoId === videoId(item)) {
-          console.log("Skipping", videoId(item));
-          setIndex(index() + 1);
-          setSkipped(skipped() + 1);
-          return;
-        }
-        try {
-          const request = await store
-            .put(JSON.parse(JSON.stringify(item)), videoId(item))
-            .then(() => {
-              console.log("success");
-              setIndex(index() + 1);
-              setSuccess(success() + 1);
-            })
-            .catch(() => {
-              setIndex(index() + 1);
-              setError(error() + 1);
-            });
-        } catch (err) {
-          console.error(err);
-          setIndex(index() + 1);
-          setError(error() + 1);
-        }
-      });
-    }
-  }
-  const solidStore = useContext(SolidStoreContext);
-  const writeStore = useContext(SyncContext);
+    // if (db()) {
+    //   console.log("Importing");
+    //   const tx = db()?.transaction("watch_history", "readwrite");
+    //   const store = tx?.objectStore("watch_history");
+    //   console.log(store);
+    //   if (!store) return;
+    //   items().forEach(async (item: any) => {
+    //     console.log(item);
+    //     // Don't override invidious items since they don't have all the data
+    //     const dbItem = await store.get(videoId(item));
+    //     if (dbItem && dbItem.videoId === videoId(item)) {
+    //       console.log("Skipping", videoId(item));
+    //       setIndex(index() + 1);
+    //       setSkipped(skipped() + 1);
+    //       return;
+    //     }
+    //     try {
+    //       const request = await store
+    //         .put(JSON.parse(JSON.stringify(item)), videoId(item))
+    //         .then(() => {
+    //           console.log("success");
+    //           setIndex(index() + 1);
+    //           setSuccess(success() + 1);
+    //         })
+    //         .catch(() => {
+    //           setIndex(index() + 1);
+    //           setError(error() + 1);
+    //         });
+    //     } catch (err) {
+    //       console.error(err);
+    //       setIndex(index() + 1);
+    //       setError(error() + 1);
+    //     }
+    //   });
+    // }
 
-  // createEffect(async () => {
-  //   if (solidStore()) {
-  //     const items = SyncedDB.history.findMany(solidStore()!) || [];
-  //     if (!items || items.length === 0) return;
-  //     setAll(items);
-  //     setHistoryItems(all().slice(0, limit()));
-  //     console.log(all().length);
-  //   }
-  // });
-  createEffect(() => {
-    setHistoryItems(
-      all()
-        .slice(0, limit())
-        .sort((a: any, b: any) => {
-          if (!a.watchedAt && !b.watchedAt) return 0;
-          if (!a.watchedAt) return 1;
-          if (!b.watchedAt) return -1;
-          return b.watchedAt - a.watchedAt;
-        })
-    );
-    console.log(historyItems()[0]);
-  });
-  const [errorMessage, setErrorMessage] = createSignal("");
-  const [statusMessage, setStatusMessage] = createSignal("Status:\n");
-  const [importing, setImporting] = createSignal(false);
-  const [importProgress, setImportProgress] = createSignal(0);
-  let preRef: HTMLPreElement | undefined = undefined;
-  async function importFromDb() {
-    setImporting(true);
-    setStatusMessage((s) => s + "\nImporting from db");
-    if (!("indexedDB" in globalThis)) {
-      setErrorMessage("No indexedDB found");
-      return;
+    const newItems: HistoryItem[] = [];
+    if (!sync.store) return;
+    for (const item of items() as HistoryItem[]) {
+      const existing = sync.store.history[item.id];
+      if (existing) {
+        setIndex(index() + 1);
+        setSkipped(skipped() + 1);
+        continue;
+      }
+      newItems.push({ [item.id]: item });
+      setIndex(index() + 1);
+      setSuccess(success() + 1);
     }
-    setStatusMessage((s) => s + "\nIndexedDB found");
-    if (!db()) {
-      setErrorMessage("No database found");
-      return;
-    }
-    setStatusMessage((s) => s + "\nDatabase found");
-    const tx = db()!.transaction("watch_history", "readwrite");
-    if (!tx) {
-      setErrorMessage("No transaction found");
-      return;
-    }
-    setStatusMessage((s) => s + "\nTransaction found");
-    const store = tx.objectStore("watch_history");
-    if (!store) {
-      setErrorMessage("No store found");
-      return;
-    }
-    setStatusMessage((s) => s + "\nStore found");
-    const data = await store?.getAll();
-    if (!data) {
-      setErrorMessage("No data found");
-      return;
-    }
-    setStatusMessage((s) => s + `\nFound ${data.length} items`);
-    const items = data?.map((item: any) => {
-      return {
-        ...item,
-        watchedAt: item.watchedAt ?? 0,
-        currentTime: item.currentTime ?? 0,
-        id: videoId(item),
-      };
+    newItems.sort((a, b) => b.watchedAt - a.watchedAt);
+
+    batch(() => {
+      newItems.forEach((item) => {
+        sync.setStore("history", item);
+      });
     });
-    console.log(items);
-    if (!writeStore()) {
-      setErrorMessage("No write store found");
-      return;
-    }
-    setStatusMessage((s) => s + "\nWrite store found, writing\n\n");
-    let toastId: number | undefined = undefined;
-    try {
-      SyncedDB.history.upsertMany( writeStore()!, data!)
-        // .then(() => {
-        //   setStatusMessage((s) => s + "\nDone");
-        // })
-        // .catch((err) => {
-        //   setStatusMessage((s) => s + "\nError: " + err.message);
-        // })
-        // .finally(() => {
-        //   setImporting(false);
-        // });
-    } catch (err) {
-      console.error(err);
-      setErrorMessage((err as any).message);
-    } finally {
-      setImporting(false);
-    }
+    // sync.setStore("history", updatedHistory);
   }
+  function deleteHistory() {
+    batch(() => {
+      Object.keys(sync.store.history).forEach((item) => {
+        sync.setStore("history", item, undefined!);
+      });
+    });
+  }
+
+  createEffect(() => {
+    console.log(
+      clone(sync.store.history),
+      Object.keys(sync.store.history).length
+    );
+  });
   const [intersectionRef, setIntersectionRef] = createSignal<
     HTMLDivElement | undefined
   >(undefined);
-  function handleScroll(e: any) {
-    const entry = e[0];
-    if (entry?.isIntersecting) {
+  const isIntersecting = useIntersectionObserver({
+    setTarget: () => intersectionRef(),
+  });
+  createEffect(() => {
+    if (isIntersecting()) {
       setLimit((l) => l + 10);
     }
-  }
-
-  createEffect(() => {
-    console.log(intersectionRef(), "intersection");
-    if (!intersectionRef()) return;
-
-    const intersectionObserver = new IntersectionObserver(handleScroll, {
-      threshold: 0.1,
-    });
-
-    intersectionObserver.observe(intersectionRef()!);
   });
 
-
-
+  const sort = (a: HistoryItem, b: HistoryItem) => {
+    if (!a.watchedAt || !b.watchedAt) return 0;
+    if (a.watchedAt < b.watchedAt) {
+      return 1;
+    }
+    if (a.watchedAt > b.watchedAt) {
+      return -1;
+    }
+    return 0;
+  };
+  const [history, setHistory] = createSignal<HistoryItem[]>([]);
+  createEffect(() => {
+    if (sync.store.history) {
+      setHistory(
+        Object.values(sync.store.history).sort(sort).slice(0, limit())
+      );
+    }
+  });
+  const [v, setV] = createSignal("");
   return (
     <div class="">
       <Title>History | Conduit</Title>
@@ -314,12 +277,18 @@ export default function History() {
         <div>
           <input ref={fileSelector} type="file" onInput={fileChange} />
         </div>
+        <textarea
+          onInput={(e) => {
+            // setV(e.currentTarget.value)
+            setItems(JSON.parse(e.currentTarget.value));
+          }}
+        />
         <br />
         <div>
           <Show when={itemsLength() > 0}>
             <strong>{`Found ${itemsLength()} items`}</strong>
           </Show>
-        </div>
+        </div>{" "}
         <div>
           <progress value={index()} max={itemsLength()} />
           <div>{`Success: ${success()} Error: ${error()} Skipped: ${skipped()}`}</div>
@@ -328,18 +297,11 @@ export default function History() {
           <button class="btn w-auto" onClick={handleImport}>
             Import
           </button>
+          <button class="btn w-auto" onClick={deleteHistory}>
+            Delete
+          </button>
         </div>
       </form>
-      <div class="text-red-500">{errorMessage()}</div>
-      <Button label="Import from db" onClick={() => importFromDb()} />
-      <Button
-        label="Remove duplicates"
-        onClick={() =>
-          console.log(
-            `removed ${SyncedDB.history.removeDuplicates(writeStore()!)} items`
-          )
-        }
-      />
       <Button
         label="Show toast"
         onClick={() =>
@@ -365,29 +327,9 @@ export default function History() {
           ))
         }
       />
-      <Portal>
-        <Toast.Region>
-          <Toast.List class="toast__list" />
-        </Toast.Region>
-      </Portal>
-      <pre
-        class="text-start overflow-y-auto h-96 bg-bg2 rounded-md p-2"
-        ref={preRef}>
-        {statusMessage()}
-      </pre>
-      <div class="flex flex-wrap justify-center">
-        <Show when={solidStore()}>
-          <For
-            each={SyncedDB.history
-              .findMany(solidStore()!, {
-                sort: (a, b) => {
-                  if (!a.watchedAt && !b.watchedAt) return 0;
-                  if (!a.watchedAt) return 1;
-                  if (!b.watchedAt) return -1;
-                  return b.watchedAt - a.watchedAt;
-                },
-              })
-              ?.slice(0, limit())}>
+      <div class="flex flex-wrap justify-center h-full min-h-[80vh]">
+        <Show when={history()}>
+          <For each={history()}>
             {(item) => (
               <div class="flex flex-col max-w-xs w-72 sm:max-w-72">
                 <VideoCard

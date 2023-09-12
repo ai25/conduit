@@ -1,7 +1,21 @@
 import { DocTypeDescription } from "@syncedstore/core/types/doc";
+import {
+  createContext,
+  createEffect,
+  createSignal,
+  from,
+  onCleanup,
+  useContext,
+} from "solid-js";
 import { IndexeddbPersistence } from "y-indexeddb";
+import { WebrtcProvider } from "y-webrtc";
 import { videoId } from "~/routes/history";
-import { Playlist, RelatedStream } from "~/types";
+import { Playlist, Preferences, RelatedStream } from "~/types";
+import OpfsPersistence from "~/utils/y-opfs";
+console.log("syncedStore.tsx");
+import * as Y from "yjs";
+import { createStore } from "solid-js/store";
+import createYjsStore from "~/lib/createYjsStore";
 
 export type HistoryItem = RelatedStream & {
   id: string;
@@ -9,14 +23,104 @@ export type HistoryItem = RelatedStream & {
   currentTime: number;
 };
 
-interface StorePlaylist extends Playlist {
-  id: string;
-}
 export interface Store extends DocTypeDescription {
-  playlists: StorePlaylist[];
-  history: HistoryItem[];
+  playlists: Record<string, Playlist>;
+  history: Record<string, HistoryItem>;
   subscriptions: string[];
+  preferences: Preferences;
 }
+const storeShape: Store = {
+  playlists: {},
+  history: {},
+  subscriptions: [],
+  preferences: {} as Preferences,
+};
+const defaultPreferences = {
+  autoplay: false,
+  pip: false,
+  muted: false,
+  volume: 1,
+  speed: 1,
+  quality: "auto",
+  theatreMode: false,
+  instance: {
+    name: "Piped",
+    api_url: "https://pipedapi.kavin.rocks",
+    cache: true,
+    cdn: true,
+    last_checked: new Date().getTime(),
+    locations: "",
+    version: "0.0.0",
+    registered: 0,
+    s3_enabled: false,
+    up_to_date: false,
+    image_proxy_url: "https://pipedproxy.kavin.rocks",
+  },
+};
+
+const [initialStore] = createStore<Store>({
+  playlists: {},
+  history: {},
+  subscriptions: [],
+  preferences: {} as Preferences,
+});
+
+const doc = new Y.Doc({
+  guid: "test",
+});
+const [store, setStore] = createYjsStore<Store>(doc, initialStore, true);
+const SyncContext = createContext({ store, setStore });
+
+export const SyncedStoreProvider = (props: { children: any }) => {
+  const [room, setRoom] = createSignal(
+    "localStorage" in globalThis
+      ? (JSON.parse(localStorage.getItem("room") || "{}") as {
+          id?: string;
+          password?: string;
+        })
+      : {}
+  );
+
+  let webrtcProvider: WebrtcProvider | null = null;
+  let idbProvider: IndexeddbPersistence | null = null;
+
+  const initWebrtc = async () => {
+    if (!room().id) return;
+    if (webrtcProvider) {
+      console.log("disconnecting");
+      webrtcProvider.disconnect();
+    }
+    webrtcProvider = new WebrtcProvider(room().id!, doc, {
+      signaling: ["wss://signaling.fly.dev"],
+      ...(room()!.password && { password: room().password }),
+    });
+    console.log(webrtcProvider, "webrtc provider");
+    webrtcProvider.connect();
+  };
+
+  createEffect(async () => {
+    await initWebrtc();
+    webrtcProvider?.connect();
+  });
+
+  createEffect(async () => {
+    console.time("webrtc");
+    if (!room().id) return;
+    idbProvider = new IndexeddbPersistence(room().id!, doc);
+    console.timeEnd("webrtc");
+  });
+  onCleanup(() => {
+    webrtcProvider?.disconnect();
+  });
+
+  return (
+    <SyncContext.Provider value={{ store, setStore }}>
+      {props.children}
+    </SyncContext.Provider>
+  );
+};
+
+export const useSyncedStore = () => useContext(SyncContext);
 
 export function clone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
@@ -142,48 +246,6 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
         (store[name] as T[]).push(upsertedItem as T);
       }
     },
-    // upsertMany: async (
-    //   store: Store,
-    //   data: T[],
-    //   progressCallback?: (
-    //     processed: number,
-    //     currentTitle: string,
-    //     updated: number
-    //   ) => void,
-    //   options?: {
-    //     skipExisting?: boolean;
-    //   }
-    // ) => {
-    //   const totalItems = data.length;
-    //   const batchSize = 1;
-    //   let progress = 0;
-    //   let updated = 0;
-    //   const skipDuplicates = options?.skipExisting || false;
-
-    //   for await (const batch of asyncBatchItems(
-    //     data,
-    //     batchSize,
-    //     (newProgress) => {
-    //       progress = newProgress;
-    //     }
-    //   )) {
-    //     batch.forEach((newItem) => {
-    //       const index = (store[name] as T[]).findIndex(
-    //         (item) => item.id === newItem.id
-    //       );
-    //       if (index !== -1 && !skipDuplicates) {
-    //         const item = clone((store[name] as T[])[index]) as T;
-    //         const upsertedItem = { ...item, ...newItem } as T;
-    //         (store[name] as T[]).splice(index, 1, upsertedItem);
-    //         updated++;
-    //       } else {
-    //         const upsertedItem = newItem;
-    //         (store[name] as T[]).push(upsertedItem);
-    //       }
-    //       progressCallback?.(progress, (newItem as any).title, updated);
-    //     });
-    //   }
-    // },
     upsertMany: (store: Store, data: T[]) => {
       if (!data || data.length === 0) return undefined;
       console.time("spliceMany");
@@ -235,7 +297,7 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
       let rangeStart = -1;
 
       (store[name] as T[]).forEach((item, index) => {
-        const id =videoId(item)
+        const id = videoId(item);
         console.log(!!videoId(item));
         if (!seen.has(id)) {
           seen.set(id, index);
@@ -255,7 +317,6 @@ function createCRUDModule<T extends { id?: string }>(name: keyof Store) {
       }
       return removed;
     },
-    
   };
 }
 
@@ -286,7 +347,7 @@ export const SyncedDB = {
       }
     },
   },
-  dangerousClearDb: (store: Store, idb:IndexeddbPersistence) => {
+  dangerousClearDb: (store: Store, idb: IndexeddbPersistence) => {
     const data = clone(store);
     idb.clearData();
     return data;
@@ -295,6 +356,5 @@ export const SyncedDB = {
     SyncedDB.playlists.upsertMany(store, data.playlists);
     SyncedDB.history.upsertMany(store, data.history);
     SyncedDB.subscriptions.createMany(store, data.subscriptions);
-  }
-
+  },
 };

@@ -9,13 +9,7 @@ import {
 } from "solid-js";
 import { useLocation } from "solid-start";
 import { For } from "solid-js";
-import {
-  DBContext,
-  InstanceContext,
-  PlayerContext,
-  PreferencesContext,
-  SolidStoreContext,
-} from "~/root";
+import { DBContext, PlayerContext, PreferencesContext } from "~/root";
 import VideoCard from "~/components/VideoCard";
 import { videoId } from "./history";
 import { getHlsManifest } from "~/utils/hls";
@@ -23,11 +17,13 @@ import PlaylistItem from "~/components/PlaylistItem";
 import { createVirtualizer, elementScroll } from "@tanstack/solid-virtual";
 import { classNames, fetchJson } from "~/utils/helpers";
 import { usePlaylist } from "~/stores/playlistStore";
-import { SyncedDB } from "~/stores/syncedStore";
+import { SyncedDB, useSyncedStore } from "~/stores/syncedStore";
 import type { Virtualizer, VirtualizerOptions } from "@tanstack/virtual-core";
 import Button from "~/components/Button";
 import { useAppState } from "~/stores/appStateStore";
 import PlayerContainer from "~/components/PlayerContainer";
+import { createQuery } from "@tanstack/solid-query";
+import { PipedVideo } from "~/types";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
@@ -66,15 +62,33 @@ export default function Watch() {
   console.log(new Date().toISOString().split("T")[1], "rendering watch page");
 
   const [video, setVideo] = useContext(PlayerContext);
-  const [instance] = useContext(InstanceContext);
   const [preferences] = useContext(PreferencesContext);
   const route = useLocation();
 
   const [playlist, setPlaylist] = usePlaylist();
-  // const videoLoaded = useSignal(false);
-  // const preferences = useContext(PreferencesContext);
-  // const instance = useContext(InstanceContext);
   const [db] = useContext(DBContext);
+
+  const [videoDownloaded, setVideoDownloaded] = createSignal(true);
+  const checkVideoDownloaded = async () => {
+    try {
+      const video = await (
+        await navigator.storage.getDirectory()
+      ).getDirectoryHandle(route.query.v);
+      if (video) return true;
+      else return false;
+    } catch (e) {
+      return false;
+    }
+  };
+  createEffect(async () => {
+    if (!route.query.v) return false;
+    console.time("verifyDownloaded");
+    if (!("getDirectory" in navigator.storage)) return false;
+    const downloaded = await checkVideoDownloaded();
+    setVideoDownloaded(downloaded);
+    console.timeEnd("verifyDownloaded");
+    if (downloaded) fetchLocalVideo();
+  });
 
   async function fetchLocalVideo() {
     const rootDir = await navigator.storage.getDirectory();
@@ -102,12 +116,35 @@ export default function Watch() {
   }
 
   const [appState, setAppState] = useAppState();
+  const sync = useSyncedStore();
 
+  const videoQuery = createQuery(
+    () => ["streams"],
+    async (): Promise<PipedVideo & { error: Error }> =>
+      await fetch(
+        sync.store.preferences.instance!.api_url + "/streams/" + route.query.v
+      ).then((res) => res.json()),
+    {
+      get enabled() {
+        return sync.store.preferences.instance?.api_url &&
+          route.query.v &&
+          !videoDownloaded()
+          ? true
+          : false;
+      },
+      retry: (failureCount) => failureCount < 3,
+    }
+  );
   createEffect(async () => {
     const v = route.query.v;
     console.log(v, "v");
+    console.log(sync.store.preferences.instance?.api_url, "api_url");
     if (!v) return;
-    const origin = new URL(instance().api_url).hostname.split(".").slice(-2).join(".");
+    if (!sync.store.preferences.instance?.api_url) return;
+    const origin = new URL(sync.store.preferences.instance.api_url).hostname
+      .split(".")
+      .slice(-2)
+      .join(".");
     const newOrigin = untrack(() =>
       new URL(video.value?.hls ?? "https://example.com").hostname
         .split(".")
@@ -117,52 +154,29 @@ export default function Watch() {
     const id = untrack(() => videoId(video.value));
 
     console.log(origin, newOrigin, "HOSTS");
-    console.log("fetching video");
-    if (id === v && origin === newOrigin) {
-      console.log("video already loaded");
+    if (id !== v || origin !== newOrigin) {
+      videoQuery.refetch();
       return;
     }
-    setAppState({ loading: true });
-    const rootDir = await navigator.storage.getDirectory();
-    if (rootDir) {
-      try {
-        const dir = await rootDir.getDirectoryHandle(v);
-        console.log(dir);
-        if (await fetchLocalVideo()) {
-          console.log("DIRECTORY");
-          return;
-        }
-      } catch (e) {
-        console.info(e);
-      }
-    }
-    const abortController = new AbortController();
-    let data;
+  });
 
-    try {
-      const res = await fetch(`${instance().api_url}/streams/${v}`, {
-        signal: abortController.signal,
-      });
-      data = await res.json();
-      if (data.error) throw new Error(data.error);
-      console.log(data, "data");
-      // const url = await getHlsManifest("VpWkcFsZ2Zs");
-      // console.log(url, "URL");
-      // setVideo({ value: { ...data, hls: url }, error: undefined });
-      setVideo({ value: data, error: undefined });
-    } catch (err) {
-      setVideo({ value: undefined, error: err as Error });
-      console.log(err, "error while fetching video");
-    } finally {
-      setAppState({ loading: false });
+  createEffect(() => {
+    setAppState({
+      loading:
+        videoQuery.isInitialLoading ||
+        videoQuery.isFetching ||
+        videoQuery.isRefetching,
+    });
+  });
+
+  createEffect(() => {
+    if (videoQuery.data && !videoQuery.data.error) {
+      setVideo({ value: videoQuery.data });
     }
   });
   createEffect(() => {
     if (!video.value) return;
-    if ("window" in globalThis) {
-      console.log("setting title");
-      document.title = `${video.value?.title} - Conduit`;
-    }
+    document.title = `${video.value?.title} - Conduit`;
   });
 
   const [listId, setListId] = createSignal<string | undefined>(undefined);
@@ -174,14 +188,15 @@ export default function Watch() {
     }
   });
 
-  createEffect(async () => {
-    if (!route.query.list) return;
-    if (isLocalPlaylist()) return;
-    const json = await fetchJson(`${instance().api_url}/playlists/${route.query.list}`);
-    setPlaylist({ ...json, id: route.query.list });
-    console.log(json);
-  });
-  const solidStore = useContext(SolidStoreContext);
+  // createEffect(async () => {
+  //   if (!route.query.list) return;
+  //   if (isLocalPlaylist()) return;
+  //   const json = await fetchJson(
+  //     `${instance().api_url}/playlists/${route.query.list}`
+  //   );
+  //   setPlaylist({ ...json, id: route.query.list });
+  //   console.log(json);
+  // });
   createEffect(async () => {
     if (!route.query.list) {
       setPlaylist(undefined);
@@ -192,18 +207,10 @@ export default function Watch() {
     console.log("fetching playlist");
     setListId(route.query.list);
     console.log("fetching playlistlist id", listId());
-    if (!solidStore()) return;
-    const list = SyncedDB.playlists.findUnique(solidStore()!, route.query.list);
+    if (!listId()) return;
+    const list = sync.store.playlists[listId()!];
     console.log("setting playlist", list);
     setPlaylist(list);
-
-    // if (!db()) return;
-
-    // const tx = db()!.transaction("playlists", "readonly");
-    // const store = tx.objectStore("playlists");
-    // const l = await store.get(listId()!);
-    // setPlaylist(l);
-    // console.log(l);
   });
 
   function easeInOutQuint(t: number): number {
@@ -217,7 +224,7 @@ export default function Watch() {
     canSmooth,
     instance
   ) => {
-    const duration = 40 * Number(route.query.index );
+    const duration = 40 * Number(route.query.index);
     const start = parentRef()!.scrollTop;
     setScrollingRef(Date.now());
     const startTime = scrollingRef();
@@ -227,7 +234,7 @@ export default function Watch() {
       const now = Date.now();
       const elapsed = now - startTime;
       const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
-      const interpolated = start + (offset  - start) * progress;
+      const interpolated = start + (offset - start) * progress;
 
       if (elapsed < duration) {
         elementScroll(interpolated, canSmooth, instance);
@@ -277,13 +284,15 @@ export default function Watch() {
       classList={{
         "flex-col": preferences.theatreMode,
         "flex-col lg:flex-row": !preferences.theatreMode,
-      }}>
+      }}
+    >
       <div
         class="flex flex-col"
         classList={{
           "flex-grow": !preferences.theatreMode,
           "w-full": preferences.theatreMode,
-        }}>
+        }}
+      >
         <PlayerContainer />
         <Show when={!preferences.theatreMode}>
           <div>
@@ -297,7 +306,8 @@ export default function Watch() {
           "flex-col": !preferences.theatreMode,
           "flex-row": preferences.theatreMode,
           "w-full": preferences.theatreMode,
-        }}>
+        }}
+      >
         <Show when={preferences.theatreMode}>
           <div class="w-full max-w-full">
             <Description video={video.value} />
@@ -308,17 +318,20 @@ export default function Watch() {
           classList={{
             [` lg:max-w-[${playlist() ? PLAYLIST_WIDTH : VIDEO_CARD_WIDTH}px]`]:
               !preferences.theatreMode,
-          }}>
+          }}
+        >
           <Show when={playlist()} keyed>
             {(list) => (
               <Show when={rowVirtualizer()}>
                 <div
                   role="group"
                   aria-label="Playlist"
-                  class="overflow-hidden rounded-xl w-full p-2 max-w-full min-w-0">
+                  class="overflow-hidden rounded-xl w-full p-2 max-w-full min-w-0"
+                >
                   <div
                     ref={(ref) => setParentRef(ref)}
-                    class="relative flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar">
+                    class="relative flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar"
+                  >
                     <h3 class="sticky text-lg font-bold sm:text-xl ">
                       {list.name}
                     </h3>
@@ -327,7 +340,8 @@ export default function Watch() {
                         height: `${rowVirtualizer()!.getTotalSize()}px`,
                         width: "100%",
                         position: "relative",
-                      }}>
+                      }}
+                    >
                       <For each={rowVirtualizer()!.getVirtualItems()}>
                         {(item) => {
                           return (
@@ -339,7 +353,8 @@ export default function Watch() {
                                 top: 0,
                                 left: 0,
                                 transform: `translateY(${item.start}px)`,
-                              }}>
+                              }}
+                            >
                               <PlaylistItem
                                 list={route.query.list}
                                 index={item.index + 1}
@@ -359,9 +374,8 @@ export default function Watch() {
           <Show
             when={video.value}
             keyed
-            fallback={
-              <For each={Array(20).fill(0)}>{() => <VideoCard />}</For>
-            }>
+            fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}
+          >
             {(video) => (
               <For each={video?.relatedStreams}>
                 {(stream) => {

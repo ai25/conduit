@@ -8,22 +8,11 @@ import {
   createSignal,
   useContext,
 } from "solid-js";
-import { InstanceContext, PreferencesContext, ThemeContext } from "~/root";
+import { PreferencesContext, ThemeContext } from "~/root";
 import { useCookie } from "~/utils/hooks";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { A } from "@solidjs/router";
 import { useLocation, useNavigate } from "solid-start";
-import {
-  Disclosure,
-  DisclosureButton,
-  DisclosurePanel,
-  Menu,
-  MenuItem,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-  Transition,
-} from "solid-headless";
 import Dropdown from "./Dropdown";
 import DropdownItem from "./DropdownItem";
 import Search from "./SearchInput";
@@ -32,44 +21,14 @@ import Button from "./Button";
 import Field from "./Field";
 import { Popover as KobaltePopover, DropdownMenu } from "@kobalte/core";
 import { FaSolidBrush, FaSolidCheck, FaSolidGlobe } from "solid-icons/fa";
-
-function classNames(...classes: (string | boolean | undefined)[]): string {
-  return classes.filter(Boolean).join(" ");
-}
-
-function Separator() {
-  return (
-    <div class="flex items-center" aria-hidden="true">
-      <div class="w-full border-t border-gray-200" />
-    </div>
-  );
-}
-function ChevronDownIcon(props: JSX.IntrinsicElements["svg"]): JSX.Element {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      {...props}>
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width={2}
-        d="M19 9l-7 7-7-7"
-      />
-    </svg>
-  );
-}
+import { useSyncedStore } from "~/stores/syncedStore";
+import { createQuery } from "@tanstack/solid-query";
+import dayjs from "dayjs";
 
 const Header = () => {
-  const [isOpen, setIsOpen] = createSignal(false);
-  const [theme, setThemeContext] = useContext(ThemeContext);
-  const [instance, setInstance] = useContext(InstanceContext);
-  const [, setTheme] = useCookie("theme", "monokai");
-  const [instances, setInstances] = createSignal<PipedInstance[] | Error>();
-  const route = useLocation();
-  const [preferences] = useContext(PreferencesContext);
+  const [theme, setTheme] = useContext(ThemeContext);
+  const [, setThemeCookie] = useCookie("theme", "monokai");
+  const sync = useSyncedStore();
 
   const links = [
     { href: "/feed", label: "Feed" },
@@ -79,35 +38,34 @@ const Header = () => {
     { href: "/playlists", label: "Playlists" },
   ];
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen());
-  };
-  createEffect(async () => {
-    console.log(
-      new Date().toISOString().split("T")[1],
-      "visible task setting instances in header"
-    );
-    console.time("visible task setting instances in header");
-    await fetch("https://piped-instances.kavin.rocks/")
-      .then(async (res) => {
-        console.log("INSTANCES", res.status);
-        if (res.status === 200) {
-          setInstances(await res.json());
-        } else {
-          setInstances(new Error("Failed to fetch instances"));
-        }
-      })
-      .catch((err) => {
-        console.log("INSTANCES ERROR", err.message);
-        return err as Error;
-      });
-    if (
-      !instances() ||
-      instances() instanceof Error ||
-      (instances() as PipedInstance[]).length < 1
-    ) {
-      setInstances(getStorageValue("instances", [], "json", "localStorage"));
-      return;
+  const query = createQuery(
+    () => ["instances"],
+    async (): Promise<PipedInstance[]> =>
+      await fetch("https://piped-instances.kavin.rocks/").then((res) =>
+        res.json()
+      ),
+    {
+      get enabled() {
+        return true;
+      },
+      get initialData() {
+        console.log("getting init");
+        return getStorageValue("instances", [], "json", "localStorage");
+      },
+      retry: (failureCount) => failureCount < 3,
+      get staleTime() {
+        console.log("getting stale time");
+        return 1000 * 60;
+      },
+    }
+  );
+
+  createEffect(() => {
+    if (query.data && !query.data.error) {
+      setStorageValue("instances", query.data, "localStorage");
+      if (!sync.store.preferences.instance) {
+        sync.setStore("preferences", "instance", query.data[0]);
+      }
     }
   });
 
@@ -137,7 +95,8 @@ const Header = () => {
           if (focusable) {
             (focusable[0] as HTMLElement).focus();
           }
-        }}>
+        }}
+      >
         Skip navigation
       </button>
       <div class="flex items-center justify-between w-full max-w-full min-w-0">
@@ -149,7 +108,8 @@ const Header = () => {
             {(link) => (
               <A
                 href={link.href}
-                class="link text-sm p-1 text-left transition ">
+                class="link text-sm p-1 text-left transition "
+              >
                 {link.label}
               </A>
             )}
@@ -164,7 +124,8 @@ const Header = () => {
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-5 w-5 text-green-600 rounded-full"
                   viewBox="0 0 20 20"
-                  fill="currentColor">
+                  fill="currentColor"
+                >
                   <circle cx="10" cy="10" r="10" />
                 </svg>
               </KobaltePopover.Trigger>
@@ -192,7 +153,8 @@ const Header = () => {
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-5 w-5 text-red-600 rounded-full"
                   viewBox="0 0 20 20"
-                  fill="currentColor">
+                  fill="currentColor"
+                >
                   <circle cx="10" cy="10" r="10" />
                 </svg>
               </KobaltePopover.Trigger>
@@ -223,9 +185,10 @@ const Header = () => {
                 <DropdownMenu.RadioGroup
                   value={theme()}
                   onChange={(value) => {
-                    setThemeContext(value);
+                    setThemeCookie(value);
                     setTheme(value);
-                  }}>
+                  }}
+                >
                   <For
                     each={[
                       { value: "monokai", label: "Monokai" },
@@ -233,11 +196,13 @@ const Header = () => {
                       { value: "kawaii", label: "Kawaii" },
                       { value: "discord", label: "Discord" },
                       { value: "github", label: "Github" },
-                    ]}>
+                    ]}
+                  >
                     {(option) => (
                       <DropdownMenu.RadioItem
                         value={option.value}
-                        class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">
+                        class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                      >
                         <DropdownMenu.ItemIndicator class="inline-flex absolute left-0">
                           <FaSolidCheck
                             fill="currentColor"
@@ -254,7 +219,13 @@ const Header = () => {
           </DropdownMenu.Root>
           <DropdownMenu.Root
             open={instanceOpen()}
-            onOpenChange={setInstanceOpen}>
+            onOpenChange={(isOpen) => {
+              setInstanceOpen(isOpen);
+              if (isOpen && query.isStale) {
+                query.refetch();
+              }
+            }}
+          >
             <DropdownMenu.Trigger class="mr-2 p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
               <DropdownMenu.Icon>
                 <FaSolidGlobe fill="currentColor" class="h-5 w-5 text-text1" />
@@ -264,19 +235,22 @@ const Header = () => {
               <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
                 <DropdownMenu.Arrow />
                 <DropdownMenu.RadioGroup
-                  value={instance().api_url}
+                  value={sync.store.preferences.instance?.api_url}
                   onChange={(value) => {
-                    setInstance(
-                      (instances() as PipedInstance[]).find(
-                        (i) => i.api_url === value
-                      )!
+                    let instance = (query.data as PipedInstance[]).find(
+                      (i) => i.api_url === value
                     );
-                  }}>
-                  <For each={instances() as PipedInstance[]}>
+                    if (instance) {
+                      sync.setStore("preferences", "instance", instance);
+                    }
+                  }}
+                >
+                  <For each={query.data as PipedInstance[]}>
                     {(instance) => (
                       <DropdownMenu.RadioItem
                         value={instance.api_url}
-                        class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">
+                        class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                      >
                         <DropdownMenu.ItemIndicator class="inline-flex absolute left-0">
                           <FaSolidCheck
                             fill="currentColor"

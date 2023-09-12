@@ -1,36 +1,36 @@
 import { createEffect, createSignal, useContext } from "solid-js";
-import { DBContext, SolidStoreContext } from "~/root";
-import HLS from "hls.js";
-import { MediaPlayerElement } from "vidstack";
-import { Show } from "solid-js";
 import { A } from "solid-start";
 import { Playlist } from "~/types";
-import { SyncedDB } from "~/stores/syncedStore";
+import { useSyncedStore } from "~/stores/syncedStore";
+import { generateThumbnailUrl } from "~/utils/helpers";
+import { videoId } from "./history";
 
 export default function Playlists() {
-  const [db] = useContext(DBContext);
-  const solidStore = useContext(SolidStoreContext);
+  const sync = useSyncedStore();
   createEffect(() => {
-    if (!solidStore()) return;
     let playlist = list;
-    const l: Playlist = {
-      id: playlist.id,
-      bannerUrl: playlist.thumbnail,
-      description: "",
-      name: playlist.name,
-      nextpage: "",
-      relatedStreams: playlist.videos,
-      thumbnailUrl: playlist.thumbnail,
-      uploader: "You",
-      uploaderUrl: "",
-      uploaderAvatar: "",
-      videos: playlist.videos.length,
+    if (!sync.store.preferences.instance) return;
+    const l: Record<string, Playlist> = {
+      [playlist.id]: {
+        bannerUrl: generateThumbnailUrl(
+          sync.store.preferences.instance.image_proxy_url,
+          videoId(playlist.videos[0].thumbnail)
+        ),
+        description: "",
+        name: playlist.name,
+        nextpage: "",
+        relatedStreams: playlist.videos,
+        thumbnailUrl: playlist.thumbnail,
+        uploader: "You",
+        uploaderUrl: "",
+        uploaderAvatar: "",
+        videos: playlist.videos.length,
+      } as unknown as Playlist,
     };
     console.log(l);
-    SyncedDB.playlists.upsert(solidStore()!, {
-      where: { id: playlist.id },
-      data: l,
-    });
+    setTimeout(() => {
+      sync.setStore("playlists", l);
+    }, 0);
   });
 
   const list = {

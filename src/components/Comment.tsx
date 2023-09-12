@@ -1,7 +1,7 @@
 import { A } from "@solidjs/router";
 import dayjs from "dayjs";
 import { Show, createSignal, useContext } from "solid-js";
-import { InstanceContext } from "~/root";
+import { useSyncedStore } from "~/stores/syncedStore";
 export interface PipedCommentResponse {
   comments: PipedComment[]
   disabled: boolean
@@ -33,7 +33,7 @@ export default function Comment(props: Props) {
   const [showingReplies, setShowingReplies] = createSignal(false);
   const [replies, setReplies] = createSignal([]);
   const [nextpage, setNextpage] = createSignal(null);
-  const [instance] = useContext(InstanceContext);
+  const store = useSyncedStore()
   async function loadReplies() {
     if (!showingReplies() && loadingReplies()) {
       setShowingReplies(true);

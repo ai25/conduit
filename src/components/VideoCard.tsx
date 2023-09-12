@@ -12,12 +12,7 @@ import {
   createSignal,
   useContext,
 } from "solid-js";
-import {
-  DBContext,
-  InstanceContext,
-  SolidStoreContext,
-  SyncContext,
-} from "~/root";
+import { DBContext } from "~/root";
 import { videoId } from "~/routes/history";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -32,7 +27,7 @@ import {
 import { MenuButton, MenuItems } from "vidstack";
 import DropdownItem from "./DropdownItem";
 import Dropdown from "./Dropdown";
-import { SyncedDB } from "~/stores/syncedStore";
+import { SyncedDB, clone, useSyncedStore } from "~/stores/syncedStore";
 import { BsInfoCircleFill, BsThreeDotsVertical } from "solid-icons/bs";
 import { generateThumbnailUrl } from "~/utils/helpers";
 
@@ -45,23 +40,21 @@ export default ({
 }) => {
   const [db] = useContext(DBContext);
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
-  const [instance] = useContext(InstanceContext);
-  const solidStore = useContext(SolidStoreContext);
   const [imgError, setImgError] = createSignal(false);
-  const writeStore = useContext(SyncContext);
+  const sync = useSyncedStore();
 
   createEffect(() => {
-    if (!solidStore()) return;
-    console.time("history");
-    const val = SyncedDB.history.findUnique(solidStore()!, videoId(v));
+    const id = videoId(v);
+    if (!id) return;
+    const val = sync.store.history[id];
     setProgress(val?.currentTime ?? undefined);
-    console.timeEnd("history");
   });
 
   if (!v)
     return (
       <div
-        class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}>
+        class={` flex w-full max-w-md mx-2 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-1`}
+      >
         <div class="animate-pulse w-full h-full bg-bg2 flex aspect-video flex-col overflow-hidden rounded text-text1">
           <div class="bg-bg2 w-full h-full"></div>
         </div>
@@ -72,10 +65,12 @@ export default ({
 
   return (
     <div
-      class={` flex w-full max-w-md lg:mx-4 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}>
+      class={` flex w-full max-w-md mx-1 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}
+    >
       <A
-        href={v.url ?? `/watch?v=${videoId(v)}`}
-        class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        href={`/watch?v=${videoId(v)}`}
+        class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
         {progress() !== undefined && (
           <div class="relative h-0 w-0 ">
             <div class="absolute left-0 top-0 z-[1] bg-bg1/80 rounded-br px-2 uppercase">
@@ -88,7 +83,11 @@ export default ({
             class={`cursor-pointer w-full aspect-video max-w-md break-words ${
               progress() !== undefined ? "saturate-[0.35] opacity-75" : ""
             } `}
-            src={generateThumbnailUrl(instance().image_proxy_url, videoId(v))}
+            src={generateThumbnailUrl(
+              sync.store!.preferences?.instance?.image_proxy_url ??
+                "https://pipedproxy.kavin.rocks",
+              videoId(v)
+            )}
             onError={() => setImgError(true)}
             // placeholder="blur"
             width={2560}
@@ -108,7 +107,8 @@ export default ({
               "bg-bg1/80": v.duration !== -1,
               "bg-primary": v.duration === -1,
             }}
-            class="absolute bottom-2 right-2 rounded px-1 text-xs">
+            class="absolute bottom-2 right-2 rounded px-1 text-xs"
+          >
             <Show when={v.duration === -1}>Live</Show>
             <Show when={v.duration !== -1}>
               {numeral(v.duration).format("00:00:00").replace(/^0:/, "")}
@@ -121,7 +121,8 @@ export default ({
               style={{
                 width: `clamp(0%, ${(progress()! / v.duration) * 100}%, 100%`,
               }}
-              class="absolute bottom-0 h-1 bg-highlight"></div>
+              class="absolute bottom-0 h-1 bg-highlight"
+            ></div>
           </div>
         )}
       </A>
@@ -129,7 +130,8 @@ export default ({
         <div class="flex flex-col gap-2 pr-2 ">
           <A
             href={v.url ?? `/watch?v=${videoId(v)}`}
-            class=" two-line-ellipsis min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            class=" two-line-ellipsis min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
             {v.title}
           </A>
 
@@ -138,7 +140,8 @@ export default ({
               <div class="group mb-1 w-max underline ">
                 <A
                   href={v.uploaderUrl || ""}
-                  class="flex max-w-max items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  class="flex max-w-max items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
                   <img
                     src={v.uploaderAvatar!}
                     width={32}
@@ -153,14 +156,17 @@ export default ({
             <div class="flex w-full flex-col text-xs">
               <A
                 href={v.uploaderUrl || ""}
-                class="outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                class="outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
                 <div class="peer w-fit ">{v.uploaderName}</div>
               </A>
               <div class="flex ">
-                <div class="w-fit  ">
-                  {" "}
-                  {numeral(v.views).format("0a").toUpperCase()} views
-                </div>
+                <Show when={v.views}>
+                  <div class="w-fit  ">
+                    {" "}
+                    {numeral(v.views).format("0a").toUpperCase()} views
+                  </div>
+                </Show>
 
                 <div class="group w-fit pl-1">
                   <Show when={v.uploaded && v.uploaded !== -1}>
@@ -180,32 +186,35 @@ export default ({
               />
             }
             iconPosition="right"
-            panelPosition="left">
+            panelPosition="left"
+          >
             <DropdownItem as="button" label="Add to queue" />
             <Switch>
-              <Match when={progress()}>
+              <Match when={progress() !== undefined}>
                 <DropdownItem
                   as="button"
                   label="Remove from history"
-                  onClick={() =>
-                    SyncedDB.history.delete(writeStore()!, (item) => {
-                      console.log(item.id, videoId(v));
-                      return item.id === videoId(v);
-                    })
+                  onClick={
+                    () => {}
+                    // SyncedDB.history.delete(writeStore()!, (item) => {
+                    //   console.log(item.id, videoId(v));
+                    //   return item.id === videoId(v);
+                    // })
                   }
                 />
               </Match>
-              <Match when={!progress()}>
+              <Match when={progress() === undefined}>
                 <DropdownItem
                   as="button"
                   label="Mark as watched"
-                  onClick={() =>
-                    SyncedDB.history.create(writeStore()!, {
-                      ...v,
-                      id: videoId(v),
-                      watchedAt: Date.now(),
-                      currentTime: v.duration,
-                    })
+                  onClick={
+                    () => {}
+                    // SyncedDB.history.create(writeStore()!, {
+                    //   ...v,
+                    //   id: videoId(v),
+                    //   watchedAt: Date.now(),
+                    //   currentTime: v.duration,
+                    // })
                   }
                 />
               </Match>

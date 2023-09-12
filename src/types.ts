@@ -1,32 +1,32 @@
 export interface PipedVideo {
-  title: string
-  description: string
-  uploadDate: string
-  uploader: string
-  uploaderUrl: string
-  uploaderAvatar: string
-  thumbnailUrl: string
-  hls: string
-  dash: string | null
-  lbryId: string | null
-  category: string
-  license: string
-  visibility: string
-  tags: string[]
-  uploaderVerified: boolean
-  duration: number
-  views: number
-  likes: number
-  dislikes: number
-  uploaderSubscriberCount: number
-  audioStreams: AudioStream[] | null
-  videoStreams: VideoStream[] | null
-  relatedStreams: RelatedStream[]
-  subtitles: Subtitle[]
-  livestream: boolean
-  proxyUrl: string
-  chapters: Chapter[]
-  previewFrames: PreviewFrame[]
+  title: string;
+  description: string;
+  uploadDate: string;
+  uploader: string;
+  uploaderUrl: string;
+  uploaderAvatar: string;
+  thumbnailUrl: string;
+  hls: string;
+  dash: string | null;
+  lbryId: string | null;
+  category: string;
+  license: string;
+  visibility: string;
+  tags: string[];
+  uploaderVerified: boolean;
+  duration: number;
+  views: number;
+  likes: number;
+  dislikes: number;
+  uploaderSubscriberCount: number;
+  audioStreams: AudioStream[] | null;
+  videoStreams: VideoStream[] | null;
+  relatedStreams: RelatedStream[];
+  subtitles: Subtitle[];
+  livestream: boolean;
+  proxyUrl: string;
+  chapters: Chapter[];
+  previewFrames: PreviewFrame[];
 }
 
 export interface AudioStream {
@@ -74,7 +74,6 @@ export interface VideoStream {
   fps: number;
   contentLength: number;
 }
-
 
 export interface Subtitle {
   url: string;
@@ -148,31 +147,29 @@ export interface Channel {
   tabs?: Tab[];
 }
 
-
-
 export interface Tab {
   name: string;
   data: string;
 }
 
 export interface Tab {
-  name: string
-  data: string
-  tabNextPage?: any
-  content?: RelatedStream[]
+  name: string;
+  data: string;
+  tabNextPage?: any;
+  content?: RelatedStream[];
 }
 
 export interface Playlist {
-  name: string
-  thumbnailUrl: string
-  description: string
-  bannerUrl: any
-  nextpage: any
-  uploader: string
-  uploaderUrl: string
-  uploaderAvatar: string
-  videos: number
-  relatedStreams: RelatedStream[]
+  name: string;
+  thumbnailUrl: string;
+  description: string;
+  bannerUrl: any;
+  nextpage: any;
+  uploader: string;
+  uploaderUrl: string;
+  uploaderAvatar: string;
+  videos: number;
+  relatedStreams: RelatedStream[];
 }
 export interface RelatedStream {
   url: string;
@@ -191,26 +188,37 @@ export interface RelatedStream {
   isShort: boolean;
 }
 export interface RelatedChannel {
-  url: string
-  type: "channel"
-  name: string
-  thumbnail: string
-  description: any
-  subscribers: number
-  videos: number
-  verified: boolean
+  url: string;
+  type: "channel";
+  name: string;
+  thumbnail: string;
+  description: any;
+  subscribers: number;
+  videos: number;
+  verified: boolean;
 }
 
 export interface RelatedPlaylist {
-  url: string
-  type: "playlist"
-  name: string
-  thumbnail: string
-  uploaderName: string
-  uploaderUrl: string
-  uploaderVerified: boolean
-  playlistType: string
-  videos: number
+  url: string;
+  type: "playlist";
+  name: string;
+  thumbnail: string;
+  uploaderName: string;
+  uploaderUrl: string;
+  uploaderVerified: boolean;
+  playlistType: string;
+  videos: number;
 }
 
-export type ContentItem = RelatedStream | RelatedChannel | RelatedPlaylist
+export type ContentItem = RelatedStream | RelatedChannel | RelatedPlaylist;
+
+export interface Preferences {
+  autoplay: boolean;
+  pip: boolean;
+  muted: boolean;
+  volume: number;
+  speed: number;
+  quality: string;
+  theatreMode: boolean;
+  instance?: PipedInstance;
+}

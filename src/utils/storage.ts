@@ -9,17 +9,17 @@ function testLocalStorage() {
 
 export function setStorageValue(
   key: string,
-  value: string,
+  value: any,
   storage: "sessionStorage" | "localStorage" = "localStorage"
 ) {
   if (typeof window === "undefined") return;
   if (!testLocalStorage()) return;
   switch (storage) {
     case "localStorage":
-      localStorage.setItem(key, value);
+      localStorage.setItem(key, JSON.stringify(value));
       break;
     case "sessionStorage":
-      sessionStorage.setItem(key, value);
+      sessionStorage.setItem(key, JSON.stringify(value));
       break;
     default:
       throw new Error(`Invalid storage: ${storage}`);
@@ -36,7 +36,9 @@ export function getStorageValue(
 
   const urlValue = new URLSearchParams(window.location.search).get(key);
   const storageValue =
-    source === "localStorage" && testLocalStorage() ? localStorage.getItem(key) : sessionStorage.getItem(key);
+    source === "localStorage" && testLocalStorage()
+      ? localStorage.getItem(key)
+      : sessionStorage.getItem(key);
 
   const value = urlValue !== null ? urlValue : storageValue;
 
@@ -58,7 +60,9 @@ export function getStorageValue(
         return Number(value);
       case "json":
         try {
-          return JSON.parse(value);
+          const json = JSON.parse(value);
+          if (typeof json === "string") return JSON.parse(json);
+          return json;
         } catch (e) {
           console.error(e);
           return defaultVal;

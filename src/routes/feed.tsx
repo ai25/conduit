@@ -1,97 +1,84 @@
 import { For, Show, createEffect, createSignal, useContext } from "solid-js";
 import VideoCard from "~/components/VideoCard";
-import { InstanceContext} from "~/root";
 import { Spinner } from "~/components/PlayerContainer";
 import { RelatedStream } from "~/types";
 import { getStorageValue } from "~/utils/storage";
 import { Title } from "solid-start";
+import { createQuery } from "@tanstack/solid-query";
+import { useSyncedStore } from "~/stores/syncedStore";
+import { ErrorComponent } from "~/components/Error";
+import useIntersectionObserver from "~/hooks/useIntersectionObserver";
+import EmptyState from "~/components/EmptyState";
+import { A } from "@solidjs/router";
+import { useAppState } from "~/stores/appStateStore";
 
 export default function Feed() {
-  // const { data, refetch } = trpc.useQuery([
-  //   "db.getSubscriptions",
-
-  // ]);
-  const [videos, setVideos] = createSignal<RelatedStream[] | null>(null);
-  const [all, setAll] = createSignal<RelatedStream[] | null>(null);
-  const [instance] = useContext(InstanceContext);
-  const [isLoading, setIsLoading] = createSignal(true);
-  const [error, setError] = createSignal<Error | null>(null);
-  // console.log(data, "subs");
-  // const ids = data?.map((sub) => sub.channelId);
-  // const ids1 = ids?.slice(0, 25);
-  // const ids2 = ids?.slice(50, 100);
-  // const ids3 = ids?.slice(100, 150);
   const [limit, setLimit] = createSignal(100);
-  createEffect(async () => {
-    setIsLoading(true);
-    const channels = getStorageValue(
-      "localSubscriptions",
-      [],
-      "json",
-      "localStorage"
-    );
+  const channels = () =>
+    getStorageValue("localSubscriptions", [], "json", "localStorage");
 
-    try {
-      console.log("cache was stale, refetching");
-      const res = await fetch(`${instance().api_url}/feed/unauthenticated`, {
-        method: "POST",
-        body: JSON.stringify(channels),
-      });
-      const data = (await res.json()) as RelatedStream[] | Error;
-      console.log(data, "subs");
-      if (!(data as Error).message) {
-        setVideos(data as RelatedStream[]);
-      }
-      setIsLoading(false);
-    } catch (err) {
-      console.log(err, "error");
-      setIsLoading(false);
-      setError(err as Error);
+  const sync = useSyncedStore();
+  const query = createQuery(
+    () => ["feed"],
+    async (): Promise<RelatedStream[]> =>
+      (
+        await fetch(
+          sync.store.preferences.instance!.api_url + "/feed/unauthenticated",
+          {
+            method: "POST",
+            body: JSON.stringify(channels()),
+          }
+        )
+      ).json(),
+    {
+      get enabled() {
+        return sync.store.preferences.instance?.api_url &&
+          channels()?.length > 0
+          ? true
+          : false;
+      },
+      placeholderData: Array(50).fill(undefined),
+    }
+  );
+
+  const [intersectionRef, setIntersectionRef] = createSignal<
+    HTMLDivElement | undefined
+  >();
+  const isIntersecting = useIntersectionObserver({
+    setTarget: () => intersectionRef(),
+  });
+  createEffect(() => {
+    console.log(query.data);
+    if (isIntersecting()) {
+      setLimit((l) => l + 10);
     }
   });
-
-  //   if (isLoading()) {
-  //     return (
-  //       <div class="flex items-center justify-center w-full h-full">
-  //         <Spinner />
-  //       </div>
-  //     );
-  //   }
+  const [appState, setAppState] = useAppState();
+  createEffect(() => {
+    setAppState({
+      loading: query.isInitialLoading || query.isRefetching || query.isFetching,
+    });
+  });
   return (
     <>
-    <Title>Feed | Conduit</Title>
-      {/* {isLoading&&<div class="fixed flex justify-center w-full text-5xl text-text"><ImSpinner2 class="animate-spin"/></div>} */}
+      <Title>Feed | Conduit</Title>
       <div class="mx-2 flex flex-wrap justify-center">
-        <Show when={videos()} keyed>
-          {(video) => (
-            <>
-              <For each={videos()!.slice(0, limit())}>
-                {(video) => <div class="md:w-72"><VideoCard v={video} /></div>}
-              </For>
-            </>
-          )}
+        <Show when={!Array.isArray(query.data)}>
+          <ErrorComponent error={query.data} />
         </Show>
-        <Show when={isLoading()} keyed>
-          {
-            <>
-              {Array(44)
-                .fill(0)
-                .map((_, index) => {
-                  return <VideoCard v={undefined} />;
-                })}
-            </>
-          }
+        <Show when={query.data && query.data.length > 0}>
+          <For each={query.data?.slice(0, limit())}>
+            {(video) => <VideoCard v={video} />}
+          </For>
         </Show>
-        <Show when={error()} keyed>
-          {(error) => <>{error?.message}</>}
+        <Show when={query.data && query.data.length === 0}>
+          <div class="h-[80vh] items-center justify-center flex flex-col gap-2">
+            <EmptyState />
+            <A href="/import">Import subscriptions</A>
+          </div>
         </Show>
       </div>
-      <div class="w-full flex items-center justify-center">
-        <button class="btn" onClick={() => setLimit(limit() + 100)}>
-          Load more
-        </button>
-      </div>
-      <div class="h-20 "></div>
+      <div ref={setIntersectionRef} class="h-20 "></div>
     </>
   );
 }

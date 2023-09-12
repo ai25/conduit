@@ -13,7 +13,6 @@ import {
 } from "solid-js";
 import { useLocation } from "solid-start";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
-import { InstanceContext } from "~/root";
 import {
   ContentItem,
   Channel as PipedChannel,

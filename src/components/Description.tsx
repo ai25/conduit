@@ -14,7 +14,6 @@ import { MediaPlayerElement } from "vidstack";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import dayjs from "dayjs";
 import Comment, { PipedCommentResponse } from "./Comment";
-import { InstanceContext } from "~/root";
 import { videoId } from "~/routes/history";
 import { downloadVideo } from "~/utils/hls";
 import Button from "./Button";
@@ -33,7 +32,6 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
   const [isSubscribed, setIsSubscribed] = createSignal(false);
 
   const [comments, setComments] = createSignal<PipedCommentResponse>();
-  const [instance] = useContext(InstanceContext);
 
   function rewriteDescription(text: string) {
     const t = text
@@ -59,12 +57,14 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
   const [expanded, setExpanded] = createSignal(false);
   createEffect(() => {
     if (!props.video) return;
-    const channels = getStorageValue(
+    let channels = getStorageValue(
       "localSubscriptions",
       [],
       "json",
       "localStorage"
     ) as string[];
+    console.log(typeof channels);
+    if (typeof channels === "string") channels = JSON.parse(channels);
     setIsSubscribed(
       channels.find(
         (channel) => channel === props.video!.uploaderUrl.split("/channel/")[1]
@@ -106,24 +106,24 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
   };
 
   async function loadComments() {
-    const res = await fetch(`${instance().api_url}/comments/${videoId(props.video)}`);
-    const data = await res.json();
-    console.log(data, "comments");
-    setComments(data);
+    // const res = await fetch(`${instance().api_url}/comments/${videoId(props.video)}`);
+    // const data = await res.json();
+    // console.log(data, "comments");
+    // setComments(data);
   }
   async function loadMoreComments() {
-    if (!comments()?.nextpage) return;
-    const res = await fetch(
-      `${instance().api_url}/nextpage/comments/${videoId(props.video)}?nextpage=${
-        comments()!.nextpage
-      }`
-    );
-    const data = await res.json();
-    console.log(data, "comments");
-    setComments({
-      ...data,
-      comments: [...comments()!.comments, ...data.comments],
-    });
+    // if (!comments()?.nextpage) return;
+    // const res = await fetch(
+    //   `${instance().api_url}/nextpage/comments/${videoId(props.video)}?nextpage=${
+    //     comments()!.nextpage
+    //   }`
+    // );
+    // const data = await res.json();
+    // console.log(data, "comments");
+    // setComments({
+    //   ...data,
+    //   comments: [...comments()!.comments, ...data.comments],
+    // });
   }
 
   async function handleDownload() {
@@ -168,7 +168,8 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
                 <div class="flex flex-col items-start justify-start">
                   <A
                     href={`${props.video!.uploaderUrl}`}
-                    class="link flex w-fit items-center gap-2">
+                    class="link flex w-fit items-center gap-2"
+                  >
                     {props.video!.uploader}{" "}
                     {props.video!.uploaderVerified && <Checkmark />}
                   </A>
@@ -213,7 +214,8 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
                         (props.video!.likes + props.video!.dislikes)) *
                       100
                     }%`,
-                  }}></div>
+                  }}
+                ></div>
               </div>
               {numeral(props.video!.dislikes).format("0a").toUpperCase()} 👎
             </div>
@@ -237,7 +239,8 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
             onClick={() => {
               setExpanded(!expanded());
             }}
-            class="text-center text-sm text-accent1 hover:underline ">
+            class="text-center text-sm text-accent1 hover:underline "
+          >
             Show {expanded() ? "less" : "more"}
           </button>
         </div>
@@ -248,7 +251,8 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
               Load Comments
             </button>
           }
-          keyed>
+          keyed
+        >
           {(c) => (
             <Switch>
               <Match when={c.comments.length === 0}>
@@ -287,7 +291,8 @@ export const Checkmark = () => (
     class="h-4 w-4 "
     xmlns="http://www.w3.org/2000/svg"
     fill="currentColor"
-    viewBox="0 0 24 24">
+    viewBox="0 0 24 24"
+  >
     <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z" />
   </svg>
 );

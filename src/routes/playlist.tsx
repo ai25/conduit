@@ -9,14 +9,15 @@ import {
 } from "solid-js";
 import { Title, useLocation } from "solid-start";
 import VideoCard from "~/components/VideoCard";
-import { DBContext, InstanceContext, SyncContext } from "~/root";
+import { DBContext } from "~/root";
 import { Playlist as PlaylistType, RelatedStream } from "~/types";
 import dayjs from "dayjs";
 import { videoId } from "./history";
 import { A } from "@solidjs/router";
 import PlaylistItem from "~/components/PlaylistItem";
 import { fetchJson } from "~/utils/helpers";
-import { SyncedDB } from "~/stores/syncedStore";
+import { SyncedDB, useSyncedStore } from "~/stores/syncedStore";
+import { createQuery } from "@tanstack/solid-query";
 
 export default function Playlist() {
   const [playlist, setPlaylist] = createSignal(null);
@@ -27,15 +28,13 @@ export default function Playlist() {
   const route = useLocation();
   const isLocal = () => route.query.list?.startsWith("conduit-");
   const id = route.query.list;
-  const [instance] = useContext(InstanceContext);
-  const readStore = useContext(SyncContext);
+  const sync = useSyncedStore();
 
-  createEffect(async() => {
+  createEffect(async () => {
     if (!id) return;
     if (!isLocal()) return;
-    if (!readStore()) return;
     await new Promise((r) => setTimeout(r, 100));
-    const l = SyncedDB.playlists.findUnique(readStore()!, id);
+    const l = sync.store.playlists[id];
     // if (!db()) return;
 
     // const tx = db()!.transaction("playlists", "readonly");
@@ -43,15 +42,27 @@ export default function Playlist() {
     // const l = await store.get(id);
     // console.log(l, id);
     setList(l);
-    console.log(l,SyncedDB.playlists.findUnique(readStore()!,id),id)
   });
+  const query = createQuery(
+    () => ["playlist"],
+    async (): Promise<PlaylistType> =>
+      (
+        await fetch(
+          sync.store.preferences.instance!.api_url + "/playlists/" + id
+        )
+      ).json(),
+    {
+      get enabled() {
+        return sync.store.preferences.instance?.api_url && !isLocal() && id
+          ? true
+          : false;
+      },
+    }
+  );
 
-  createEffect(async () => {
-    if (!id) return;
-    if (isLocal()) return;
-    const json = await fetchJson(`${instance().api_url}/playlists/${id}`);
-    setList(json);
-    console.log(json);
+  createEffect(() => {
+    if (!query.data) return;
+    setList(query.data);
   });
 
   onMount(() => {
@@ -169,7 +180,7 @@ export default function Playlist() {
 
   return (
     <>
-    <Title>{list() ? list()!.name : "Playlist"}</Title>
+      <Title>{list() ? list()!.name : "Playlist"}</Title>
       <Show when={list()} keyed>
         {(l) => {
           return (
@@ -180,7 +191,12 @@ export default function Playlist() {
                 <Show when={l.relatedStreams.length > 0}>
                   <For each={l.relatedStreams}>
                     {(video, index) => (
-                      <PlaylistItem active="" v={video} index={index() + 1} list={id} />
+                      <PlaylistItem
+                        active=""
+                        v={video}
+                        index={index() + 1}
+                        list={id}
+                      />
                     )}
                   </For>
                 </Show>

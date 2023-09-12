@@ -56,6 +56,20 @@ export default defineConfig({
               },
             },
           },
+          {
+            urlPattern: /https:\/\/[a-zA-Z./0-9_]*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "static-cache",
+              expiration: {
+                maxEntries: 1000,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
         ],
       },
       manifest: {

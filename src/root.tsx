@@ -41,7 +41,7 @@ import { Portal, isServer } from "solid-js/web";
 import Select from "./components/Select";
 import Player from "./components/Player";
 import { SetStoreFunction, createStore, unwrap } from "solid-js/store";
-import { PipedInstance, PipedVideo } from "./types";
+import { PipedInstance, PipedVideo, Preferences } from "./types";
 import { defineCustomElements } from "vidstack/elements";
 import { IDBPDatabase, openDB } from "idb";
 import Header from "./components/Header";
@@ -62,19 +62,23 @@ import Import from "./routes/import";
 import { PlaylistProvider } from "./stores/playlistStore";
 import { QueueProvider } from "./stores/queueStore";
 import { PlayerStateProvider } from "./stores/playerStateStore";
-import { Store, SyncedDB, clone } from "./stores/syncedStore";
-import syncedStore, { getYjsDoc, observeDeep } from "@syncedstore/core";
-import { WebrtcProvider } from "y-webrtc";
-import { IndexeddbPersistence } from "y-indexeddb";
+import {
+  Store,
+  SyncedDB,
+  SyncedStoreProvider,
+  clone,
+  useSyncedStore,
+} from "./stores/syncedStore";
 import { AppStateProvider, useAppState } from "./stores/appStateStore";
 import BottomNav from "./components/BottomNav";
 import { TiHome } from "solid-icons/ti";
 import { AiOutlineFire, AiOutlineMenu } from "solid-icons/ai";
 import { Toast } from "@kobalte/core";
 import Button from "./components/Button";
+import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 
-const theme = createSignal("monokai");
-export const ThemeContext = createContext(theme);
+const [theme, setTheme] = createSignal("");
+export const ThemeContext = createContext<Signal<string>>([theme, setTheme]);
 
 const video = createStore<{
   value: PipedVideo | undefined;
@@ -113,7 +117,6 @@ const instance = createSignal<PipedInstance>({
   up_to_date: false,
   image_proxy_url: "https://pipedproxy.kavin.rocks",
 });
-export const InstanceContext = createContext(instance);
 
 const preferences = createStore({
   autoplay: false,
@@ -123,23 +126,27 @@ const preferences = createStore({
   speed: 1,
   quality: "auto",
   theatreMode: false,
+  instance: {
+    name: "Piped",
+    api_url: "https://pipedapi.kavin.rocks",
+    cache: true,
+    cdn: true,
+    last_checked: new Date().getTime(),
+    locations: "",
+    version: "0.0.0",
+    registered: 0,
+    s3_enabled: false,
+    up_to_date: false,
+    image_proxy_url: "https://pipedproxy.kavin.rocks",
+  },
 });
-const initialStore: Store = {
-  playlists: [],
-  history: [],
-  subscriptions: [],
-};
 export const PreferencesContext = createContext(preferences);
-const [store, setStore] = createSignal<Store | null>(null);
-const [solidStore, setSolidStore] = createSignal<Store | null>(null);
-export const SyncContext = createContext(store);
-export const SolidStoreContext = createContext(solidStore);
 
 defineCustomElements();
 
 export default function Root() {
-  const location = useLocation();
-  const isRouting = useIsRouting();
+  // const location = useLocation();
+  // const isRouting = useIsRouting();
   const event = useServerContext();
   createRenderEffect(() => {
     const cookie = () => {
@@ -147,66 +154,67 @@ export default function Root() {
         isServer ? event.request.headers.get("cookie") ?? "" : document.cookie
       );
     };
-    const t = cookie().theme ?? "monokai";
-    theme[1](t);
-  });
-  createEffect(async () => {
-    console.log(
-      new Date().toISOString().split("T")[1],
-      "visible task waiting for db"
-    );
-    console.time("db");
-    const odb = await openDB("conduit", 2, {
-      upgrade(db) {
-        console.log("upgrading");
-        try {
-          db.createObjectStore("watch_history");
-        } catch (e) {}
-        try {
-          db.createObjectStore("playlists");
-        } catch (e) {}
-      },
-    });
-    console.log("setting db visible");
-    db[1](odb);
-    console.timeEnd("db");
-  });
-  const [progress, setProgress] = createSignal(0);
-
-  createEffect(() => {
-    console.time("prefs");
-    console.log("render effect setting context, theatre is:");
-    preferences[1](
-      getStorageValue(
-        "preferences",
-        {
-          autoplay: false,
-          pip: false,
-          muted: false,
-          volume: 1,
-          speed: 1,
-          quality: "auto",
-          theatreMode: false,
-        },
-        "json",
-        "localStorage"
-      )
-    );
-    console.timeEnd("prefs");
+    const theme = cookie().theme ?? "monokai";
+    setTheme(theme);
+    // console.log("setting theme")
   });
 
-  createEffect(() => {
-    console.log(
-      preferences[0],
-      "setting theater prefs in root, theatre mode is set to: ",
-      preferences[0].theatreMode
-    );
-    setStorageValue(
-      "preferences",
-      JSON.stringify(preferences[0]),
-      "localStorage"
-    );
-  });
+  // createEffect(async () => {
+  //   console.log(
+  //     new Date().toISOString().split("T")[1],
+  //     "visible task waiting for db"
+  //   );
+  //   console.time("db");
+  //   const odb = await openDB("conduit", 2, {
+  //     upgrade(db) {
+  //       console.log("upgrading");
+  //       try {
+  //         db.createObjectStore("watch_history");
+  //       } catch (e) {}
+  //       try {
+  //         db.createObjectStore("playlists");
+  //       } catch (e) {}
+  //     },
+  //   });
+  //   console.log("setting db visible");
+  //   db[1](odb);
+  //   console.timeEnd("db");
+  // });
+
+  // createEffect(() => {
+  //   console.time("prefs");
+  //   console.log("render effect setting context, theatre is:");
+  //   preferences[1](
+  //     getStorageValue(
+  //       "preferences",
+  //       {
+  //         autoplay: false,
+  //         pip: false,
+  //         muted: false,
+  //         volume: 1,
+  //         speed: 1,
+  //         quality: "auto",
+  //         theatreMode: false,
+  //       },
+  //       "json",
+  //       "localStorage"
+  //     )
+  //   );
+  //   console.timeEnd("prefs");
+  // });
+
+  // createEffect(() => {
+  //   console.log(
+  //     preferences[0],
+  //     "setting theater prefs in root, theatre mode is set to: ",
+  //     preferences[0].theatreMode
+  //   );
+  //   setStorageValue(
+  //     "preferences",
+  //     JSON.stringify(preferences[0]),
+  //     "localStorage"
+  //   );
+  // });
   // createEffect(async () => {
   //   try {
   //     const { registerSW } = await import("virtual:pwa-register");
@@ -223,65 +231,6 @@ export default function Root() {
   //     console.error(e, "worker");
   //   }
   // });
-
-  const doc = () => (store() ? getYjsDoc(store()) : null);
-  const [room, setRoom] = createSignal(
-    "localStorage" in globalThis
-      ? (JSON.parse(localStorage.getItem("room") || "{}") as {
-          id?: string;
-          password?: string;
-        })
-      : {}
-  );
-  createEffect(() => {
-    if (room().id) {
-      setStore(syncedStore(initialStore));
-    }
-  });
-  createEffect(() => {
-    console.time("room");
-    if (!isServer) {
-      if (!store()) return;
-      observeDeep(store(), () => {
-        console.log("store changed");
-        console.time("store");
-        setTimeout(() => setSolidStore(clone(store())), 0);
-        console.log(clone(store())?.history.length, "history length");
-        console.timeEnd("store");
-      });
-    }
-    console.timeEnd("room");
-  });
-  let webrtcProvider: WebrtcProvider | null = null;
-  let idbProvider: IndexeddbPersistence | null = null;
-  async function initializeIndexedDB(): Promise<IndexeddbPersistence | null> {
-    return new Promise((resolve) => {
-      const tempProvider =
-        doc() && room().id
-          ? new IndexeddbPersistence(room().id!, doc()!)
-          : null;
-      resolve(tempProvider);
-    });
-  }
-  createEffect(async () => {
-    console.time("webrtc");
-    if (!doc() || !room().id) return;
-    console.log(room().id, "setting webrtc provider");
-    webrtcProvider = new WebrtcProvider(room().id!, doc()!, {
-      signaling: ["wss://signaling.fly.dev"],
-      ...(room()!.password && { password: room().password }),
-    });
-    console.log(webrtcProvider, "webrtc provider");
-    webrtcProvider.connect();
-
-    idbProvider = await initializeIndexedDB();
-
-    console.log(idbProvider, "provider");
-    console.timeEnd("webrtc");
-  });
-  onCleanup(() => {
-    webrtcProvider?.disconnect();
-  });
   const [appState] = useAppState();
 
   // function handleKeyDown(e: KeyboardEvent) {
@@ -299,13 +248,20 @@ export default function Root() {
   //   if (!isServer)
   //   document.removeEventListener("keydown", handleKeyDown);
   // });
-  const dangerouslyClearDb = () => {
-    const data = SyncedDB.dangerousClearDb(store()!, idbProvider!);
-    console.log(data, "data");
-    SyncedDB.restoreData(store()!, data);
-  };
-  const [x, setX] = createSignal("");
-
+  const store = useSyncedStore();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        cacheTime: 1000 * 60 * 60 * 24, // 24 hours
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false,
+        retry: (failureCount) => {
+          return failureCount < 3;
+        },
+      },
+    },
+  });
   return (
     <Html lang="en">
       <Head>
@@ -319,16 +275,17 @@ export default function Root() {
         <Link rel="manifest" href="manifest.webmanifest" />
       </Head>
       <QueueProvider>
-        <ThemeContext.Provider value={theme}>
+        <ThemeContext.Provider value={[theme, setTheme]}>
           <DBContext.Provider value={db}>
-            <InstanceContext.Provider value={instance}>
-              <AppStateProvider>
-                <PlaylistProvider>
-                  <PlayerContext.Provider value={video}>
-                    <PlayerStateProvider>
-                      <SyncContext.Provider value={store}>
+            <AppStateProvider>
+              <PlaylistProvider>
+                <PlayerContext.Provider value={video}>
+                  <PlayerStateProvider>
+                    <SyncedStoreProvider>
+                      <QueryClientProvider client={queryClient}>
                         <Body
-                          class={`${theme[0]()} bg-bg1 font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}>
+                          class={`${theme()} bg-bg1 font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}
+                        >
                           <Suspense>
                             <ErrorBoundary>
                               <Show when={appState.loading}>
@@ -346,20 +303,7 @@ export default function Root() {
                                 </Toast.Region>
                               </Portal>
                               {/* <PlayerContainer /> */}
-                              {/* <PipContainer />{" "} */}
                               <main>
-        <Button label="Dangerously clear db" onClick={dangerouslyClearDb} />
-        <Button label="Restore" onClick={() => SyncedDB.restoreData(store()!, JSON.parse(x()))} />
-        <Button label="Backup" onClick={() => {
-          const date = new Date();
-          const dateString =  date.toISOString().replaceAll(":", "_").substring(0, 19)
-                    const filename = `conduit-backup-${dateString}.json`
-          const file = new File([JSON.stringify((store()!))], filename, {type: "application/json"})
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(file);
-          a.download = filename;
-          a.click();
-        }} />
                                 <Routes>
                                   <FileRoutes />
                                   {/* <Transition
@@ -398,7 +342,8 @@ export default function Root() {
                                 enterTo="translate-y-0"
                                 leave="transition ease-in-out duration-300 transform"
                                 leaveFrom="translate-y-0"
-                                leaveTo="translate-y-full">
+                                leaveTo="translate-y-full"
+                              >
                                 <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
                                   <BottomNav
                                     items={[
@@ -440,12 +385,12 @@ export default function Root() {
                           </Suspense>
                           <Scripts />
                         </Body>
-                      </SyncContext.Provider>
-                    </PlayerStateProvider>
-                  </PlayerContext.Provider>
-                </PlaylistProvider>
-              </AppStateProvider>
-            </InstanceContext.Provider>
+                      </QueryClientProvider>
+                    </SyncedStoreProvider>
+                  </PlayerStateProvider>
+                </PlayerContext.Provider>
+              </PlaylistProvider>
+            </AppStateProvider>
           </DBContext.Provider>
         </ThemeContext.Provider>
       </QueueProvider>

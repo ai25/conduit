@@ -39,14 +39,10 @@ import {
   onMount,
   useContext,
 } from "solid-js";
-import { PlayerContext, PreferencesContext, SyncContext } from "~/root";
+import { PlayerContext, PreferencesContext } from "~/root";
 import { PipedVideo, PreviewFrame, RelatedStream, Subtitle } from "~/types";
 import { chaptersVtt } from "~/utils/chapters";
 import { useIsRouting, useLocation, useNavigate } from "solid-start";
-// import { extractVideoId } from "~/routes/watch";
-// import { RouteLocation, useLocation } from "@builder.io/qwik-city";
-// import { IDBPDatabase } from "idb";
-// import PlayerSkin from "./player-skin/player-skin";
 import { extractVideoId } from "~/routes/watch";
 import { DBContext } from "~/root";
 //@ts-ignore
@@ -58,13 +54,10 @@ import numeral from "numeral";
 import { useQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
 import dayjs from "dayjs";
-import { SyncedDB } from "~/stores/syncedStore";
+import { HistoryItem, SyncedDB, useSyncedStore } from "~/stores/syncedStore";
 import { usePlayerState } from "../stores/playerStateStore";
 import { MediaRemoteControl } from "vidstack";
 
-const BUFFER_LIMIT = 3;
-const BUFFER_TIME = 15000;
-const TIME_SPAN = 300000;
 export default function Player() {
   console.log(new Date().toISOString().split("T")[1], "rendering player");
   console.time("rendering player");
@@ -73,7 +66,7 @@ export default function Player() {
   const route = useLocation();
   let mediaPlayer: MediaPlayerElement | undefined = undefined;
   const [db] = useContext(DBContext);
-  const store = useContext(SyncContext);
+  const sync = useSyncedStore();
   const updateProgress = async () => {
     console.log("updating progress");
     if (!video.value) return;
@@ -84,7 +77,6 @@ export default function Player() {
     if (video.value.category === "Music") {
       currentTime = 0;
     }
-    if (!store()) return;
     const id = videoId(video.value);
     if (!id) return;
     console.time("updating progress");
@@ -106,23 +98,25 @@ export default function Player() {
       uploaderUrl: video.value.uploaderUrl,
       url: `/watch?v=${id}`,
       isShort,
-      currentTime,
+      currentTime: currentTime ?? video.value.duration,
       watchedAt: new Date().getTime(),
       type: "stream",
       uploaded: new Date(video.value.uploadDate).getTime(),
       uploaderVerified: video.value.uploaderVerified,
       views: video.value.views,
     };
+    const historyItem: Record<string, HistoryItem> = {
+      [id]: val as HistoryItem,
+    };
     console.log("updating progress", val);
 
-    await new Promise((resolve) => {
-      SyncedDB.history.upsert(store()!, { where: { id }, data: val });
-
-      console.log(
-        `updated progress for ${video.value?.title}. ${id} to ${currentTime}`
-      );
-      resolve(null);
-    });
+    setTimeout(
+      () => (
+        sync.setStore("history", historyItem),
+        console.timeEnd("updating progress")
+      ),
+      0
+    );
     console.timeEnd("updating progress");
   };
   const state = usePlayerState();
@@ -277,6 +271,7 @@ export default function Player() {
     if (!video.value?.chapters) return;
     if (!mediaPlayer) return;
     if (route.search.match("fullscreen")) {
+      //@ts-ignore
       if (navigator.userActivation.isActive) {
         mediaPlayer?.requestFullscreen();
       }
@@ -340,12 +335,11 @@ export default function Player() {
   createEffect(() => {
     if (!video.value) return;
     if (!mediaPlayer) return;
-    if (!store()) return;
     if (time) return;
     const id = videoId(video.value);
     if (!id) return;
     console.time("getting progress");
-    const val = SyncedDB.history.findUnique(store()!, id);
+    const val = sync.store.history[id];
     const progress = val?.currentTime;
     if (progress) {
       if (progress < video.value.duration * 0.9) {
@@ -627,20 +621,26 @@ export default function Player() {
     return URL.createObjectURL(blob);
   };
   const [mediaPlayerConnected, setMediaPlayerConnected] = createSignal(false);
+  const [remote, setRemote] = createSignal<MediaRemoteControl | undefined>(
+    undefined
+  );
 
   createEffect(() => {
     if (!mediaPlayerConnected()) return;
     if (!video.value) return;
     document.addEventListener("keydown", handleKeyDown);
   });
+  createEffect(() => {
+    if (!mediaPlayer) return;
+    setRemote(new MediaRemoteControl());
+  });
 
   onCleanup(() => {
     document.removeEventListener("keydown", handleKeyDown);
   });
 
-  const remote = new MediaRemoteControl();
-
   const handleKeyDown = (e: KeyboardEvent) => {
+    const remote = new MediaRemoteControl();
     console.log(e.key);
     // if an input is focused
     if (document.activeElement?.tagName === "INPUT") return;
@@ -684,17 +684,17 @@ export default function Player() {
         else mediaPlayer!.pause();
         e.preventDefault();
         break;
-      case "up":
+      case "ArrowUp":
         mediaPlayer!.volume = Math.min(mediaPlayer!.volume + 0.05, 1);
         e.preventDefault();
         break;
-      case "down":
+      case "ArrowDown":
         mediaPlayer!.volume = Math.max(mediaPlayer!.volume - 0.05, 0);
         e.preventDefault();
         break;
       case "ArrowLeft":
         mediaPlayer!.currentTime = Math.max(mediaPlayer!.currentTime - 5, 0);
-        remote.toggleUserIdle();
+        remote!.toggleUserIdle();
         e.preventDefault();
         break;
       case "ArrowRight":
@@ -806,7 +806,8 @@ export default function Player() {
       // 16 / 9}
       aspect-ratio={16 / 9}
       thumbnails={generateStoryboard(video.value?.previewFrames[1])}
-      crossorigin="anonymous">
+      crossorigin="anonymous"
+    >
       <media-outlet
       // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
       >
@@ -831,7 +832,8 @@ export default function Player() {
           <Show when={err().fatal}>
             <div
               // classList={{hidden: preferences.pip}}
-              class="absolute top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50">
+              class="absolute top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50"
+            >
               <div class="flex flex-col items-center justify-center w-full h-full gap-3">
                 <div class="text-2xl font-bold text-white">
                   {error()?.name} {error()?.details}
@@ -854,7 +856,8 @@ export default function Player() {
                     class="px-4 py-2 text-lg text-white border border-white rounded-md"
                     onClick={() => {
                       setError(undefined);
-                    }}>
+                    }}
+                  >
                     Close
                   </button>
                 </div>
@@ -880,14 +883,16 @@ export default function Player() {
                 onClick={() => {
                   dismiss();
                   playNext();
-                }}>
+                }}
+              >
                 Play now (Shift + N)
               </button>
               <button
                 class="px-4 py-2 text-lg text-white border border-white rounded-md"
                 onClick={() => {
                   dismiss();
-                }}>
+                }}
+              >
                 Dismiss (Esc)
               </button>
             </div>
