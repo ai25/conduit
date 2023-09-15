@@ -1,16 +1,32 @@
-import { useRegisterSW } from "virtual:pwa-register/solid";
+import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
+import { registerRoute } from "workbox-routing";
+import { StaleWhileRevalidate } from "workbox-strategies";
+import { clientsClaim } from "workbox-core";
 
-const intervalMS = 60 * 60 * 1000;
+declare let self: ServiceWorkerGlobalScope;
 
-const updateServiceWorker = useRegisterSW({
-  onRegistered(r) {
-    r &&
-      setInterval(() => {
-        r.update();
-      }, intervalMS);
-  },
-  onRegisterError() {},
-  onOfflineReady() {
-    console.log("offline ready");
-  },
+// Clean up outdated caches
+cleanupOutdatedCaches();
+
+// Precache and route
+precacheAndRoute(self.__WB_MANIFEST);
+
+// Auto Update Behavior
+self.skipWaiting();
+clientsClaim();
+
+// Cache any cross-origin image
+registerRoute(
+  // Ensure you adjust the regex to match the kind of assets you're fetching
+  /\.(?:png|jpg|jpeg|svg|gif)$/,
+  new StaleWhileRevalidate({
+    cacheName: "image-cache",
+  })
+);
+
+// Prompt For Update Behavior
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });

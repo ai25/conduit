@@ -445,14 +445,14 @@ export default function Player() {
     document.removeEventListener("keydown", handleKeyDown);
   });
 
-  const onProviderChange = (event: MediaProviderChangeEvent) => {
+  const onProviderChange = async (event: MediaProviderChangeEvent) => {
     console.log(event, "provider change");
     const provider = event.detail;
     if (isHLSProvider(provider)) {
-      provider.library = () => import("hls.js");
+      provider.library = async () => await import("hls.js");
       console.log(provider);
       provider.config = {
-        startLevel: 0,
+        startLevel: 13,
       };
     }
   };
@@ -744,6 +744,9 @@ export default function Player() {
       }}
       on:pause={() => {
         updateProgress();
+      }}
+      on:hls-manifest-loaded={(e) => {
+        console.log(e.detail, "levels");
       }}
       on:media-player-connect={() => setMediaPlayerConnected(true)}
       autoplay
