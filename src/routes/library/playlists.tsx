@@ -4,16 +4,18 @@ import { Playlist } from "~/types";
 import { useSyncedStore } from "~/stores/syncedStore";
 import { generateThumbnailUrl } from "~/utils/helpers";
 import { videoId } from "./history";
+import { usePreferences } from "~/stores/preferencesStore";
 
 export default function Playlists() {
   const sync = useSyncedStore();
+  const [preferences] = usePreferences();
   createEffect(() => {
     let playlist = list;
-    if (!sync.store.preferences.instance) return;
+    if (!preferences.instance) return;
     const l: Record<string, Playlist> = {
       [playlist.id]: {
         bannerUrl: generateThumbnailUrl(
-          sync.store.preferences.instance.image_proxy_url,
+          preferences.instance.image_proxy_url,
           videoId(playlist.videos[0].thumbnail)
         ),
         description: "",

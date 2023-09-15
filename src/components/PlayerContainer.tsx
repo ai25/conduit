@@ -11,13 +11,14 @@ import {
   on,
   useContext,
 } from "solid-js";
-import { PlayerContext, PreferencesContext } from "~/root";
+import { PlayerContext } from "~/root";
 import VideoCard from "./VideoCard";
+import { usePreferences } from "~/stores/preferencesStore";
 
 export default function PlayerContainer() {
   const route = useLocation();
   const [video] = useContext(PlayerContext);
-  const [preferences] = useContext(PreferencesContext);
+  const [preferences] = usePreferences();
 
   const Loading = () =>
     route.pathname === "/watch" ? <LoadingState /> : <></>;
@@ -38,7 +39,8 @@ export default function PlayerContainer() {
         // "lg:max-w-[calc(100%-20.8rem)]": !theatre(),
 
         // "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
-      }}>
+      }}
+    >
       <Switch fallback={<Loading />}>
         <Match when={video.error} keyed>
           <Error message={video.error!.message} name={video.error!.name} />
@@ -88,7 +90,8 @@ export const Spinner = () => (
     class="h-24 w-24 text-white  transition-opacity duration-200 ease-linear animate-spin"
     fill="none"
     viewBox="0 0 120 120"
-    aria-hidden="true">
+    aria-hidden="true"
+  >
     <circle
       class="opacity-25"
       cx="60"

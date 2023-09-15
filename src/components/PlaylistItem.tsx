@@ -9,14 +9,14 @@ import {
   onMount,
   useContext,
 } from "solid-js";
-import { DBContext } from "~/root";
-import { videoId } from "~/routes/history";
+import { videoId } from "~/routes/library/history";
 import { RelatedStream } from "~/types";
 import Modal from "./Modal";
 import Dropdown from "./Dropdown";
 import DropdownItem from "./DropdownItem";
 import { SyncedDB, useSyncedStore } from "~/stores/syncedStore";
 import { generateThumbnailUrl } from "~/utils/helpers";
+import { usePreferences } from "~/stores/preferencesStore";
 
 const PlaylistItem = (props: {
   v: RelatedStream;
@@ -24,9 +24,9 @@ const PlaylistItem = (props: {
   list: string;
   active: string;
 }) => {
-  const [db] = useContext(DBContext);
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
   const sync = useSyncedStore();
+  const [preferences] = usePreferences();
 
   createRenderEffect(async () => {
     const val = sync.store.playlists[props.list]?.relatedStreams?.find(
@@ -86,7 +86,7 @@ const PlaylistItem = (props: {
           <img
             class="object-cover w-full h-full max-w-full max-h-full rounded-lg "
             src={generateThumbnailUrl(
-              sync.store.preferences.instance!.image_proxy_url,
+              preferences.instance.image_proxy_url,
               videoId(props.v)
             )}
           />

@@ -4,7 +4,7 @@ import {
   createSignal,
   useContext,
 } from "solid-js";
-import { videoId } from "~/routes/history";
+import { videoId } from "~/routes/library/history";
 import { RelatedStream } from "~/types";
 
 export type QueueContextType = {

@@ -14,21 +14,21 @@ import { Combobox } from "@kobalte/core";
 import { BsCaretDown } from "solid-icons/bs";
 import { QueryClient, createQuery } from "@tanstack/solid-query";
 import { useSyncedStore } from "~/stores/syncedStore";
+import { usePreferences } from "~/stores/preferencesStore";
 
 const Search = () => {
   const [search, setSearch] = createSignal<string>("");
   const sync = useSyncedStore();
+  const [preferences] = usePreferences();
   const query = createQuery(
     () => ["suggestions"],
     async (): Promise<string[]> =>
       await fetch(
-        sync.store.preferences.instance?.api_url +
-          "/suggestions?query=" +
-          search()
+        preferences.instance?.api_url + "/suggestions?query=" + search()
       ).then((res) => res.json()),
     {
       get enabled() {
-        return sync.store.preferences.instance?.api_url && search().length > 1
+        return preferences.instance?.api_url && search().length > 1
           ? true
           : false;
       },

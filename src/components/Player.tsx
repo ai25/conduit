@@ -16,41 +16,27 @@ declare module "solid-js" {
 
 import {
   HLSErrorEvent,
-  MediaCanPlayEvent,
-  MediaOutletElement,
   MediaPlayerElement,
-  MediaPosterElement,
   MediaProviderChangeEvent,
-  VideoProvider,
   isHLSProvider,
-  // MediaPlayerConnectEvent,
 } from "vidstack";
 import {
-  For,
-  ParentProps,
   Show,
-  children,
   createEffect,
-  createMemo,
   createSignal,
-  lazy,
-  on,
   onCleanup,
   onMount,
   useContext,
 } from "solid-js";
-import { PlayerContext, PreferencesContext } from "~/root";
+import { PlayerContext } from "~/root";
 import { PipedVideo, PreviewFrame, RelatedStream, Subtitle } from "~/types";
 import { chaptersVtt } from "~/utils/chapters";
 import { useIsRouting, useLocation, useNavigate } from "solid-start";
-import { extractVideoId } from "~/routes/watch";
-import { DBContext } from "~/root";
 //@ts-ignore
 import { ttml2srt } from "~/utils/ttml";
 import PlayerSkin from "./PlayerSkin";
 import VideoCard from "./VideoCard";
-import { videoId } from "~/routes/history";
-import numeral from "numeral";
+import { videoId } from "~/routes/library/history";
 import { useQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
 import dayjs from "dayjs";
@@ -59,16 +45,11 @@ import { usePlayerState } from "../stores/playerStateStore";
 import { MediaRemoteControl } from "vidstack";
 
 export default function Player() {
-  console.log(new Date().toISOString().split("T")[1], "rendering player");
-  console.time("rendering player");
   const [video] = useContext(PlayerContext);
-  //   const db = useContext(DBContext);
   const route = useLocation();
   let mediaPlayer: MediaPlayerElement | undefined = undefined;
-  const [db] = useContext(DBContext);
   const sync = useSyncedStore();
   const updateProgress = async () => {
-    console.log("updating progress");
     if (!video.value) return;
     if (!started()) {
       return;
@@ -81,15 +62,7 @@ export default function Player() {
     if (!id) return;
     console.time("updating progress");
 
-    let isShort = false;
-    let width = video.value.videoStreams?.[0]?.width;
-    let height = video.value.videoStreams?.[0]?.height;
-    if (width && height) {
-      isShort = height > width;
-    }
-
     const val = {
-      id,
       title: video.value.title,
       duration: video.value.duration,
       thumbnail: video.value.thumbnailUrl,
@@ -97,7 +70,6 @@ export default function Player() {
       uploaderAvatar: video.value.uploaderAvatar,
       uploaderUrl: video.value.uploaderUrl,
       url: `/watch?v=${id}`,
-      isShort,
       currentTime: currentTime ?? video.value.duration,
       watchedAt: new Date().getTime(),
       type: "stream",
@@ -120,23 +92,6 @@ export default function Player() {
     console.timeEnd("updating progress");
   };
   const state = usePlayerState();
-
-  // let interval: any;
-
-  // createEffect(() => {
-  //   if (!video.value) return;
-  //   if (!mediaPlayer) return;
-  //   if (!started()) return;
-  //   if (video.value.category === "Music") return
-  //   if (!state.playing) return
-  //   if (interval) clearInterval(interval);
-  //   interval = setInterval(() => {
-  //     updateProgress();
-  //   }, 1000);
-  // });
-  // onCleanup(() => {
-  //   clearInterval(interval);
-  // });
 
   const [playlist] = usePlaylist();
 
@@ -237,16 +192,8 @@ export default function Player() {
     });
   };
 
-  const setMediaState = () => {
-    navigator.mediaSession.setPositionState({
-      duration: video.value!.duration,
-      playbackRate: mediaPlayer!.playbackRate,
-      position: mediaPlayer!.currentTime,
-    });
-  };
-
   const init = () => {
-    if (!video.value) return;
+    if (!video.value) throw new Error("No video");
     console.time("init");
     initMediaSession();
     fetchSubtitles(video.value.subtitles);
@@ -321,7 +268,6 @@ export default function Player() {
         }
       }
       setCurrentTime(start);
-      // this.initialSeekComplete = true;
     }
   };
 
@@ -792,7 +738,13 @@ export default function Player() {
       on:provider-change={onProviderChange}
       on:hls-error={handleHlsError}
       on:ended={handleEnded}
-      on:play={() => setStarted(true)}
+      on:play={() => {
+        setStarted(true);
+        updateProgress();
+      }}
+      on:pause={() => {
+        updateProgress();
+      }}
       on:media-player-connect={() => setMediaPlayerConnected(true)}
       autoplay
       ref={mediaPlayer}

@@ -9,7 +9,7 @@ import {
 } from "solid-js";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { WebrtcProvider } from "y-webrtc";
-import { videoId } from "~/routes/history";
+import { videoId } from "~/routes/library/history";
 import { Playlist, Preferences, RelatedStream } from "~/types";
 import OpfsPersistence from "~/utils/y-opfs";
 console.log("syncedStore.tsx");

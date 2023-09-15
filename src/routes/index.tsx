@@ -8,15 +8,6 @@ import {
   useContext,
 } from "solid-js";
 import { A, Navigate } from "solid-start";
-import Counter from "~/components/Counter";
-import * as Y from "yjs";
-
-import { observeDeep } from "@syncedstore/core";
-import { IndexeddbPersistence } from "y-indexeddb";
-import { isServer } from "solid-js/web";
-import Button from "~/components/Button";
-import { createStore } from "solid-js/store";
-import { DBContext } from "~/root";
 import {} from "~/types";
 import { Playlist, RelatedStream } from "~/types";
 import { Store, SyncedDB, clone } from "~/stores/syncedStore";
@@ -24,16 +15,6 @@ import { Store, SyncedDB, clone } from "~/stores/syncedStore";
 const [error, setError] = createSignal();
 
 export default function Home() {
-  const [db] = useContext(DBContext);
-  // const store = useContext(SyncContext)
-  // const [doc, setDoc] = createSignal<Y.Doc>();
-  // const [store, setStore] = createSignal<Store>({
-  //   playlists: [],
-  //   history: [],
-  //   subscriptions: [],
-  // } as Store);
-  const [solidStore, setSolidStore] = createSignal();
-
   async function getIndexedDbEntries() {
     // store.playlists.pop();
     const tx = db()!.transaction("playlists", "readonly");

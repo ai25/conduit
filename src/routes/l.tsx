@@ -1,6 +1,5 @@
 import { downloadVideo } from "~/utils/hls";
 import { RelatedStream } from "../types";
-import { videoId } from "./history";
 import Description from "~/components/Description";
 import { createEffect, useContext } from "solid-js";
 import { PlayerContext } from "~/root";

@@ -10,8 +10,9 @@ import {
   onCleanup,
   onMount,
   useContext,
+  createMemo,
 } from "solid-js";
-import { useLocation } from "solid-start";
+import { ErrorMessage, useLocation } from "solid-start";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import {
   ContentItem,
@@ -19,6 +20,7 @@ import {
   RelatedChannel,
   RelatedPlaylist,
   RelatedStream,
+  Tab,
 } from "~/types";
 import Button from "~/components/Button";
 import { Spinner } from "~/components/PlayerContainer";
@@ -29,86 +31,203 @@ import PlaylistCard from "~/components/PlaylistCard";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import { useAppState } from "~/stores/appStateStore";
 import SubscribeButton from "~/components/SubscribeButton";
+import { usePreferences } from "~/stores/preferencesStore";
+import {
+  createInfiniteQuery,
+  CreateInfiniteQueryResult,
+} from "@tanstack/solid-query";
+import { isServer } from "solid-js/web";
+import EmptyState from "~/components/EmptyState";
 
 export default function Channel() {
   const [channel, setChannel] = createSignal<PipedChannel | undefined>();
   const [error, setError] = createSignal<Error | undefined>();
-  const [isSubscribed, setIsSubscribed] = createSignal(false);
   const [tabs, setTabs] = createSignal<any[]>([]);
-  const [selectedTab, setSelectedTab] = createSignal(0);
-  const [contentItems, setContentItems] = createSignal<ContentItem[]>([]);
-  const [instance] = useContext(InstanceContext);
+  const [selectedTab, setSelectedTab] = createSignal("videos");
+  const [preferences] = usePreferences();
   const route = useLocation();
-  onMount(() => {
-    getChannelData();
-  });
+  // onMount(() => {
+  //   getChannelData();
+  // });
 
-  async function fetchSubscribedStatus() {
-    if (!channel()?.id) return;
-    const channels = getStorageValue(
-      "localSubscriptions",
-      [],
-      "json",
-      "localStorage"
-    ) as string[];
-    setIsSubscribed(channels.find((id) => id === channel()!.id) ? true : false);
-  }
-
-  async function fetchChannel() {
-    console.log(route, "fetching channel");
-    const url = instance().api_url + route.pathname + "/";
-    return await fetch(url).then((res) => res.json());
-  }
-
-  async function getChannelData() {
-    setAppState({ loading: true });
-    fetchChannel()
-      .then((data) => {
-        console.log(data, "data");
-        if (data.error) {
-          setError(data);
-        } else {
-          setChannel(data);
-        }
-      })
-      .then(() => {
-        if (!error()) {
-          document.title = channel()!.name + " - Conduit";
-          setContentItems(channel()!.relatedStreams as ContentItem[]);
-          fetchSubscribedStatus();
-          setTabs([{ name: "videos" }]);
-          const tabQuery = route.query.tab;
-          for (let i = 0; i < channel()!.tabs!.length; i++) {
-            const tabs = channel()!.tabs;
-            const tab = tabs?.[i];
-
-            setTabs((tabs) => [...tabs, tab]);
-            if (tab?.name === tabQuery) loadTab(i + 1);
-          }
-        }
-      })
-      .finally(() => {
-        setAppState({ loading: false });
-      });
-  }
   const [appState, setAppState] = useAppState();
-  async function handleScroll() {
-    if (
-      !channel() ||
-      !channel()!.nextpage ||
-      (selectedTab() != 0 && !tabs()[selectedTab()!]?.tabNextPage)
-    ){
-      console.log("no more items");
-      return;
-    }
-    setAppState({ loading: true });
-    if (selectedTab() == 0) {
-      await fetchChannelNextPage();
+
+  async function fetchChannelOrNextPage({
+    pageParam,
+  }: {
+    pageParam?: string;
+  }): Promise<PipedChannel> {
+    if (!pageParam) {
+      const url = `${preferences.instance.api_url}${route.pathname}/`;
+      return fetch(url).then((res) => res.json());
     } else {
-      await fetchChannelTabNextPage();
+      return await fetchJson(
+        `${preferences.instance.api_url}/nextpage/channel/${query.data?.pages[0].id}`,
+        {
+          nextpage: pageParam,
+        }
+      );
     }
-    setAppState({ loading: false });
   }
+
+  const query = createInfiniteQuery(
+    () => ["channelData"],
+    fetchChannelOrNextPage,
+    {
+      getNextPageParam: (lastPage) => lastPage.nextpage,
+      get enabled() {
+        return !!route?.pathname && preferences?.instance?.api_url && !isServer
+          ? true
+          : false;
+      },
+    }
+  );
+  // Fetching logic for tabs
+  async function fetchTabNextPage(
+    data: string,
+    { pageParam }: { pageParam?: string }
+  ): Promise<any> {
+    if (!pageParam) {
+      return await fetchJson(`${preferences.instance.api_url}/channels/tabs`, {
+        data: data,
+      });
+    } else {
+      return await fetchJson(`${preferences.instance.api_url}/channels/tabs`, {
+        nextpage: pageParam ?? null,
+      });
+    }
+  }
+
+  const shortsQuery = createInfiniteQuery(
+    () => ["tabData", "shorts"],
+    (context) =>
+      fetchTabNextPage(
+        query.data!.pages[0].tabs!.find((tab) => tab.name === "shorts")!.data!,
+        context
+      ),
+    {
+      getNextPageParam: (lastPage) => lastPage.nextpage,
+      get enabled() {
+        return query.data?.pages?.[0]?.tabs?.find(
+          (tab) => tab.name === "shorts"
+        )?.data &&
+          !isServer &&
+          !!route?.pathname &&
+          preferences?.instance?.api_url &&
+          selectedTab() === "shorts"
+          ? true
+          : false;
+      },
+    }
+  );
+  const livestreamsQuery = createInfiniteQuery(
+    () => ["tabData", "livestreams"],
+    (context) =>
+      fetchTabNextPage(
+        query.data!.pages[0].tabs!.find((tab) => tab.name === "livestreams")!
+          .data!,
+        context
+      ),
+    {
+      getNextPageParam: (lastPage) => lastPage.nextpage,
+      get enabled() {
+        return query.data?.pages?.[0]?.tabs?.find(
+          (tab) => tab.name === "livestreams"
+        )?.data &&
+          !isServer &&
+          !!route?.pathname &&
+          preferences?.instance?.api_url &&
+          selectedTab() === "livestreams"
+          ? true
+          : false;
+      },
+    }
+  );
+  const channelsQuery = createInfiniteQuery(
+    () => ["tabData", "channels"],
+    (context) =>
+      fetchTabNextPage(
+        query.data!.pages[0].tabs!.find((tab) => tab.name === "channels")!
+          .data!,
+        context
+      ),
+    {
+      getNextPageParam: (lastPage) => lastPage.nextpage,
+      get enabled() {
+        return query.data?.pages?.[0]?.tabs?.find(
+          (tab) => tab.name === "channels"
+        )?.data &&
+          !isServer &&
+          !!route?.pathname &&
+          preferences?.instance?.api_url &&
+          selectedTab() === "channels"
+          ? true
+          : false;
+      },
+    }
+  );
+  const playlistsQuery = createInfiniteQuery(
+    () => ["tabData", "playlists"],
+    (context) =>
+      fetchTabNextPage(
+        query.data!.pages[0].tabs!.find((tab) => tab.name === "playlists")!
+          .data!,
+        context
+      ),
+    {
+      getNextPageParam: (lastPage) => lastPage.nextpage,
+      get enabled() {
+        return query.data?.pages?.[0]?.tabs?.find(
+          (tab) => tab.name === "playlists"
+        )?.data &&
+          !isServer &&
+          !!route?.pathname &&
+          preferences?.instance?.api_url &&
+          selectedTab() === "playlists"
+          ? true
+          : false;
+      },
+    }
+  );
+
+  const tabQueries = new Map<string, CreateInfiniteQueryResult<any>>();
+
+  createEffect(() => {
+    if (!query.data) return;
+    const channel = query.data.pages[0];
+    if (!channel) return;
+    document.title = `${channel.name} - Conduit`;
+    const tabs = channel.tabs;
+    if (!tabs) return;
+    console.log("tabs", tabs);
+    setTabs([{ name: "videos", data: null }, ...tabs]);
+    for (const tab of tabs) {
+      if (!tabQueries.has(tab.name)) {
+        switch (tab.name) {
+          case "videos":
+            tabQueries.set(tab.name, query);
+            break;
+          case "shorts":
+            tabQueries.set(tab.name, shortsQuery);
+            break;
+          case "livestreams":
+            tabQueries.set(tab.name, livestreamsQuery);
+            break;
+          case "channels":
+            tabQueries.set(tab.name, channelsQuery);
+            break;
+          case "playlists":
+            tabQueries.set(tab.name, playlistsQuery);
+            break;
+          default:
+            break;
+        }
+      }
+    }
+  });
+  const [currentQuery, setCurrentQuery] =
+    createSignal<CreateInfiniteQueryResult<any>>(query);
+
   const isIntersecting = useIntersectionObserver({
     setTarget: () => intersection(),
     threshold: 0.1,
@@ -117,66 +236,23 @@ export default function Channel() {
   createEffect(() => {
     if (isIntersecting()) {
       console.log("intersecting");
-      handleScroll();
+      if (currentQuery().isFetchingNextPage) return;
+      if (!currentQuery().hasNextPage) return;
+
+      currentQuery().fetchNextPage();
+      console.log(query.data);
     }
   });
 
-  async function fetchChannelNextPage() {
-    const json = await fetchJson(
-      `${instance().api_url}/nextpage/channel/${channel()!.id}`,
-      {
-        nextpage: channel()!.nextpage,
-      }
-    );
-    console.log(json.relatedStreams);
-    if (json.error) return;
-    setChannel((c) => ({ ...c, nextpage: json.nextpage }));
-    if (!json.relatedStreams) return;
-    setContentItems((items) => [...items, ...json.relatedStreams]);
-  }
-  async function fetchChannelTabNextPage() {
-    const json = await fetchJson(`${instance().api_url}/channels/tabs`, {
-      data: tabs()[selectedTab()].data,
-      nextpage: tabs()[selectedTab()].tabNextPage,
-    });
-    const newTabs = tabs();
-    newTabs[selectedTab()].tabNextPage = json.nextpage;
-    newTabs[selectedTab()].content = [...contentItems(), ...json.content];
-    setTabs(newTabs);
-  }
-
   function loadTab(index: number) {
-    setSelectedTab(index);
+    setSelectedTab(tabs()[index].name);
+    setCurrentQuery(tabQueries.get(tabs()[index].name) ?? query);
     console.log(route.pathname, "route", new URL(window.location.href));
 
     // update the tab query in the url path
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", tabs()[index].name ?? "videos");
-    history.replaceState(window.history.state, "", url);
-
-    if (index == 0) {
-      setContentItems(channel()!.relatedStreams as RelatedStream[]);
-      return;
-    }
-
-    if (tabs()[index].content) {
-      setContentItems(tabs()[index].content);
-      return;
-    }
-
-    let u = new URL(
-      `${instance().api_url}/channels/tabs?data=${tabs()[index].data}`
-    );
-    fetch(u)
-      .then((res) => res.json())
-      .then((tab) => {
-        console.log(tab, "tab");
-        const newTabs = tabs();
-        newTabs[index].tabNextPage = tab.nextpage;
-        newTabs[index].content = tab.content;
-        setTabs(newTabs);
-        setContentItems(tab.content);
-      });
+    // const url = new URL(window.location.href);
+    // url.searchParams.set("tab", tabs()[index].name ?? "videos");
+    // history.replaceState(window.history.state, "", url);
   }
 
   const [intersection, setIntersection] = createSignal<
@@ -213,7 +289,7 @@ export default function Channel() {
             return (
               <Button
                 label={tab.name}
-                activated={selectedTab() === index()}
+                activated={selectedTab() == tab.name}
                 onClick={() => loadTab(index())}
               />
             );
@@ -224,67 +300,98 @@ export default function Channel() {
       <hr />
 
       <div class="flex flex-wrap justify-center">
-        <For each={contentItems()}>
-          {(item) => {
-            return (
-              <Switch>
-                <Match
-                  when={assertType<RelatedStream>(item, "type", "stream")}
-                  keyed>
-                  {(item) => <VideoCard v={item} />}
-                </Match>
-                <Match
-                  when={assertType<RelatedChannel>(item, "type", "channel")}
-                  keyed>
-                  {(item) => (
-                    <div class="w-44 mx-1 flex flex-col gap-2 items-start">
-                      <A href={item.url} class="group outline-none">
-                        <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
-                          <img
-                            class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
-                            src={item.thumbnail}
-                            loading="lazy"
-                          />
-                        </div>
-                      </A>
-                      <A class="link" href={item.url}>
-                        <div class="flex gap-1">
-                          <span>{item.name}</span>
-                          <Show when={item.verified}>
-                            <Checkmark />
-                          </Show>
-                        </div>
-                      </A>
+        <Switch fallback={<Spinner />}>
+          <Match when={currentQuery().error}>
+            <ErrorMessage error={currentQuery().error} />
+          </Match>
+          <Match
+            when={
+              currentQuery().isSuccess &&
+              (!currentQuery().data?.pages ||
+                !currentQuery().data?.pages?.[0] ||
+                !(
+                  currentQuery().data?.pages?.[0]?.relatedStreams ||
+                  currentQuery().data?.pages?.[0]?.content
+                ))
+            }
+          >
+            <EmptyState />
+          </Match>
+          <Match
+            when={
+              currentQuery().isSuccess
+              // currentQuery().data?.pages?.[0] &&
+              // (currentQuery().data?.pages?.[0]?.relatedStreams ||
+              //   currentQuery().data?.pages?.[0]?.content)
+            }
+          >
+            <For
+              each={currentQuery()
+                .data?.pages?.map((page) => page.relatedStreams ?? page.content)
+                .flat()}
+            >
+              {(item) => {
+                return (
+                  <Switch fallback={"no item"}>
+                    <Match
+                      when={assertType<RelatedStream>(item, "type", "stream")}
+                      keyed
+                    >
+                      {(item) => <VideoCard v={item} />}
+                    </Match>
+                    <Match
+                      when={assertType<RelatedChannel>(item, "type", "channel")}
+                      keyed
+                    >
+                      {(item) => (
+                        <div class="w-44 mx-1 flex flex-col gap-2 items-start">
+                          <A href={item.url} class="group outline-none">
+                            <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
+                              <img
+                                class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
+                                src={item.thumbnail}
+                                loading="lazy"
+                              />
+                            </div>
+                          </A>
+                          <A class="link" href={item.url}>
+                            <div class="flex gap-1">
+                              <span>{item.name}</span>
+                              <Show when={item.verified}>
+                                <Checkmark />
+                              </Show>
+                            </div>
+                          </A>
 
-                      {/* <template v-if="props.item.videos >= 0">
-                      <br v-if="props.item.uploaderName" />
-                      <strong v-text="`${props.item.videos} ${$t('video.videos')}`" />
-                    </template> */}
+                          {/* <template v-if="props.item.videos >= 0">
+                    <br v-if="props.item.uploaderName" />
+                    <strong v-text="`${props.item.videos} ${$t('video.videos')}`" />
+                  </template> */}
 
-                      <br />
-                    </div>
-                  )}
-                </Match>
-                <Match
-                  when={assertType<RelatedPlaylist>(item, "type", "playlist")}
-                  keyed>
-                  {(item) => <PlaylistCard item={item} />}
-                </Match>
-              </Switch>
-            );
-          }}
-        </For>
+                          <br />
+                        </div>
+                      )}
+                    </Match>
+                    <Match
+                      when={assertType<RelatedPlaylist>(
+                        item,
+                        "type",
+                        "playlist"
+                      )}
+                      keyed
+                    >
+                      {(item) => <PlaylistCard item={item} />}
+                    </Match>
+                  </Switch>
+                );
+              }}
+            </For>
+          </Match>
+        </Switch>
         <Show when={appState.loading}>
           <div class="w-full flex justify-center">
             <Spinner />
           </div>
-        </Show>
-        <Show
-          when={
-            (!channel()?.nextpage || !tabs()?.[selectedTab()]?.tabNextPage) &&
-            !appState.loading
-          }>
-          no more items
         </Show>
         <div ref={(ref) => setIntersection(ref)} class="w-full h-20 mt-2" />
       </div>

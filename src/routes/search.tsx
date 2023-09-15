@@ -43,6 +43,7 @@ import { createInfiniteQuery } from "@tanstack/solid-query";
 import { useSyncedStore } from "~/stores/syncedStore";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import EmptyState from "~/components/EmptyState";
+import { usePreferences } from "~/stores/preferencesStore";
 export interface SearchQuery {
   items: ContentItem[];
   nextpage: string;
@@ -68,20 +69,21 @@ export default function Search() {
   );
   const sync = useSyncedStore();
   const [appState, setAppState] = useAppState();
+  const [preferences] = usePreferences();
   const fetchSearch = async ({
     pageParam = "initial",
   }): Promise<SearchQuery> => {
     if (pageParam === "initial") {
       return await (
         await fetch(
-          `${sync.store.preferences.instance!.api_url}/search?q=${
+          `${preferences.instance.api_url}/search?q=${
             route.query.q
           }&filter=${selectedFilter()}`
         )
       ).json();
     } else {
       return await fetchJson(
-        `${sync.store.preferences.instance!.api_url}/nextpage/search`,
+        `${preferences.instance.api_url}/nextpage/search`,
         {
           nextpage: pageParam,
           q: route.query.q,
@@ -93,9 +95,7 @@ export default function Search() {
 
   const query = createInfiniteQuery(() => ["search"], fetchSearch, {
     get enabled() {
-      return sync.store.preferences.instance?.api_url && route.query.q
-        ? true
-        : false;
+      return preferences.instance?.api_url && route.query.q ? true : false;
     },
     getNextPageParam: (lastPage) => {
       return lastPage.nextpage;

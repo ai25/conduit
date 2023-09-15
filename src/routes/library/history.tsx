@@ -7,8 +7,7 @@ import {
   useContext,
   batch,
 } from "solid-js";
-import { DBContext } from "~/root";
-import { extractVideoId } from "./watch";
+import { extractVideoId } from "~/routes/watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
 import dayjs from "dayjs";
@@ -19,7 +18,7 @@ import { toaster, Toast } from "@kobalte/core";
 import { Portal } from "solid-js/web";
 import { Title } from "solid-start";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
-import { clone } from "../stores/syncedStore";
+import { clone } from "~/stores/syncedStore";
 
 export const videoId = (item: any) => {
   if (!item) return undefined;
@@ -39,7 +38,6 @@ export default function History() {
   const [skipped, setSkipped] = createSignal(0);
   let fileSelector: HTMLInputElement | undefined = undefined;
   const itemsLength = () => items().length;
-  const [db] = useContext(DBContext);
   const [all, setAll] = createSignal<RelatedStream[]>([]);
   const [historyItems, setHistoryItems] = createSignal<RelatedStream[]>([]);
   const [limit, setLimit] = createSignal(50);

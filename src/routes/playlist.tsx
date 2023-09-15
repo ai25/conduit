@@ -9,53 +9,35 @@ import {
 } from "solid-js";
 import { Title, useLocation } from "solid-start";
 import VideoCard from "~/components/VideoCard";
-import { DBContext } from "~/root";
 import { Playlist as PlaylistType, RelatedStream } from "~/types";
-import dayjs from "dayjs";
-import { videoId } from "./history";
-import { A } from "@solidjs/router";
 import PlaylistItem from "~/components/PlaylistItem";
 import { fetchJson } from "~/utils/helpers";
 import { SyncedDB, useSyncedStore } from "~/stores/syncedStore";
 import { createQuery } from "@tanstack/solid-query";
+import { usePreferences } from "~/stores/preferencesStore";
 
 export default function Playlist() {
-  const [playlist, setPlaylist] = createSignal(null);
-  const [admin, setAdmin] = createSignal(false);
-  const [isBookmarked, setIsBookmarked] = createSignal(false);
   const [list, setList] = createSignal<PlaylistType>();
-  const [db] = useContext(DBContext);
   const route = useLocation();
   const isLocal = () => route.query.list?.startsWith("conduit-");
   const id = route.query.list;
   const sync = useSyncedStore();
+  const [preferences] = usePreferences();
 
   createEffect(async () => {
     if (!id) return;
     if (!isLocal()) return;
     await new Promise((r) => setTimeout(r, 100));
     const l = sync.store.playlists[id];
-    // if (!db()) return;
-
-    // const tx = db()!.transaction("playlists", "readonly");
-    // const store = tx.objectStore("playlists");
-    // const l = await store.get(id);
-    // console.log(l, id);
     setList(l);
   });
   const query = createQuery(
     () => ["playlist"],
     async (): Promise<PlaylistType> =>
-      (
-        await fetch(
-          sync.store.preferences.instance!.api_url + "/playlists/" + id
-        )
-      ).json(),
+      (await fetch(preferences.instance.api_url + "/playlists/" + id)).json(),
     {
       get enabled() {
-        return sync.store.preferences.instance?.api_url && !isLocal() && id
-          ? true
-          : false;
+        return preferences.instance.api_url && !isLocal() && id ? true : false;
       },
     }
   );

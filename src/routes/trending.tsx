@@ -5,22 +5,22 @@ import { For, Switch, createSignal } from "solid-js";
 import { Title, createRouteData, useRouteData } from "solid-start";
 import { ErrorComponent } from "~/components/Error";
 import VideoCard from "~/components/VideoCard";
+import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncedStore } from "~/stores/syncedStore";
 import type { TrendingStream } from "~/types";
 
 export default function Trending() {
   const sync = useSyncedStore();
+  const [preferences] = usePreferences();
   const query = createQuery(
     () => ["trending"],
     async (): Promise<TrendingStream[] & { error: Error }> =>
       (
-        await fetch(
-          sync.store.preferences.instance!.api_url + "/trending?region=US"
-        )
+        await fetch(preferences.instance.api_url + "/trending?region=US")
       ).json(),
     {
       get enabled() {
-        return sync.store.preferences.instance?.api_url ? true : false;
+        return preferences.instance?.api_url ? true : false;
       },
       placeholderData: Array(40).fill(undefined),
     }

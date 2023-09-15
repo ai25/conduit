@@ -12,8 +12,7 @@ import {
   createSignal,
   useContext,
 } from "solid-js";
-import { DBContext } from "~/root";
-import { videoId } from "~/routes/history";
+import { videoId } from "~/routes/library/history";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import {
@@ -38,7 +37,6 @@ export default ({
 }: {
   v?: (RelatedStream & { progress?: number }) | undefined;
 }) => {
-  const [db] = useContext(DBContext);
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
   const [imgError, setImgError] = createSignal(false);
   const sync = useSyncedStore();

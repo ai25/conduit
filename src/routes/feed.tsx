@@ -11,29 +11,27 @@ import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import EmptyState from "~/components/EmptyState";
 import { A } from "@solidjs/router";
 import { useAppState } from "~/stores/appStateStore";
+import { usePreferences } from "~/stores/preferencesStore";
 
 export default function Feed() {
   const [limit, setLimit] = createSignal(100);
   const channels = () =>
     getStorageValue("localSubscriptions", [], "json", "localStorage");
+  const [preferences] = usePreferences();
 
   const sync = useSyncedStore();
   const query = createQuery(
     () => ["feed"],
     async (): Promise<RelatedStream[]> =>
       (
-        await fetch(
-          sync.store.preferences.instance!.api_url + "/feed/unauthenticated",
-          {
-            method: "POST",
-            body: JSON.stringify(channels()),
-          }
-        )
+        await fetch(preferences.instance.api_url + "/feed/unauthenticated", {
+          method: "POST",
+          body: JSON.stringify(channels()),
+        })
       ).json(),
     {
       get enabled() {
-        return sync.store.preferences.instance?.api_url &&
-          channels()?.length > 0
+        return preferences.instance?.api_url && channels()?.length > 0
           ? true
           : false;
       },

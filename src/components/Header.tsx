@@ -8,7 +8,7 @@ import {
   createSignal,
   useContext,
 } from "solid-js";
-import { PreferencesContext, ThemeContext } from "~/root";
+import { ThemeContext } from "~/root";
 import { useCookie } from "~/utils/hooks";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { A } from "@solidjs/router";
@@ -24,6 +24,7 @@ import { FaSolidBrush, FaSolidCheck, FaSolidGlobe } from "solid-icons/fa";
 import { useSyncedStore } from "~/stores/syncedStore";
 import { createQuery } from "@tanstack/solid-query";
 import dayjs from "dayjs";
+import { usePreferences } from "~/stores/preferencesStore";
 
 const Header = () => {
   const [theme, setTheme] = useContext(ThemeContext);
@@ -52,13 +53,11 @@ const Header = () => {
       retry: (failureCount) => failureCount < 3,
     }
   );
+  const [preferences, setPreferences] = usePreferences();
 
   createEffect(() => {
     if (query.data && !query.data.error) {
       setStorageValue("instances", query.data, "localStorage");
-      if (!sync.store.preferences.instance) {
-        sync.setStore("preferences", "instance", query.data[0]);
-      }
     }
   });
 
@@ -228,13 +227,13 @@ const Header = () => {
               <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
                 <DropdownMenu.Arrow />
                 <DropdownMenu.RadioGroup
-                  value={sync.store.preferences.instance?.api_url}
+                  value={preferences.instance.api_url}
                   onChange={(value) => {
                     let instance = (query.data as PipedInstance[]).find(
                       (i) => i.api_url === value
                     );
                     if (instance) {
-                      sync.setStore("preferences", "instance", instance);
+                      setPreferences("instance", instance);
                     }
                   }}
                 >

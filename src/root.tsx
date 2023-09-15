@@ -1,24 +1,14 @@
 // @refresh reload
 import {
-  Accessor,
-  Match,
   Show,
   Signal,
   Suspense,
-  Switch,
   createContext,
-  createEffect,
   createRenderEffect,
   createSignal,
-  from,
-  onCleanup,
-  onMount,
-  untrack,
-  useContext,
+  createEffect,
 } from "solid-js";
 import {
-  useLocation,
-  A,
   Body,
   ErrorBoundary,
   FileRoutes,
@@ -28,54 +18,34 @@ import {
   Routes,
   Scripts,
   Title,
-  APIEvent,
-  useIsRouting,
   useServerContext,
   parseCookie,
   Link,
-  useNavigate,
-  Route,
 } from "solid-start";
 import "./root.css";
 import { Portal, isServer } from "solid-js/web";
-import Select from "./components/Select";
-import Player from "./components/Player";
 import { SetStoreFunction, createStore, unwrap } from "solid-js/store";
 import { PipedInstance, PipedVideo, Preferences } from "./types";
 import { defineCustomElements } from "vidstack/elements";
 import { IDBPDatabase, openDB } from "idb";
 import Header from "./components/Header";
-import PlayerSkin from "./components/PlayerSkin";
-import { MediaOutletElement, MediaPlayerElement } from "vidstack";
-import History, { videoId } from "./routes/history";
-import { getStorageValue, setStorageValue } from "./utils/storage";
-import PlayerContainer from "./components/PlayerContainer";
-import Modal from "./components/Modal";
 import { Transition } from "solid-headless";
-import Watch from "./routes/watch";
-import Feed from "./routes/feed";
-import Playlists from "./routes/playlists";
-import Playlist from "./routes/playlist";
-import Search from "./routes/search";
-import Trending from "./routes/trending";
-import Import from "./routes/import";
 import { PlaylistProvider } from "./stores/playlistStore";
 import { QueueProvider } from "./stores/queueStore";
 import { PlayerStateProvider } from "./stores/playerStateStore";
-import {
-  Store,
-  SyncedDB,
-  SyncedStoreProvider,
-  clone,
-  useSyncedStore,
-} from "./stores/syncedStore";
+import { SyncedStoreProvider, useSyncedStore } from "./stores/syncedStore";
 import { AppStateProvider, useAppState } from "./stores/appStateStore";
 import BottomNav from "./components/BottomNav";
 import { TiHome } from "solid-icons/ti";
 import { AiOutlineFire, AiOutlineMenu } from "solid-icons/ai";
 import { Toast } from "@kobalte/core";
-import Button from "./components/Button";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
+import { getStorageValue } from "./utils/storage";
+import { PreferencesProvider } from "./stores/preferencesStore";
+
+if (!isServer) {
+  import("./sw");
+}
 
 const [theme, setTheme] = createSignal("");
 export const ThemeContext = createContext<Signal<string>>([theme, setTheme]);
@@ -100,53 +70,9 @@ export const PlayerContext = createContext<
   ]
 >(video);
 
-const db = createSignal<IDBPDatabase<unknown> | undefined>(undefined);
-export const DBContext =
-  createContext<Signal<IDBPDatabase<unknown> | undefined>>(db);
-
-const instance = createSignal<PipedInstance>({
-  name: "Piped",
-  api_url: "https://pipedapi.kavin.rocks",
-  cache: true,
-  cdn: true,
-  last_checked: new Date().getTime(),
-  locations: "",
-  version: "0.0.0",
-  registered: 0,
-  s3_enabled: false,
-  up_to_date: false,
-  image_proxy_url: "https://pipedproxy.kavin.rocks",
-});
-
-const preferences = createStore({
-  autoplay: false,
-  pip: false,
-  muted: false,
-  volume: 1,
-  speed: 1,
-  quality: "auto",
-  theatreMode: false,
-  instance: {
-    name: "Piped",
-    api_url: "https://pipedapi.kavin.rocks",
-    cache: true,
-    cdn: true,
-    last_checked: new Date().getTime(),
-    locations: "",
-    version: "0.0.0",
-    registered: 0,
-    s3_enabled: false,
-    up_to_date: false,
-    image_proxy_url: "https://pipedproxy.kavin.rocks",
-  },
-});
-export const PreferencesContext = createContext(preferences);
-
 defineCustomElements();
 
 export default function Root() {
-  // const location = useLocation();
-  // const isRouting = useIsRouting();
   const event = useServerContext();
   createRenderEffect(() => {
     const cookie = () => {
@@ -156,99 +82,9 @@ export default function Root() {
     };
     const theme = cookie().theme ?? "monokai";
     setTheme(theme);
-    // console.log("setting theme")
   });
-
-  // createEffect(async () => {
-  //   console.log(
-  //     new Date().toISOString().split("T")[1],
-  //     "visible task waiting for db"
-  //   );
-  //   console.time("db");
-  //   const odb = await openDB("conduit", 2, {
-  //     upgrade(db) {
-  //       console.log("upgrading");
-  //       try {
-  //         db.createObjectStore("watch_history");
-  //       } catch (e) {}
-  //       try {
-  //         db.createObjectStore("playlists");
-  //       } catch (e) {}
-  //     },
-  //   });
-  //   console.log("setting db visible");
-  //   db[1](odb);
-  //   console.timeEnd("db");
-  // });
-
-  // createEffect(() => {
-  //   console.time("prefs");
-  //   console.log("render effect setting context, theatre is:");
-  //   preferences[1](
-  //     getStorageValue(
-  //       "preferences",
-  //       {
-  //         autoplay: false,
-  //         pip: false,
-  //         muted: false,
-  //         volume: 1,
-  //         speed: 1,
-  //         quality: "auto",
-  //         theatreMode: false,
-  //       },
-  //       "json",
-  //       "localStorage"
-  //     )
-  //   );
-  //   console.timeEnd("prefs");
-  // });
-
-  // createEffect(() => {
-  //   console.log(
-  //     preferences[0],
-  //     "setting theater prefs in root, theatre mode is set to: ",
-  //     preferences[0].theatreMode
-  //   );
-  //   setStorageValue(
-  //     "preferences",
-  //     JSON.stringify(preferences[0]),
-  //     "localStorage"
-  //   );
-  // });
-  // createEffect(async () => {
-  //   try {
-  //     const { registerSW } = await import("virtual:pwa-register");
-  //     registerSW({
-  //       onOfflineReady() {},
-  //       onRegisterError(error) {
-  //         console.error(error, "worker");
-  //       },
-  //       onRegisteredSW(swScriptUrl, registration) {
-  //         console.log(swScriptUrl, registration, "worker");
-  //       },
-  //     });
-  //   } catch (e) {
-  //     console.error(e, "worker");
-  //   }
-  // });
   const [appState] = useAppState();
 
-  // function handleKeyDown(e: KeyboardEvent) {
-  //   if (e.key === "K" && e.ctrlKey) {
-  //     e.preventDefault();
-  //     const input = document.querySelectorAll("input")[0]
-  //     input?.focus();
-  //   }
-  // }
-  // onMount(() => {
-  //   if(!isServer)
-  //   document.addEventListener("keydown", handleKeyDown);
-  // });
-  // onCleanup(() => {
-  //   if (!isServer)
-  //   document.removeEventListener("keydown", handleKeyDown);
-  // });
-  const store = useSyncedStore();
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -276,7 +112,7 @@ export default function Root() {
       </Head>
       <QueueProvider>
         <ThemeContext.Provider value={[theme, setTheme]}>
-          <DBContext.Provider value={db}>
+          <PreferencesProvider>
             <AppStateProvider>
               <PlaylistProvider>
                 <PlayerContext.Provider value={video}>
@@ -391,7 +227,7 @@ export default function Root() {
                 </PlayerContext.Provider>
               </PlaylistProvider>
             </AppStateProvider>
-          </DBContext.Provider>
+          </PreferencesProvider>
         </ThemeContext.Provider>
       </QueueProvider>
     </Html>

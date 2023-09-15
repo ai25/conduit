@@ -9,9 +9,9 @@ import {
 } from "solid-js";
 import { useLocation } from "solid-start";
 import { For } from "solid-js";
-import { DBContext, PlayerContext, PreferencesContext } from "~/root";
+import { PlayerContext } from "~/root";
 import VideoCard from "~/components/VideoCard";
-import { videoId } from "./history";
+import { videoId } from "~/routes/library/history";
 import { getHlsManifest } from "~/utils/hls";
 import PlaylistItem from "~/components/PlaylistItem";
 import { createVirtualizer, elementScroll } from "@tanstack/solid-virtual";
@@ -24,6 +24,7 @@ import { useAppState } from "~/stores/appStateStore";
 import PlayerContainer from "~/components/PlayerContainer";
 import { createQuery } from "@tanstack/solid-query";
 import { PipedVideo } from "~/types";
+import { usePreferences } from "~/stores/preferencesStore";
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
@@ -62,11 +63,9 @@ export default function Watch() {
   console.log(new Date().toISOString().split("T")[1], "rendering watch page");
 
   const [video, setVideo] = useContext(PlayerContext);
-  const [preferences] = useContext(PreferencesContext);
   const route = useLocation();
 
   const [playlist, setPlaylist] = usePlaylist();
-  const [db] = useContext(DBContext);
 
   const [videoDownloaded, setVideoDownloaded] = createSignal(true);
   const checkVideoDownloaded = async () => {
@@ -117,31 +116,30 @@ export default function Watch() {
 
   const [appState, setAppState] = useAppState();
   const sync = useSyncedStore();
+  const [preferences] = usePreferences();
 
   const videoQuery = createQuery(
     () => ["streams"],
     async (): Promise<PipedVideo & { error: Error }> =>
       await fetch(
-        sync.store.preferences.instance!.api_url + "/streams/" + route.query.v
+        preferences.instance.api_url + "/streams/" + route.query.v
       ).then((res) => res.json()),
     {
       get enabled() {
-        return sync.store.preferences.instance?.api_url &&
+        return preferences.instance?.api_url &&
           route.query.v &&
           !videoDownloaded()
           ? true
           : false;
       },
-      retry: (failureCount) => failureCount < 3,
+      refetchOnReconnect: false,
     }
   );
   createEffect(async () => {
     const v = route.query.v;
     console.log(v, "v");
-    console.log(sync.store.preferences.instance?.api_url, "api_url");
     if (!v) return;
-    if (!sync.store.preferences.instance?.api_url) return;
-    const origin = new URL(sync.store.preferences.instance.api_url).hostname
+    const origin = new URL(preferences.instance.api_url).hostname
       .split(".")
       .slice(-2)
       .join(".");

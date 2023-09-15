@@ -14,7 +14,7 @@ import { MediaPlayerElement } from "vidstack";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import dayjs from "dayjs";
 import Comment, { PipedCommentResponse } from "./Comment";
-import { videoId } from "~/routes/history";
+import { videoId } from "~/routes/library/history";
 import { downloadVideo } from "~/utils/hls";
 import Button from "./Button";
 import { Toaster } from "solid-headless";

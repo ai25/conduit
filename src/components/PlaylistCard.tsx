@@ -1,16 +1,5 @@
-
 import type { RelatedPlaylist, RelatedStream } from "~/types";
-import numeral from "numeral";
 import { A } from "solid-start";
-import {
-  Match,
-  Switch,
-  createRenderEffect,
-  createSignal,
-  useContext,
-} from "solid-js";
-import { DBContext, InstanceContext } from "~/root";
-import { videoId } from "~/routes/history";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import DropdownItem from "./DropdownItem";
@@ -18,17 +7,12 @@ import Dropdown from "./Dropdown";
 
 dayjs.extend(relativeTime);
 
-export default ({
-  item,
-}: {
-  item?: RelatedPlaylist | undefined
-}) => {
-
-
+export default ({ item }: { item?: RelatedPlaylist | undefined }) => {
   if (!item)
     return (
       <div
-        class={` flex w-72 max-w-[18rem] flex-col items-start rounded-xl bg-bg1 `}>
+        class={` flex w-72 max-w-[18rem] flex-col items-start rounded-xl bg-bg1 `}
+      >
         <div class="animate-pulse w-64 h-32 bg-bg2 flex aspect-video max-w-fit flex-col overflow-hidden rounded text-text1">
           <div class="bg-bg2 w-full h-full"></div>
         </div>
@@ -39,10 +23,12 @@ export default ({
 
   return (
     <div
-      class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-center rounded-xl bg-bg1 p-2`}>
+      class={` flex w-full max-w-md mx-4 lg:w-72 flex-col items-center rounded-xl bg-bg1 p-2`}
+    >
       <A
         href={item.url}
-        class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1">
+        class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1"
+      >
         <img
           class={`cursor-pointer w-full aspect-video max-w-md break-words `}
           src={item.thumbnail?.replace("hqdefault", "mqdefault")}
@@ -59,9 +45,7 @@ export default ({
       </A>
       <div class="mt-2 flex w-full flex-col ">
         <div class="flex flex-col gap-2 pr-2 ">
-          <A
-            href={item.url}
-            class="break-words text-lg leading-tight">
+          <A href={item.url} class="break-words text-lg leading-tight">
             {item.name}
           </A>
 
