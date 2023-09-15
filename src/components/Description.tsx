@@ -18,6 +18,7 @@ import { videoId } from "~/routes/library/history";
 import { downloadVideo } from "~/utils/hls";
 import Button from "./Button";
 import { Toaster } from "solid-headless";
+import { usePreferences } from "~/stores/preferencesStore";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -28,8 +29,12 @@ function handleTimestamp(videoId: string, t: string) {
 }
 (globalThis as any).handleTimestamp = handleTimestamp;
 
-const Description = (props: { video: PipedVideo | null | undefined }) => {
+const Description = (props: {
+  video: PipedVideo | null | undefined;
+  downloaded: boolean;
+}) => {
   const [isSubscribed, setIsSubscribed] = createSignal(false);
+  const [preferences] = usePreferences();
 
   const [comments, setComments] = createSignal<PipedCommentResponse>();
 
@@ -128,7 +133,16 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
 
   async function handleDownload() {
     if (!(await navigator.storage.persist())) return;
-    downloadVideo(videoId(props.video));
+    downloadVideo(videoId(props.video), preferences.instance.api_url);
+  }
+
+  async function deleteVideo(id: string) {
+    try {
+      const root = await navigator.storage.getDirectory();
+      await root.removeEntry(id, { recursive: true });
+    } catch (e) {
+      console.error(`Failed to delete ${id}`, e);
+    }
   }
 
   const Placeholder = () => (
@@ -200,9 +214,17 @@ const Description = (props: { video: PipedVideo | null | undefined }) => {
               })()}
             </p>
             <p class="">{numeral(props.video!.views).format("0,0")} views</p>
-            <button onClick={handleDownload} class="btn">
-              Download
-            </button>
+            <Switch>
+              <Match when={props.downloaded}>
+                <Button
+                  label="Delete"
+                  onClick={() => deleteVideo(videoId(props.video))}
+                />
+              </Match>
+              <Match when={!props.downloaded}>
+                <Button label="Download" onClick={handleDownload} />
+              </Match>
+            </Switch>
             <div class="flex gap-2">
               {numeral(props.video!.likes).format("0a").toUpperCase()} 👍
               <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">

@@ -333,7 +333,7 @@ export default function History() {
                 <VideoCard
                   v={{
                     ...item,
-                    url: `/watch?v=${videoId(item)}}`,
+                    url: `/watch?v=${videoId(item)}`,
                   }}
                 />
               </div>

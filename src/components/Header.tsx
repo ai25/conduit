@@ -34,9 +34,8 @@ const Header = () => {
   const links = [
     { href: "/feed", label: "Feed" },
     { href: "/trending", label: "Trending" },
-    { href: "/history", label: "History" },
+    { href: "/library", label: "Library" },
     { href: "/import", label: "Import" },
-    { href: "/playlists", label: "Playlists" },
   ];
 
   const query = createQuery(

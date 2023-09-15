@@ -89,7 +89,6 @@ export default function Player() {
       ),
       0
     );
-    console.timeEnd("updating progress");
   };
   const state = usePlayerState();
 
@@ -408,6 +407,7 @@ export default function Player() {
 
   createEffect(() => {
     console.log("ended effect", ended());
+    console.log(navigator.storage.estimate());
     if (!ended()) return;
     if (!mediaPlayer) return;
     if (!video.value) return;

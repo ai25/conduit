@@ -1,5 +1,5 @@
 import { PipedVideo, Subtitle } from "~/types";
-import {ttml2srt} from "./ttml.js"
+import { ttml2srt } from "./ttml.js";
 
 export function modifyManifest(
   manifest: string,
@@ -192,7 +192,7 @@ export async function downloadVideo(
     const videoData = (await (
       await fetch(`${apiUrl}/streams/${videoId}`)
     ).json()) as PipedVideo;
-      console.log(videoData)
+    console.log(videoData);
 
     const storageRoot = await navigator.storage.getDirectory();
     const videoDirectory = await storageRoot.getDirectoryHandle(videoId, {
@@ -201,8 +201,31 @@ export async function downloadVideo(
     const videoInfo = await videoDirectory.getFileHandle("streams.json", {
       create: true,
     });
+    // keep only necessary data
+    const videoInfoData = {
+      title: videoData.title,
+      description: videoData.description,
+      uploadDate: videoData.uploadDate,
+      uploader: videoData.uploader,
+      uploaderUrl: videoData.uploaderUrl,
+      category: videoData.category,
+      license: videoData.license,
+      visibility: videoData.visibility,
+      tags: videoData.tags,
+      duration: videoData.duration,
+      uploaderVerified: videoData.uploaderVerified,
+      views: videoData.views,
+      likes: videoData.likes,
+      dislikes: videoData.dislikes,
+      uploaderSubscriberCount: videoData.uploaderSubscriberCount,
+      chapters: videoData.chapters,
+      subtitles: videoData.subtitles.map((sub) => sub.code),
+      prevewFrames: videoData.previewFrames,
+    };
     const videoInfoWritableStream = await videoInfo.createWritable();
-      await videoInfoWritableStream.write(new Blob([JSON.stringify(videoData)]));
+    await videoInfoWritableStream.write(
+      new Blob([JSON.stringify(videoInfoData)])
+    );
     await videoInfoWritableStream.close();
 
     const baseProxyUrl = videoData.hls.split("/api")[0];
@@ -264,6 +287,99 @@ export async function downloadVideo(
       `${videoId}/video`,
       modifiedVideoManifest.segments
     );
+    // fetch subtitles
+    try {
+      const subtitles = videoData.subtitles;
+      if (subtitles) {
+        const subtitlesDirectory = await videoDirectory.getDirectoryHandle(
+          `subtitles`,
+          {
+            create: true,
+          }
+        );
+        for (const subtitle of subtitles) {
+          const subtitleFile = await subtitlesDirectory.getFileHandle(
+            `${subtitle.code}.srt`,
+            {
+              create: true,
+            }
+          );
+          const subtitleWritableStream = await subtitleFile.createWritable();
+          const { srtText } = await ttml2srt(subtitle.url);
+          await subtitleWritableStream.write(srtText);
+          await subtitleWritableStream.close();
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching subtitles:", error);
+    }
+    // fetch thumbnail
+    try {
+      const thumbnail = videoData.thumbnailUrl;
+      if (thumbnail) {
+        const thumbnailFile = await videoDirectory.getFileHandle(`thumbnail`, {
+          create: true,
+        });
+        const thumbnailWritableStream = await thumbnailFile.createWritable();
+        const thumbnailBlob = await (await fetch(thumbnail)).blob();
+        await thumbnailWritableStream.write(thumbnailBlob);
+        await thumbnailWritableStream.close();
+      }
+    } catch (error) {
+      console.error("Error fetching thumbnail:", error);
+    }
+    // fetch channel icon
+    try {
+      const channelIcon = videoData.uploaderAvatar;
+      if (channelIcon) {
+        const channelIconFile = await videoDirectory.getFileHandle(
+          `channel-icon`,
+          {
+            create: true,
+          }
+        );
+        const channelIconWritableStream =
+          await channelIconFile.createWritable();
+        const channelIconBlob = await (await fetch(channelIcon)).blob();
+        await channelIconWritableStream.write(channelIconBlob);
+        await channelIconWritableStream.close();
+      }
+    } catch (error) {
+      console.error("Error fetching channel icon:", error);
+    }
+    // fetch preview frames
+    try {
+      const previewFrames = videoData.previewFrames;
+      if (previewFrames) {
+        const previewFramesDirectory = await videoDirectory.getDirectoryHandle(
+          `preview-frames`,
+          {
+            create: true,
+          }
+        );
+        let index = 0;
+        for (const previewFrame of previewFrames[1].urls) {
+          const previewFrameFile = await previewFramesDirectory.getFileHandle(
+            `${index}`,
+            {
+              create: true,
+            }
+          );
+          const previewFrameWritableStream =
+            await previewFrameFile.createWritable();
+          const previewFrameBlob = await (await fetch(previewFrame)).blob();
+          await previewFrameWritableStream.write(previewFrameBlob);
+          await previewFrameWritableStream.close();
+          index++;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching preview frames:", error);
+    }
+
+    const downloaded = JSON.parse(localStorage.getItem("downloaded") || "[]");
+    downloaded.push(videoId);
+    localStorage.setItem("downloaded", JSON.stringify(downloaded));
   } catch (error) {
     console.error("Error downloading the video:", error);
     throw error;
@@ -339,33 +455,99 @@ export async function getHlsManifest(videoId: string) {
   return URL.createObjectURL(new Blob([indexContent]));
 }
 
-  const fetchSubtitles = async (subtitles: Subtitle[]) => {
-    console.time("fetching subtitles");
-    const newTracks = await Promise.all(
-      subtitles.map(async (subtitle) => {
-        if (!subtitle.url) return null;
-        if (subtitle.mimeType !== "application/ttml+xml")
-          return {
-            id: `track-${subtitle.code}`,
-            key: subtitle.url,
-            kind: "subtitles",
-            src: subtitle.url,
-            srcLang: subtitle.code,
-            label: `${subtitle.name} - ${subtitle.autoGenerated ? "Auto" : ""}`,
-            dataType: subtitle.mimeType,
-          };
-        const { srtUrl, srtText } = await ttml2srt(subtitle.url);
-        // remove empty subtitles
-        if (srtText.trim() === "") return null;
+export const getStreams = async (videoId: string) => {
+  const storageRoot = await navigator.storage.getDirectory();
+  const videoDirectory = await storageRoot.getDirectoryHandle(videoId, {
+    create: false,
+  });
+  if (!videoDirectory) {
+    return null;
+  }
+  const streamsFileHandle = await videoDirectory.getFileHandle("streams.json");
+  const streamsFile = await streamsFileHandle.getFile();
+  const text = await streamsFile.text();
+  const streams = JSON.parse(text);
+  if (!streams) throw new Error("Streams not found");
+  const thumbnailFileHandle = await videoDirectory.getFileHandle("thumbnail");
+  const thumbnailFile = await thumbnailFileHandle.getFile();
+  const thumbnailUrl = URL.createObjectURL(thumbnailFile);
+
+  const channelIconFileHandle = await videoDirectory.getFileHandle(
+    "channel-icon"
+  );
+  const channelIconFile = await channelIconFileHandle.getFile();
+  const channelIconUrl = URL.createObjectURL(channelIconFile);
+
+  streams.thumbnailUrl = thumbnailUrl;
+  streams.uploaderAvatar = channelIconUrl;
+  const subtitlesDirectory = await videoDirectory.getDirectoryHandle(
+    `subtitles`,
+    {
+      create: false,
+    }
+  );
+  const subtitles = [];
+  for (const code of streams.subtitles) {
+    const subtitleFileHandle = await subtitlesDirectory.getFileHandle(
+      `${code}.srt`
+    );
+    const subtitleFile = await subtitleFileHandle.getFile();
+    const subtitleUrl = URL.createObjectURL(subtitleFile);
+    subtitles.push({
+      code,
+      url: subtitleUrl,
+    });
+  }
+  streams.subtitles = subtitles;
+  const previewFramesDirectory = await videoDirectory.getDirectoryHandle(
+    `preview-frames`,
+    {
+      create: false,
+    }
+  );
+  const urls = [];
+  let index = 0;
+  for (const frameUrl of streams.prevewFrames[1].urls) {
+    const frameFileHandle = await previewFramesDirectory.getFileHandle(
+      `${index}`
+    );
+    const frameFile = await frameFileHandle.getFile();
+    const frameUrl = URL.createObjectURL(frameFile);
+    urls.push(frameUrl);
+    index++;
+  }
+  streams.prevewFrames[1].urls = urls;
+
+  return streams;
+};
+
+const fetchSubtitles = async (subtitles: Subtitle[]) => {
+  console.time("fetching subtitles");
+  const newTracks = await Promise.all(
+    subtitles.map(async (subtitle) => {
+      if (!subtitle.url) return null;
+      if (subtitle.mimeType !== "application/ttml+xml")
         return {
           id: `track-${subtitle.code}`,
           key: subtitle.url,
           kind: "subtitles",
-          src: srtUrl,
+          src: subtitle.url,
           srcLang: subtitle.code,
           label: `${subtitle.name} - ${subtitle.autoGenerated ? "Auto" : ""}`,
-          dataType: "srt",
+          dataType: subtitle.mimeType,
         };
-      })
-    );
-  }
+      const { srtUrl, srtText } = await ttml2srt(subtitle.url);
+      // remove empty subtitles
+      if (srtText.trim() === "") return null;
+      return {
+        id: `track-${subtitle.code}`,
+        key: subtitle.url,
+        kind: "subtitles",
+        src: srtUrl,
+        srcLang: subtitle.code,
+        label: `${subtitle.name} - ${subtitle.autoGenerated ? "Auto" : ""}`,
+        dataType: "srt",
+      };
+    })
+  );
+};

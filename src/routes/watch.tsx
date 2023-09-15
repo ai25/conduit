@@ -12,7 +12,7 @@ import { For } from "solid-js";
 import { PlayerContext } from "~/root";
 import VideoCard from "~/components/VideoCard";
 import { videoId } from "~/routes/library/history";
-import { getHlsManifest } from "~/utils/hls";
+import { getHlsManifest, getStreams } from "~/utils/hls";
 import PlaylistItem from "~/components/PlaylistItem";
 import { createVirtualizer, elementScroll } from "@tanstack/solid-virtual";
 import { classNames, fetchJson } from "~/utils/helpers";
@@ -80,13 +80,34 @@ export default function Watch() {
     }
   };
   createEffect(async () => {
-    if (!route.query.v) return false;
+    if (!route.query.v) return;
     console.time("verifyDownloaded");
-    if (!("getDirectory" in navigator.storage)) return false;
-    const downloaded = await checkVideoDownloaded();
-    setVideoDownloaded(downloaded);
-    console.timeEnd("verifyDownloaded");
-    if (downloaded) fetchLocalVideo();
+    if (!("getDirectory" in navigator.storage)) {
+      setVideoDownloaded(false);
+      return;
+    }
+    try {
+      const downloaded = await getStreams(route.query.v);
+      if (downloaded) {
+        console.log("video downloaded");
+        const manifest = await getHlsManifest(route.query.v);
+        setVideo({
+          value: {
+            ...downloaded,
+            hls: manifest,
+          },
+        });
+        return;
+      } else {
+        console.log("video not downloaded");
+        setVideoDownloaded(false);
+        console.timeEnd("verifyDownloaded");
+      }
+    } catch (e) {
+      console.log(e);
+      setVideoDownloaded(false);
+      return;
+    }
   });
 
   async function fetchLocalVideo() {
