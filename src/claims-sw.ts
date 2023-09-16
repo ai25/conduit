@@ -22,6 +22,13 @@ if (import.meta.env.DEV) allowlist = [/.*/];
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL("index.html"), { allowlist })
 );
+// precache index.html
+precacheAndRoute([
+  {
+    url: "index.html",
+    revision: null,
+  },
+]);
 
 // cache any cross-origin image
 registerRoute(

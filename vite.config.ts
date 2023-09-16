@@ -16,7 +16,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
   registerType: "autoUpdate",
 
   devOptions: {
-    enabled: false,
+    enabled: true,
     type: "module",
     navigateFallback: "index.html",
   },
