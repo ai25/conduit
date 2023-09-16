@@ -18,7 +18,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
   devOptions: {
     enabled: true,
     type: "module",
-    navigateFallback: "index.html",
+    navigateFallback: "/",
   },
   manifest: {
     name: "Conduit",

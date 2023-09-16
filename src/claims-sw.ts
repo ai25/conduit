@@ -19,9 +19,7 @@ let allowlist: undefined | RegExp[];
 if (import.meta.env.DEV) allowlist = [/.*/];
 
 // to allow work offline
-registerRoute(
-  new NavigationRoute(createHandlerBoundToURL("index.html"), { allowlist })
-);
+registerRoute(new NavigationRoute(createHandlerBoundToURL("/"), { allowlist }));
 // precache index.html
 precacheAndRoute([
   {

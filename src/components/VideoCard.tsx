@@ -42,7 +42,6 @@ export default ({
   const sync = useSyncedStore();
 
   createEffect(() => {
-    console.log(v);
     const id = videoId(v);
     if (!id) return;
     const val = sync.store.history[id];
