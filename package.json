@@ -8,6 +8,7 @@
   },
   "type": "module",
   "devDependencies": {
+    "@rollup/plugin-replace": "^5.0.2",
     "@types/numeral": "^2.0.2",
     "autoprefixer": "^10.4.15",
     "postcss": "^8.4.29",

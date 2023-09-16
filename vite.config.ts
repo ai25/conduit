@@ -2,13 +2,64 @@ import solid from "solid-start/vite";
 import { defineConfig } from "vite";
 import devtools from "solid-devtools/vite";
 import vercel from "solid-start-vercel";
-import { VitePWA } from "vite-plugin-pwa";
+import { ManifestOptions, VitePWA, VitePWAOptions } from "vite-plugin-pwa";
+import replace from "@rollup/plugin-replace";
 
+const pwaOptions: Partial<VitePWAOptions> = {
+  base: "/",
+  mode: "development",
+  // strategies: "generateSW",
+  // registerType: "autoUpdate",
+  srcDir: "src",
+  filename: "claims-sw.ts",
+  strategies: "injectManifest",
+  registerType: "autoUpdate",
 
+  devOptions: {
+    enabled: false,
+    type: "module",
+    navigateFallback: "index.html",
+  },
+  manifest: {
+    name: "Conduit",
+    short_name: "Conduit",
+    background_color: "#000000",
+    theme_color: "#fa4b4b",
+    icons: [
+      {
+        src: "img/icons/android-chrome-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "img/icons/android-chrome-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+      {
+        src: "img/icons/android-chrome-maskable-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "img/icons/android-chrome-maskable-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
+  },
+};
 export default defineConfig({
   ssr: {
     noExternal: ["@kobalte/core", "@internationalized/message"],
   },
+  build: {
+    target: "esnext",
+    sourcemap: true,
+  },
+
   plugins: [
     // devtools({
     //   /* features options - all disabled by default */
@@ -16,92 +67,6 @@ export default defineConfig({
     //   locator: true, // enables DOM locator tab
     // }),
     solid({ adapter: vercel() }),
-    VitePWA({
-      registerType: "autoUpdate",
-      devOptions: {
-        enabled: true,
-      },
-      workbox: {
-        globPatterns: [
-          "**/*.{js,css,html,ico,svg,png}",
-          "manifest.webmanifest","manifest.json"
-        ],
-        globIgnores: ["**/*-legacy-*.js"],
-        runtimeCaching: [
-          {
-            urlPattern: /https:\/\/[a-zA-Z./0-9_]*\.(?:otf|ttf)/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "fonts-cache",
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /https:\/\/[a-zA-Z./0-9_]*\.(?:png|jpg|jpeg|svg)/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "images-cache",
-              expiration: {
-                maxEntries: 1000,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /https:\/\/[a-zA-Z./0-9_]*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "static-cache",
-              expiration: {
-                maxEntries: 1000,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // <== 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-        ],
-      },
-      manifest: {
-        name: "Conduit",
-        short_name: "Conduit",
-        background_color: "#000000",
-        theme_color: "#fa4b4b",
-        icons: [
-          {
-            src: "img/icons/android-chrome-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "img/icons/android-chrome-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "img/icons/android-chrome-maskable-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "maskable",
-          },
-          {
-            src: "img/icons/android-chrome-maskable-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-      },
-    }),
+    VitePWA(pwaOptions),
   ],
 });

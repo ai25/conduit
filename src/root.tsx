@@ -42,10 +42,7 @@ import { Toast } from "@kobalte/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { getStorageValue } from "./utils/storage";
 import { PreferencesProvider } from "./stores/preferencesStore";
-
-if (!isServer) {
-  import("./sw");
-}
+import ReloadPrompt from "./components/ReloadPrompt";
 
 const [theme, setTheme] = createSignal("");
 export const ThemeContext = createContext<Signal<string>>([theme, setTheme]);
@@ -170,6 +167,9 @@ export default function Root() {
                         <Route path="/trending" element={<Trending />} />
                         <Route path="/import" element={<Import />} /> */}
                                 </Routes>
+                                <Show when={!isServer}>
+                                  <ReloadPrompt />
+                                </Show>
                               </main>
                               <Transition
                                 show={true}
