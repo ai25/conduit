@@ -20,13 +20,6 @@ if (import.meta.env.DEV) allowlist = [/.*/];
 
 // to allow work offline
 registerRoute(new NavigationRoute(createHandlerBoundToURL("/"), { allowlist }));
-// precache index.html
-precacheAndRoute([
-  {
-    url: "index.html",
-    revision: null,
-  },
-]);
 
 // cache any cross-origin image
 registerRoute(
