@@ -13,8 +13,7 @@ import { useCookie } from "~/utils/hooks";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { A } from "@solidjs/router";
 import { useLocation, useNavigate } from "solid-start";
-import Dropdown from "./Dropdown";
-import DropdownItem from "./DropdownItem";
+import { Dropdown } from "./Dropdown";
 import Search from "./SearchInput";
 import Modal from "./Modal";
 import Button from "./Button";
@@ -46,7 +45,6 @@ const Header = () => {
       ),
     {
       get initialData() {
-        console.log("getting init");
         return getStorageValue("instances", [], "json", "localStorage");
       },
       retry: (failureCount) => failureCount < 3,
@@ -108,22 +106,28 @@ const Header = () => {
         </ul>
         <Search />
         <div class="flex items-center gap-2 ">
-          <Show when={roomId()}>
-            <KobaltePopover.Root>
-              <KobaltePopover.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5 text-green-600 rounded-full"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+          <KobaltePopover.Root>
+            <KobaltePopover.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class={`h-5 w-5 rounded-full ${
+                  roomId() ? "text-green-600" : "text-red-600"
+                }`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <circle cx="10" cy="10" r="10" />
+              </svg>
+            </KobaltePopover.Trigger>
+            <KobaltePopover.Portal>
+              <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
+                <KobaltePopover.Arrow />
+                <KobaltePopover.Description
+                  class={`text-sm p-1 text-left flex flex-col gap-2 items-center ${
+                    roomId() ? "text-green-600" : "text-red-600"
+                  }`}
                 >
-                  <circle cx="10" cy="10" r="10" />
-                </svg>
-              </KobaltePopover.Trigger>
-              <KobaltePopover.Portal>
-                <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
-                  <KobaltePopover.Arrow />
-                  <KobaltePopover.Description class=" text-sm p-1 text-left flex flex-col gap-2 items-center text-green-600">
+                  <Show when={roomId()}>
                     Connected: {roomId()}
                     <Button
                       label="Leave"
@@ -132,130 +136,58 @@ const Header = () => {
                         location.reload();
                       }}
                     />
-                  </KobaltePopover.Description>
-                </KobaltePopover.Content>
-              </KobaltePopover.Portal>
-            </KobaltePopover.Root>
-          </Show>
-          <Show when={!roomId()}>
-            <KobaltePopover.Root>
-              <KobaltePopover.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5 text-red-600 rounded-full"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <circle cx="10" cy="10" r="10" />
-                </svg>
-              </KobaltePopover.Trigger>
-              <KobaltePopover.Portal>
-                <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
-                  <KobaltePopover.Arrow />
-                  <KobaltePopover.Description class=" text-sm p-1 text-left flex flex-col gap-2 items-center text-red-600">
+                  </Show>
+                  <Show when={!roomId()}>
                     Disconnected
                     <Button
                       label="Join room"
                       onClick={() => setModalOpen(true)}
                     />
-                  </KobaltePopover.Description>
-                </KobaltePopover.Content>
-              </KobaltePopover.Portal>
-            </KobaltePopover.Root>
-          </Show>
+                  </Show>
+                </KobaltePopover.Description>
+              </KobaltePopover.Content>
+            </KobaltePopover.Portal>
+          </KobaltePopover.Root>
+          <Dropdown
+            isOpen={themeOpen}
+            onOpenChange={setThemeOpen}
+            onChange={(value) => {
+              setTheme(value);
+              setThemeCookie(value);
+            }}
+            options={[
+              { value: "monokai", label: "Monokai" },
+              { value: "dracula", label: "Dracula" },
+              { value: "kawaii", label: "Kawaii" },
+              { value: "discord", label: "Discord" },
+              { value: "github", label: "Github" },
+            ]}
+            selectedValue={theme}
+            triggerIcon={
+              <FaSolidBrush fill="currentColor" class="h-5 w-5 text-text1" />
+            }
+          />
 
-          <DropdownMenu.Root open={themeOpen()} onOpenChange={setThemeOpen}>
-            <DropdownMenu.Trigger class=" p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
-              <DropdownMenu.Icon>
-                <FaSolidBrush fill="currentColor" class="h-5 w-5 text-text1" />
-              </DropdownMenu.Icon>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
-                <DropdownMenu.Arrow />
-                <DropdownMenu.RadioGroup
-                  value={theme()}
-                  onChange={(value) => {
-                    setThemeCookie(value);
-                    setTheme(value);
-                  }}
-                >
-                  <For
-                    each={[
-                      { value: "monokai", label: "Monokai" },
-                      { value: "dracula", label: "Dracula" },
-                      { value: "kawaii", label: "Kawaii" },
-                      { value: "discord", label: "Discord" },
-                      { value: "github", label: "Github" },
-                    ]}
-                  >
-                    {(option) => (
-                      <DropdownMenu.RadioItem
-                        value={option.value}
-                        class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-                      >
-                        <DropdownMenu.ItemIndicator class="inline-flex absolute left-0">
-                          <FaSolidCheck
-                            fill="currentColor"
-                            class="h-4 w-4 mx-1 text-text1"
-                          />
-                        </DropdownMenu.ItemIndicator>
-                        {option.label}
-                      </DropdownMenu.RadioItem>
-                    )}
-                  </For>
-                </DropdownMenu.RadioGroup>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-          <DropdownMenu.Root
-            open={instanceOpen()}
-            onOpenChange={(isOpen) => {
-              setInstanceOpen(isOpen);
-              if (isOpen && query.isStale) {
-                query.refetch();
+          <Dropdown
+            isOpen={instanceOpen}
+            onOpenChange={setInstanceOpen}
+            selectedValue={() => preferences.instance.api_url}
+            onChange={(value) => {
+              let instance = (query.data as PipedInstance[]).find(
+                (i) => i.api_url === value
+              );
+              if (instance) {
+                setPreferences("instance", instance);
               }
             }}
-          >
-            <DropdownMenu.Trigger class="mr-2 p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
-              <DropdownMenu.Icon>
-                <FaSolidGlobe fill="currentColor" class="h-5 w-5 text-text1" />
-              </DropdownMenu.Icon>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
-                <DropdownMenu.Arrow />
-                <DropdownMenu.RadioGroup
-                  value={preferences.instance.api_url}
-                  onChange={(value) => {
-                    let instance = (query.data as PipedInstance[]).find(
-                      (i) => i.api_url === value
-                    );
-                    if (instance) {
-                      setPreferences("instance", instance);
-                    }
-                  }}
-                >
-                  <For each={query.data as PipedInstance[]}>
-                    {(instance) => (
-                      <DropdownMenu.RadioItem
-                        value={instance.api_url}
-                        class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-                      >
-                        <DropdownMenu.ItemIndicator class="inline-flex absolute left-0">
-                          <FaSolidCheck
-                            fill="currentColor"
-                            class="h-4 w-4 mx-1 text-text1"
-                          />
-                        </DropdownMenu.ItemIndicator>
-                        {instance.name}
-                      </DropdownMenu.RadioItem>
-                    )}
-                  </For>
-                </DropdownMenu.RadioGroup>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
+            options={(query.data as PipedInstance[]).map((i) => ({
+              label: i.name,
+              value: i.api_url,
+            }))}
+            triggerIcon={
+              <FaSolidGlobe fill="currentColor" class="h-5 w-5 text-text1" />
+            }
+          />
         </div>
       </div>
       <Modal isOpen={modalOpen()} title="Join Room" setIsOpen={setModalOpen}>

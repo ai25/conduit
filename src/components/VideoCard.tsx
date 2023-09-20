@@ -11,30 +11,34 @@ import {
   createRenderEffect,
   createSignal,
   useContext,
+  createMemo,
+  For,
 } from "solid-js";
 import { videoId } from "~/routes/library/history";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { useSyncedStore, HistoryItem } from "~/stores/syncedStore";
 import {
-  Menu,
-  MenuItem,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-  Transition,
-} from "solid-headless";
-import { MenuButton, MenuItems } from "vidstack";
-import DropdownItem from "./DropdownItem";
-import Dropdown from "./Dropdown";
-import { SyncedDB, clone, useSyncedStore } from "~/stores/syncedStore";
-import { BsInfoCircleFill, BsThreeDotsVertical } from "solid-icons/bs";
+  BsChevronRight,
+  BsInfoCircleFill,
+  BsThreeDotsVertical,
+} from "solid-icons/bs";
 import { generateThumbnailUrl } from "~/utils/helpers";
+import { DropdownMenu } from "@kobalte/core";
+import {
+  FaRegularEye,
+  FaRegularEyeSlash,
+  FaSolidBug,
+  FaSolidCheck,
+  FaSolidPlus,
+  FaSolidX,
+} from "solid-icons/fa";
+import Modal from "./Modal";
+import { mergeProps } from "solid-js";
 
 dayjs.extend(relativeTime);
 
-export default ({
-  v,
-}: {
+export default (props: {
   v?: (RelatedStream & { progress?: number }) | undefined;
 }) => {
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
@@ -42,13 +46,18 @@ export default ({
   const sync = useSyncedStore();
 
   createEffect(() => {
-    const id = videoId(v);
+    const id = videoId(props.v);
     if (!id) return;
+    console.log("effect");
     const val = sync.store.history[id];
+    props = mergeProps(props, { v: { ...props.v, ...val } });
     setProgress(val?.currentTime ?? undefined);
   });
 
-  if (!v)
+  const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  const [modalOpen, setModalOpen] = createSignal(false);
+
+  if (!props.v)
     return (
       <div
         class={` flex w-full max-w-md mx-2 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-1`}
@@ -66,7 +75,7 @@ export default ({
       class={` flex w-full max-w-md mx-1 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}
     >
       <A
-        href={`/watch?v=${videoId(v)}`}
+        href={`/watch?v=${videoId(props.v)}`}
         class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         {progress() !== undefined && (
@@ -84,7 +93,7 @@ export default ({
             src={generateThumbnailUrl(
               sync.store!.preferences?.instance?.image_proxy_url ??
                 "https://pipedproxy.kavin.rocks",
-              videoId(v)
+              videoId(props.v)
             )}
             onError={() => setImgError(true)}
             // placeholder="blur"
@@ -102,14 +111,14 @@ export default ({
         <div class="relative h-0 w-12 place-self-end text-sm lg:w-16 lg:text-base">
           <div
             classList={{
-              "bg-bg1/80": v.duration !== -1,
-              "bg-primary": v.duration === -1,
+              "bg-bg1/80": props.v.duration !== -1,
+              "bg-primary": props.v.duration === -1,
             }}
             class="absolute bottom-2 right-2 rounded px-1 text-xs"
           >
-            <Show when={v.duration === -1}>Live</Show>
-            <Show when={v.duration !== -1}>
-              {numeral(v.duration).format("00:00:00").replace(/^0:/, "")}
+            <Show when={props.v.duration === -1}>Live</Show>
+            <Show when={props.v.duration !== -1}>
+              {numeral(props.v.duration).format("00:00:00").replace(/^0:/, "")}
             </Show>
           </div>
         </div>
@@ -117,7 +126,9 @@ export default ({
           <div class="relative h-0 w-full">
             <div
               style={{
-                width: `clamp(0%, ${(progress()! / v.duration) * 100}%, 100%`,
+                width: `clamp(0%, ${
+                  (progress()! / props.v.duration) * 100
+                }%, 100%`,
               }}
               class="absolute bottom-0 h-1 bg-highlight"
             ></div>
@@ -127,21 +138,21 @@ export default ({
       <div class="mt-2 flex w-full max-h-20 min-w-0 max-w-full justify-between ">
         <div class="flex flex-col gap-2 pr-2 ">
           <A
-            href={v.url ?? `/watch?v=${videoId(v)}`}
+            href={props.v.url ?? `/watch?v=${videoId(props.v)}`}
             class=" two-line-ellipsis min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            {v.title}
+            {props.v.title}
           </A>
 
           <div class="flex gap-2 text-text2">
-            <Show when={v.uploaderAvatar}>
+            <Show when={props.v.uploaderAvatar}>
               <div class="group mb-1 w-max underline ">
                 <A
-                  href={v.uploaderUrl || ""}
+                  href={props.v.uploaderUrl || ""}
                   class="flex max-w-max items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <img
-                    src={v.uploaderAvatar!}
+                    src={props.v.uploaderAvatar!}
                     width={32}
                     height={32}
                     class="rounded-full"
@@ -153,22 +164,22 @@ export default ({
 
             <div class="flex w-full flex-col text-xs">
               <A
-                href={v.uploaderUrl || ""}
+                href={props.v.uploaderUrl || ""}
                 class="outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <div class="peer w-fit ">{v.uploaderName}</div>
+                <div class="peer w-fit ">{props.v.uploaderName}</div>
               </A>
               <div class="flex ">
-                <Show when={v.views}>
+                <Show when={props.v.views}>
                   <div class="w-fit  ">
                     {" "}
-                    {numeral(v.views).format("0a").toUpperCase()} views
+                    {numeral(props.v.views).format("0a").toUpperCase()} views
                   </div>
                 </Show>
 
                 <div class="group w-fit pl-1">
-                  <Show when={v.uploaded && v.uploaded !== -1}>
-                    <div class=""> • {dayjs(v.uploaded).fromNow()} </div>
+                  <Show when={props.v.uploaded && props.v.uploaded !== -1}>
+                    <div class=""> • {dayjs(props.v.uploaded).fromNow()} </div>
                   </Show>
                 </div>
               </div>
@@ -176,62 +187,108 @@ export default ({
           </div>
         </div>
         <div class="flex flex-col justify-between">
-          <Dropdown
-            icon={
+          <DropdownMenu.Root
+            open={dropdownOpen()}
+            onOpenChange={setDropdownOpen}
+          >
+            <DropdownMenu.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
               <BsThreeDotsVertical
                 fill="currentColor"
                 class="text-text2 w-6 h-6 group-hover:text-text1"
               />
-            }
-            iconPosition="right"
-            panelPosition="left"
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
+                <DropdownMenu.Arrow />
+                <DropdownMenu.Sub>
+                  <DropdownMenu.SubTrigger class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">
+                    <div class="flex items-center w-full justify-between">
+                      <div class="text-text1">Add to playlist</div>
+                      <BsChevronRight
+                        class="justify-self-end"
+                        fill="currentColor"
+                      />
+                    </div>
+                  </DropdownMenu.SubTrigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.SubContent class="bg-bg2 p-2 rounded-md shadow">
+                      <For each={Object.entries(sync.store.playlists)}>
+                        {([id, playlist]) => (
+                          <DropdownMenu.Item
+                            class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                            onSelect={() => {
+                              sync.setStore("playlists", id, "relatedStreams", [
+                                ...playlist.relatedStreams,
+                                props.v as RelatedStream,
+                              ]);
+                            }}
+                          >
+                            <div class="flex items-center gap">
+                              <div class="text-text1">{playlist.name}</div>
+                            </div>
+                          </DropdownMenu.Item>
+                        )}
+                      </For>
+                    </DropdownMenu.SubContent>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Sub>
+                <Show when={progress() === undefined}>
+                  <DropdownMenu.Item
+                    class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                    onSelect={() => {
+                      console.log("clicked");
+                      sync.setStore("history", {
+                        [videoId(props.v)]: {
+                          ...props.v,
+                          currentTime: props.v!.duration,
+                          watchedAt: Date.now(),
+                        },
+                      } as Record<string, HistoryItem>);
+                      console.log("added to history");
+                    }}
+                  >
+                    <div class="flex items-center gap-2">
+                      <FaRegularEye fill="currentColor" />
+                      <div class="text-text1">Mark as watched</div>
+                    </div>
+                  </DropdownMenu.Item>
+                </Show>
+                <Show when={progress() !== undefined}>
+                  <DropdownMenu.Item
+                    class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                    onSelect={() => {
+                      sync.setStore("history", {
+                        [videoId(props.v)]: undefined,
+                      });
+                    }}
+                  >
+                    <div class="flex items-center gap-2">
+                      <FaRegularEyeSlash fill="currentColor" />
+                      <div class="text-text1">Remove from history</div>
+                    </div>
+                  </DropdownMenu.Item>
+                </Show>
+                <DropdownMenu.Item
+                  class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                  onSelect={() => setModalOpen(true)}
+                >
+                  <div class="flex items-center gap-2">
+                    <FaSolidBug fill="currentColor" />
+                    <div class="text-text1">Debug info</div>
+                  </div>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+          <Modal
+            isOpen={modalOpen()}
+            setIsOpen={setModalOpen}
+            title="Debug info"
           >
-            <DropdownItem as="button" label="Add to queue" />
-            <Switch>
-              <Match when={progress() !== undefined}>
-                <DropdownItem
-                  as="button"
-                  label="Remove from history"
-                  onClick={
-                    () => {}
-                    // SyncedDB.history.delete(writeStore()!, (item) => {
-                    //   console.log(item.id, videoId(v));
-                    //   return item.id === videoId(v);
-                    // })
-                  }
-                />
-              </Match>
-              <Match when={progress() === undefined}>
-                <DropdownItem
-                  as="button"
-                  label="Mark as watched"
-                  onClick={
-                    () => {}
-                    // SyncedDB.history.create(writeStore()!, {
-                    //   ...v,
-                    //   id: videoId(v),
-                    //   watchedAt: Date.now(),
-                    //   currentTime: v.duration,
-                    // })
-                  }
-                />
-              </Match>
-            </Switch>
-          </Dropdown>
-          <Show when={(v as any).watchedAt}>
-            <div class="relative w-0 h-0 self-end ">
-              <button class="peer absolute right-1 -top-8 z-[1] link ">
-                <BsInfoCircleFill
-                  fill="currentColor"
-                  class="w-5 h-5 text-text2"
-                />
-              </button>
-              <div class=" absolute right-0 -top-2 z-[1] bg-bg1/80 w-44 flex items-center rounded px-2 opacity-0 scale-0 transition peer-hover:scale-100 peer-hover:opacity-100 peer-focus-visible:scale-100 peer-focus-visible:opacity-100 ">
-                Watched: {dayjs((v as any).watchedAt).fromNow()}
-                <p>{videoId(v)}</p>
-              </div>
-            </div>
-          </Show>
+            <pre class="break-all text-text1 max-w-full min-w-0 overflow-auto">
+              {JSON.stringify(props.v, null, 2)}
+            </pre>
+          </Modal>
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { For, Switch, createSignal } from "solid-js";
 import { Title, createRouteData, useRouteData } from "solid-start";
 import { ErrorComponent } from "~/components/Error";
 import VideoCard from "~/components/VideoCard";
+import { useAppState } from "~/stores/appStateStore";
 import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncedStore } from "~/stores/syncedStore";
 import type { TrendingStream } from "~/types";
@@ -25,8 +26,12 @@ export default function Trending() {
       placeholderData: Array(40).fill(undefined),
     }
   );
+  const [, setAppState] = useAppState();
   createEffect(() => {
-    console.log(query.data);
+    setAppState(
+      "loading",
+      query.isFetching || query.isRefetching || query.isInitialLoading
+    );
   });
   return (
     <div class="flex min-h-full flex-wrap justify-center bg-bg1">

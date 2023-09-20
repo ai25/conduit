@@ -223,14 +223,14 @@ export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
                     <div class="flex gap-2 items-center">
                       <img
                         class="h-18 w-32 shrink-0 rounded-md bg-bg1"
-                        src={video?.relatedStreams[0]?.thumbnail}
+                        src={video?.relatedStreams?.[0]?.thumbnail}
                       />
                       <div class="ml-2 flex grow flex-col">
                         <div class="text-sm text-text1 truncate">
-                          {video?.relatedStreams[0]?.title}
+                          {video?.relatedStreams?.[0]?.title}
                         </div>
                         <div class="text-xs text-text1/50">
-                          {video?.relatedStreams[0]?.uploaderName}
+                          {video?.relatedStreams?.[0]?.uploaderName}
                         </div>
                       </div>
                     </div>

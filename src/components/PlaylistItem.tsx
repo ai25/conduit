@@ -12,8 +12,6 @@ import {
 import { videoId } from "~/routes/library/history";
 import { RelatedStream } from "~/types";
 import Modal from "./Modal";
-import Dropdown from "./Dropdown";
-import DropdownItem from "./DropdownItem";
 import { SyncedDB, useSyncedStore } from "~/stores/syncedStore";
 import { generateThumbnailUrl } from "~/utils/helpers";
 import { usePreferences } from "~/stores/preferencesStore";
@@ -133,26 +131,26 @@ const PlaylistItem = (props: {
         </div>
       </div>
       <div class="self-center justify-self-end ml-2">
-        <Dropdown
-          icon={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="currentColor"
-              class="text-text1 rounded-full w-6 h-6"
-              viewBox="0 0 16 16"
-            >
-              {" "}
-              <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />{" "}
-            </svg>
-          }
-          iconPosition="right"
-          panelPosition="left"
-        >
-          <DropdownItem as="button" label="Add to playlist" />
-          <DropdownItem as="button" label="Add to queue" />
-        </Dropdown>
+        {/* <Dropdown */}
+        {/*   icon={ */}
+        {/*     <svg */}
+        {/*       xmlns="http://www.w3.org/2000/svg" */}
+        {/*       width="16" */}
+        {/*       height="16" */}
+        {/*       fill="currentColor" */}
+        {/*       class="text-text1 rounded-full w-6 h-6" */}
+        {/*       viewBox="0 0 16 16" */}
+        {/*     > */}
+        {/*       {" "} */}
+        {/*       <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />{" "} */}
+        {/*     </svg> */}
+        {/*   } */}
+        {/*   iconPosition="right" */}
+        {/*   panelPosition="left" */}
+        {/* > */}
+        {/*   <DropdownItem as="button" label="Add to playlist" /> */}
+        {/*   <DropdownItem as="button" label="Add to queue" /> */}
+        {/* </Dropdown> */}
       </div>
     </A>
   );

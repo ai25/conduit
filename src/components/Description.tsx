@@ -8,6 +8,7 @@ import {
   createEffect,
   createSignal,
   useContext,
+  JSX,
 } from "solid-js";
 import { A } from "solid-start";
 import { MediaPlayerElement } from "vidstack";
@@ -19,6 +20,21 @@ import { downloadVideo } from "~/utils/hls";
 import Button from "./Button";
 import { Toaster } from "solid-headless";
 import { usePreferences } from "~/stores/preferencesStore";
+import {
+  FaSolidArrowsRotate,
+  FaSolidBookmark,
+  FaSolidBug,
+  FaSolidChevronDown,
+  FaSolidChevronRight,
+  FaSolidCopy,
+  FaSolidDownload,
+  FaSolidShare,
+  FaSolidThumbsDown,
+  FaSolidThumbsUp,
+  FaSolidTrashCan,
+} from "solid-icons/fa";
+import { Tooltip } from "@kobalte/core";
+import Modal from "./Modal";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -32,6 +48,7 @@ function handleTimestamp(videoId: string, t: string) {
 const Description = (props: {
   video: PipedVideo | null | undefined;
   downloaded: boolean;
+  onRefetch: () => void;
 }) => {
   const [isSubscribed, setIsSubscribed] = createSignal(false);
   const [preferences] = usePreferences();
@@ -144,6 +161,7 @@ const Description = (props: {
       console.error(`Failed to delete ${id}`, e);
     }
   }
+  const [debugInfoOpen, setDebugInfoOpen] = createSignal(false);
 
   const Placeholder = () => (
     <div class="mb-2 w-full grow min-w-0 max-w-5xl p-4 bg-bg1">
@@ -164,10 +182,30 @@ const Description = (props: {
 
   return (
     <Show when={props.video} fallback={<Placeholder />}>
+      <Modal
+        isOpen={debugInfoOpen()}
+        setIsOpen={setDebugInfoOpen}
+        title="Debug info"
+      >
+        <IconButton
+          icon={<FaSolidCopy class="w-4 h-4" />}
+          title="Copy to clipboard"
+          onClick={() => {
+            navigator.clipboard.writeText(JSON.stringify(props.video, null, 2));
+          }}
+        />
+        <div class="max-w-screen-sm max-h-[80vh] overflow-auto">
+          <JSONViewer data={props.video} folded={false} />
+        </div>
+      </Modal>
       <div class="mb-2 bg-bg1 p-4 ">
-        <div class="flex flex-col justify-between gap-2 lg:flex-row">
+        <div class="flex flex-col gap-2">
           <div class="flex flex-col gap-2 ">
-            <h1 class="text-lg font-bold sm:text-xl ">{props.video!.title}</h1>
+            <div class="flex items-start justify-between">
+              <h1 class="text-lg font-bold sm:text-xl ">
+                {props.video!.title}
+              </h1>
+            </div>
             <div class="mb-1  flex justify-between gap-4 sm:justify-start ">
               <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
                 <A class="link" href={`${props.video!.uploaderUrl}`}>
@@ -187,7 +225,12 @@ const Description = (props: {
                     {props.video!.uploader}{" "}
                     {props.video!.uploaderVerified && <Checkmark />}
                   </A>
-                  <div class="flex w-full items-center text-start text-xs text-text2 sm:text-sm">
+                  <div
+                    title={`${
+                      props.video!.uploaderSubscriberCount
+                    } subscribers`}
+                    class="flex w-full items-center text-start text-xs text-text2 sm:text-sm"
+                  >
                     {numeral(props.video!.uploaderSubscriberCount)
                       .format("0a")
                       .toUpperCase()}{" "}
@@ -195,38 +238,48 @@ const Description = (props: {
                   </div>
                 </div>
               </div>
+
               <Button
                 onClick={toggleSubscribed}
                 activated={isSubscribed()}
                 label={`Subscribe${isSubscribed() ? "d" : ""}`}
               />
-              <Toaster />
             </div>
           </div>
-          <div class="flex items-center justify-between text-sm lg:flex-col lg:items-start lg:justify-start">
-            <p class="break-words">
-              Published{" "}
-              {(() => {
-                const substr = dayjs(props.video!.uploadDate)
-                  .toString()
-                  .split(":")[0];
-                return substr.slice(0, substr.length - 3);
-              })()}
+          <div
+            title={`Published ${(() => {
+              const substr = dayjs(props.video!.uploadDate)
+                .toString()
+                .split(":")[0];
+              return substr.slice(0, substr.length - 3);
+            })()} • ${numeral(props.video!.views).format("0,0")} views`}
+            class="flex items-center gap-2 text-sm"
+          >
+            <p class="">{dayjs(props.video?.uploadDate).fromNow()}</p>•
+            <p class="">
+              {numeral(props.video!.views).format("0a").toUpperCase()} views
             </p>
-            <p class="">{numeral(props.video!.views).format("0,0")} views</p>
-            <Switch>
-              <Match when={props.downloaded}>
-                <Button
-                  label="Delete"
-                  onClick={() => deleteVideo(videoId(props.video))}
-                />
-              </Match>
-              <Match when={!props.downloaded}>
-                <Button label="Download" onClick={handleDownload} />
-              </Match>
-            </Switch>
-            <div class="flex gap-2">
-              {numeral(props.video!.likes).format("0a").toUpperCase()} 👍
+            <div class="flex flex-col w-36 ml-auto">
+              <div class="flex items-center justify-between ">
+                <span
+                  title={`${numeral(props.video!.likes).format("0,0")} likes`}
+                  class="flex items-center gap-2 "
+                >
+                  <FaSolidThumbsUp class="w-5 h-5" fill="currentColor" />
+                  {numeral(props.video!.likes).format("0a").toUpperCase()}{" "}
+                </span>
+                <span
+                  title={`${numeral(props.video!.dislikes).format(
+                    "0,0"
+                  )} likes`}
+                  class="flex items-center gap-2"
+                >
+                  <FaSolidThumbsDown class="h-5 w-5" fill="currentColor" />
+                  {numeral(props.video!.dislikes)
+                    .format("0a")
+                    .toUpperCase()}{" "}
+                </span>
+              </div>
               <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
                 <div
                   class="h-full bg-accent1 rounded-r"
@@ -239,9 +292,49 @@ const Description = (props: {
                   }}
                 ></div>
               </div>
-              {numeral(props.video!.dislikes).format("0a").toUpperCase()} 👎
             </div>
           </div>
+          <div class="flex items-center justify-evenly rounded p-2 bg-bg2">
+            <Switch>
+              <Match when={props.downloaded}>
+                <IconButton
+                  title="Delete"
+                  icon={<FaSolidTrashCan class="h-6 w-6" />}
+                  onClick={() => deleteVideo(videoId(props.video))}
+                />
+              </Match>
+              <Match when={!props.downloaded}>
+                <IconButton
+                  title="Download"
+                  icon={<FaSolidDownload class="h-6 w-6" />}
+                  onClick={handleDownload}
+                />
+              </Match>
+            </Switch>
+            <IconButton
+              title="Share"
+              icon={<FaSolidShare class="h-6 w-6" />}
+              onClick={() => {}}
+            />
+            <IconButton
+              title="Save"
+              icon={<FaSolidBookmark class="h-6 w-6" />}
+              onClick={() => {}}
+            />
+            <IconButton
+              title="Debug info"
+              icon={<FaSolidBug class="h-6 w-6" />}
+              onClick={() => {
+                setDebugInfoOpen(true);
+              }}
+            />
+            <IconButton
+              title="Soft Refresh (Shift+R)"
+              icon={<FaSolidArrowsRotate class="h-6 w-6" />}
+              onClick={props.onRefetch}
+            />
+          </div>
+          <div></div>
         </div>
         <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
           <div
@@ -318,5 +411,69 @@ export const Checkmark = () => (
     <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z" />
   </svg>
 );
+
+const IconButton = (props: {
+  icon: JSX.Element;
+  title?: string;
+  onClick: () => void;
+}) => (
+  <Tooltip.Root>
+    <Tooltip.Trigger
+      onClick={props.onClick}
+      class="aspect-square w-12 h-12 transition duration-300 flex items-center justify-center rounded-full  hover:bg-bg1/80 outline-none active:scale-110 focus-visible:bg-bg2 focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      {props.icon}
+    </Tooltip.Trigger>
+    <Tooltip.Portal>
+      <Tooltip.Content class="p-2 z-50 bg-bg2 rounded max-w-[min(calc(100vw-16px),380px)] animate-[contentHide] data-[expanded]:animate-[contentShow]">
+        <Tooltip.Arrow />
+        <p>{props.title}</p>
+      </Tooltip.Content>
+    </Tooltip.Portal>
+  </Tooltip.Root>
+);
+
+type JSONViewerProps = {
+  data: any;
+  folded: boolean;
+  level?: number;
+};
+
+const JSONViewer: any = (props: JSONViewerProps) => {
+  const [folded, setFolded] = createSignal(props.folded);
+  const isObject = typeof props.data === "object" && props.data !== null;
+
+  return (
+    <div class={`pl-${props.level || 1} flex`}>
+      {isObject ? (
+        <div class="flex gap-2 justify-between">
+          <span class="cursor-pointer" onClick={() => setFolded(!folded())}>
+            {folded() ? <FaSolidChevronRight /> : <FaSolidChevronDown />}
+          </span>
+          <span>{Array.isArray(props.data) ? "[" : "{"}</span>
+          {!folded() ? (
+            <pre>
+              {Object.entries(props.data).map(([key, value], index) => (
+                <pre class="flex gap-2">
+                  <span class="font-bold">{key}:</span>{" "}
+                  <JSONViewer
+                    data={value}
+                    level={(props.level || 0) + 1}
+                    folded={true}
+                  />
+                </pre>
+              ))}
+            </pre>
+          ) : (
+            "..."
+          )}
+          <span>{Array.isArray(props.data) ? "]" : "}"}</span>
+        </div>
+      ) : (
+        <span>{props.data}</span>
+      )}
+    </div>
+  );
+};
 
 export default Description;

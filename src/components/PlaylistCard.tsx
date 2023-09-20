@@ -2,8 +2,6 @@ import type { RelatedPlaylist, RelatedStream } from "~/types";
 import { A } from "solid-start";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import DropdownItem from "./DropdownItem";
-import Dropdown from "./Dropdown";
 
 dayjs.extend(relativeTime);
 
@@ -58,9 +56,9 @@ export default ({ item }: { item?: RelatedPlaylist | undefined }) => {
             </div>
 
             <div class="flex w-full flex-col">
-              <Dropdown>
-                <DropdownItem as="button" label="Add to queue" />
-              </Dropdown>
+              {/* <Dropdown> */}
+              {/*   <DropdownItem as="button" label="Add to queue" /> */}
+              {/* </Dropdown> */}
               <A href={item.uploaderUrl || ""}>
                 <div class="peer w-fit text-sm">{item.uploaderName}</div>
               </A>

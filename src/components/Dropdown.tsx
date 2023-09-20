@@ -1,100 +1,55 @@
-import {
-  Menu,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-  Transition,
-} from "solid-headless";
-import { Show, onMount } from "solid-js";
-import { JSX } from "solid-js";
-import { Dynamic } from "solid-js/web";
-import { classNames } from "~/utils/helpers";
+import { For, JSX } from "solid-js";
+import { DropdownMenu } from "@kobalte/core";
+import { FaSolidCheck } from "solid-icons/fa";
 
-export default function Dropdown(props: {
-  class?: string;
-  children: JSX.Element | JSX.Element[];
-  icon?: JSX.Element;
-  label?: string;
-  iconPosition?: "left" | "right";
-  rotateIcon?: boolean;
-  showButton?: boolean;
-  show?: boolean;
-  buttonClass?: string;
-  panelPosition?: "left" | "right" | "center";
-}) {
-  return (
-    <Popover defaultOpen={false} class={`relative ${props.class}`}>
-      {({ isOpen, setState }) => (
-        <>
-          <Show when={props.showButton !== false}>
-            <PopoverButton
-              class={`text-text3 group  focus:outline-none focus-visible:ring-4 focus-visible:ring-accent1 ${
-                props.buttonClass ?? ""
-              }`}>
-              <Show when={props.iconPosition === "left" && props.icon}>
-                <span
-                  classList={{
-                    "mr-1": !!props.label,
-                    "transform rotate-180": props.rotateIcon && isOpen(),
-                  }}>
-                  {props.icon}
-                </span>
-              </Show>
-              <Show when={props.label}>
-                {<span class="truncate">{props.label}</span>}
-              </Show>
-              <Show when={props.iconPosition === "right" && props.icon}>
-                <span
-                  classList={{
-                    "mr-1": !!props.label,
-                    "transition rotate-180": props.rotateIcon && isOpen(),
-                  }}>
-                  {props.icon}
-                </span>
-              </Show>
-            </PopoverButton>
-          </Show>
-          <Transition
-            show={isOpen() || !!props.show}
-            enter="transition duration-200"
-            enterFrom="opacity-0 -translate-y-1 scale-50"
-            enterTo="opacity-100 translate-y-0 scale-100"
-            leave="transition duration-150"
-            leaveFrom="opacity-100 translate-y-0 scale-100"
-            leaveTo="opacity-0 -translate-y-1 scale-50">
-            <PopoverPanel
-              unmount={true}
-              class={`${classNames(
-                props.panelPosition === "left" && "left-8 -translate-x-full",
-                props.panelPosition === "right" && "right-8 translate-x-full",
-                props.panelPosition === "center" && "left-1/2 -translate-x-1/2"
-              )} absolute z-10 px-4 mt-3 transform sm:px-0 lg:max-w-3xl`}>
-              <Menu
-                onClick={() => {
-                  console.log("click");
-                  setState(false);
-                }}
-                class="overflow-hidden w-64 rounded-lg shadow-lg ring-1 ring-black/5 bg-bg2 flex flex-col space-y-1 p-1">
-                {Array.isArray(props.children) ? (
-                  props.children.map((child) => {
-                    return (
-                      <Dynamic
-                        component={child as any}
-                        onClick={() => setState(false)}
-                      />
-                    );
-                  })
-                ) : (
-                  <Dynamic
-                    component={props.children as any}
-                    onClick={() => setState(false)}
-                  />
-                )}
-              </Menu>
-            </PopoverPanel>
-          </Transition>
-        </>
-      )}
-    </Popover>
-  );
+interface Option {
+  value?: string;
+  label: string;
+  onClick?: () => void;
 }
+
+interface DropdownProps {
+  isOpen: () => boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  triggerIcon: JSX.Element;
+  options: Option[];
+  selectedValue?: () => string;
+  onChange?: (value: string) => void;
+}
+
+export const Dropdown = (props: DropdownProps) => {
+  return (
+    <DropdownMenu.Root open={props.isOpen()} onOpenChange={props.onOpenChange}>
+      <DropdownMenu.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+        <DropdownMenu.Icon>{props.triggerIcon}</DropdownMenu.Icon>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
+          <DropdownMenu.Arrow />
+          <DropdownMenu.RadioGroup
+            value={props.selectedValue?.()}
+            onChange={props.onChange}
+          >
+            <For each={props.options}>
+              {(option) => (
+                <DropdownMenu.RadioItem
+                  value={option.value ?? option.label}
+                  class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                  onClick={option.onClick}
+                >
+                  <DropdownMenu.ItemIndicator class="inline-flex absolute left-0">
+                    <FaSolidCheck
+                      fill="currentColor"
+                      class="h-4 w-4 mx-1 text-text1"
+                    />
+                  </DropdownMenu.ItemIndicator>
+                  {option.label}
+                </DropdownMenu.RadioItem>
+              )}
+            </For>
+          </DropdownMenu.RadioGroup>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
+};

@@ -1,10 +1,12 @@
 import { createSignal } from "solid-js";
 import Toggle from "~/components/Toggle";
+import { useSyncedStore } from "~/stores/syncedStore";
 
 export default function Import() {
   const [subscriptions, setSubscriptions] = createSignal<string[]>([]);
   const [override, setOverride] = createSignal(false);
   const selectedSubscriptions = () => subscriptions().length;
+  const sync = useSyncedStore();
   let fileSelector: HTMLInputElement | undefined = undefined;
   function fileChange() {
     console.log("fileChange", fileSelector?.files?.[0]?.name);
@@ -74,47 +76,26 @@ export default function Import() {
     });
   }
   function handleImport() {
-    // if (this.authenticated) {
-    //     this.fetchJson(
-    //         this.authApiUrl() + "/import",
-    //         {
-    //             override: this.override,
-    //         },
-    //         {
-    //             method: "POST",
-    //             headers: {
-    //                 Authorization: this.getAuthToken(),
-    //             },
-    //             body: JSON.stringify(this.subscriptions),
-    //         },
-    //     ).then(json => {
-    //         if (json.message === "ok") window.location = "/feed";
-    //     });
-    // } else {
-    importSubscriptionsLocally(subscriptions());
-    // }
-  }
-  function getLocalSubscriptions() {
-    try {
-      return JSON.parse(localStorage.getItem("localSubscriptions") ?? "");
-    } catch {
-      return [];
-    }
-  }
-  function importSubscriptionsLocally(newChannels: string[]) {
     const subs = override()
-      ? [...new Set(newChannels)]
+      ? [...new Set(subscriptions())]
       : ([
-          ...new Set((getLocalSubscriptions() ?? []).concat(newChannels)),
+          ...new Set((getLocalSubscriptions() ?? []).concat(subscriptions())),
         ] as string[]);
     // Sort for better cache hits
     console.log("importSubscriptionsLocally", subs.sort());
     setSubscriptions(subs.sort());
 
     try {
-      localStorage.setItem("localSubscriptions", JSON.stringify(subscriptions()));
+      sync.setStore("subscriptions", subs);
     } catch (e) {
       alert("Error saving subscriptions");
+    }
+  }
+  function getLocalSubscriptions() {
+    try {
+      return sync.store.subscriptions;
+    } catch {
+      return [];
     }
   }
   return (
@@ -122,11 +103,7 @@ export default function Import() {
       <div class="text-center">
         <form>
           <div>
-            <input
-              ref={fileSelector}
-              type="file"
-              onInput={fileChange}
-            />
+            <input ref={fileSelector} type="file" onInput={fileChange} />
           </div>
           <div>
             <strong>

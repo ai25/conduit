@@ -68,17 +68,6 @@ export default function Watch() {
   const [playlist, setPlaylist] = usePlaylist();
 
   const [videoDownloaded, setVideoDownloaded] = createSignal(true);
-  const checkVideoDownloaded = async () => {
-    try {
-      const video = await (
-        await navigator.storage.getDirectory()
-      ).getDirectoryHandle(route.query.v);
-      if (video) return true;
-      else return false;
-    } catch (e) {
-      return false;
-    }
-  };
   createEffect(async () => {
     if (!route.query.v) return;
     console.time("verifyDownloaded");
@@ -88,6 +77,7 @@ export default function Watch() {
     }
     try {
       const downloaded = await getStreams(route.query.v);
+      console.log("downloaded", downloaded);
       if (downloaded) {
         console.log("video downloaded");
         const manifest = await getHlsManifest(route.query.v);
@@ -97,6 +87,7 @@ export default function Watch() {
             hls: manifest,
           },
         });
+        console.log(video.value, "previewFrames");
         return;
       } else {
         console.log("video not downloaded");
@@ -110,37 +101,12 @@ export default function Watch() {
     }
   });
 
-  async function fetchLocalVideo() {
-    const rootDir = await navigator.storage.getDirectory();
-    const dir = await rootDir.getDirectoryHandle(route.query.v);
-    console.log("DIR", dir.getFileHandle("streams.json"));
-    if (!dir) {
-      console.log("no dir");
-      return 0;
-    }
-    try {
-      const videoInfoHandle = await dir.getFileHandle("streams.json");
-      console.log(videoInfoHandle);
-      const file = await (await videoInfoHandle.getFile()).text();
-      console.log(file);
-      const video = JSON.parse(file);
-      console.log(video);
-      const hls = await getHlsManifest(route.query.v);
-      console.log(hls);
-      setVideo({ value: { ...video, hls }, error: undefined });
-      return 1;
-    } catch (error) {
-      console.error(error);
-      return 0;
-    }
-  }
-
   const [appState, setAppState] = useAppState();
   const sync = useSyncedStore();
   const [preferences] = usePreferences();
 
   const videoQuery = createQuery(
-    () => ["streams"],
+    () => ["streams", route.query.v, preferences.instance.api_url],
     async (): Promise<PipedVideo & { error: Error }> =>
       await fetch(
         preferences.instance.api_url + "/streams/" + route.query.v
@@ -156,28 +122,28 @@ export default function Watch() {
       refetchOnReconnect: false,
     }
   );
-  createEffect(async () => {
-    const v = route.query.v;
-    console.log(v, "v");
-    if (!v) return;
-    const origin = new URL(preferences.instance.api_url).hostname
-      .split(".")
-      .slice(-2)
-      .join(".");
-    const newOrigin = untrack(() =>
-      new URL(video.value?.hls ?? "https://example.com").hostname
-        .split(".")
-        .slice(-2)
-        .join(".")
-    );
-    const id = untrack(() => videoId(video.value));
+  // createEffect(async () => {
+  //   const v = route.query.v;
+  //   console.log(v, "v");
+  //   if (!v) return;
+  //   const origin = new URL(preferences.instance.api_url).hostname
+  //     .split(".")
+  //     .slice(-2)
+  //     .join(".");
+  //   const newOrigin = untrack(() =>
+  //     new URL(video.value?.hls ?? "https://example.com").hostname
+  //       .split(".")
+  //       .slice(-2)
+  //       .join(".")
+  //   );
+  //   const id = untrack(() => videoId(video.value));
 
-    console.log(origin, newOrigin, "HOSTS");
-    if (id !== v || origin !== newOrigin) {
-      videoQuery.refetch();
-      return;
-    }
-  });
+  //   console.log(origin, newOrigin, "HOSTS");
+  //   if (id !== v || origin !== newOrigin) {
+  //     videoQuery.refetch();
+  //     return;
+  //   }
+  // });
 
   createEffect(() => {
     setAppState({
@@ -315,7 +281,11 @@ export default function Watch() {
         <PlayerContainer />
         <Show when={!preferences.theatreMode}>
           <div>
-            <Description video={video.value} />
+            <Description
+              video={video.value}
+              downloaded={videoDownloaded()}
+              onRefetch={() => videoQuery.refetch()}
+            />
           </div>
         </Show>
       </div>
@@ -329,7 +299,11 @@ export default function Watch() {
       >
         <Show when={preferences.theatreMode}>
           <div class="w-full max-w-full">
-            <Description video={video.value} />
+            <Description
+              video={video.value}
+              downloaded={videoDownloaded()}
+              onRefetch={() => videoQuery.refetch()}
+            />
           </div>
         </Show>
         <div
@@ -395,13 +369,13 @@ export default function Watch() {
             keyed
             fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}
           >
-            {(video) => (
-              <For each={video?.relatedStreams}>
+            <Show when={video.value?.relatedStreams}>
+              <For each={video.value?.relatedStreams}>
                 {(stream) => {
                   return <VideoCard v={stream} />;
                 }}
               </For>
-            )}
+            </Show>
           </Show>
         </div>
       </div>

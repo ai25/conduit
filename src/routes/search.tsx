@@ -1,4 +1,4 @@
-import { useLocation } from "solid-start";
+import { useLocation, useNavigate } from "solid-start";
 import VideoCard from "~/components/VideoCard";
 import {
   For,
@@ -93,20 +93,35 @@ export default function Search() {
     }
   };
 
-  const query = createInfiniteQuery(() => ["search"], fetchSearch, {
-    get enabled() {
-      return preferences.instance?.api_url && route.query.q ? true : false;
-    },
-    getNextPageParam: (lastPage) => {
-      return lastPage.nextpage;
-    },
-  });
+  const query = createInfiniteQuery(
+    () => ["search", route.query.q, selectedFilter()],
+    fetchSearch,
+    {
+      get enabled() {
+        console.log("enabled", route.query.q);
+        return preferences.instance?.api_url &&
+          route.query.q &&
+          selectedFilter()
+          ? true
+          : false;
+      },
+      getNextPageParam: (lastPage) => {
+        return lastPage.nextpage;
+      },
+    }
+  );
 
   onMount(() => {
     document.title = route.query.q + " - Conduit";
     saveQueryToHistory();
   });
   createEffect(() => {
+    console.log(
+      "app state loading",
+      query.isLoading,
+      query.isFetching,
+      query.isInitialLoading
+    );
     setAppState({
       loading:
         query.isInitialLoading ||
@@ -138,12 +153,13 @@ export default function Search() {
       }
     }, 1000);
   });
+  const navigate = useNavigate();
   function updateFilter(value: string) {
     setSelectedFilter(value);
     console.log(location, route);
     const url = new URL(location.origin + route.pathname + route.search);
     url.searchParams.set("filter", value);
-    location.replace(url);
+    navigate(url.pathname + url.search);
     // fetchResults()
   }
 

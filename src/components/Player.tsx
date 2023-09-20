@@ -474,7 +474,7 @@ export default function Player() {
     if (!mediaPlayer) return;
     console.log(mediaPlayer.qualities);
     const q = mediaPlayer.qualities
-      .toArray()
+      ?.toArray()
       .find((q) => q.height >= preferredQuality);
     console.log(q);
     if (q) {

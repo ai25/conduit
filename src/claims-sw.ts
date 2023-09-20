@@ -17,52 +17,42 @@ cleanupOutdatedCaches();
 
 let allowlist: undefined | RegExp[];
 allowlist = [/.*/];
+import { NetworkFirst } from "workbox-strategies";
 
-// to allow work offline
-registerRoute(new NavigationRoute(createHandlerBoundToURL("/"), { allowlist }));
+// Precache assets
+precacheAndRoute([
+  ...self.__WB_MANIFEST,
+  { url: "/offline.html", revision: "your-revision-id" },
+]);
 
-// cache any cross-origin image
+// Custom handler to manage offline fallback
+const networkFirstHandlerWithFallback = new NetworkFirst({
+  cacheName: "dynamic-cache",
+  plugins: [
+    // Any other plugins you might want to use
+    {
+      async handlerDidError() {
+        const cache = await caches.open("offline-cache");
+        return await cache.match("/offline.html");
+      },
+    },
+  ],
+  // This is the important part:
+  fetchOptions: {
+    mode: "cors",
+  },
+});
+
 registerRoute(
-  /\.(?:png|jpg|jpeg|svg|gif)$/,
-  new StaleWhileRevalidate({
-    cacheName: "image-cache",
-  })
-);
-// cache any cross-origin font
-registerRoute(
-  /\.(?:woff|woff2|ttf|otf|eot)$/,
-  new StaleWhileRevalidate({
-    cacheName: "font-cache",
-  })
-);
-// cache any cross-origin css
-registerRoute(
-  /\.(?:css)$/,
-  new StaleWhileRevalidate({
-    cacheName: "css-cache",
-  })
-);
-// cache any cross-origin js
-registerRoute(
-  /\.(?:js)$/,
-  new StaleWhileRevalidate({
-    cacheName: "js-cache",
-  })
-);
-// cache any cross-origin tsx
-registerRoute(
-  /\.(?:tsx)$/,
-  new StaleWhileRevalidate({
-    cacheName: "tsx-cache",
-  })
-);
-// cache any cross-origin webmanifest
-registerRoute(
-  /\.(?:webmanifest)$/,
-  new StaleWhileRevalidate({
-    cacheName: "webmanifest-cache",
+  new NavigationRoute(networkFirstHandlerWithFallback, {
+    denylist: [/^\/_/, new RegExp("/[^/?]+\\.[^/]+$")],
   })
 );
 
+// Cache other assets like CSS, JS, and images using StaleWhileRevalidate
+registerRoute(
+  /\.(?:css|js|jpg|jpeg|png|svg)$/,
+  new StaleWhileRevalidate({ cacheName: "static-resources" })
+);
 self.skipWaiting();
 clientsClaim();

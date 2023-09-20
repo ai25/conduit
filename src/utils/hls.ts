@@ -220,7 +220,7 @@ export async function downloadVideo(
       uploaderSubscriberCount: videoData.uploaderSubscriberCount,
       chapters: videoData.chapters,
       subtitles: videoData.subtitles.map((sub) => sub.code),
-      prevewFrames: videoData.previewFrames,
+      previewFrames: videoData.previewFrames,
     };
     const videoInfoWritableStream = await videoInfo.createWritable();
     await videoInfoWritableStream.write(
@@ -507,7 +507,7 @@ export const getStreams = async (videoId: string) => {
   );
   const urls = [];
   let index = 0;
-  for (const frameUrl of streams.prevewFrames[1].urls) {
+  for (const frameUrl of streams.previewFrames[1].urls) {
     const frameFileHandle = await previewFramesDirectory.getFileHandle(
       `${index}`
     );
@@ -516,7 +516,7 @@ export const getStreams = async (videoId: string) => {
     urls.push(frameUrl);
     index++;
   }
-  streams.prevewFrames[1].urls = urls;
+  streams.previewFrames[1].urls = urls;
 
   return streams;
 };

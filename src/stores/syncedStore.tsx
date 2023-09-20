@@ -16,6 +16,7 @@ console.log("syncedStore.tsx");
 import * as Y from "yjs";
 import { createStore } from "solid-js/store";
 import createYjsStore from "~/lib/createYjsStore";
+import { useAppState } from "./appStateStore";
 
 export type HistoryItem = RelatedStream & {
   id: string;
@@ -102,12 +103,16 @@ export const SyncedStoreProvider = (props: { children: any }) => {
     await initWebrtc();
     webrtcProvider?.connect();
   });
+  const [, setAppState] = useAppState();
 
   createEffect(async () => {
-    console.time("webrtc");
     if (!room().id) return;
+    console.time("indexeddb");
     idbProvider = new IndexeddbPersistence(room().id!, doc);
-    console.timeEnd("webrtc");
+    idbProvider.whenSynced.then(() => {
+      console.timeEnd("indexeddb");
+      console.log("synced");
+    });
   });
   onCleanup(() => {
     webrtcProvider?.disconnect();

@@ -1,30 +1,20 @@
 import { createSignal } from "solid-js";
 import Button from "./Button";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
+import { useSyncedStore } from "~/stores/syncedStore";
 
 const SubscribeButton = (props: { id: string; class?: string }) => {
-  const [isSubscribed, setIsSubscribed] = createSignal(false);
+  const sync = useSyncedStore();
+  const isSubscribed = () => sync.store.subscriptions.includes(props.id);
   const toggleSubscribed = () => {
-    const channels = getStorageValue(
-      "localSubscriptions",
-      [],
-      "json",
-      "localStorage"
-    ) as string[];
+    const channels = sync.store.subscriptions;
     if (!isSubscribed()) {
-      setStorageValue(
-        "localSubscriptions",
-        JSON.stringify([...channels, props.id]),
-        "localStorage"
-      );
-      setIsSubscribed(true);
+      sync.setStore("subscriptions", [...channels, props.id].sort());
     } else {
-      setStorageValue(
-        "localSubscriptions",
-        JSON.stringify(channels.filter((c) => c !== props.id)),
-        "localStorage"
+      sync.setStore(
+        "subscriptions",
+        channels.filter((c) => c !== props.id)
       );
-      setIsSubscribed(false);
     }
   };
 
