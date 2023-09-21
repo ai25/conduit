@@ -130,11 +130,11 @@ export default function Root() {
                               </Show>
                               <Header />
                               <div aria-hidden="true" class="h-10" />
-                              <Portal>
-                                <Toast.Region>
-                                  <Toast.List class="toast__list" />
-                                </Toast.Region>
-                              </Portal>
+                              {/* <Portal> */}
+                              {/*   <Toast.Region> */}
+                              {/*     <Toast.List class="toast__list" /> */}
+                              {/*   </Toast.Region> */}
+                              {/* </Portal> */}
                               {/* <PlayerContainer /> */}
                               <main>
                                 <Routes>

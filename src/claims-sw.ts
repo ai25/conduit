@@ -22,7 +22,10 @@ import { NetworkFirst } from "workbox-strategies";
 // Precache assets
 precacheAndRoute([
   ...self.__WB_MANIFEST,
-  { url: "/offline.html", revision: "your-revision-id" },
+  {
+    url: "/",
+    revision: "1",
+  },
 ]);
 
 // Custom handler to manage offline fallback
@@ -51,7 +54,7 @@ registerRoute(
 
 // Cache other assets like CSS, JS, and images using StaleWhileRevalidate
 registerRoute(
-  /\.(?:css|js|jpg|jpeg|png|svg)$/,
+  /\.(?:css|js|jpg|jpeg|png|svg|gif|woff|woff2|ttf|eot|ico|webp|avif|json)$/,
   new StaleWhileRevalidate({ cacheName: "static-resources" })
 );
 self.skipWaiting();

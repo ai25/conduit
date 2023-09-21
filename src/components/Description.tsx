@@ -34,7 +34,11 @@ import {
   FaSolidTrashCan,
 } from "solid-icons/fa";
 import { Tooltip } from "@kobalte/core";
+import "solid-bottomsheet/styles.css";
+import { SolidBottomsheet } from "solid-bottomsheet";
 import Modal from "./Modal";
+import { createQuery } from "@tanstack/solid-query";
+import Comments from "./Comments";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -127,27 +131,6 @@ const Description = (props: {
     }
   };
 
-  async function loadComments() {
-    // const res = await fetch(`${instance().api_url}/comments/${videoId(props.video)}`);
-    // const data = await res.json();
-    // console.log(data, "comments");
-    // setComments(data);
-  }
-  async function loadMoreComments() {
-    // if (!comments()?.nextpage) return;
-    // const res = await fetch(
-    //   `${instance().api_url}/nextpage/comments/${videoId(props.video)}?nextpage=${
-    //     comments()!.nextpage
-    //   }`
-    // );
-    // const data = await res.json();
-    // console.log(data, "comments");
-    // setComments({
-    //   ...data,
-    //   comments: [...comments()!.comments, ...data.comments],
-    // });
-  }
-
   async function handleDownload() {
     if (!(await navigator.storage.persist())) return;
     downloadVideo(videoId(props.video), preferences.instance.api_url);
@@ -162,6 +145,7 @@ const Description = (props: {
     }
   }
   const [debugInfoOpen, setDebugInfoOpen] = createSignal(false);
+  const [commentsOpen, setCommentsOpen] = createSignal(false);
 
   const Placeholder = () => (
     <div class="mb-2 w-full grow min-w-0 max-w-5xl p-4 bg-bg1">
@@ -359,43 +343,23 @@ const Description = (props: {
             Show {expanded() ? "less" : "more"}
           </button>
         </div>
-        <Show
-          when={comments()}
-          fallback={
-            <button onClick={loadComments} class="btn">
-              Load Comments
-            </button>
-          }
-          keyed
-        >
-          {(c) => (
-            <Switch>
-              <Match when={c.comments.length === 0}>
-                <div class="text-center text-text2">No comments</div>
-              </Match>
-              <Match when={c.disabled}>
-                <div class="text-center text-text2">Comments disabled</div>
-              </Match>
-              <Match when={c.comments.length > 0}>
-                <For each={c.comments}>
-                  {(comment) => (
-                    <Comment
-                      comment={comment}
-                      nextpage={c.nextpage}
-                      uploader={props.video!.uploader}
-                      videoId={videoId(props.video)}
-                    />
-                  )}
-                </For>
-                <Show when={c.nextpage}>
-                  <button class="btn" onClick={loadMoreComments}>
-                    Load More
-                  </button>
-                </Show>
-              </Match>
-            </Switch>
-          )}
-        </Show>
+        <button onClick={() => setCommentsOpen(true)}>Click me!</button>
+        {commentsOpen() && (
+          <SolidBottomsheet
+            variant="snap"
+            defaultSnapPoint={({ maxHeight }) => maxHeight / 2}
+            snapPoints={({ maxHeight }) => [maxHeight, maxHeight / 4]}
+            onClose={() => setCommentsOpen(false)}
+          >
+            <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-h-full max-w-full overflow-auto">
+              <p>I'm inside the bottomsheet</p>
+              <Comments
+                videoId={videoId(props.video)}
+                uploader={props.video!.uploader}
+              />
+            </div>
+          </SolidBottomsheet>
+        )}
       </div>
     </Show>
   );

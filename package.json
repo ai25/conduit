@@ -42,6 +42,7 @@
     "long-press-event": "^2.4.6",
     "media-icons": "^0.10.0",
     "numeral": "^2.0.6",
+    "solid-bottomsheet": "^1.1.0",
     "solid-headless": "^0.13.1",
     "solid-icons": "^1.0.12",
     "solid-js": "^1.7.11",
