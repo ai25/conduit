@@ -80,14 +80,19 @@ export default function Feed() {
       </Tooltip.Root>
       <Title>Feed | Conduit</Title>
 
-      <Show when={!appState.synced}>
+      <Show when={appState.sync.providers.idb === "connecting"}>
         <div class="fixed inset-0 flex items-center justify-center">
           <div class="bg-bg2 rounded p-4">
             <p class="text-center">Syncing...</p>
           </div>
         </div>
       </Show>
-      <Show when={!sync.store.subscriptions?.length && appState.synced}>
+      <Show
+        when={
+          !sync.store.subscriptions?.length &&
+          !(appState.sync.providers.idb === "connecting")
+        }
+      >
         <div class="h-[80vh] w-full flex items-center justify-center">
           <EmptyState />
         </div>

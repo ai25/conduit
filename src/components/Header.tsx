@@ -199,7 +199,7 @@ const Header = () => {
                     ) === SyncState.ONLINE
                   }
                 >
-                  <BsCloudCheck class="w-8 h-8 text-green-500" />
+                  <BsCloudCheck class="w-7 h-7 text-green-500" />
                 </Match>
                 <Match
                   when={
@@ -209,7 +209,7 @@ const Header = () => {
                     ) === SyncState.DISCONNECTED
                   }
                 >
-                  <TiTimes class="w-8 h-8 text-red-500" />
+                  <TiTimes class="w-9 h-9 text-red-500" />
                 </Match>
                 <Match
                   when={
@@ -219,7 +219,7 @@ const Header = () => {
                     ) === SyncState.OFFLINE
                   }
                 >
-                  <BsCloudSlash class="w-8 h-8 text-text1" />
+                  <BsCloudSlash class="w-7 h-7 text-text1" />
                 </Match>
                 <Match
                   when={
@@ -229,7 +229,7 @@ const Header = () => {
                     ) === SyncState.VOLATILE
                   }
                 >
-                  <BsDatabaseX class="w-8 h-8 text-text1" />
+                  <BsDatabaseX class="w-6 h-6 text-text1" />
                 </Match>
               </Switch>
             </KobaltePopover.Trigger>
