@@ -119,6 +119,12 @@ export default function Root() {
                         <Body
                           class={`${theme()} bg-bg1 font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}
                         >
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <ErrorBoundary>
+                              <Header />
+                            </ErrorBoundary>
+                          </Suspense>
+
                           <Suspense>
                             <ErrorBoundary>
                               <Show when={appState.loading}>
@@ -128,13 +134,12 @@ export default function Root() {
                                   />
                                 </div>
                               </Show>
-                              <Header />
                               <div aria-hidden="true" class="h-10" />
-                              {/* <Portal> */}
-                              {/*   <Toast.Region> */}
-                              {/*     <Toast.List class="toast__list" /> */}
-                              {/*   </Toast.Region> */}
-                              {/* </Portal> */}
+                              <Portal>
+                                <Toast.Region>
+                                  <Toast.List class="toast__list" />
+                                </Toast.Region>
+                              </Portal>
                               {/* <PlayerContainer /> */}
                               <main>
                                 <Routes>
@@ -171,52 +176,52 @@ export default function Root() {
                                   <ReloadPrompt />
                                 </Show>
                               </main>
-                              <Transition
-                                show={true}
-                                enter="transition ease-in-out duration-300 transform"
-                                enterFrom="translate-y-full"
-                                enterTo="translate-y-0"
-                                leave="transition ease-in-out duration-300 transform"
-                                leaveFrom="translate-y-0"
-                                leaveTo="translate-y-full"
-                              >
-                                <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
-                                  <BottomNav
-                                    items={[
-                                      {
-                                        href: "/feed",
-                                        label: "Feed",
-                                        icon: (
-                                          <TiHome
-                                            fill="currentColor"
-                                            class="w-6 h-6 "
-                                          />
-                                        ),
-                                      },
-                                      {
-                                        href: "/trending",
-                                        label: "Trending",
-                                        icon: (
-                                          <AiOutlineFire
-                                            fill="currentColor"
-                                            class="w-6 h-6 "
-                                          />
-                                        ),
-                                      },
-                                      {
-                                        href: "/library",
-                                        label: "Library",
-                                        icon: (
-                                          <AiOutlineMenu
-                                            fill="currentColor"
-                                            class="w-6 h-6 "
-                                          />
-                                        ),
-                                      },
-                                    ]}
-                                  />
-                                </div>
-                              </Transition>
+                              {/* <Transition */}
+                              {/*   show={true} */}
+                              {/*   enter="transition ease-in-out duration-300 transform" */}
+                              {/*   enterFrom="translate-y-full" */}
+                              {/*   enterTo="translate-y-0" */}
+                              {/*   leave="transition ease-in-out duration-300 transform" */}
+                              {/*   leaveFrom="translate-y-0" */}
+                              {/*   leaveTo="translate-y-full" */}
+                              {/* > */}
+                              <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
+                                <BottomNav
+                                  items={[
+                                    {
+                                      href: "/feed",
+                                      label: "Feed",
+                                      icon: (
+                                        <TiHome
+                                          fill="currentColor"
+                                          class="w-6 h-6 "
+                                        />
+                                      ),
+                                    },
+                                    {
+                                      href: "/trending",
+                                      label: "Trending",
+                                      icon: (
+                                        <AiOutlineFire
+                                          fill="currentColor"
+                                          class="w-6 h-6 "
+                                        />
+                                      ),
+                                    },
+                                    {
+                                      href: "/library",
+                                      label: "Library",
+                                      icon: (
+                                        <AiOutlineMenu
+                                          fill="currentColor"
+                                          class="w-6 h-6 "
+                                        />
+                                      ),
+                                    },
+                                  ]}
+                                />
+                              </div>
+                              <div class="h-20 md:h-0" />
                             </ErrorBoundary>
                           </Suspense>
                           <Scripts />

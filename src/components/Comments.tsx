@@ -1,6 +1,7 @@
 import { createInfiniteQuery } from "@tanstack/solid-query";
-import { Show } from "solid-js";
+import { createEffect, createSignal, Show } from "solid-js";
 import { For } from "solid-js";
+import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import { usePreferences } from "~/stores/preferencesStore";
 import { fetchJson } from "~/utils/helpers";
 import Comment, { PipedCommentResponse } from "./Comment";
@@ -25,7 +26,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
   };
 
   const query = createInfiniteQuery(
-    () => ["comments", props.videoId],
+    () => ["comments", props.videoId, preferences.instance.api_url],
     fetchComments,
     {
       get enabled() {
@@ -56,9 +57,22 @@ export default function Comments(props: { videoId: string; uploader: string }) {
     //   comments: [...comments()!.comments, ...data.comments],
     // });
   }
+  const [intersectionRef, setIntersectionRef] = createSignal<
+    HTMLDivElement | undefined
+  >(undefined);
+  const isIntersecting = useIntersectionObserver({
+    setTarget: () => intersectionRef(),
+  });
+  createEffect(() => {
+    if (isIntersecting()) {
+      if (query.hasNextPage) {
+        query.fetchNextPage();
+      }
+    }
+  });
 
   return (
-    <div class="flex  flex-col ">
+    <div class="flex flex-col gap-1 ">
       <Show when={query.data}>
         <For each={query.data!.pages}>
           {(page) => (
@@ -74,6 +88,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
             </For>
           )}
         </For>
+        <div class="w-full h-40" ref={(ref) => setIntersectionRef(ref)} />
       </Show>
     </div>
   );

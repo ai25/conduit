@@ -27,7 +27,7 @@ export interface SnapVariantProps extends BaseSolidBottomsheetProps {
 
 export type SolidBottomsheetProps = DefaultVariantProps | SnapVariantProps;
 
-export const SolidBottomsheet: Component<SolidBottomsheetProps> = (props) => {
+export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
   const isSnapVariant = props.variant === "snap";
 
   const [maxHeight, setMaxHeight] = createSignal(window.visualViewport!.height);
@@ -188,12 +188,12 @@ export const SolidBottomsheet: Component<SolidBottomsheetProps> = (props) => {
           {...(isClosing() ? { onAnimationEnd: props.onClose } : {})}
         >
           <div
-            class="sb-handle-container"
+            class="py-2"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            <div class="sb-handle" />
+            <div class="w-10 h-1 m-auto" />
           </div>
           {props.children}
         </div>

@@ -11,7 +11,7 @@ import { extractVideoId } from "~/routes/watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
 import dayjs from "dayjs";
-import { HistoryItem, SyncedDB, useSyncedStore } from "~/stores/syncedStore";
+import { HistoryItem, useSyncedStore } from "~/stores/syncedStore";
 import { BsInfoCircleFill, BsXCircle } from "solid-icons/bs";
 import Button from "~/components/Button";
 import { toaster, Toast } from "@kobalte/core";

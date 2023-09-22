@@ -24,7 +24,7 @@ export const Dropdown = (props: DropdownProps) => {
         <DropdownMenu.Icon>{props.triggerIcon}</DropdownMenu.Icon>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
+        <DropdownMenu.Content class="bg-bg2 p-2 rounded-md z-50">
           <DropdownMenu.Arrow />
           <DropdownMenu.RadioGroup
             value={props.selectedValue?.()}

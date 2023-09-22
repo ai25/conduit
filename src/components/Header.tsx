@@ -19,11 +19,32 @@ import Modal from "./Modal";
 import Button from "./Button";
 import Field from "./Field";
 import { Popover as KobaltePopover, DropdownMenu } from "@kobalte/core";
-import { FaSolidBrush, FaSolidCheck, FaSolidGlobe } from "solid-icons/fa";
+import {
+  FaSolidArrowsRotate,
+  FaSolidBrush,
+  FaSolidCheck,
+  FaSolidGlobe,
+} from "solid-icons/fa";
 import { useSyncedStore } from "~/stores/syncedStore";
 import { createQuery } from "@tanstack/solid-query";
 import dayjs from "dayjs";
 import { usePreferences } from "~/stores/preferencesStore";
+import { useAppState } from "~/stores/appStateStore";
+import { Switch } from "solid-js";
+import { Match } from "solid-js";
+import { BsCloudCheck, BsCloudSlash, BsDatabaseX } from "solid-icons/bs";
+import { TiTimes } from "solid-icons/ti";
+enum SyncState {
+  DISCONNECTED = "disconnected",
+  OFFLINE = "offline",
+  ONLINE = "online",
+  VOLATILE = "volatile", // Data is flowing but not saved
+}
+export enum ProviderStatus {
+  DISCONNECTED = "disconnected",
+  CONNECTING = "connecting",
+  CONNECTED = "connected",
+}
 
 const Header = () => {
   const [theme, setTheme] = useContext(ThemeContext);
@@ -58,22 +79,80 @@ const Header = () => {
     }
   });
 
+  const randomNames = [
+    "Alice",
+    "Bob",
+    "Charlie",
+    "Dave",
+    "Eve",
+    "Frank",
+    "Grace",
+    "Heidi",
+    "Ivan",
+    "Judy",
+    "Kevin",
+    "Larry",
+    "Mallory",
+    "Nancy",
+    "Oscar",
+    "Peggy",
+    "Quentin",
+    "Rupert",
+    "Sybil",
+    "Trent",
+    "Ursula",
+    "Victor",
+    "Walter",
+    "Xavier",
+    "Yvonne",
+    "Zelda",
+  ];
+  const [appState] = useAppState();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = createSignal(false);
+  const [name, setName] = createSignal(
+    randomNames[Math.floor(Math.random() * randomNames.length)]
+  );
   const [roomId, setRoomId] = createSignal("");
   const [password, setPassword] = createSignal("");
 
   createEffect(() => {
     const room = JSON.parse(localStorage.getItem("room") || "{}");
+    if (room.name) {
+      setName(room.name);
+    }
     setRoomId(room.id || "");
     setPassword(room.password || "");
   });
 
   const [themeOpen, setThemeOpen] = createSignal(false);
   const [instanceOpen, setInstanceOpen] = createSignal(false);
+  function getSyncStatus(
+    idbStatus: "connected" | "connecting" | "disconnected",
+    webrtcStatus: "connected" | "connecting" | "disconnected"
+  ) {
+    if (
+      idbStatus === ProviderStatus.CONNECTED &&
+      webrtcStatus === ProviderStatus.CONNECTED
+    ) {
+      return SyncState.ONLINE;
+    } else if (
+      idbStatus === ProviderStatus.CONNECTED &&
+      webrtcStatus !== ProviderStatus.CONNECTED
+    ) {
+      return SyncState.OFFLINE;
+    } else if (
+      idbStatus !== ProviderStatus.CONNECTED &&
+      webrtcStatus === ProviderStatus.CONNECTED
+    ) {
+      return SyncState.VOLATILE;
+    } else {
+      return SyncState.DISCONNECTED;
+    }
+  }
 
   return (
-    <nav class="fixed bg-bg2 w-full z-[99999] -mx-2 h-10 flex items-center justify-between">
+    <nav class="fixed top-0 bg-bg2 w-full z-[99999] -mx-2 h-10 flex items-center justify-between">
       <button
         class="sr-only focus:not-sr-only absolute top-0 left-0"
         onClick={() => {
@@ -108,16 +187,51 @@ const Header = () => {
         <div class="flex items-center gap-2 ">
           <KobaltePopover.Root>
             <KobaltePopover.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class={`h-5 w-5 rounded-full ${
-                  roomId() ? "text-green-600" : "text-red-600"
-                }`}
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <circle cx="10" cy="10" r="10" />
-              </svg>
+              <Switch>
+                <Match when={appState.sync.syncing}>
+                  <FaSolidArrowsRotate class="w-6 h-6 text-yellow-500" />
+                </Match>
+                <Match
+                  when={
+                    getSyncStatus(
+                      appState.sync.providers.idb,
+                      appState.sync.providers.webrtc
+                    ) === SyncState.ONLINE
+                  }
+                >
+                  <BsCloudCheck class="w-8 h-8 text-green-500" />
+                </Match>
+                <Match
+                  when={
+                    getSyncStatus(
+                      appState.sync.providers.idb,
+                      appState.sync.providers.webrtc
+                    ) === SyncState.DISCONNECTED
+                  }
+                >
+                  <TiTimes class="w-8 h-8 text-red-500" />
+                </Match>
+                <Match
+                  when={
+                    getSyncStatus(
+                      appState.sync.providers.idb,
+                      appState.sync.providers.webrtc
+                    ) === SyncState.OFFLINE
+                  }
+                >
+                  <BsCloudSlash class="w-8 h-8 text-text1" />
+                </Match>
+                <Match
+                  when={
+                    getSyncStatus(
+                      appState.sync.providers.idb,
+                      appState.sync.providers.webrtc
+                    ) === SyncState.VOLATILE
+                  }
+                >
+                  <BsDatabaseX class="w-8 h-8 text-text1" />
+                </Match>
+              </Switch>
             </KobaltePopover.Trigger>
             <KobaltePopover.Portal>
               <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
@@ -129,6 +243,30 @@ const Header = () => {
                 >
                   <Show when={roomId()}>
                     Connected: {roomId()}
+                    <div class="flex items-start flex-col gap-2 text-text1">
+                      <details class="text-xs">
+                        <summary class="link">
+                          Users: {appState.sync.users.length}
+                        </summary>
+                        <For each={appState.sync.users}>
+                          {(user) => (
+                            <div class="flex items-center gap-2">
+                              ID: {user.id}
+                              Name: {user.name}
+                            </div>
+                          )}
+                        </For>
+                      </details>
+                      <div>
+                        Last Sync:{" "}
+                        {dayjs(appState.sync.lastSync).format("HH:mm:ss")}
+                      </div>
+                      <div>
+                        Syncing: {appState.sync.syncing ? "true" : "false"}
+                      </div>
+                      <div>IndexedDB: {appState.sync.providers.idb}</div>
+                      <div>WebRTC: {appState.sync.providers.webrtc}</div>
+                    </div>
                     <Button
                       label="Leave"
                       onClick={() => {
@@ -194,6 +332,14 @@ const Header = () => {
         <div class="w-full h-full bg-bg1">
           <div class="p-4 flex flex-col items-center justify-center gap-2">
             <Field
+              name="name"
+              value={name()}
+              onInput={(e) => setName(e)}
+              placeholder="Name"
+              type="text"
+              class="w-full"
+            />
+            <Field
               name="room"
               type="text"
               placeholder="Room ID"
@@ -211,7 +357,11 @@ const Header = () => {
               onClick={() => {
                 localStorage.setItem(
                   "room",
-                  JSON.stringify({ id: roomId(), password: password() })
+                  JSON.stringify({
+                    name: name(),
+                    id: roomId(),
+                    password: password(),
+                  })
                 );
                 location.reload();
               }}

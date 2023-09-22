@@ -31,8 +31,10 @@ export const PlayerStateProvider = (props: { children: any }) => {
     if (!player()) return;
     player()!.onAttach(() => {
       unsubscribe = player()!.subscribe(({ paused }) => {
+        console.log("playerStateStore.tsx:39", paused);
         setPlayerState({ paused });
       });
+      unsubscribe?.();
     });
   });
 

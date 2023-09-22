@@ -6,7 +6,7 @@ const preferences = createStore({
   autoplay: false,
   pip: false,
   muted: false,
-  volume: 1,
+  volume: 0.5,
   speed: 1,
   quality: "auto",
   theatreMode: false,

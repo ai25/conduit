@@ -216,10 +216,13 @@ export default (props: {
                         {([id, playlist]) => (
                           <DropdownMenu.Item
                             class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
                             onSelect={() => {
                               sync.setStore("playlists", id, "relatedStreams", [
-                                ...playlist.relatedStreams,
                                 props.v as RelatedStream,
+                                ...playlist.relatedStreams,
                               ]);
                             }}
                           >

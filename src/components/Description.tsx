@@ -39,6 +39,8 @@ import { SolidBottomsheet } from "solid-bottomsheet";
 import Modal from "./Modal";
 import { createQuery } from "@tanstack/solid-query";
 import Comments from "./Comments";
+import { Bottomsheet } from "./Bottomsheet";
+import { Suspense } from "solid-js";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -186,11 +188,11 @@ const Description = (props: {
         <div class="flex flex-col gap-2">
           <div class="flex flex-col gap-2 ">
             <div class="flex items-start justify-between">
-              <h1 class="text-lg font-bold sm:text-xl ">
+              <h1 class="text-lg leading-tight font-bold sm:text-xl ">
                 {props.video!.title}
               </h1>
             </div>
-            <div class="mb-1  flex justify-between gap-4 sm:justify-start ">
+            <div class="my-1 flex justify-between items-center gap-4 sm:justify-start ">
               <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
                 <A class="link" href={`${props.video!.uploaderUrl}`}>
                   <img
@@ -227,55 +229,8 @@ const Description = (props: {
                 onClick={toggleSubscribed}
                 activated={isSubscribed()}
                 label={`Subscribe${isSubscribed() ? "d" : ""}`}
+                class="h-10"
               />
-            </div>
-          </div>
-          <div
-            title={`Published ${(() => {
-              const substr = dayjs(props.video!.uploadDate)
-                .toString()
-                .split(":")[0];
-              return substr.slice(0, substr.length - 3);
-            })()} • ${numeral(props.video!.views).format("0,0")} views`}
-            class="flex items-center gap-2 text-sm"
-          >
-            <p class="">{dayjs(props.video?.uploadDate).fromNow()}</p>•
-            <p class="">
-              {numeral(props.video!.views).format("0a").toUpperCase()} views
-            </p>
-            <div class="flex flex-col w-36 ml-auto">
-              <div class="flex items-center justify-between ">
-                <span
-                  title={`${numeral(props.video!.likes).format("0,0")} likes`}
-                  class="flex items-center gap-2 "
-                >
-                  <FaSolidThumbsUp class="w-5 h-5" fill="currentColor" />
-                  {numeral(props.video!.likes).format("0a").toUpperCase()}{" "}
-                </span>
-                <span
-                  title={`${numeral(props.video!.dislikes).format(
-                    "0,0"
-                  )} likes`}
-                  class="flex items-center gap-2"
-                >
-                  <FaSolidThumbsDown class="h-5 w-5" fill="currentColor" />
-                  {numeral(props.video!.dislikes)
-                    .format("0a")
-                    .toUpperCase()}{" "}
-                </span>
-              </div>
-              <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
-                <div
-                  class="h-full bg-accent1 rounded-r"
-                  style={{
-                    width: `${
-                      (props.video!.dislikes /
-                        (props.video!.likes + props.video!.dislikes)) *
-                      100
-                    }%`,
-                  }}
-                ></div>
-              </div>
             </div>
           </div>
           <div class="flex items-center justify-evenly rounded p-2 bg-bg2">
@@ -318,7 +273,54 @@ const Description = (props: {
               onClick={props.onRefetch}
             />
           </div>
-          <div></div>
+          <div
+            title={`Published ${(() => {
+              const substr = dayjs(props.video!.uploadDate)
+                .toString()
+                .split(":")[0];
+              return substr.slice(0, substr.length - 3);
+            })()} • ${numeral(props.video!.views).format("0,0")} views`}
+            class="flex items-center gap-1 my-1 text-sm truncate max-w-full"
+          >
+            <p class="">{dayjs(props.video?.uploadDate).fromNow()}</p>•
+            <p class="">
+              {numeral(props.video!.views).format("0a").toUpperCase()} views
+            </p>
+            <div class="flex flex-col w-32 ml-auto ">
+              <div class="flex items-center justify-between ">
+                <span
+                  title={`${numeral(props.video!.likes).format("0,0")} likes`}
+                  class="flex items-center gap-2 "
+                >
+                  <FaSolidThumbsUp class="w-5 h-5" fill="currentColor" />
+                  {numeral(props.video!.likes).format("0a").toUpperCase()}{" "}
+                </span>
+                <span
+                  title={`${numeral(props.video!.dislikes).format(
+                    "0,0"
+                  )} likes`}
+                  class="flex items-center gap-2"
+                >
+                  <FaSolidThumbsDown class="h-5 w-5" fill="currentColor" />
+                  {numeral(props.video!.dislikes)
+                    .format("0a")
+                    .toUpperCase()}{" "}
+                </span>
+              </div>
+              <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
+                <div
+                  class="h-full bg-accent1 rounded-r"
+                  style={{
+                    width: `${
+                      (props.video!.dislikes /
+                        (props.video!.likes + props.video!.dislikes)) *
+                      100
+                    }%`,
+                  }}
+                ></div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
           <div
@@ -343,20 +345,26 @@ const Description = (props: {
             Show {expanded() ? "less" : "more"}
           </button>
         </div>
-        <button onClick={() => setCommentsOpen(true)}>Click me!</button>
+        <button
+          class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mt-2"
+          onClick={() => setCommentsOpen(true)}
+        >
+          Comments
+        </button>
         {commentsOpen() && (
           <SolidBottomsheet
             variant="snap"
             defaultSnapPoint={({ maxHeight }) => maxHeight / 2}
-            snapPoints={({ maxHeight }) => [maxHeight, maxHeight / 4]}
+            snapPoints={({ maxHeight }) => [maxHeight - 40, maxHeight / 2]}
             onClose={() => setCommentsOpen(false)}
           >
             <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-h-full max-w-full overflow-auto">
-              <p>I'm inside the bottomsheet</p>
-              <Comments
-                videoId={videoId(props.video)}
-                uploader={props.video!.uploader}
-              />
+              <Suspense fallback={<p>Loading...</p>}>
+                <Comments
+                  videoId={videoId(props.video)}
+                  uploader={props.video!.uploader}
+                />
+              </Suspense>
             </div>
           </SolidBottomsheet>
         )}
@@ -384,7 +392,7 @@ const IconButton = (props: {
   <Tooltip.Root>
     <Tooltip.Trigger
       onClick={props.onClick}
-      class="aspect-square w-12 h-12 transition duration-300 flex items-center justify-center rounded-full  hover:bg-bg1/80 outline-none active:scale-110 focus-visible:bg-bg2 focus-visible:ring-2 focus-visible:ring-primary"
+      class="aspect-square w-12 h-12 transition duration-300 flex items-center justify-center rounded-full  hover-fine:bg-bg1/80 outline-none active:scale-110 focus-visible:bg-bg2 focus-visible:ring-2 focus-visible:ring-primary"
     >
       {props.icon}
     </Tooltip.Trigger>

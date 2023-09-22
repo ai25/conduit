@@ -44,6 +44,7 @@ import { useSyncedStore } from "~/stores/syncedStore";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import EmptyState from "~/components/EmptyState";
 import { usePreferences } from "~/stores/preferencesStore";
+import { Suspense } from "solid-js";
 export interface SearchQuery {
   items: ContentItem[];
   nextpage: string;
@@ -197,164 +198,184 @@ export default function Search() {
 
   return (
     <>
-      <div class="flex items-center justify-between my-2">
-        <Select
-          options={availableFilters}
-          defaultValue="all"
-          value={selectedFilter()}
-          onChange={(value) => updateFilter(value)}
-        />
-        <button onClick={() => setFiltersModalOpen(true)}>
-          Advanced Filters
-        </button>
-      </div>
-
-      <Show when={filterErrors().length > 0}>
-        <div class="bg-red-300 p-2 rounded-md text-red-900 flex justify-between items-center">
-          <span>{filterErrors()[filterErrors().length - 1]}</span>
-          <span>x{filterErrors().length}</span>{" "}
-        </div>
-      </Show>
-      <Modal
-        isOpen={filtersModalOpen()}
-        setIsOpen={setFiltersModalOpen}
-        title="Advanced Filters"
-      >
-        <div class="flex justify-center items-start h-full min-w-[20rem] min-h-[10rem]">
-          <FilterEditor filter={filter()} setFilter={setFilter} />
-        </div>
-      </Modal>
-      <Show when={query.data?.pages?.[0].corrected}>
-        <div class="mt-2">
-          <p class="">
-            Did you mean{" "}
-            <A
-              href={`/search?q=${
-                query.data?.pages[0].suggestion
-              }&filter=${selectedFilter()}`}
-              class="link !text-accent1"
-            >
-              {query.data?.pages[0].suggestion}
-            </A>
-            ?
-          </p>
-        </div>
-      </Show>
-
-      <div
-        ref={(ref) => setParentRef(ref)}
-        class="flex flex-wrap justify-evenly min-h-screen h-full items-start"
-      >
-        <Show when={query.data?.pages?.[0]?.items.length === 0}>
-          <div class="flex flex-col items-center justify-center w-full h-full">
-            <EmptyState />
-          </div>
-        </Show>
-        <Show
-          when={
-            query.data?.pages?.[0]?.items &&
-            query.data.pages[0].items.length > 0
-          }
-          fallback={
+      <Suspense
+        fallback={
+          <div class="flex flex-wrap py-12 items-center justify-center w-full h-full">
             <For each={Array(40).fill(0)}>
               {() => <VideoCard v={undefined} />}
             </For>
-          }
-        >
-          <For
-            // remove duplicates
-            each={query
-              .data!.pages?.map((page) => page.items)
-              .flat()
-              .filter(
-                (item, index, self) =>
-                  self.findIndex((t) => t.url === item.url) === index
-              )}
-          >
-            {(item) => (
-              <Show
-                when={evaluateFilter(filter(), item as any, (e) =>
-                  setFilterErrors((errors) => [...errors, (e as Error).message])
-                )}
-              >
-                <Switch>
-                  <Match
-                    when={assertType<RelatedStream>(item, "type", "stream")}
-                    keyed
-                  >
-                    {(item) => <VideoCard v={item} />}
-                  </Match>
-                  <Match
-                    when={assertType<RelatedChannel>(item, "type", "channel")}
-                    keyed
-                  >
-                    {(item) => (
-                      <div class="mx-4 my-2 flex flex-col gap-2 items-start w-full lg:w-72 max-h-20 lg:max-h-full max-w-md">
-                        <div class="flex items-center gap-2 w-full lg:flex-col lg:items-start">
-                          <A href={item.url} class="group outline-none">
-                            <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
-                              <img
-                                class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
-                                src={item.thumbnail}
-                                loading="lazy"
-                              />
-                            </div>
-                          </A>
-                          <div class="flex flex-col justify-center gap-1 min-w-0 w-full h-20 max-h-20 text-text2 text-xs self-end">
-                            <div class="flex items-center gap-1">
-                              <A class="link text-sm" href={item.url}>
-                                <div class="flex gap-1">
-                                  <span>{item.name}</span>
-                                  <Show when={item.verified}>
-                                    <Checkmark />
-                                  </Show>
-                                </div>
-                              </A>
-                              <Show when={item.videos >= 0}>
-                                <p>&#183; {item.videos} videos</p>
-                              </Show>
-                            </div>
-                            <Show when={item.description}>
-                              <p class="two-line-ellipsis ">
-                                {item.description}
-                              </p>
-                            </Show>
-                            <Show
-                              when={item.subscribers >= 0}
-                              fallback={<p></p>}
-                            >
-                              <p>
-                                {numeral(item.subscribers)
-                                  .format("0a")
-                                  .toUpperCase()}{" "}
-                                subscribers
-                              </p>
-                            </Show>
-                          </div>
-                          <SubscribeButton id={item.url.split("/").pop()!} />
-                        </div>
-                      </div>
-                    )}
-                  </Match>
-                  <Match
-                    when={assertType<RelatedPlaylist>(item, "type", "playlist")}
-                    keyed
-                  >
-                    {(item) => <PlaylistCard item={item} />}
-                  </Match>
-                </Switch>
-              </Show>
-            )}
-          </For>
-        </Show>
+          </div>
+        }
+      >
+        <div class="flex items-center justify-between my-2">
+          <Select
+            options={availableFilters}
+            defaultValue="all"
+            value={selectedFilter()}
+            onChange={(value) => updateFilter(value)}
+          />
+          <button onClick={() => setFiltersModalOpen(true)}>
+            Advanced Filters
+          </button>
+        </div>
 
-        <Show when={appState.loading}>
-          <div class="w-full flex justify-center">
-            <Spinner />
+        <Show when={filterErrors().length > 0}>
+          <div class="bg-red-300 p-2 rounded-md text-red-900 flex justify-between items-center">
+            <span>{filterErrors()[filterErrors().length - 1]}</span>
+            <span>x{filterErrors().length}</span>{" "}
           </div>
         </Show>
-        <div ref={(ref) => setIntersectionRef(ref)} class="w-full h-20 mt-2" />
-      </div>
+        <Modal
+          isOpen={filtersModalOpen()}
+          setIsOpen={setFiltersModalOpen}
+          title="Advanced Filters"
+        >
+          <div class="flex justify-center items-start h-full min-w-[20rem] min-h-[10rem]">
+            <FilterEditor filter={filter()} setFilter={setFilter} />
+          </div>
+        </Modal>
+        <Show when={query.data?.pages?.[0].corrected}>
+          <div class="mt-2">
+            <p class="">
+              Did you mean{" "}
+              <A
+                href={`/search?q=${
+                  query.data?.pages[0].suggestion
+                }&filter=${selectedFilter()}`}
+                class="link !text-accent1"
+              >
+                {query.data?.pages[0].suggestion}
+              </A>
+              ?
+            </p>
+          </div>
+        </Show>
+
+        <div
+          ref={(ref) => setParentRef(ref)}
+          class="flex flex-wrap justify-evenly min-h-screen h-full items-start"
+        >
+          <Show when={query.data?.pages?.[0]?.items.length === 0}>
+            <div class="flex flex-col items-center justify-center w-full h-full">
+              <EmptyState />
+            </div>
+          </Show>
+          <Show
+            when={
+              query.data?.pages?.[0]?.items &&
+              query.data.pages[0].items.length > 0
+            }
+            fallback={
+              <For each={Array(40).fill(0)}>
+                {() => <VideoCard v={undefined} />}
+              </For>
+            }
+          >
+            <For
+              // remove duplicates
+              each={query
+                .data!.pages?.map((page) => page.items)
+                .flat()
+                .filter(
+                  (item, index, self) =>
+                    self.findIndex((t) => t.url === item.url) === index
+                )}
+            >
+              {(item) => (
+                <Show
+                  when={evaluateFilter(filter(), item as any, (e) =>
+                    setFilterErrors((errors) => [
+                      ...errors,
+                      (e as Error).message,
+                    ])
+                  )}
+                >
+                  <Switch>
+                    <Match
+                      when={assertType<RelatedStream>(item, "type", "stream")}
+                      keyed
+                    >
+                      {(item) => <VideoCard v={item} />}
+                    </Match>
+                    <Match
+                      when={assertType<RelatedChannel>(item, "type", "channel")}
+                      keyed
+                    >
+                      {(item) => (
+                        <div class="mx-4 my-2 flex flex-col gap-2 items-start w-full lg:w-72 max-h-20 lg:max-h-full max-w-md">
+                          <div class="flex items-center gap-2 w-full lg:flex-col lg:items-start">
+                            <A href={item.url} class="group outline-none">
+                              <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
+                                <img
+                                  class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
+                                  src={item.thumbnail}
+                                  loading="lazy"
+                                />
+                              </div>
+                            </A>
+                            <div class="flex flex-col justify-center gap-1 min-w-0 w-full h-20 max-h-20 text-text2 text-xs self-end">
+                              <div class="flex items-center gap-1">
+                                <A class="link text-sm" href={item.url}>
+                                  <div class="flex gap-1">
+                                    <span>{item.name}</span>
+                                    <Show when={item.verified}>
+                                      <Checkmark />
+                                    </Show>
+                                  </div>
+                                </A>
+                                <Show when={item.videos >= 0}>
+                                  <p>&#183; {item.videos} videos</p>
+                                </Show>
+                              </div>
+                              <Show when={item.description}>
+                                <p class="two-line-ellipsis ">
+                                  {item.description}
+                                </p>
+                              </Show>
+                              <Show
+                                when={item.subscribers >= 0}
+                                fallback={<p></p>}
+                              >
+                                <p>
+                                  {numeral(item.subscribers)
+                                    .format("0a")
+                                    .toUpperCase()}{" "}
+                                  subscribers
+                                </p>
+                              </Show>
+                            </div>
+                            <SubscribeButton id={item.url.split("/").pop()!} />
+                          </div>
+                        </div>
+                      )}
+                    </Match>
+                    <Match
+                      when={assertType<RelatedPlaylist>(
+                        item,
+                        "type",
+                        "playlist"
+                      )}
+                      keyed
+                    >
+                      {(item) => <PlaylistCard item={item} />}
+                    </Match>
+                  </Switch>
+                </Show>
+              )}
+            </For>
+          </Show>
+
+          <Show when={appState.loading}>
+            <div class="w-full flex justify-center">
+              <Spinner />
+            </div>
+          </Show>
+          <div
+            ref={(ref) => setIntersectionRef(ref)}
+            class="w-full h-20 mt-2"
+          />
+        </div>
+      </Suspense>
     </>
   );
 }

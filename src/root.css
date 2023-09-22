@@ -7,24 +7,30 @@
   src: url("/fonts/poppins-500.woff2") format("woff2");
 }
 @font-face {
-  font-family: 'Lato';
-  src: url('/fonts/Lato.ttf') format('truetype');
+  font-family: "Lato";
+  src: url("/fonts/Lato.ttf") format("truetype");
 }
 @font-face {
-  font-family: 'Karla';
-  src: url('/fonts/karla.woff2') format('woff2');
+  font-family: "Karla";
+  src: url("/fonts/karla.woff2") format("woff2");
 }
 @font-face {
-  font-family: 'Manrope';
-  src: url('/fonts/Manrope.woff2') format('woff2');
-}
-
-body {
-  @apply overscroll-y-contain;
+  font-family: "Manrope";
+  src: url("/fonts/Manrope.woff2") format("woff2");
 }
 
 svg {
   @apply ring-0;
+}
+body {
+  @apply overscroll-y-contain;
+  min-height: 100vh;
+  /* mobile viewport bug fix */
+  min-height: -webkit-fill-available;
+}
+
+html {
+  height: -webkit-fill-available;
 }
 
 .btn {
@@ -220,3 +226,4 @@ a {
     transform: scale(0.96);
   }
 }
+
