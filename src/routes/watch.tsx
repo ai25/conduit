@@ -17,7 +17,7 @@ import PlaylistItem from "~/components/PlaylistItem";
 import { createVirtualizer, elementScroll } from "@tanstack/solid-virtual";
 import { classNames, fetchJson } from "~/utils/helpers";
 import { usePlaylist } from "~/stores/playlistStore";
-import { SyncedDB, useSyncedStore } from "~/stores/syncedStore";
+import {  useSyncStore } from "~/stores/syncStore";
 import type { Virtualizer, VirtualizerOptions } from "@tanstack/virtual-core";
 import Button from "~/components/Button";
 import { useAppState } from "~/stores/appStateStore";
@@ -102,7 +102,7 @@ export default function Watch() {
   });
 
   const [appState, setAppState] = useAppState();
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   const [preferences] = usePreferences();
 
   const videoQuery = createQuery(

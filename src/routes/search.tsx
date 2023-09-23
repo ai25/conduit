@@ -40,7 +40,7 @@ import FilterEditor, {
   evaluateFilter,
 } from "~/components/FilterEditor";
 import { createInfiniteQuery } from "@tanstack/solid-query";
-import { useSyncedStore } from "~/stores/syncedStore";
+import { useSyncStore } from "~/stores/syncStore";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import EmptyState from "~/components/EmptyState";
 import { usePreferences } from "~/stores/preferencesStore";
@@ -68,7 +68,7 @@ export default function Search() {
   const [selectedFilter, setSelectedFilter] = createSignal(
     route.query.filter ?? "all"
   );
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   const [appState, setAppState] = useAppState();
   const [preferences] = usePreferences();
   const fetchSearch = async ({

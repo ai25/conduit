@@ -11,14 +11,13 @@ import { extractVideoId } from "~/routes/watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
 import dayjs from "dayjs";
-import { HistoryItem, useSyncedStore } from "~/stores/syncedStore";
+import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { BsInfoCircleFill, BsXCircle } from "solid-icons/bs";
 import Button from "~/components/Button";
 import { toaster, Toast } from "@kobalte/core";
 import { Portal } from "solid-js/web";
 import { Title } from "solid-start";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
-import { clone } from "~/stores/syncedStore";
 
 export const videoId = (item: any) => {
   if (!item) return undefined;
@@ -161,7 +160,7 @@ export default function History() {
       console.log(items());
     });
   }
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   async function handleImport(e: any) {
     e.preventDefault();
     // if (db()) {

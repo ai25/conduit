@@ -48,6 +48,7 @@
     "solid-js": "^1.7.11",
     "solid-start": "^0.2.32",
     "solid-start-vercel": "^0.2.32",
+    "solid-transition-group": "^0.2.3",
     "undici": "^5.24.0",
     "vidstack": "^0.6.13",
     "vite-plugin-pwa": "^0.16.5",

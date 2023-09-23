@@ -25,7 +25,7 @@ import {
   FaSolidCheck,
   FaSolidGlobe,
 } from "solid-icons/fa";
-import { useSyncedStore } from "~/stores/syncedStore";
+import { useSyncStore } from "~/stores/syncStore";
 import { createQuery } from "@tanstack/solid-query";
 import dayjs from "dayjs";
 import { usePreferences } from "~/stores/preferencesStore";
@@ -49,7 +49,7 @@ export enum ProviderStatus {
 const Header = () => {
   const [theme, setTheme] = useContext(ThemeContext);
   const [, setThemeCookie] = useCookie("theme", "monokai");
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
 
   const links = [
     { href: "/feed", label: "Feed" },

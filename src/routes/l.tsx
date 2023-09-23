@@ -3,12 +3,12 @@ import { RelatedStream } from "../types";
 import Description from "~/components/Description";
 import { createEffect, useContext } from "solid-js";
 import { PlayerContext } from "~/root";
-import { clone, useSyncedStore } from "~/stores/syncedStore";
+import { clone, useSyncStore } from "~/stores/syncStore";
 import Button from "~/components/Button";
 
 export default () => {
   const [video] = useContext(PlayerContext);
-  const { store, setStore } = useSyncedStore();
+  const { store, setStore } = useSyncStore();
   const DELIMITER = new Uint8Array([0xff, 0xff, 0xff, 0xff]);
   const UPDATE = "test";
   const UINT8UPDATE = new TextEncoder().encode(UPDATE);

@@ -17,7 +17,7 @@ import {
 import { videoId } from "~/routes/library/history";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { useSyncedStore, HistoryItem } from "~/stores/syncedStore";
+import { useSyncStore, HistoryItem } from "~/stores/syncStore";
 import {
   BsChevronRight,
   BsInfoCircleFill,
@@ -43,7 +43,7 @@ export default (props: {
 }) => {
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
   const [imgError, setImgError] = createSignal(false);
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
 
   createEffect(() => {
     const id = videoId(props.v);

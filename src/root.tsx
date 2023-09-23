@@ -33,7 +33,7 @@ import { Transition } from "solid-headless";
 import { PlaylistProvider } from "./stores/playlistStore";
 import { QueueProvider } from "./stores/queueStore";
 import { PlayerStateProvider } from "./stores/playerStateStore";
-import { SyncedStoreProvider, useSyncedStore } from "./stores/syncedStore";
+import { SyncedStoreProvider, useSyncStore } from "./stores/syncStore";
 import { AppStateProvider, useAppState } from "./stores/appStateStore";
 import BottomNav from "./components/BottomNav";
 import { TiHome } from "solid-icons/ti";

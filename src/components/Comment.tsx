@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import { FaSolidThumbsUp } from "solid-icons/fa";
 import { Show, createSignal, useContext, Suspense, For } from "solid-js";
 import { usePreferences } from "~/stores/preferencesStore";
-import { useSyncedStore } from "~/stores/syncedStore";
+import { useSyncStore } from "~/stores/syncStore";
 import { fetchJson } from "~/utils/helpers";
 export interface PipedCommentResponse {
   comments: PipedComment[];
@@ -38,7 +38,7 @@ export default function Comment(props: Props) {
   const [showingReplies, setShowingReplies] = createSignal(false);
   const [replies, setReplies] = createSignal([]);
   const [nextpage, setNextpage] = createSignal(null);
-  const store = useSyncedStore();
+  const store = useSyncStore();
   const [preferences] = usePreferences();
   const fetchComments = async ({
     pageParam = "initial",

@@ -1,12 +1,12 @@
 import { createSignal } from "solid-js";
 import Toggle from "~/components/Toggle";
-import { useSyncedStore } from "~/stores/syncedStore";
+import { useSyncStore } from "~/stores/syncStore";
 
 export default function Import() {
   const [subscriptions, setSubscriptions] = createSignal<string[]>([]);
   const [override, setOverride] = createSignal(false);
   const selectedSubscriptions = () => subscriptions().length;
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   let fileSelector: HTMLInputElement | undefined = undefined;
   function fileChange() {
     console.log("fileChange", fileSelector?.files?.[0]?.name);

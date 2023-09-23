@@ -1,10 +1,10 @@
 import { createSignal } from "solid-js";
 import Button from "./Button";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
-import { useSyncedStore } from "~/stores/syncedStore";
+import { useSyncStore } from "~/stores/syncStore";
 
 const SubscribeButton = (props: { id: string; class?: string }) => {
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   const isSubscribed = () => sync.store.subscriptions.includes(props.id);
   const toggleSubscribed = () => {
     const channels = sync.store.subscriptions;

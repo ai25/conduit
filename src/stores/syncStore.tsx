@@ -34,35 +34,6 @@ export interface Store extends DocTypeDescription {
   subscriptions: string[];
   preferences: Preferences;
 }
-const storeShape: Store = {
-  playlists: {},
-  history: {},
-  subscriptions: [],
-  preferences: {} as Preferences,
-};
-const defaultPreferences = {
-  autoplay: false,
-  pip: false,
-  muted: false,
-  volume: 1,
-  speed: 1,
-  quality: "auto",
-  theatreMode: false,
-  instance: {
-    name: "Piped",
-    api_url: "https://pipedapi.kavin.rocks",
-    cache: true,
-    cdn: true,
-    last_checked: new Date().getTime(),
-    locations: "",
-    version: "0.0.0",
-    registered: 0,
-    s3_enabled: false,
-    up_to_date: false,
-    image_proxy_url: "https://pipedproxy.kavin.rocks",
-  },
-};
-
 const [initialStore] = createStore<Store>({
   playlists: {},
   history: {},
@@ -113,8 +84,7 @@ export const SyncedStoreProvider = (props: { children: any }) => {
 
     if (!webrtcProvider) return;
     // setAppState("sync", "providers", "webrtc", ProviderStatus.CONNECTED);
-    webrtcProvider?.connect();
-    webrtcProvider?.awareness.setLocalStateField("user", {
+    webrtcProvider.awareness.setLocalStateField("user", {
       name: room().name,
     });
     // setAppState("sync", "lastSync", webrtcProvider?.awareness.states.
@@ -189,12 +159,8 @@ export const SyncedStoreProvider = (props: { children: any }) => {
   );
 };
 
-export const useSyncedStore = () => useContext(SyncContext);
-
-export function clone<T>(obj: T): T {
-  return JSON.parse(JSON.stringify(obj));
-}
-
-export function jsonClone<T>(obj: T): T {
-  return JSON.parse(JSON.stringify(obj));
-}
+export const useSyncStore = () => {
+  const context = useContext(SyncContext);
+  if (!context) throw new Error("No SyncedStoreProvider!");
+  return context;
+};

@@ -12,7 +12,7 @@ import {
 import { videoId } from "~/routes/library/history";
 import { RelatedStream } from "~/types";
 import Modal from "./Modal";
-import { SyncedDB, useSyncedStore } from "~/stores/syncedStore";
+import {  useSyncStore } from "~/stores/syncStore";
 import { generateThumbnailUrl } from "~/utils/helpers";
 import { usePreferences } from "~/stores/preferencesStore";
 
@@ -23,7 +23,7 @@ const PlaylistItem = (props: {
   active: string;
 }) => {
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   const [preferences] = usePreferences();
 
   createRenderEffect(async () => {

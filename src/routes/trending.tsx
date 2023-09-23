@@ -7,11 +7,11 @@ import { ErrorComponent } from "~/components/Error";
 import VideoCard from "~/components/VideoCard";
 import { useAppState } from "~/stores/appStateStore";
 import { usePreferences } from "~/stores/preferencesStore";
-import { useSyncedStore } from "~/stores/syncedStore";
+import { useSyncStore } from "~/stores/syncStore";
 import type { TrendingStream } from "~/types";
 
 export default function Trending() {
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   const [preferences] = usePreferences();
   const query = createQuery(
     () => ["trending"],

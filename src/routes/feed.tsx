@@ -5,7 +5,7 @@ import { RelatedStream } from "~/types";
 import { getStorageValue } from "~/utils/storage";
 import { Title } from "solid-start";
 import { createQuery } from "@tanstack/solid-query";
-import { useSyncedStore } from "~/stores/syncedStore";
+import { useSyncStore } from "~/stores/syncStore";
 import { ErrorComponent } from "~/components/Error";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import EmptyState from "~/components/EmptyState";
@@ -19,7 +19,7 @@ export default function Feed() {
   const [limit, setLimit] = createSignal(100);
   const [preferences] = usePreferences();
 
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   const query = createQuery(
     () => ["feed"],
     async (): Promise<RelatedStream[]> =>

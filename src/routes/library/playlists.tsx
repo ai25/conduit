@@ -1,13 +1,13 @@
 import { createEffect, createSignal, useContext } from "solid-js";
 import { A } from "solid-start";
 import { Playlist } from "~/types";
-import { useSyncedStore } from "~/stores/syncedStore";
+import { useSyncStore } from "~/stores/syncStore";
 import { generateThumbnailUrl } from "~/utils/helpers";
 import { videoId } from "./history";
 import { usePreferences } from "~/stores/preferencesStore";
 
 export default function Playlists() {
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   const [preferences] = usePreferences();
   createEffect(() => {
     let playlist = list;

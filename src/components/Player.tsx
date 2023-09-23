@@ -40,7 +40,7 @@ import { videoId } from "~/routes/library/history";
 import { useQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
 import dayjs from "dayjs";
-import { HistoryItem, SyncedDB, useSyncedStore } from "~/stores/syncedStore";
+import { HistoryItem,  useSyncStore } from "~/stores/syncStore";
 import { usePlayerState } from "../stores/playerStateStore";
 import { MediaRemoteControl } from "vidstack";
 
@@ -48,7 +48,7 @@ export default function Player() {
   const [video] = useContext(PlayerContext);
   const route = useLocation();
   let mediaPlayer: MediaPlayerElement | undefined = undefined;
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   const updateProgress = async () => {
     if (!video.value) return;
     if (!started()) {

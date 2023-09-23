@@ -12,7 +12,7 @@ import VideoCard from "~/components/VideoCard";
 import { Playlist as PlaylistType, RelatedStream } from "~/types";
 import PlaylistItem from "~/components/PlaylistItem";
 import { fetchJson } from "~/utils/helpers";
-import { SyncedDB, useSyncedStore } from "~/stores/syncedStore";
+import {  useSyncStore } from "~/stores/syncStore";
 import { createQuery } from "@tanstack/solid-query";
 import { usePreferences } from "~/stores/preferencesStore";
 
@@ -21,7 +21,7 @@ export default function Playlist() {
   const route = useLocation();
   const isLocal = () => route.query.list?.startsWith("conduit-");
   const id = route.query.list;
-  const sync = useSyncedStore();
+  const sync = useSyncStore();
   const [preferences] = usePreferences();
 
   createEffect(async () => {

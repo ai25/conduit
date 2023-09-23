@@ -10,7 +10,7 @@ import {
 import { A, Navigate } from "solid-start";
 import {} from "~/types";
 import { Playlist, RelatedStream } from "~/types";
-import { Store, SyncedDB, clone } from "~/stores/syncedStore";
+import { Store,  clone } from "~/stores/syncStore";
 
 const [error, setError] = createSignal();
 
