@@ -14,6 +14,7 @@ import {
   MediaGestureElement,
   MediaPlayerElement,
   MediaRemoteControl,
+  MediaTimeSliderElement,
 } from "vidstack";
 import { MediaIconElement } from "vidstack/icons";
 import { usePlaylist } from "~/stores/playlistStore";
@@ -21,6 +22,8 @@ import { useQueue } from "~/stores/queueStore";
 import PlaylistItem from "./PlaylistItem";
 import { usePlayerState } from "~/stores/playerStateStore";
 import { usePreferences } from "~/stores/preferencesStore";
+import { useTheater } from "~/root";
+import { useCookie } from "~/utils/hooks";
 
 declare module "solid-js" {
   namespace JSX {
@@ -35,7 +38,7 @@ declare module "solid-js" {
       "media-slider-thumb": any;
       "media-slider-track": any;
       "media-slider-fill": any;
-      "media-time-slider": any;
+      "media-time-slider": MediaTimeSliderElement;
       "media-slider-value": any;
       "media-slider-video": any;
       "media-live-indicator": any;
@@ -69,6 +72,8 @@ export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
   const [currentChapter, setCurrentChapter] = createSignal("");
   const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
   const [preferences, setPreferences] = usePreferences();
+  const [theater, setTheater] = useTheater();
+  const [, setTheaterCookie] = useCookie("theater", "false");
 
   let interval: any;
   createEffect(() => {
@@ -424,26 +429,25 @@ export default function PlayerSkin({ video, nextVideo }: PlayerSkinProps) {
             </media-caption-button>
             <media-toggle-button
               onClick={() => {
-                console.log("toggle", preferences.theatreMode);
-                setPreferences((state) => ({
-                  theatreMode: !state.theatreMode,
-                }));
+                const t = theater();
+                setTheater(!t);
+                setTheaterCookie(!t);
               }}
               aria-label="Theatre Mode"
               class="group z-10 hidden lg:inline-flex fullscreen:hidden h-10 w-10 items-center justify-center rounded-sm text-white outline-none "
             >
               <media-icon
                 classList={{
-                  hidden: preferences.theatreMode,
-                  block: !preferences.theatreMode,
+                  hidden: theater(),
+                  block: !theater(),
                 }}
                 class="group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
                 type="theatre-mode"
               ></media-icon>
               <media-icon
                 classList={{
-                  hidden: !preferences.theatreMode,
-                  block: preferences.theatreMode,
+                  hidden: !theater(),
+                  block: theater(),
                 }}
                 class="group-data-[focus]:ring-4 group-data-[focus]:ring-primary"
                 type="theatre-mode-exit"

@@ -9,7 +9,7 @@ import {
 } from "solid-js";
 import { useLocation } from "solid-start";
 import { For } from "solid-js";
-import { PlayerContext } from "~/root";
+import { PlayerContext, useTheater } from "~/root";
 import VideoCard from "~/components/VideoCard";
 import { videoId } from "~/routes/library/history";
 import { getHlsManifest, getStreams } from "~/utils/hls";
@@ -17,14 +17,28 @@ import PlaylistItem from "~/components/PlaylistItem";
 import { createVirtualizer, elementScroll } from "@tanstack/solid-virtual";
 import { classNames, fetchJson } from "~/utils/helpers";
 import { usePlaylist } from "~/stores/playlistStore";
-import {  useSyncStore } from "~/stores/syncStore";
+import { useSyncStore } from "~/stores/syncStore";
 import type { Virtualizer, VirtualizerOptions } from "@tanstack/virtual-core";
 import Button from "~/components/Button";
 import { useAppState } from "~/stores/appStateStore";
 import PlayerContainer from "~/components/PlayerContainer";
 import { createQuery } from "@tanstack/solid-query";
-import { PipedVideo } from "~/types";
+import { Chapter, PipedVideo } from "~/types";
 import { usePreferences } from "~/stores/preferencesStore";
+import { Suspense } from "solid-js";
+import numeral from "numeral";
+import { isServer } from "solid-js/web";
+
+export interface SponsorSegment {
+  category: string;
+  actionType: string;
+  segment: number[];
+  UUID: string;
+  videoDuration: number;
+  locked: number;
+  votes: number;
+  description: string;
+}
 
 export function extractVideoId(url: string | undefined): string | undefined {
   let id;
@@ -64,6 +78,7 @@ export default function Watch() {
 
   const [video, setVideo] = useContext(PlayerContext);
   const route = useLocation();
+  const [theater] = useTheater();
 
   const [playlist, setPlaylist] = usePlaylist();
 
@@ -107,13 +122,17 @@ export default function Watch() {
 
   const videoQuery = createQuery(
     () => ["streams", route.query.v, preferences.instance.api_url],
-    async (): Promise<PipedVideo & { error: Error }> =>
+    async (): Promise<PipedVideo> =>
       await fetch(
         preferences.instance.api_url + "/streams/" + route.query.v
-      ).then((res) => res.json()),
+      ).then((res) => {
+        if (!res.ok) throw new Error("video not found");
+        return res.json();
+      }),
     {
       get enabled() {
         return preferences.instance?.api_url &&
+          !isServer &&
           route.query.v &&
           !videoDownloaded()
           ? true
@@ -122,6 +141,115 @@ export default function Watch() {
       refetchOnReconnect: false,
     }
   );
+  const [shouldFetchSponsors, setShouldFetchSponsors] = createSignal(false);
+  createEffect(() => {
+    if (videoQuery.isSuccess) {
+      setShouldFetchSponsors(true);
+    }
+  });
+  const sponsorsQuery = createQuery(
+    () => ["sponsors", route.query.v, preferences.instance.api_url],
+    async (): Promise<SponsorSegment[]> => {
+      const urlObj = new URL("https://sponsor.ajay.app/api/skipSegments");
+      urlObj.searchParams.set("videoID", route.query.v);
+      urlObj.searchParams.set(
+        "categories",
+        JSON.stringify([
+          "sponsor",
+          "interaction",
+          "selfpromo",
+          "music_offtopic",
+        ])
+      );
+      const url = urlObj.toString();
+      console.log(url);
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error("Failed to fetch sponsors");
+      }
+      return await res.json();
+    },
+    {
+      get enabled() {
+        return preferences.instance?.api_url && shouldFetchSponsors()
+          ? // videoQuery.data
+            true
+          : false;
+      },
+      refetchOnReconnect: false,
+    }
+  );
+
+  const mergeChaptersAndSponsors = (
+    chapters: Chapter[],
+    sponsors: SponsorSegment[]
+  ): Chapter[] => {
+    const sortedChapters = [...chapters].sort((a, b) => a.start - b.start);
+    const sortedSponsors = [...sponsors].sort(
+      (a, b) => a.segment[0] - b.segment[0]
+    );
+
+    const result: Chapter[] = [];
+
+    let chapterIndex = 0;
+    let sponsorIndex = 0;
+
+    while (
+      chapterIndex < sortedChapters.length ||
+      sponsorIndex < sortedSponsors.length
+    ) {
+      const currentChapter = sortedChapters[chapterIndex];
+      const currentSponsor = sortedSponsors[sponsorIndex];
+      const nextChapter = sortedChapters[chapterIndex];
+
+      const nextSegmentStart = nextChapter?.start ?? Number.MAX_SAFE_INTEGER;
+
+      if (
+        currentChapter &&
+        (!currentSponsor || currentChapter.start <= currentSponsor.segment[0])
+      ) {
+        result.push(currentChapter);
+        chapterIndex++;
+      } else if (currentSponsor) {
+        result.push({
+          title: `Sponsor: ${currentSponsor.category}`,
+          start: currentSponsor.segment[0],
+        } as Chapter);
+
+        if (Math.abs(nextSegmentStart - currentSponsor.segment[1]) >= 5) {
+          console.log(
+            "Next chapter is more than 5s after end of sponsor, adding chapter. ",
+            "next segment start is: ",
+            numeral(nextSegmentStart).format("00:00:00"),
+            "current sponsor end is: ",
+            numeral(currentSponsor.segment[1]).format("00:00:00"),
+            "absolute value is: ",
+            Math.abs(nextSegmentStart - currentSponsor.segment[1])
+          );
+          result.push({
+            title: `End Sponsor: ${currentSponsor.category}`,
+            start: currentSponsor.segment[1],
+          } as Chapter);
+        }
+
+        sponsorIndex++;
+      }
+    }
+
+    return result;
+  };
+  createEffect(() => {
+    console.log(sponsorsQuery.data);
+    if (!sponsorsQuery.data) return;
+    const video = untrack(() => videoQuery.data);
+    if (!video) return;
+    const mergedChapters = mergeChaptersAndSponsors(
+      video.chapters,
+      sponsorsQuery.data
+    );
+    console.log(mergedChapters);
+    // setVideo("value", "chapters", mergedChapters);
+  });
   // createEffect(async () => {
   //   const v = route.query.v;
   //   console.log(v, "v");
@@ -155,7 +283,7 @@ export default function Watch() {
   });
 
   createEffect(() => {
-    if (videoQuery.data && !videoQuery.data.error) {
+    if (videoQuery.data) {
       setVideo({ value: videoQuery.data });
     }
   });
@@ -267,50 +395,58 @@ export default function Watch() {
     <div
       class="flex"
       classList={{
-        "flex-col": preferences.theatreMode,
-        "flex-col lg:flex-row": !preferences.theatreMode,
+        "flex-col": theater(),
+        "flex-col lg:flex-row": !theater(),
       }}
     >
       <div
         class="flex flex-col"
         classList={{
-          "flex-grow": !preferences.theatreMode,
-          "w-full": preferences.theatreMode,
+          "flex-grow": !theater(),
+          "w-full": theater(),
         }}
       >
-        <PlayerContainer />
-        <Show when={!preferences.theatreMode}>
+        <PlayerContainer
+          loading={videoQuery.isLoading}
+          error={videoQuery.error}
+          video={videoQuery.data}
+        />
+        <Show when={!theater()}>
           <div>
-            <Description
-              video={video.value}
-              downloaded={videoDownloaded()}
-              onRefetch={() => videoQuery.refetch()}
-            />
+            <Suspense fallback="Watch page loading">
+              <Description
+                video={video.value}
+                downloaded={videoDownloaded()}
+                onRefetch={() => videoQuery.refetch()}
+              />
+            </Suspense>
           </div>
         </Show>
       </div>
       <div
         class="flex"
         classList={{
-          "flex-col": !preferences.theatreMode,
-          "flex-row": preferences.theatreMode,
-          "w-full": preferences.theatreMode,
+          "flex-col": !theater(),
+          "flex-row": theater(),
+          "w-full": theater(),
         }}
       >
-        <Show when={preferences.theatreMode}>
+        <Show when={theater()}>
           <div class="w-full max-w-full">
-            <Description
-              video={video.value}
-              downloaded={videoDownloaded()}
-              onRefetch={() => videoQuery.refetch()}
-            />
+            <Suspense fallback="Watch page loading">
+              <Description
+                video={video.value}
+                downloaded={videoDownloaded()}
+                onRefetch={() => videoQuery.refetch()}
+              />
+            </Suspense>
           </div>
         </Show>
         <div
           class={`flex flex-col gap-2 items-center w-full min-w-0`}
           classList={{
             [` lg:max-w-[${playlist() ? PLAYLIST_WIDTH : VIDEO_CARD_WIDTH}px]`]:
-              !preferences.theatreMode,
+              !theater(),
           }}
         >
           <Show when={playlist()} keyed>

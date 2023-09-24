@@ -7,6 +7,7 @@ import {
   createRenderEffect,
   createSignal,
   createEffect,
+  useContext,
 } from "solid-js";
 import {
   Body,
@@ -46,6 +47,16 @@ import ReloadPrompt from "./components/ReloadPrompt";
 
 const [theme, setTheme] = createSignal("");
 export const ThemeContext = createContext<Signal<string>>([theme, setTheme]);
+const [theater, setTheater] = createSignal(false);
+export const TheaterContext = createContext<Signal<boolean>>([
+  theater,
+  setTheater,
+]);
+export const useTheater = () => {
+  const theater = useContext(TheaterContext);
+  if (!theater) throw new Error("TheaterContext not found");
+  return theater;
+};
 
 const video = createStore<{
   value: PipedVideo | undefined;
@@ -79,6 +90,8 @@ export default function Root() {
     };
     const theme = cookie().theme ?? "monokai";
     setTheme(theme);
+    const theater = cookie().theater ?? "false";
+    setTheater(theater === "true");
   });
   const [appState] = useAppState();
 
@@ -107,44 +120,45 @@ export default function Root() {
 
         <Link rel="manifest" href="manifest.webmanifest" />
       </Head>
-      <QueueProvider>
-        <ThemeContext.Provider value={[theme, setTheme]}>
-          <PreferencesProvider>
-            <AppStateProvider>
-              <PlaylistProvider>
-                <PlayerContext.Provider value={video}>
-                  <PlayerStateProvider>
-                    <SyncedStoreProvider>
-                      <QueryClientProvider client={queryClient}>
-                        <Body
-                          class={`${theme()} bg-bg1 font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}
-                        >
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <ErrorBoundary>
-                              <Header />
-                            </ErrorBoundary>
-                          </Suspense>
+      <QueryClientProvider client={queryClient}>
+        <QueueProvider>
+          <ThemeContext.Provider value={[theme, setTheme]}>
+            <TheaterContext.Provider value={[theater, setTheater]}>
+              <PreferencesProvider>
+                <AppStateProvider>
+                  <PlaylistProvider>
+                    <PlayerContext.Provider value={video}>
+                      <PlayerStateProvider>
+                        <SyncedStoreProvider>
+                          <Body
+                            class={`${theme()} bg-bg1 font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}
+                          >
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <ErrorBoundary>
+                                <Header />
+                              </ErrorBoundary>
+                            </Suspense>
 
-                          <Suspense>
-                            <ErrorBoundary>
-                              <Show when={appState.loading}>
-                                <div class="fixed h-1 w-full -mx-2 top-0 z-[9999999]">
-                                  <div
-                                    class={`h-1 bg-gradient-to-r from-accent1 via-primary to-accent1 bg-repeat-x w-full animate-stripe`}
-                                  />
-                                </div>
-                              </Show>
-                              <div aria-hidden="true" class="h-10" />
-                              <Portal>
-                                <Toast.Region>
-                                  <Toast.List class="toast__list" />
-                                </Toast.Region>
-                              </Portal>
-                              {/* <PlayerContainer /> */}
-                              <main>
-                                <Routes>
-                                  <FileRoutes />
-                                  {/* <Transition
+                            <Suspense>
+                              <ErrorBoundary>
+                                <Show when={appState.loading}>
+                                  <div class="fixed h-1 w-full -mx-2 top-0 z-[9999999]">
+                                    <div
+                                      class={`h-1 bg-gradient-to-r from-accent1 via-primary to-accent1 bg-repeat-x w-full animate-stripe`}
+                                    />
+                                  </div>
+                                </Show>
+                                <div aria-hidden="true" class="h-10" />
+                                <Portal>
+                                  <Toast.Region>
+                                    <Toast.List class="toast__list" />
+                                  </Toast.Region>
+                                </Portal>
+                                {/* <PlayerContainer /> */}
+                                <main>
+                                  <Routes>
+                                    <FileRoutes />
+                                    {/* <Transition
                         show={!isRouting()}
                         enter="transition-opacity duration-200"
                         enterFrom="opacity-0 translate-y-1"
@@ -171,70 +185,71 @@ export default function Root() {
                         <Route path="/search" element={<Search />} />
                         <Route path="/trending" element={<Trending />} />
                         <Route path="/import" element={<Import />} /> */}
-                                </Routes>
-                                <Show when={!isServer}>
-                                  <ReloadPrompt />
-                                </Show>
-                              </main>
-                              {/* <Transition */}
-                              {/*   show={true} */}
-                              {/*   enter="transition ease-in-out duration-300 transform" */}
-                              {/*   enterFrom="translate-y-full" */}
-                              {/*   enterTo="translate-y-0" */}
-                              {/*   leave="transition ease-in-out duration-300 transform" */}
-                              {/*   leaveFrom="translate-y-0" */}
-                              {/*   leaveTo="translate-y-full" */}
-                              {/* > */}
-                              <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
-                                <BottomNav
-                                  items={[
-                                    {
-                                      href: "/feed",
-                                      label: "Feed",
-                                      icon: (
-                                        <TiHome
-                                          fill="currentColor"
-                                          class="w-6 h-6 "
-                                        />
-                                      ),
-                                    },
-                                    {
-                                      href: "/trending",
-                                      label: "Trending",
-                                      icon: (
-                                        <AiOutlineFire
-                                          fill="currentColor"
-                                          class="w-6 h-6 "
-                                        />
-                                      ),
-                                    },
-                                    {
-                                      href: "/library",
-                                      label: "Library",
-                                      icon: (
-                                        <AiOutlineMenu
-                                          fill="currentColor"
-                                          class="w-6 h-6 "
-                                        />
-                                      ),
-                                    },
-                                  ]}
-                                />
-                              </div>
-                              <div class="h-20 md:h-0" />
-                            </ErrorBoundary>
-                          </Suspense>
-                          <Scripts />
-                        </Body>
-                      </QueryClientProvider>
-                    </SyncedStoreProvider>
-                  </PlayerStateProvider>
-                </PlayerContext.Provider>
-              </PlaylistProvider>
-            </AppStateProvider>
-          </PreferencesProvider>
-        </ThemeContext.Provider>
-      </QueueProvider>
+                                  </Routes>
+                                  <Show when={!isServer}>
+                                    <ReloadPrompt />
+                                  </Show>
+                                </main>
+                                {/* <Transition */}
+                                {/*   show={true} */}
+                                {/*   enter="transition ease-in-out duration-300 transform" */}
+                                {/*   enterFrom="translate-y-full" */}
+                                {/*   enterTo="translate-y-0" */}
+                                {/*   leave="transition ease-in-out duration-300 transform" */}
+                                {/*   leaveFrom="translate-y-0" */}
+                                {/*   leaveTo="translate-y-full" */}
+                                {/* > */}
+                                <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
+                                  <BottomNav
+                                    items={[
+                                      {
+                                        href: "/feed",
+                                        label: "Feed",
+                                        icon: (
+                                          <TiHome
+                                            fill="currentColor"
+                                            class="w-6 h-6 "
+                                          />
+                                        ),
+                                      },
+                                      {
+                                        href: "/trending",
+                                        label: "Trending",
+                                        icon: (
+                                          <AiOutlineFire
+                                            fill="currentColor"
+                                            class="w-6 h-6 "
+                                          />
+                                        ),
+                                      },
+                                      {
+                                        href: "/library",
+                                        label: "Library",
+                                        icon: (
+                                          <AiOutlineMenu
+                                            fill="currentColor"
+                                            class="w-6 h-6 "
+                                          />
+                                        ),
+                                      },
+                                    ]}
+                                  />
+                                </div>
+                                <div class="h-20 md:h-0" />
+                              </ErrorBoundary>
+                            </Suspense>
+                            <Scripts />
+                          </Body>
+                        </SyncedStoreProvider>
+                      </PlayerStateProvider>
+                    </PlayerContext.Provider>
+                  </PlaylistProvider>
+                </AppStateProvider>
+              </PreferencesProvider>
+            </TheaterContext.Provider>
+          </ThemeContext.Provider>
+        </QueueProvider>
+      </QueryClientProvider>
     </Html>
   );
 }

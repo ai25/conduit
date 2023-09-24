@@ -29,7 +29,13 @@ import {
   useContext,
 } from "solid-js";
 import { PlayerContext } from "~/root";
-import { PipedVideo, PreviewFrame, RelatedStream, Subtitle } from "~/types";
+import {
+  Chapter,
+  PipedVideo,
+  PreviewFrame,
+  RelatedStream,
+  Subtitle,
+} from "~/types";
 import { chaptersVtt } from "~/utils/chapters";
 import { useIsRouting, useLocation, useNavigate } from "solid-start";
 //@ts-ignore
@@ -40,42 +46,45 @@ import { videoId } from "~/routes/library/history";
 import { useQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
 import dayjs from "dayjs";
-import { HistoryItem,  useSyncStore } from "~/stores/syncStore";
+import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { usePlayerState } from "../stores/playerStateStore";
 import { MediaRemoteControl } from "vidstack";
+import { toaster } from "@kobalte/core";
+import ToastComponent from "./Toast";
+import { Suspense } from "solid-js";
+import { isServer } from "solid-js/web";
 
-export default function Player() {
-  const [video] = useContext(PlayerContext);
+export default function Player(props: { video: PipedVideo }) {
   const route = useLocation();
   let mediaPlayer: MediaPlayerElement | undefined = undefined;
   const sync = useSyncStore();
   const updateProgress = async () => {
-    if (!video.value) return;
+    if (!props.video) return;
     if (!started()) {
       return;
     }
     let currentTime = mediaPlayer?.currentTime;
-    if (video.value.category === "Music") {
+    if (props.video.category === "Music") {
       currentTime = 0;
     }
-    const id = videoId(video.value);
+    const id = videoId(props.video);
     if (!id) return;
     console.time("updating progress");
 
     const val = {
-      title: video.value.title,
-      duration: video.value.duration,
-      thumbnail: video.value.thumbnailUrl,
-      uploaderName: video.value.uploader,
-      uploaderAvatar: video.value.uploaderAvatar,
-      uploaderUrl: video.value.uploaderUrl,
+      title: props.video.title,
+      duration: props.video.duration,
+      thumbnail: props.video.thumbnailUrl,
+      uploaderName: props.video.uploader,
+      uploaderAvatar: props.video.uploaderAvatar,
+      uploaderUrl: props.video.uploaderUrl,
       url: `/watch?v=${id}`,
-      currentTime: currentTime ?? video.value.duration,
+      currentTime: currentTime ?? props.video.duration,
       watchedAt: new Date().getTime(),
       type: "stream",
-      uploaded: new Date(video.value.uploadDate).getTime(),
-      uploaderVerified: video.value.uploaderVerified,
-      views: video.value.views,
+      uploaded: new Date(props.video.uploadDate).getTime(),
+      uploaderVerified: props.video.uploaderVerified,
+      views: props.video.views,
     };
     const historyItem: Record<string, HistoryItem> = {
       [id]: val as HistoryItem,
@@ -155,14 +164,14 @@ export default function Player() {
 
   const initMediaSession = () => {
     if (!navigator.mediaSession) return;
-    if (!video.value) return;
+    if (!props.video) return;
     if (!mediaPlayer) return;
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: video.value.title,
-      artist: video.value.uploader,
+      title: props.video.title,
+      artist: props.video.uploader,
       artwork: [
         {
-          src: video.value?.thumbnailUrl,
+          src: props.video?.thumbnailUrl,
           sizes: "128x128",
           type: "image/png",
         },
@@ -192,13 +201,13 @@ export default function Player() {
   };
 
   const init = () => {
-    if (!video.value) throw new Error("No video");
+    if (!props.video) throw new Error("No video");
     console.time("init");
     initMediaSession();
-    fetchSubtitles(video.value.subtitles);
-    if (!video.value?.subtitles) return;
+    fetchSubtitles(props.video.subtitles);
+    if (!props.video?.subtitles) return;
     const subs = new Map<string, string>();
-    video.value.subtitles.forEach((subtitle) => {
+    props.video.subtitles.forEach((subtitle) => {
       if (!subtitle.url) return;
       subs.set(subtitle.code, subtitle.url);
     });
@@ -214,7 +223,7 @@ export default function Player() {
     console.log(event);
     setError(undefined);
     init();
-    if (!video.value?.chapters) return;
+    if (!props.video?.chapters) return;
     if (!mediaPlayer) return;
     if (route.search.match("fullscreen")) {
       //@ts-ignore
@@ -223,21 +232,21 @@ export default function Player() {
       }
     }
     let chapters = [];
-    for (let i = 0; i < video.value.chapters.length; i++) {
-      const chapter = video.value.chapters[i];
+    for (let i = 0; i < props.video.chapters.length; i++) {
+      const chapter = props.video.chapters[i];
       const name = chapter.title;
       // seconds to 00:00:00
       const timestamp = new Date(chapter.start * 1000)
         .toISOString()
         .slice(11, 22);
       const seconds =
-        video.value.chapters[i + 1]?.start - chapter.start ??
-        video.value.duration - chapter.start;
+        props.video.chapters[i + 1]?.start - chapter.start ??
+        props.video.duration - chapter.start;
       chapters.push({ name, timestamp, seconds });
     }
 
     console.time("chapters vtt");
-    setVtt(chaptersVtt(chapters, video.value.duration));
+    setVtt(chaptersVtt(chapters, props.video.duration));
     if (vtt()) {
       mediaPlayer.textTracks.add({
         kind: "chapters",
@@ -271,23 +280,23 @@ export default function Player() {
   };
 
   createEffect(() => {
-    if (!video.value) return;
+    if (!props.video) return;
     if (!mediaPlayer) return;
-    mediaPlayer.thumbnails = generateStoryboard(video.value.previewFrames[1]);
+    mediaPlayer.thumbnails = generateStoryboard(props.video.previewFrames[1]);
     console.log(mediaPlayer.thumbnails);
   });
 
   createEffect(() => {
-    if (!video.value) return;
+    if (!props.video) return;
     if (!mediaPlayer) return;
     if (time) return;
-    const id = videoId(video.value);
+    const id = videoId(props.video);
     if (!id) return;
     console.time("getting progress");
     const val = sync.store.history[id];
     const progress = val?.currentTime;
     if (progress) {
-      if (progress < video.value.duration * 0.9) {
+      if (progress < props.video.duration * 0.9) {
         setCurrentTime(progress);
       }
     }
@@ -295,26 +304,26 @@ export default function Player() {
   });
 
   createEffect(() => {
-    const nextVideo = video.value?.relatedStreams?.[0];
+    const nextVideo = props.video?.relatedStreams?.[0];
     if (!nextVideo) return;
     if (!mediaPlayer) return;
-    if (!video.value) return;
+    if (!props.video) return;
     if (route.query.list) return;
     queueStore.setCurrentVideo({
-      url: `/watch?v=${videoId(video.value)}`,
-      title: video.value.title,
-      thumbnail: video.value.thumbnailUrl,
-      duration: video.value.duration,
-      uploaderName: video.value.uploader,
-      uploaderAvatar: video.value.uploaderAvatar,
-      uploaderUrl: video.value.uploaderUrl,
+      url: `/watch?v=${videoId(props.video)}`,
+      title: props.video.title,
+      thumbnail: props.video.thumbnailUrl,
+      duration: props.video.duration,
+      uploaderName: props.video.uploader,
+      uploaderAvatar: props.video.uploaderAvatar,
+      uploaderUrl: props.video.uploaderUrl,
       isShort: false,
       shortDescription: "",
       type: "video",
-      uploaded: dayjs(video.value.uploadDate).unix(),
-      views: video.value.views,
-      uploadedDate: video.value.uploadDate,
-      uploaderVerified: video.value.uploaderVerified,
+      uploaded: dayjs(props.video.uploadDate).unix(),
+      views: props.video.views,
+      uploadedDate: props.video.uploadDate,
+      uploaderVerified: props.video.uploaderVerified,
     });
     if (queueStore.isCurrentLast()) {
       queueStore.addToQueue(nextVideo);
@@ -342,11 +351,11 @@ export default function Player() {
       } else if (local) {
         index = (playlist() as unknown as {
           videos: RelatedStream[];
-        })!.videos!.findIndex((v) => videoId(v) === videoId(video.value));
+        })!.videos!.findIndex((v) => videoId(v) === videoId(props.video));
         if (index !== -1) index++;
       } else {
         index = playlist()!.relatedStreams!.findIndex(
-          (v) => videoId(v) === videoId(video.value)
+          (v) => videoId(v) === videoId(props.video)
         );
         if (index !== -1) index++;
       }
@@ -380,7 +389,7 @@ export default function Player() {
   }
 
   createEffect(() => {
-    if (!video.value) return;
+    if (!props.video) return;
     if (!mediaPlayer) return;
     handleSetNextVideo();
   });
@@ -394,7 +403,7 @@ export default function Player() {
   const handleEnded = () => {
     console.log("ended");
     if (!mediaPlayer) return;
-    if (!video.value) return;
+    if (!props.video) return;
     setEnded(true);
     showToast();
     updateProgress();
@@ -410,7 +419,7 @@ export default function Player() {
     console.log(navigator.storage.estimate());
     if (!ended()) return;
     if (!mediaPlayer) return;
-    if (!video.value) return;
+    if (!props.video) return;
   });
 
   function showToast() {
@@ -441,6 +450,7 @@ export default function Player() {
   }
 
   onCleanup(() => {
+    if (isServer) return;
     clearInterval(timeoutCounter);
     document.removeEventListener("keydown", handleKeyDown);
   });
@@ -483,17 +493,19 @@ export default function Player() {
   }
   createEffect(() => {
     if (!mediaPlayer) return;
-    if (!video.value) return;
+    if (!props.video) return;
     selectDefaultQuality();
   });
 
   onMount(() => {
+    if (isServer) return;
     console.log("mount", mediaPlayer);
     document.addEventListener("visibilitychange", updateProgress);
     document.addEventListener("pagehide", updateProgress);
   });
 
   onCleanup(() => {
+    if (isServer) return;
     document.removeEventListener("visibilitychange", updateProgress);
     document.removeEventListener("pagehide", updateProgress);
   });
@@ -573,7 +585,7 @@ export default function Player() {
 
   createEffect(() => {
     if (!mediaPlayerConnected()) return;
-    if (!video.value) return;
+    if (!props.video) return;
     document.addEventListener("keydown", handleKeyDown);
   });
   createEffect(() => {
@@ -582,6 +594,7 @@ export default function Player() {
   });
 
   onCleanup(() => {
+    if (isServer) return;
     document.removeEventListener("keydown", handleKeyDown);
   });
 
@@ -610,7 +623,7 @@ export default function Player() {
       case "l":
         mediaPlayer!.currentTime = Math.min(
           mediaPlayer!.currentTime + 10,
-          video.value!.duration
+          props.video!.duration
         );
         e.preventDefault();
         break;
@@ -652,39 +665,39 @@ export default function Player() {
         e.preventDefault();
         break;
       case "1":
-        mediaPlayer!.currentTime = video.value!.duration * 0.1;
+        mediaPlayer!.currentTime = props.video!.duration * 0.1;
         e.preventDefault();
         break;
       case "2":
-        mediaPlayer!.currentTime = video.value!.duration * 0.2;
+        mediaPlayer!.currentTime = props.video!.duration * 0.2;
         e.preventDefault();
         break;
       case "3":
-        mediaPlayer!.currentTime = video.value!.duration * 0.3;
+        mediaPlayer!.currentTime = props.video!.duration * 0.3;
         e.preventDefault();
         break;
       case "4":
-        mediaPlayer!.currentTime = video.value!.duration * 0.4;
+        mediaPlayer!.currentTime = props.video!.duration * 0.4;
         e.preventDefault();
         break;
       case "5":
-        mediaPlayer!.currentTime = video.value!.duration * 0.5;
+        mediaPlayer!.currentTime = props.video!.duration * 0.5;
         e.preventDefault();
         break;
       case "6":
-        mediaPlayer!.currentTime = video.value!.duration * 0.6;
+        mediaPlayer!.currentTime = props.video!.duration * 0.6;
         e.preventDefault();
         break;
       case "7":
-        mediaPlayer!.currentTime = video.value!.duration * 0.7;
+        mediaPlayer!.currentTime = props.video!.duration * 0.7;
         e.preventDefault();
         break;
       case "8":
-        mediaPlayer!.currentTime = video.value!.duration * 0.8;
+        mediaPlayer!.currentTime = props.video!.duration * 0.8;
         e.preventDefault();
         break;
       case "9":
-        mediaPlayer!.currentTime = video.value!.duration * 0.9;
+        mediaPlayer!.currentTime = props.video!.duration * 0.9;
         e.preventDefault();
         break;
       case "N":
@@ -714,6 +727,69 @@ export default function Player() {
       //   break;
     }
   };
+  interface Segment extends Chapter {
+    end: number;
+    manuallyNavigated: boolean;
+    autoSkipped: boolean;
+  }
+  const [sponsorSegments, setSponsorSegments] = createSignal<Segment[]>([]);
+  createEffect(() => {
+    if (!props.video?.chapters) return;
+    const segments: Segment[] = [];
+
+    for (let i = 0; i < props.video.chapters.length; i++) {
+      const chapter = props.video.chapters[i];
+      if (chapter.title.startsWith("Sponsor")) {
+        segments.push({
+          ...chapter,
+          end: props.video.chapters[i + 1]?.start || props.video.duration,
+          manuallyNavigated: false,
+          autoSkipped: false,
+        });
+      }
+    }
+    setSponsorSegments(segments);
+  });
+
+  const autoSkipHandler = () => {
+    if (!mediaPlayer) return;
+    if (sponsorSegments().length === 0) return;
+    const currentTime = mediaPlayer.currentTime;
+    let segments = sponsorSegments();
+    for (const segment of segments) {
+      if (
+        currentTime >= segment.start &&
+        currentTime < segment.end &&
+        !segment.manuallyNavigated &&
+        !segment.autoSkipped
+      ) {
+        mediaPlayer.currentTime = segment.end;
+        segment.autoSkipped = true; // Mark as automatically skipped
+        break;
+      }
+    }
+    setSponsorSegments(segments);
+  };
+
+  const userNavigationHandler = () => {
+    if (!mediaPlayer) return;
+    if (sponsorSegments().length === 0) return;
+
+    const currentTime = mediaPlayer.currentTime;
+    let segments = sponsorSegments();
+    for (const segment of segments) {
+      if (currentTime >= segment.start && currentTime < segment.end) {
+        segment.manuallyNavigated = true;
+        segment.autoSkipped = false; // Reset the auto-skipped flag
+        break;
+      } else {
+        // Reset flags for segments that are not being navigated to
+        segment.manuallyNavigated = false;
+        segment.autoSkipped = false;
+      }
+    }
+    setSponsorSegments(segments);
+  };
 
   return (
     <media-player
@@ -733,7 +809,11 @@ export default function Player() {
       //   volumeUp: "ArrowUp",
       //   volumeDown: "ArrowDown",
       // }}
+
       key-disabled
+      on:time-update={() => {
+        autoSkipHandler();
+      }}
       on:can-play={onCanPlay}
       on:provider-change={onProviderChange}
       on:hls-error={handleHlsError}
@@ -742,31 +822,35 @@ export default function Player() {
         setStarted(true);
         updateProgress();
       }}
+      on:seeked={() => {
+        updateProgress();
+        userNavigationHandler();
+      }}
       on:pause={() => {
         updateProgress();
       }}
-      on:hls-manifest-loaded={(e) => {
+      on:hls-manifest-loaded={(e: any) => {
         console.log(e.detail, "levels");
       }}
       on:media-player-connect={() => setMediaPlayerConnected(true)}
       autoplay
       ref={mediaPlayer}
-      title={video.value?.title ?? ""}
-      // src={video.value?.hls ?? ""}
-      poster={video.value?.thumbnailUrl ?? ""}
-      //       aspect-ratio={video.value?.videoStreams?.[0]
-      //           ? video.value.videoStreams[0]?.width /
-      //             video.value.videoStreams[0]?.height
+      title={props.video?.title ?? ""}
+      // src={props.video?.hls ?? ""}
+      poster={props.video?.thumbnailUrl ?? ""}
+      //       aspect-ratio={props.video?.videoStreams?.[0]
+      //           ? props.video.videoStreams[0]?.width /
+      //             props.video.videoStreams[0]?.height
       //           :
       // 16 / 9}
       aspect-ratio={16 / 9}
-      thumbnails={generateStoryboard(video.value?.previewFrames[1])}
+      thumbnails={generateStoryboard(props.video?.previewFrames?.[1])}
       crossorigin="anonymous"
     >
       <media-outlet
       // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
       >
-        <media-poster alt={video.value?.title ?? ""} />
+        <media-poster alt={props.video?.title ?? ""} />
         {tracks().map((track) => {
           return (
             <track
@@ -780,7 +864,7 @@ export default function Player() {
           );
         })}
         <media-captions class="transition-[bottom] not-can-control:opacity-100 user-idle:opacity-100 not-user-idle:bottom-[80px]" />
-        <source src={video.value!.hls} type="application/x-mpegurl" />
+        <source src={props.video!.hls} type="application/x-mpegurl" />
       </media-outlet>
       <Show when={error()}>
         {(err) => (
@@ -854,7 +938,7 @@ export default function Player() {
           </div>
         </div>
       </Show>
-      <PlayerSkin video={video.value} nextVideo={nextVideo()} />
+      <PlayerSkin video={props.video} nextVideo={nextVideo()} />
       {/* <media-community-skin></media-community-skin> */}
     </media-player>
   );

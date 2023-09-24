@@ -188,6 +188,7 @@ export default (props: {
         </div>
         <div class="flex flex-col justify-between">
           <DropdownMenu.Root
+            overlap={true}
             open={dropdownOpen()}
             onOpenChange={setDropdownOpen}
           >
@@ -216,14 +217,12 @@ export default (props: {
                         {([id, playlist]) => (
                           <DropdownMenu.Item
                             class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
                             onSelect={() => {
-                              sync.setStore("playlists", id, "relatedStreams", [
-                                props.v as RelatedStream,
-                                ...playlist.relatedStreams,
-                              ]);
+                              console.log(playlist.relatedStreams, props.v);
+                              // sync.setStore("playlists", id, "relatedStreams", [
+                              //   props.v as RelatedStream,
+                              //   ...playlist.relatedStreams,
+                              // ]);
                             }}
                           >
                             <div class="flex items-center gap">
@@ -237,16 +236,33 @@ export default (props: {
                 </DropdownMenu.Sub>
                 <Show when={progress() === undefined}>
                   <DropdownMenu.Item
-                    class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                    class="cursor-pointer z-50 w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onPointerUp={(e) => {
+                      e.stopPropagation();
+                    }}
+                    as="button"
                     onSelect={() => {
-                      console.log("clicked");
-                      sync.setStore("history", {
-                        [videoId(props.v)]: {
-                          ...props.v,
+                      if (!props.v) return;
+                      const item = {
+                        [videoId(props.v) as string]: {
+                          title: props.v.title,
+                          url: props.v.url,
+                          duration: props.v.duration,
+                          uploaderName: props.v.uploaderName,
+                          uploaderUrl: props.v.uploaderUrl,
+                          uploaderAvatar: props.v.uploaderAvatar,
+                          views: props.v.views,
+                          uploaded: props.v.uploaded,
+                          thumbnail: props.v.thumbnail,
+                          uploaderVerified: props.v.uploaderVerified,
                           currentTime: props.v!.duration,
                           watchedAt: Date.now(),
                         },
-                      } as Record<string, HistoryItem>);
+                      } as Record<string, HistoryItem>;
+                      sync.setStore("history", item);
                       console.log("added to history");
                     }}
                   >
@@ -259,6 +275,12 @@ export default (props: {
                 <Show when={progress() !== undefined}>
                   <DropdownMenu.Item
                     class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onPointerUp={(e) => {
+                      e.stopPropagation();
+                    }}
                     onSelect={() => {
                       sync.setStore("history", {
                         [videoId(props.v)]: undefined,

@@ -1,4 +1,9 @@
-import { useLocation, useNavigate } from "solid-start";
+import {
+  parseCookie,
+  useLocation,
+  useNavigate,
+  useServerContext,
+} from "solid-start";
 import Player from "./Player";
 import {
   For,
@@ -10,16 +15,34 @@ import {
   createSignal,
   on,
   useContext,
+  Suspense,
 } from "solid-js";
 import { PlayerContext } from "~/root";
 import VideoCard from "./VideoCard";
 import { usePreferences } from "~/stores/preferencesStore";
+import { PipedVideo } from "~/types";
+import { isServer } from "solid-js/web";
 
-export default function PlayerContainer() {
+export default function PlayerContainer(props: {
+  video: PipedVideo | undefined;
+  error: any;
+  loading: boolean;
+}) {
   const route = useLocation();
-  const [video] = useContext(PlayerContext);
   const [preferences] = usePreferences();
+  const [theatre, setTheatre] = createSignal(true);
 
+  createRenderEffect(() => {
+    const event = useServerContext();
+    const cookie = () => {
+      return parseCookie(
+        isServer ? event?.request.headers.get("cookie") ?? "" : document.cookie
+      );
+    };
+    const theater = cookie().theater ?? "false";
+    console.log("theater", theater);
+    setTheatre(theater === "true");
+  });
   const Loading = () =>
     route.pathname === "/watch" ? <LoadingState /> : <></>;
   const Error = (props: any) =>
@@ -28,8 +51,6 @@ export default function PlayerContainer() {
     ) : (
       <></>
     );
-
-  const [theatre, setTheatre] = createSignal(true);
 
   return (
     <div
@@ -41,21 +62,22 @@ export default function PlayerContainer() {
         // "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
       }}
     >
-      <Switch fallback={<Loading />}>
-        <Match when={video.error} keyed>
-          <Error message={video.error!.message} name={video.error!.name} />
-        </Match>
-        <Match when={video.value} keyed>
-          {(video) => {
-            return <Player />;
-          }}
-        </Match>
-      </Switch>
+      <Suspense fallback={<Loading />}>
+        <Show when={props.loading}>
+          <Loading />
+        </Show>
+        <Show when={props.error}>
+          <Error message={props.error!.message} name={props.error!.name} />
+        </Show>
+        <Show when={props.video}>
+          <Player video={props.video!} />
+        </Show>
+      </Suspense>
       <div
         id="column"
         classList={{
-          "w-0 h-0": !preferences.theatreMode,
-          "w-max min-w-max h-max overflow-y-auto": preferences.theatreMode,
+          "w-0 h-0": theatre(),
+          "w-max min-w-max h-max overflow-y-auto": !theatre(),
         }}
       />
       {/* <div

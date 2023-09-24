@@ -230,10 +230,7 @@ export default function History() {
   }
 
   createEffect(() => {
-    console.log(
-      clone(sync.store.history),
-      Object.keys(sync.store.history).length
-    );
+    console.log(Object.keys(sync.store.history).length);
   });
   const [intersectionRef, setIntersectionRef] = createSignal<
     HTMLDivElement | undefined

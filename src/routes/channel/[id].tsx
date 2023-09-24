@@ -41,6 +41,7 @@ import { isServer } from "solid-js/web";
 import EmptyState from "~/components/EmptyState";
 import { Collapsible, Tabs } from "@kobalte/core";
 import { Transition, TransitionGroup } from "solid-transition-group";
+import { FaSolidCheck } from "solid-icons/fa";
 // Fetching logic for tabs
 async function fetchTabNextPage(
   instance: string,
@@ -135,9 +136,24 @@ export default function Channel() {
     }
   });
 
+  const [currentIndex, setCurrentIndex] = createSignal(
+    tabs().findIndex((tab) => tab.name === selectedTab()) ?? 0
+  );
+  const [isNavigatingLeft, setIsNavigatingLeft] = createSignal(false);
+
   function loadTab(name: string) {
+    let prevIndex = currentIndex();
+    setCurrentIndex(
+      tabs().findIndex((tab) => tab.name === name) ?? currentIndex()
+    );
+    setIsNavigatingLeft(prevIndex > currentIndex());
+    console.log(
+      "navigating ",
+      isNavigatingLeft() ? "left" : "right",
+      prevIndex,
+      currentIndex()
+    );
     setSelectedTab(name);
-    console.log(route.pathname, "route", new URL(window.location.href));
 
     // update the tab query in the url path
     const url = new URL(window.location.href);
@@ -148,16 +164,6 @@ export default function Channel() {
   return (
     <Suspense fallback={<Spinner />}>
       <Show when={query.data} fallback={<Spinner />}>
-        <div class="flex justify-center place-items-center">
-          <img
-            height="48"
-            width="48"
-            class="rounded-full m-1"
-            src={query.data?.pages?.[0]?.avatarUrl}
-          />
-          <h1 v-text="channel.name" />
-          {/* <font-awesome-icon class="ml-1.5 !text-3xl" v-if="channel.verified" icon="check" /> */}
-        </div>
         <Show when={query.data?.pages?.[0]?.bannerUrl}>
           <img
             src={query.data?.pages[0].bannerUrl}
@@ -165,13 +171,26 @@ export default function Channel() {
             loading="lazy"
           />
         </Show>
+        <div class="flex items-center">
+          <img
+            height="48"
+            width="48"
+            class="rounded-full m-1"
+            src={query.data?.pages?.[0]?.avatarUrl}
+          />
+          <h1 class="text-xl font-bold mr-2">{query.data?.pages?.[0]?.name}</h1>
+          <Show when={query.data?.pages?.[0]?.verified}>
+            <Checkmark />
+          </Show>
+          <Show when={query.data?.pages?.[0]?.id}>
+            <div class="ml-auto">
+              <SubscribeButton id={query.data?.pages[0].id!} />
+            </div>
+          </Show>
+        </div>
         <CollapsibleText
           description={query.data?.pages?.[0]?.description ?? ""}
         />
-
-        <Show when={query.data?.pages?.[0]?.id}>
-          <SubscribeButton id={query.data?.pages[0].id!} />
-        </Show>
 
         <Tabs.Root
           class="w-full min-h-screen"
@@ -183,7 +202,7 @@ export default function Channel() {
               {(tab) => {
                 return (
                   <Tabs.Trigger
-                    class="inline-block pl-1 pt-2 pr-4 outline-none hover:bg-primary/20 focus-visible:bg-primary/20 "
+                    class="inline-block pl-1 pt-2 pr-4 outline-none hover:bg-primary/20 focus-visible:bg-primary/20 first-letter:uppercase"
                     value={tab.name}
                   >
                     {tab.name}
@@ -194,13 +213,17 @@ export default function Channel() {
             <Tabs.Indicator class="absolute -bottom-px w-full h-[2px] bg-primary transition-all duration-250" />
           </Tabs.List>
           <TransitionGroup
-            enterActiveClass="transition ease-in-out duration-250 transform"
-            enterClass="translate-x-0 translate-y-0 opacity-100"
-            enterToClass="translate-x-0 translate-y-0 opacity-100"
-            exitActiveClass="transition ease-in-out duration-250 transform"
-            exitClass="translate-x-0 translate-y-0 opacity-100"
-            exitToClass="translate-x-full translate-y-0 opacity-0"
-            moveClass="transition ease-in-out duration-250 transform"
+            appear
+            enterActiveClass="transition-all ease-in-out duration-250 transform"
+            enterClass={
+              isNavigatingLeft() ? "-translate-x-full" : "translate-x-full"
+            }
+            enterToClass="translate-x-0"
+            exitActiveClass="transition-all ease-in-out duration-250 transform"
+            exitClass="translate-x-0"
+            exitToClass={
+              isNavigatingLeft() ? "translate-x-full" : "-translate-x-full"
+            }
           >
             <Tabs.Content value="videos">
               <div class="flex flex-wrap justify-center">

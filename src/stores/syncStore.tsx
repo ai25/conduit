@@ -44,7 +44,7 @@ const [initialStore] = createStore<Store>({
 const doc = new Y.Doc({
   guid: "test",
 });
-const [store, setStore] = createYjsStore<Store>(doc, initialStore, true);
+const [store, setStore] = createYjsStore<Store>(doc, initialStore, false);
 const SyncContext = createContext({ store, setStore });
 
 export const SyncedStoreProvider = (props: { children: any }) => {
