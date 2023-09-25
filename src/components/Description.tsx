@@ -41,6 +41,7 @@ import { createQuery } from "@tanstack/solid-query";
 import Comments from "./Comments";
 import { Bottomsheet } from "./Bottomsheet";
 import { Suspense } from "solid-js";
+import DOMPurify from "dompurify";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -50,6 +51,27 @@ function handleTimestamp(videoId: string, t: string) {
   history.pushState({}, "", `/watch?v=${videoId}&t=${t}`);
 }
 (globalThis as any).handleTimestamp = handleTimestamp;
+export function rewriteDescription(text: string) {
+  const t = DOMPurify.sanitize(text)
+    .replaceAll(
+      /(?:http(?:s)?:\/\/)?(?:www\.)?youtube\.com(\/[/a-zA-Z0-9_?=&-]*)/gm,
+      "$1"
+    )
+    .replaceAll(
+      /(?:http(?:s)?:\/\/)?(?:www\.)?youtu\.be\/(?:watch\?v=)?([/a-zA-Z0-9_?=&-]*)/gm,
+      "/watch?v=$1"
+    )
+    .replaceAll("\n", "<br>")
+    // replace all <a> tags that contain a timestamp with a button
+    .replaceAll(
+      /<a href="\/watch\?v=([a-zA-Z0-9_?=&-]*)&amp;t=([0-9]*)">([a-zA-Z0-9_?=&-:]*)<\/a>/gm,
+      `<button
+        class="link" onclick="handleTimestamp('$1','$2')">$3</button>`
+    )
+    // add a class to all <a> tags
+    .replaceAll(/<a href/gm, '<a class="link" href');
+  return t;
+}
 
 const Description = (props: {
   video: PipedVideo | null | undefined;
@@ -61,27 +83,6 @@ const Description = (props: {
 
   const [comments, setComments] = createSignal<PipedCommentResponse>();
 
-  function rewriteDescription(text: string) {
-    const t = text
-      .replaceAll(
-        /(?:http(?:s)?:\/\/)?(?:www\.)?youtube\.com(\/[/a-zA-Z0-9_?=&-]*)/gm,
-        "$1"
-      )
-      .replaceAll(
-        /(?:http(?:s)?:\/\/)?(?:www\.)?youtu\.be\/(?:watch\?v=)?([/a-zA-Z0-9_?=&-]*)/gm,
-        "/watch?v=$1"
-      )
-      .replaceAll("\n", "<br>")
-      // replace all <a> tags that contain a timestamp with a button
-      .replaceAll(
-        /<a href="\/watch\?v=([a-zA-Z0-9_?=&-]*)&amp;t=([0-9]*)">([a-zA-Z0-9_?=&-:]*)<\/a>/gm,
-        `<button
-        class="link" onclick="handleTimestamp('$1','$2')">$3</button>`
-      )
-      // add a class to all <a> tags
-      .replaceAll(/<a href/gm, '<a class="link" href');
-    return t;
-  }
   const [expanded, setExpanded] = createSignal(false);
   createEffect(() => {
     if (!props.video) return;
@@ -345,29 +346,10 @@ const Description = (props: {
             Show {expanded() ? "less" : "more"}
           </button>
         </div>
-        <button
-          class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mt-2"
-          onClick={() => setCommentsOpen(true)}
-        >
-          Comments
-        </button>
-        {commentsOpen() && (
-          <SolidBottomsheet
-            variant="snap"
-            defaultSnapPoint={({ maxHeight }) => maxHeight / 2}
-            snapPoints={({ maxHeight }) => [maxHeight - 40, maxHeight / 2]}
-            onClose={() => setCommentsOpen(false)}
-          >
-            <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-h-full max-w-full overflow-auto">
-              <Suspense fallback={<p>Loading...</p>}>
-                <Comments
-                  videoId={videoId(props.video)}
-                  uploader={props.video!.uploader}
-                />
-              </Suspense>
-            </div>
-          </SolidBottomsheet>
-        )}
+        <Comments
+          videoId={videoId(props.video)}
+          uploader={props.video!.uploader}
+        />
       </div>
     </Show>
   );

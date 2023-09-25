@@ -182,6 +182,16 @@ a {
     transform: translateX(0);
   }
 }
+@keyframes slideDown {
+    to {
+        transform: translateY(100%);
+    }
+}
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+}
 @keyframes swipeOut {
   from {
     transform: translateX(var(--kb-toast-swipe-end-x));

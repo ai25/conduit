@@ -78,13 +78,6 @@ export default (props: {
         href={`/watch?v=${videoId(props.v)}`}
         class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
-        {progress() !== undefined && (
-          <div class="relative h-0 w-0 ">
-            <div class="absolute left-0 top-0 z-[1] bg-bg1/80 rounded-br px-2 uppercase">
-              Watched
-            </div>
-          </div>
-        )}
         <Show when={!imgError()}>
           <img
             class={`cursor-pointer w-full aspect-video max-w-md break-words ${
@@ -108,13 +101,20 @@ export default (props: {
             <div class="text-text2">Image not found</div>
           </div>
         </Show>
-        <div class="relative h-0 w-12 place-self-end text-sm lg:w-16 lg:text-base">
+        {progress() !== undefined && (
+          <div class="relative h-0 w-0 ">
+            <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-2 py-[2px] border border-bg2 w-max h-max text-sm">
+              Watched {dayjs(props.v?.watchedAt).fromNow()}
+            </div>
+          </div>
+        )}
+        <div class="relative h-0 w-12 place-self-end lg:w-16 ">
           <div
             classList={{
               "bg-bg1/80": props.v.duration !== -1,
               "bg-primary": props.v.duration === -1,
             }}
-            class="absolute bottom-2 right-2 rounded px-1 text-xs"
+            class="absolute bottom-2 right-2 bg-bg1/90 rounded px-1 py-px border border-bg2 text-sm"
           >
             <Show when={props.v.duration === -1}>Live</Show>
             <Show when={props.v.duration !== -1}>
@@ -199,7 +199,7 @@ export default (props: {
               />
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
-              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md">
+              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md z-50">
                 <DropdownMenu.Arrow />
                 <DropdownMenu.Sub>
                   <DropdownMenu.SubTrigger class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">

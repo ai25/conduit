@@ -9,6 +9,7 @@
   "type": "module",
   "devDependencies": {
     "@rollup/plugin-replace": "^5.0.2",
+    "@types/dompurify": "^3.0.3",
     "@types/numeral": "^2.0.2",
     "autoprefixer": "^10.4.15",
     "postcss": "^8.4.29",
@@ -36,6 +37,7 @@
     "@tanstack/solid-virtual": "3.0.0-beta.6",
     "@tanstack/virtual-core": "3.0.0-alpha.1",
     "dayjs": "^1.11.9",
+    "dompurify": "^3.0.5",
     "hls.js": "^1.4.12",
     "idb": "^7.1.1",
     "lib0": "^0.2.83",

@@ -10,6 +10,14 @@ module.exports = {
         karla: ["Karla", "sans-serif"],
         manrope: ["Manrope", "Helvetica", "sans-serif"],
       },
+      // animations
+      animation: {
+        "contentHide": "contentHide 0.2s ease-in-out",
+        "contentShow": "contentShow 0.2s ease-in-out",
+        "slideDown": "slideDown 0.2s ease-in-out",
+        "slideUp": "slideUp 0.2s ease-in-out",
+      }
+
     },
   },
   experimental: {

@@ -45,6 +45,7 @@ import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import EmptyState from "~/components/EmptyState";
 import { usePreferences } from "~/stores/preferencesStore";
 import { Suspense } from "solid-js";
+import { isServer } from "solid-js/web";
 export interface SearchQuery {
   items: ContentItem[];
   nextpage: string;
@@ -102,7 +103,8 @@ export default function Search() {
         console.log("enabled", route.query.q);
         return preferences.instance?.api_url &&
           route.query.q &&
-          selectedFilter()
+          selectedFilter() &&
+          !isServer
           ? true
           : false;
       },

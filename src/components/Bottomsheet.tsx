@@ -1,4 +1,4 @@
-import { Portal } from "solid-js/web";
+import { Dynamic, Portal } from "solid-js/web";
 import {
   Component,
   createEffect,
@@ -7,12 +7,14 @@ import {
   onCleanup,
   onMount,
 } from "solid-js";
+import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 
 const DEFAULT_THRESHOLD = 50;
 
 export interface BaseSolidBottomsheetProps {
   children: JSX.Element;
   onClose: () => void;
+  onIntersect?: () => void;
 }
 
 export interface DefaultVariantProps extends BaseSolidBottomsheetProps {
@@ -82,10 +84,14 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
 
   let touchStartPosition = 0;
   let lastTouchPosition = 0;
+  const acceptIds = new Set<string>(["sb-handle", "sb-overlay"]);
 
   const onTouchStart: JSX.EventHandlerUnion<HTMLDivElement, TouchEvent> = (
     event
   ) => {
+    if (!acceptIds.has(event.target.id)) {
+      return;
+    }
     isSnapVariant && setIsSnapping(false);
 
     touchStartPosition = lastTouchPosition = event.touches[0].clientY;
@@ -94,6 +100,9 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
   const onTouchMove: JSX.EventHandlerUnion<HTMLDivElement, TouchEvent> = (
     event
   ) => {
+    if (!acceptIds.has(event.target.id)) {
+      return;
+    }
     let dragDistance = 0;
 
     switch (props.variant) {
@@ -124,7 +133,12 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
     }
   };
 
-  const onTouchEnd: JSX.EventHandlerUnion<HTMLDivElement, TouchEvent> = () => {
+  const onTouchEnd: JSX.EventHandlerUnion<HTMLDivElement, TouchEvent> = (
+    event
+  ) => {
+    if (!acceptIds.has(event.target.id)) {
+      return;
+    }
     let currentPoint = 0;
     let closestPoint = 0;
 
@@ -167,19 +181,44 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
       setIsClosing(true);
     }
   };
+  const [intersectionRef, setIntersectionRef] = createSignal<
+    HTMLDivElement | undefined
+  >(undefined);
+  const isIntersecting = useIntersectionObserver({
+    setTarget: () => intersectionRef(),
+  });
+  createEffect(() => {
+    if (isIntersecting()) {
+      props.onIntersect?.();
+    }
+  });
+  const MaxHeight = () => (
+    <div
+      style={{
+        "overflow-y": "auto",
+        "max-height": `calc(100vh - ${bottomsheetTranslateValue()}px)`,
+      }}
+    >
+      {props.children}
+    </div>
+  );
 
   return (
     <Portal>
       <div
         id="sb-overlay"
-        class="fixed inset-0 flex items-end"
+        class="fixed inset-0 flex items-end bg-bg1/50 z-50"
         onClick={onOverlayClick}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         <div
           classList={{
-            "w-full": true,
-            "sb-is-closing": isClosing(),
-            "sb-is-snapping": isSnapping(),
+            "w-full bg-bg1 ": true,
+            "animate-slideDown": isClosing(),
+            "animate-slideUp": !isClosing(),
+            "transition-all duration-250": isSnapping(),
           }}
           style={{
             transform: `translateY(${bottomsheetTranslateValue()}px)`,
@@ -188,14 +227,24 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
           {...(isClosing() ? { onAnimationEnd: props.onClose } : {})}
         >
           <div
-            class="py-2"
+            id="sb-handle"
+            class="py-5 my-0 mx-auto bg-bg1"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            <div class="w-10 h-1 m-auto" />
+            <div class="w-10 h-1 m-auto bg-bg3" />
           </div>
-          {props.children}
+          <div
+            id="sb-content"
+            class="relative w-full h-full bg-bg1 overflow-auto"
+          >
+            <MaxHeight />
+            <div
+              class="w-full h-40 bg-primary"
+              ref={(ref) => setIntersectionRef(ref)}
+            />
+          </div>
         </div>
       </div>
     </Portal>

@@ -6,6 +6,8 @@ import {
   onMount,
   untrack,
   useContext,
+  Switch,
+  Match,
 } from "solid-js";
 import { useLocation } from "solid-start";
 import { For } from "solid-js";
@@ -23,11 +25,12 @@ import Button from "~/components/Button";
 import { useAppState } from "~/stores/appStateStore";
 import PlayerContainer from "~/components/PlayerContainer";
 import { createQuery } from "@tanstack/solid-query";
-import { Chapter, PipedVideo } from "~/types";
+import { Chapter, PipedVideo, RelatedPlaylist } from "~/types";
 import { usePreferences } from "~/stores/preferencesStore";
 import { Suspense } from "solid-js";
 import numeral from "numeral";
 import { isServer } from "solid-js/web";
+import PlaylistCard from "~/components/PlaylistCard";
 
 export interface SponsorSegment {
   category: string;
@@ -119,6 +122,7 @@ export default function Watch() {
   const [appState, setAppState] = useAppState();
   const sync = useSyncStore();
   const [preferences] = usePreferences();
+  const isLocalPlaylist = () => route.query.list?.startsWith("conduit-");
 
   const videoQuery = createQuery(
     () => ["streams", route.query.v, preferences.instance.api_url],
@@ -147,11 +151,22 @@ export default function Watch() {
       setShouldFetchSponsors(true);
     }
   });
-  const sponsorsQuery = createQuery(
+  const sponsorsQuery = createQuery<SponsorSegment[]>(
     () => ["sponsors", route.query.v, preferences.instance.api_url],
     async (): Promise<SponsorSegment[]> => {
-      const urlObj = new URL("https://sponsor.ajay.app/api/skipSegments");
-      urlObj.searchParams.set("videoID", route.query.v);
+      const sha256Encrypted = await globalThis.crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(route.query.v)
+      );
+      const sha256Array = Array.from(new Uint8Array(sha256Encrypted));
+      const prefix = sha256Array
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .slice(0, 5);
+      const urlObj = new URL(
+        "https://sponsor.ajay.app/api/skipSegments/" + prefix
+      );
+      // urlObj.searchParams.set("videoID", route.query.v);
       urlObj.searchParams.set(
         "categories",
         JSON.stringify([
@@ -167,7 +182,14 @@ export default function Watch() {
       if (!res.ok) {
         throw new Error("Failed to fetch sponsors");
       }
-      return await res.json();
+      const data = await res.json();
+      console.log(data);
+      const video = data.find((v: any) => v.videoID === route.query.v);
+      console.log(video, "Sponsors");
+      if (!video) {
+        throw new Error("Failed to fetch sponsors");
+      }
+      return video.segments;
     },
     {
       get enabled() {
@@ -177,8 +199,42 @@ export default function Watch() {
           : false;
       },
       refetchOnReconnect: false,
+      retry: false,
     }
   );
+  const playlistQuery = createQuery(
+    () => ["playlist", route.query.list, preferences.instance.api_url],
+    async () => {
+      const res = await fetch(
+        `${preferences.instance.api_url}/playlists/${route.query.list}`
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch playlist");
+      }
+      return await res.json();
+    },
+    {
+      get enabled() {
+        return preferences.instance?.api_url &&
+          route.query.list &&
+          !isLocalPlaylist()
+          ? true
+          : false;
+      },
+      refetchOnReconnect: false,
+    }
+  );
+  createEffect(() => {
+    console.log(sponsorsQuery.data, sponsorsQuery.error);
+  });
+
+  createEffect(() => {
+    if (playlistQuery.isSuccess) {
+      setPlaylist(playlistQuery.data);
+    } else {
+      setPlaylist(undefined);
+    }
+  });
 
   const mergeChaptersAndSponsors = (
     chapters: Chapter[],
@@ -248,30 +304,8 @@ export default function Watch() {
       sponsorsQuery.data
     );
     console.log(mergedChapters);
-    // setVideo("value", "chapters", mergedChapters);
+    setVideo("value", "chapters", mergedChapters);
   });
-  // createEffect(async () => {
-  //   const v = route.query.v;
-  //   console.log(v, "v");
-  //   if (!v) return;
-  //   const origin = new URL(preferences.instance.api_url).hostname
-  //     .split(".")
-  //     .slice(-2)
-  //     .join(".");
-  //   const newOrigin = untrack(() =>
-  //     new URL(video.value?.hls ?? "https://example.com").hostname
-  //       .split(".")
-  //       .slice(-2)
-  //       .join(".")
-  //   );
-  //   const id = untrack(() => videoId(video.value));
-
-  //   console.log(origin, newOrigin, "HOSTS");
-  //   if (id !== v || origin !== newOrigin) {
-  //     videoQuery.refetch();
-  //     return;
-  //   }
-  // });
 
   createEffect(() => {
     setAppState({
@@ -293,7 +327,6 @@ export default function Watch() {
   });
 
   const [listId, setListId] = createSignal<string | undefined>(undefined);
-  const isLocalPlaylist = () => route.query.list?.startsWith("conduit-");
   createEffect(() => {
     if (!route.query.list) {
       setPlaylist(undefined);
@@ -326,71 +359,6 @@ export default function Watch() {
     setPlaylist(list);
   });
 
-  function easeInOutQuint(t: number): number {
-    return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
-  }
-
-  const [scrollingRef, setScrollingRef] = createSignal<number>(0);
-
-  const scrollToFn: VirtualizerOptions<any, any>["scrollToFn"] = (
-    offset,
-    canSmooth,
-    instance
-  ) => {
-    const duration = 40 * Number(route.query.index);
-    const start = parentRef()!.scrollTop;
-    setScrollingRef(Date.now());
-    const startTime = scrollingRef();
-
-    const run = () => {
-      if (scrollingRef() !== startTime) return;
-      const now = Date.now();
-      const elapsed = now - startTime;
-      const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
-      const interpolated = start + (offset - start) * progress;
-
-      if (elapsed < duration) {
-        elementScroll(interpolated, canSmooth, instance);
-        requestAnimationFrame(run);
-      } else {
-        elementScroll(interpolated, canSmooth, instance);
-      }
-    };
-
-    requestAnimationFrame(run);
-  };
-
-  const [parentRef, setParentRef] = createSignal<HTMLDivElement | undefined>(
-    undefined
-  );
-  const [rowVirtualizer, setRowVirtualizer] = createSignal<Virtualizer<
-    HTMLDivElement,
-    any
-  > | null>(null);
-  createEffect(() => {
-    if (!playlist()) return;
-    setRowVirtualizer(
-      createVirtualizer({
-        count: playlist()!.relatedStreams.length,
-        getScrollElement: () => parentRef()!,
-        estimateSize: () => 85,
-        overscan: 5,
-        debug: true,
-        scrollToFn,
-        // initialOffset: 85 * (Number(route.query.index) - 1),
-      })
-    );
-  });
-  createEffect(() => {
-    if (!route.query.index) return;
-    if (!parentRef()) return;
-    if (!rowVirtualizer()) return;
-    console.log("scrolling");
-    rowVirtualizer()!.scrollToIndex(Number(route.query.index) - 1, {
-      align: "start",
-    });
-  });
-
   return (
     <div
       class="flex"
@@ -410,6 +378,7 @@ export default function Watch() {
           loading={videoQuery.isLoading}
           error={videoQuery.error}
           video={videoQuery.data}
+          onReload={() => videoQuery.refetch()}
         />
         <Show when={!theater()}>
           <div>
@@ -424,10 +393,10 @@ export default function Watch() {
         </Show>
       </div>
       <div
-        class="flex"
+        class="flex flex-col"
         classList={{
           "flex-col": !theater(),
-          "flex-row": theater(),
+          "lg:flex-row": theater(),
           "w-full": theater(),
         }}
       >
@@ -443,61 +412,34 @@ export default function Watch() {
           </div>
         </Show>
         <div
-          class={`flex flex-col gap-2 items-center w-full min-w-0`}
-          classList={{
-            [` lg:max-w-[${playlist() ? PLAYLIST_WIDTH : VIDEO_CARD_WIDTH}px]`]:
-              !theater(),
-          }}
+          class={`flex flex-col gap-2 items-center w-full min-w-0 max-w-max`}
         >
           <Show when={playlist()} keyed>
             {(list) => (
-              <Show when={rowVirtualizer()}>
-                <div
-                  role="group"
-                  aria-label="Playlist"
-                  class="overflow-hidden rounded-xl w-full p-2 max-w-full min-w-0"
-                >
-                  <div
-                    ref={(ref) => setParentRef(ref)}
-                    class="relative flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar"
-                  >
-                    <h3 class="sticky text-lg font-bold sm:text-xl ">
-                      {list.name}
-                    </h3>
-                    <div
-                      style={{
-                        height: `${rowVirtualizer()!.getTotalSize()}px`,
-                        width: "100%",
-                        position: "relative",
-                      }}
-                    >
-                      <For each={rowVirtualizer()!.getVirtualItems()}>
-                        {(item) => {
-                          return (
-                            <div
-                              style={{
-                                width: "100%",
-                                height: `${item.size}px`,
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                transform: `translateY(${item.start}px)`,
-                              }}
-                            >
-                              <PlaylistItem
-                                list={route.query.list}
-                                index={item.index + 1}
-                                v={list.relatedStreams[item.index]}
-                                active={route.query.index ?? 1}
-                              />
-                            </div>
-                          );
-                        }}
-                      </For>
-                    </div>
-                  </div>
+              <div
+                role="group"
+                aria-label="Playlist"
+                class="overflow-hidden rounded-xl w-full p-2 max-w-[400px] min-w-0"
+              >
+                <div class="relative flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar">
+                  <h3 class="sticky top-0 left-0 z-10 text-lg font-bold sm:text-xl ">
+                    {list.name} - {route.query.index} /{" "}
+                    {list.relatedStreams.length}
+                  </h3>
+                  <For each={list.relatedStreams}>
+                    {(item, index) => {
+                      return (
+                        <PlaylistItem
+                          list={route.query.list}
+                          index={index() + 1}
+                          v={item}
+                          active={route.query.index ?? 1}
+                        />
+                      );
+                    }}
+                  </For>
                 </div>
-              </Show>
+              </div>
             )}
           </Show>
           <Show
@@ -506,11 +448,24 @@ export default function Watch() {
             fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}
           >
             <Show when={video.value?.relatedStreams}>
-              <For each={video.value?.relatedStreams}>
-                {(stream) => {
-                  return <VideoCard v={stream} />;
-                }}
-              </For>
+              <div class="w-full max-w-max">
+                <For each={video.value?.relatedStreams}>
+                  {(stream) => {
+                    return (
+                      <Switch>
+                        <Match when={stream.type === "stream"}>
+                          <VideoCard v={stream} />
+                        </Match>
+                        <Match when={stream.type === "playlist"}>
+                          <PlaylistCard
+                            item={stream as unknown as RelatedPlaylist}
+                          />
+                        </Match>
+                      </Switch>
+                    );
+                  }}
+                </For>
+              </div>
             </Show>
           </Show>
         </div>

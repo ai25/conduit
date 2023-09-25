@@ -27,6 +27,7 @@ export default function PlayerContainer(props: {
   video: PipedVideo | undefined;
   error: any;
   loading: boolean;
+  onReload: () => void;
 }) {
   const route = useLocation();
   const [preferences] = usePreferences();
@@ -70,7 +71,7 @@ export default function PlayerContainer(props: {
           <Error message={props.error!.message} name={props.error!.name} />
         </Show>
         <Show when={props.video}>
-          <Player video={props.video!} />
+          <Player video={props.video!} onReload={props.onReload} />
         </Show>
       </Suspense>
       <div

@@ -7,6 +7,8 @@ import {
   createEffect,
   createSignal,
   useContext,
+  onMount,
+  onCleanup,
 } from "solid-js";
 import { ThemeContext } from "~/root";
 import { useCookie } from "~/utils/hooks";
@@ -18,7 +20,11 @@ import Search from "./SearchInput";
 import Modal from "./Modal";
 import Button from "./Button";
 import Field from "./Field";
-import { Popover as KobaltePopover, DropdownMenu } from "@kobalte/core";
+import {
+  Popover as KobaltePopover,
+  DropdownMenu,
+  toaster,
+} from "@kobalte/core";
 import {
   FaSolidArrowsRotate,
   FaSolidBrush,
@@ -34,6 +40,8 @@ import { Switch } from "solid-js";
 import { Match } from "solid-js";
 import { BsCloudCheck, BsCloudSlash, BsDatabaseX } from "solid-icons/bs";
 import { TiTimes } from "solid-icons/ti";
+import { isServer } from "solid-js/web";
+import ToastComponent from "./Toast";
 enum SyncState {
   DISCONNECTED = "disconnected",
   OFFLINE = "offline",
@@ -60,24 +68,26 @@ const Header = () => {
 
   const query = createQuery(
     () => ["instances"],
-    async (): Promise<PipedInstance[]> =>
-      await fetch("https://piped-instances.kavin.rocks/").then((res) =>
-        res.json()
-      ),
+    async (): Promise<PipedInstance[]> => {
+      const res = await fetch("https://piped-instances.kavin.rocks/");
+      if (!res.ok) {
+        throw new Error("Failed to fetch instances");
+      }
+      return await res.json();
+    },
     {
       get initialData() {
         return getStorageValue("instances", [], "json", "localStorage");
       },
+      select: (data) => {
+        setStorageValue("instances", data, "localStorage");
+        return data as PipedInstance[];
+      },
       retry: (failureCount) => failureCount < 3,
     }
   );
-  const [preferences, setPreferences] = usePreferences();
 
-  createEffect(() => {
-    if (query.data && !query.data.error) {
-      setStorageValue("instances", query.data, "localStorage");
-    }
-  });
+  const [preferences, setPreferences] = usePreferences();
 
   const randomNames = [
     "Alice",
@@ -150,6 +160,42 @@ const Header = () => {
       return SyncState.DISCONNECTED;
     }
   }
+  const cycleInstances = () => {
+    if (!query.data) return;
+    const instances = query.data;
+    const currentInstanceIndex = instances.findIndex(
+      (instance) => instance.api_url === preferences.instance.api_url
+    );
+    if (currentInstanceIndex === -1) return;
+    const nextInstanceIndex = (currentInstanceIndex + 1) % instances.length;
+    setPreferences("instance", instances[nextInstanceIndex]);
+    toaster.show((props) => (
+      <ToastComponent
+        toastId={props.toastId}
+        tite="Instance changed"
+        description={`You are now connected to ${instances[nextInstanceIndex].name}`}
+      />
+    ));
+  };
+
+  onMount(() => {
+    if (isServer) return;
+    document.addEventListener("keydown", (e) => {
+      e.preventDefault();
+      if (e.key === "i" && e.ctrlKey) {
+        cycleInstances();
+      }
+    });
+  });
+  onCleanup(() => {
+    if (isServer) return;
+    document.removeEventListener("keydown", (e) => {
+      e.preventDefault();
+      if (e.key === "i" && e.ctrlKey) {
+        cycleInstances();
+      }
+    });
+  });
 
   return (
     <nav class="fixed top-0 bg-bg2 w-full z-[99999] -mx-2 h-10 flex items-center justify-between">

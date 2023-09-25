@@ -54,7 +54,10 @@ import ToastComponent from "./Toast";
 import { Suspense } from "solid-js";
 import { isServer } from "solid-js/web";
 
-export default function Player(props: { video: PipedVideo }) {
+export default function Player(props: {
+  video: PipedVideo;
+  onReload?: () => void;
+}) {
   const route = useLocation();
   let mediaPlayer: MediaPlayerElement | undefined = undefined;
   const sync = useSyncStore();
@@ -652,12 +655,19 @@ export default function Player(props: { video: PipedVideo }) {
         e.preventDefault();
         break;
       case "ArrowLeft":
-        mediaPlayer!.currentTime = Math.max(mediaPlayer!.currentTime - 5, 0);
-        remote!.toggleUserIdle();
+        if (e.shiftKey) {
+          prevChapter();
+        } else {
+          mediaPlayer!.currentTime = Math.max(mediaPlayer!.currentTime - 5, 0);
+        }
         e.preventDefault();
         break;
       case "ArrowRight":
-        mediaPlayer!.currentTime = mediaPlayer!.currentTime + 5;
+        if (e.shiftKey) {
+          nextChapter();
+        } else {
+          mediaPlayer!.currentTime = mediaPlayer!.currentTime + 5;
+        }
         e.preventDefault();
         break;
       case "0":
@@ -722,6 +732,13 @@ export default function Player(props: { video: PipedVideo }) {
       case ".":
         mediaPlayer!.currentTime += 0.04;
         break;
+      case "R":
+        if (e.shiftKey) {
+          props.onReload?.();
+          e.preventDefault();
+        }
+        break;
+
       // case "return":
       //   self.skipSegment(mediaPlayer!);
       //   break;
@@ -789,6 +806,52 @@ export default function Player(props: { video: PipedVideo }) {
       }
     }
     setSponsorSegments(segments);
+  };
+
+  const prevChapter = () => {
+    if (!mediaPlayer) return;
+    if (!props.video?.chapters) return;
+    const currentTime = mediaPlayer.currentTime;
+    let currentChapter: Chapter | undefined;
+    for (let i = 0; i < props.video.chapters.length; i++) {
+      const chapter = props.video.chapters[i];
+      if (
+        currentTime >= chapter.start &&
+        currentTime < props.video.chapters[i + 1]?.start
+      ) {
+        currentChapter = chapter;
+        break;
+      }
+    }
+    if (!currentChapter) return;
+    const prevChapter = props.video.chapters.find(
+      (c) => c.start < currentChapter!.start
+    );
+    if (!prevChapter) return;
+    mediaPlayer.currentTime = prevChapter.start;
+  };
+
+  const nextChapter = () => {
+    if (!mediaPlayer) return;
+    if (!props.video?.chapters) return;
+    const currentTime = mediaPlayer.currentTime;
+    let currentChapter: Chapter | undefined;
+    for (let i = 0; i < props.video.chapters.length; i++) {
+      const chapter = props.video.chapters[i];
+      if (
+        currentTime >= chapter.start &&
+        currentTime < props.video.chapters[i + 1]?.start
+      ) {
+        currentChapter = chapter;
+        break;
+      }
+    }
+    if (!currentChapter) return;
+    const nextChapter = props.video.chapters.find(
+      (c) => c.start > currentChapter!.start
+    );
+    if (!nextChapter) return;
+    mediaPlayer.currentTime = nextChapter.start;
   };
 
   return (

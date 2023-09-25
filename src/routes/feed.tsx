@@ -21,14 +21,20 @@ export default function Feed() {
 
   const sync = useSyncStore();
   const query = createQuery(
-    () => ["feed"],
-    async (): Promise<RelatedStream[]> =>
-      (
-        await fetch(preferences.instance.api_url + "/feed/unauthenticated", {
+    () => ["feed", preferences.instance.api_url, sync.store.subscriptions],
+    async (): Promise<RelatedStream[]> => {
+      const res = await fetch(
+        preferences.instance.api_url + "/feed/unauthenticated",
+        {
           method: "POST",
           body: JSON.stringify(sync.store.subscriptions),
-        })
-      ).json(),
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Error fetching feed");
+      }
+      return await res.json();
+    },
     {
       get enabled() {
         return preferences.instance?.api_url &&

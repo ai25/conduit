@@ -1,9 +1,10 @@
 import { createInfiniteQuery } from "@tanstack/solid-query";
-import { createEffect, createSignal, Show } from "solid-js";
+import { createEffect, createSignal, Show, Suspense } from "solid-js";
 import { For } from "solid-js";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import { usePreferences } from "~/stores/preferencesStore";
 import { fetchJson } from "~/utils/helpers";
+import { Bottomsheet } from "./Bottomsheet";
 import Comment, { PipedCommentResponse } from "./Comment";
 
 export default function Comments(props: { videoId: string; uploader: string }) {
@@ -57,39 +58,55 @@ export default function Comments(props: { videoId: string; uploader: string }) {
     //   comments: [...comments()!.comments, ...data.comments],
     // });
   }
-  const [intersectionRef, setIntersectionRef] = createSignal<
-    HTMLDivElement | undefined
-  >(undefined);
-  const isIntersecting = useIntersectionObserver({
-    setTarget: () => intersectionRef(),
-  });
-  createEffect(() => {
-    if (isIntersecting()) {
-      if (query.hasNextPage) {
-        query.fetchNextPage();
-      }
-    }
-  });
+  const [commentsOpen, setCommentsOpen] = createSignal(false);
 
   return (
-    <div class="flex flex-col gap-1 ">
-      <Show when={query.data}>
-        <For each={query.data!.pages}>
-          {(page) => (
-            <For each={page.comments}>
-              {(comment) => (
-                <Comment
-                  videoId={props.videoId}
-                  comment={comment}
-                  uploader={props.uploader}
-                  nextpage={""}
-                />
-              )}
-            </For>
-          )}
-        </For>
-        <div class="w-full h-40" ref={(ref) => setIntersectionRef(ref)} />
-      </Show>
-    </div>
+    <>
+      <button
+        class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mt-2"
+        onClick={() => setCommentsOpen(true)}
+      >
+        Comments
+      </button>
+      {commentsOpen() && (
+        <Bottomsheet
+          variant="snap"
+          defaultSnapPoint={({ maxHeight }) => maxHeight / 2}
+          snapPoints={({ maxHeight }) => [maxHeight - 40, maxHeight / 2]}
+          onClose={() => {
+            console.log("close");
+            setCommentsOpen(false);
+          }}
+          onIntersect={() => {
+            if (query.hasNextPage) {
+              query.fetchNextPage();
+            }
+          }}
+        >
+          <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-h-full max-w-full overflow-auto">
+            <Suspense fallback={<p>Loading...</p>}>
+              <div class="flex flex-col gap-1 relative z-50 ">
+                <Show when={query.data}>
+                  <For each={query.data!.pages}>
+                    {(page) => (
+                      <For each={page.comments}>
+                        {(comment) => (
+                          <Comment
+                            videoId={props.videoId}
+                            comment={comment}
+                            uploader={props.uploader}
+                            nextpage={""}
+                          />
+                        )}
+                      </For>
+                    )}
+                  </For>
+                </Show>
+              </div>
+            </Suspense>
+          </div>
+        </Bottomsheet>
+      )}
+    </>
   );
 }

@@ -6,6 +6,7 @@ import { Show, createSignal, useContext, Suspense, For } from "solid-js";
 import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncStore } from "~/stores/syncStore";
 import { fetchJson } from "~/utils/helpers";
+import { rewriteDescription } from "./Description";
 export interface PipedCommentResponse {
   comments: PipedComment[];
   disabled: boolean;
@@ -120,7 +121,7 @@ export default function Comment(props: Props) {
                 </Show> */}
       <div class="flex  gap-2 ">
         <A
-          href={`/channel/${props.comment.commentorUrl}`}
+          href={`${props.comment.commentorUrl}`}
           class="w-1/12 rounded-full justify-center flex h-fit"
         >
           <img
@@ -134,7 +135,7 @@ export default function Comment(props: Props) {
         <div class="flex flex-col  w-11/12">
           <span class="flex gap-2 items-center">
             <A
-              href={`/channel/${props.comment.commentorUrl}`}
+              href={`${props.comment.commentorUrl}`}
               class={`text-sm font-bold ${
                 props.comment.commentorUrl === props.uploader &&
                 "bg-background rounded-full px-4"
@@ -159,7 +160,10 @@ export default function Comment(props: Props) {
             <p class="text-xs text-text2">{props.comment.commentedTime}</p>
             {/* {props.comment.&& <p class="text-sm">edited</p>} */}
           </span>
-          <p class="text-xs">{props.comment.commentText}</p>
+          <p
+            class="text-xs"
+            innerHTML={rewriteDescription(props.comment.commentText)}
+          ></p>
           <span class="flex gap-1 items-center text-xs ">
             <FaSolidThumbsUp />
             {props.comment.likeCount}
