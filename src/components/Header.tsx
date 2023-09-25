@@ -181,18 +181,18 @@ const Header = () => {
   onMount(() => {
     if (isServer) return;
     document.addEventListener("keydown", (e) => {
-      e.preventDefault();
       if (e.key === "i" && e.ctrlKey) {
         cycleInstances();
+        e.preventDefault();
       }
     });
   });
   onCleanup(() => {
     if (isServer) return;
     document.removeEventListener("keydown", (e) => {
-      e.preventDefault();
       if (e.key === "i" && e.ctrlKey) {
         cycleInstances();
+        e.preventDefault();
       }
     });
   });
