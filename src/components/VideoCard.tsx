@@ -77,6 +77,7 @@ export default (props: {
       <A
         href={`/watch?v=${videoId(props.v)}`}
         class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        title={props.v.title}
       >
         <Show when={!imgError()}>
           <img
@@ -101,21 +102,15 @@ export default (props: {
             <div class="text-text2">Image not found</div>
           </div>
         </Show>
-        {progress() !== undefined && (
+        {(props.v as HistoryItem)?.watchedAt && (
           <div class="relative h-0 w-0 ">
-            <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-2 py-[2px] border border-bg2 w-max h-max text-sm">
-              Watched {dayjs(props.v?.watchedAt).fromNow()}
+            <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
+              Watched {dayjs((props.v as HistoryItem).watchedAt).fromNow()}
             </div>
           </div>
         )}
         <div class="relative h-0 w-12 place-self-end lg:w-16 ">
-          <div
-            classList={{
-              "bg-bg1/80": props.v.duration !== -1,
-              "bg-primary": props.v.duration === -1,
-            }}
-            class="absolute bottom-2 right-2 bg-bg1/90 rounded px-1 py-px border border-bg2 text-sm"
-          >
+          <div class="absolute bottom-2 right-2 bg-bg1/90 rounded px-1 py-px border border-bg2 text-xs">
             <Show when={props.v.duration === -1}>Live</Show>
             <Show when={props.v.duration !== -1}>
               {numeral(props.v.duration).format("00:00:00").replace(/^0:/, "")}

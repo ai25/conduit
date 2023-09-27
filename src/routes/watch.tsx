@@ -180,22 +180,24 @@ export default function Watch() {
       console.log(url);
       const res = await fetch(url);
       if (!res.ok) {
-        throw new Error("Failed to fetch sponsors");
+        if (res.status === 404) {
+          return Promise.reject("no sponsors found");
+        } else {
+          const text = await res.text();
+          return Promise.reject("error fetching sponsors: " + text);
+        }
       }
       const data = await res.json();
-      console.log(data);
       const video = data.find((v: any) => v.videoID === route.query.v);
-      console.log(video, "Sponsors");
       if (!video) {
-        throw new Error("Failed to fetch sponsors");
+        return Promise.reject("no sponsors found");
       }
       return video.segments;
     },
     {
       get enabled() {
         return preferences.instance?.api_url && shouldFetchSponsors()
-          ? // videoQuery.data
-            true
+          ? true
           : false;
       },
       refetchOnReconnect: false,
@@ -321,10 +323,15 @@ export default function Watch() {
       setVideo({ value: videoQuery.data });
     }
   });
+
   createEffect(() => {
     if (!video.value) return;
     document.title = `${video.value?.title} - Conduit`;
   });
+
+  const [playlistScrollContainer, setPlaylistScrollContainer] = createSignal<
+    HTMLDivElement | undefined
+  >();
 
   const [listId, setListId] = createSignal<string | undefined>(undefined);
   createEffect(() => {
@@ -357,6 +364,12 @@ export default function Watch() {
     const list = sync.store.playlists[listId()!];
     console.log("setting playlist", list);
     setPlaylist(list);
+    setTimeout(() => {
+      playlistScrollContainer()?.scrollTo({
+        top: route.query.index ? Number(route.query.index) * 80 : 0,
+        behavior: "smooth",
+      });
+    }, 100);
   });
 
   return (
@@ -421,7 +434,10 @@ export default function Watch() {
                 aria-label="Playlist"
                 class="overflow-hidden rounded-xl w-full p-2 max-w-[400px] min-w-0"
               >
-                <div class="relative flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar">
+                <div
+                  ref={setPlaylistScrollContainer}
+                  class="relative flex flex-col gap-2 min-w-full md:min-w-[20rem] w-full bg-bg2 max-h-[30rem] px-1 overflow-y-auto scrollbar"
+                >
                   <h3 class="sticky top-0 left-0 z-10 text-lg font-bold sm:text-xl ">
                     {list.name} - {route.query.index} /{" "}
                     {list.relatedStreams.length}

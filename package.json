@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@kobalte/core": "^0.11.0",
+    "@leeoniya/ufuzzy": "^1.0.10",
     "@solidjs/meta": "^0.28.6",
     "@solidjs/router": "^0.8.3",
     "@syncedstore/core": "0.6.0-alpha.0",

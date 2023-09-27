@@ -4,6 +4,9 @@ dependencies:
   '@kobalte/core':
     specifier: ^0.11.0
     version: 0.11.0(solid-js@1.7.11)
+  '@leeoniya/ufuzzy':
+    specifier: ^1.0.10
+    version: 1.0.10
   '@solidjs/meta':
     specifier: ^0.28.6
     version: 0.28.6(solid-js@1.7.11)
@@ -1770,6 +1773,10 @@ packages:
       '@solid-primitives/refs': 1.0.5(solid-js@1.7.11)
       '@solid-primitives/utils': 6.2.1(solid-js@1.7.11)
       solid-js: 1.7.11
+    dev: false
+
+  /@leeoniya/ufuzzy@1.0.10:
+    resolution: {integrity: sha512-OR1yiyN8cKBn5UiHjKHUl0LcrTQt4vZPUpIf96qIIZVLxgd4xyASuRvTZ3tjbWvuyQAMgvKsq61Nwu131YyHnA==}
     dev: false
 
   /@mapbox/node-pre-gyp@1.0.11:
