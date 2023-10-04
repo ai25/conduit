@@ -8,6 +8,10 @@ import {
   createSignal,
   createEffect,
   useContext,
+  Component,
+  JSX,
+  createMemo,
+  lazy,
 } from "solid-js";
 import {
   Body,
@@ -22,12 +26,14 @@ import {
   useServerContext,
   parseCookie,
   Link,
+  Route,
+  useIsRouting,
+  useLocation,
 } from "solid-start";
 import "./root.css";
 import { Portal, isServer } from "solid-js/web";
 import { SetStoreFunction, createStore, unwrap } from "solid-js/store";
 import { PipedInstance, PipedVideo, Preferences } from "./types";
-import { defineCustomElements } from "vidstack/elements";
 import { IDBPDatabase, openDB } from "idb";
 import Header from "./components/Header";
 import { Transition } from "solid-headless";
@@ -44,6 +50,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { getStorageValue } from "./utils/storage";
 import { PreferencesProvider } from "./stores/preferencesStore";
 import ReloadPrompt from "./components/ReloadPrompt";
+import Watch from "./routes/watch";
+import Playlists from "./routes/library/playlists";
+import History from "./routes/library/history";
+import Playlist from "./routes/playlist";
+import Search from "./routes/search";
+import Trending from "./routes/trending";
+import Import from "./routes/import";
+import { splitProps } from "solid-js";
+import { TransitionGroup } from "solid-transition-group";
 
 const [theme, setTheme] = createSignal("");
 export const ThemeContext = createContext<Signal<string>>([theme, setTheme]);
@@ -78,9 +93,35 @@ export const PlayerContext = createContext<
   ]
 >(video);
 
-defineCustomElements();
+type CacheItem = {
+  component: JSX.Element;
+  data: any;
+};
+
+class RouteCacheStore {
+  private cache: Map<string, CacheItem> = new Map();
+
+  set(key: string, component: JSX.Element, data: any): void {
+    this.cache.set(key, { component, data });
+  }
+
+  get(key: string): CacheItem | null {
+    return this.cache.get(key) ?? null;
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  remove(key: string): void {
+    this.cache.delete(key);
+  }
+}
+
+export const routeCacheStore = new RouteCacheStore();
 
 export default function Root() {
+  console.time("feed root");
   const event = useServerContext();
   createRenderEffect(() => {
     const cookie = () => {
@@ -108,6 +149,8 @@ export default function Root() {
       },
     },
   });
+  const CachedFeed = lazy(() => import("./routes/feed"));
+
   return (
     <Html lang="en">
       <Head>
@@ -158,47 +201,11 @@ export default function Root() {
                                 <main>
                                   <Routes>
                                     <FileRoutes />
-                                    {/* <Transition
-                        show={!isRouting()}
-                        enter="transition-opacity duration-200"
-                        enterFrom="opacity-0 translate-y-1"
-                        enterTo="opacity-100 translate-y-0"
-                        leave="transition-opacity duration-200"
-                        leaveFrom="opacity-100 translate-y-0"
-                        leaveTo="opacity-0 translate-y-1">
-                        <Route path="/" element={<Feed />} />
-                      </Transition>
-                      <Transition
-                        show={!isRouting()}
-                        enter="transition-opacity duration-200"
-                        enterFrom="opacity-0 translate-y-1"
-                        enterTo="opacity-100 translate-y-0"
-                        leave="transition-opacity duration-200"
-                        leaveFrom="opacity-100 translate-y-0"
-                        leaveTo="opacity-0 translate-y-1">
-                        <Route path="/watch" element={<Watch />} />
-                        </Transition>
-                        <Route path="/feed" element={<Feed />} />
-                        <Route path="/history" element={<History />} />
-                        <Route path="/playlists" element={<Playlists />} />
-                        <Route path="/playlist" element={<Playlist />} />
-                        <Route path="/search" element={<Search />} />
-                        <Route path="/trending" element={<Trending />} />
-                        <Route path="/import" element={<Import />} /> */}
                                   </Routes>
                                   <Show when={!isServer}>
                                     <ReloadPrompt />
                                   </Show>
                                 </main>
-                                {/* <Transition */}
-                                {/*   show={true} */}
-                                {/*   enter="transition ease-in-out duration-300 transform" */}
-                                {/*   enterFrom="translate-y-full" */}
-                                {/*   enterTo="translate-y-0" */}
-                                {/*   leave="transition ease-in-out duration-300 transform" */}
-                                {/*   leaveFrom="translate-y-0" */}
-                                {/*   leaveTo="translate-y-full" */}
-                                {/* > */}
                                 <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
                                   <BottomNav
                                     items={[

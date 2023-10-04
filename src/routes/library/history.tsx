@@ -20,7 +20,6 @@ import { Title } from "solid-start";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import ToastComponent from "~/components/Toast";
 import ImportHistoryModal from "~/components/ImportHistoryModal";
-import { debounce, fuzzySearch } from "~/utils/fuzzy";
 import uFuzzy from "@leeoniya/ufuzzy";
 import Modal from "~/components/Modal";
 import Field from "~/components/Field";
@@ -82,6 +81,7 @@ export default function History() {
   });
   const [importModalOpen, setImportModalOpen] = createSignal(false);
   const [search, setSearch] = createSignal("");
+
   const setSearchDebounced = debounce((input: string) => {
     setSearch(input);
   }, 500);
@@ -135,6 +135,7 @@ export default function History() {
   const [deleteModalOpen, setDeleteModalOpen] = createSignal(false);
   const [deleteConfirmInput, setDeleteConfirmInput] = createSignal("");
   const [touched, setTouched] = createSignal(false);
+  const [isLoading, setLoading] = createSignal(false);
 
   return (
     <div class="">
@@ -198,6 +199,40 @@ export default function History() {
         class="my-2 mx-auto"
         placeholder="Search..."
       />
+      <button
+        onClick={() => {
+          setLoading(true);
+          setTimeout(() => setLoading(false), 1000);
+        }}
+        class={`
+        bg-primary
+          hover:bg-primary/90
+          focus-visible:ring-4
+          focus-visible:ring-primary/50
+          focus-visible:outline-none
+          active:bg-primary/80
+          disabled:opacity-50
+          disabled:cursor-not-allowed
+          transition
+          duration-200
+          ease-in-out
+          shadow
+          hover:shadow-3xl
+          py-2
+          px-3
+          text-text1
+          text-sm
+          rounded-full
+          border-4
+          border-transparent
+          hover:border-primary/30
+          uppercase
+        `}
+        disabled={isLoading()}
+        aria-disabled={isLoading()}
+      >
+        {isLoading() ? "Loading..." : "Subscribe"}
+      </button>
       <div class="flex flex-wrap justify-center h-full min-h-[80vh]">
         <Show when={history()}>
           <For each={history()}>
@@ -220,4 +255,36 @@ export default function History() {
       </div>
     </div>
   );
+}
+
+/**
+ * Debounce a function call.
+ *
+ * @template T - The type of the `this` context for the function.
+ * @template U - The tuple type representing the argument types of the function.
+ *
+ * @param {(...args: U) => void} func - The function to debounce.
+ * @param {number} wait - The number of milliseconds to delay the function call.
+ * @returns {(...args: U) => void} - The debounced function.
+ */
+function debounce<T, U extends any[]>(
+  func: (this: T, ...args: U) => void,
+  wait: number
+): (this: T, ...args: U) => void {
+  let timeout: NodeJS.Timeout | null = null;
+
+  return function (this: T, ...args: U): void {
+    const context = this;
+
+    const later = () => {
+      timeout = null;
+      func.apply(context, args);
+    };
+
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(later, wait);
+  };
 }

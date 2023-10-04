@@ -12,28 +12,26 @@ module.exports = {
       },
       // animations
       animation: {
-        "contentHide": "contentHide 0.2s ease-in-out",
-        "contentShow": "contentShow 0.2s ease-in-out",
-        "slideDown": "slideDown 0.2s ease-in-out",
-        "slideUp": "slideUp 0.2s ease-in-out",
-      }
-
+        contentHide: "contentHide 0.2s ease-in-out",
+        contentShow: "contentShow 0.2s ease-in-out",
+        slideDown: "slideDown 0.2s ease-in-out",
+        slideUp: "slideUp 0.2s ease-in-out",
+      },
     },
+  },
+  future: {
+    hoverOnlyWhenSupported: true,
   },
   experimental: {
     optimizeUniversalDefaults: true,
   },
   plugins: [
-    plugin(function ({ addVariant, e }) {
-      addVariant("hover-fine", ({ modifySelectors, separator }) => {
-        modifySelectors(({ className }) => {
-          return `@media (hover: hover) and (pointer: fine) .${e(
-            `hover-fine${separator}${className}`
-          )}:hover`;
-        });
-      });
+    require("tailwindcss-animate"),
+    require("vidstack/tailwind.cjs")({
+      prefix: "media",
+      webComponents: true,
     }),
-    require("vidstack/tailwind.cjs"),
+    customVariants,
     require("@tailwindcss/container-queries"),
     require("tailwindcss-themer")({
       defaultTheme: {
@@ -157,3 +155,10 @@ module.exports = {
     }),
   ],
 };
+function customVariants({ addVariant, matchVariant }) {
+  // Strict version of `.group` to help with nesting.
+  matchVariant("parent-data", (value) => `.parent[data-${value}] > &`);
+
+  addVariant("hocus", ["&:hover", "&:focus-visible"]);
+  addVariant("group-hocus", [".group:hover &", ".group:focus-visible &"]);
+}

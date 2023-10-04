@@ -111,6 +111,8 @@ export default function Search() {
       getNextPageParam: (lastPage) => {
         return lastPage.nextpage;
       },
+      refetchOnMount: false,
+      refetchOnReconnect: false,
     }
   );
 

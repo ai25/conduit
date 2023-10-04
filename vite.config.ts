@@ -62,13 +62,5 @@ export default defineConfig({
     sourcemap: true,
   },
 
-  plugins: [
-    // devtools({
-    //   /* features options - all disabled by default */
-    //   autoname: true, // e.g. enable autoname
-    //   locator: true, // enables DOM locator tab
-    // }),
-    solid({ adapter: vercel() }),
-    VitePWA(pwaOptions),
-  ],
+  plugins: [solid({ adapter: vercel() }), VitePWA(pwaOptions)],
 });

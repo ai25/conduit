@@ -18,27 +18,16 @@ import { videoId } from "~/routes/library/history";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useSyncStore, HistoryItem } from "~/stores/syncStore";
-import {
-  BsChevronRight,
-  BsInfoCircleFill,
-  BsThreeDotsVertical,
-} from "solid-icons/bs";
+import { BsChevronRight, BsThreeDotsVertical } from "solid-icons/bs";
 import { generateThumbnailUrl } from "~/utils/helpers";
-import { DropdownMenu } from "@kobalte/core";
-import {
-  FaRegularEye,
-  FaRegularEyeSlash,
-  FaSolidBug,
-  FaSolidCheck,
-  FaSolidPlus,
-  FaSolidX,
-} from "solid-icons/fa";
+import { FaRegularEye, FaRegularEyeSlash, FaSolidBug } from "solid-icons/fa";
 import Modal from "./Modal";
 import { mergeProps } from "solid-js";
+import { DropdownMenu } from "@kobalte/core";
 
 dayjs.extend(relativeTime);
 
-export default (props: {
+const VideoCard = (props: {
   v?: (RelatedStream & { progress?: number }) | undefined;
 }) => {
   const [progress, setProgress] = createSignal<number | undefined>(undefined);
@@ -48,7 +37,6 @@ export default (props: {
   createEffect(() => {
     const id = videoId(props.v);
     if (!id) return;
-    console.log("effect");
     const val = sync.store.history[id];
     props = mergeProps(props, { v: { ...props.v, ...val } });
     setProgress(val?.currentTime ?? undefined);
@@ -102,13 +90,26 @@ export default (props: {
             <div class="text-text2">Image not found</div>
           </div>
         </Show>
-        {(props.v as HistoryItem)?.watchedAt && (
-          <div class="relative h-0 w-0 ">
-            <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
-              Watched {dayjs((props.v as HistoryItem).watchedAt).fromNow()}
+        <Switch>
+          <Match when={(props.v as HistoryItem)?.watchedAt}>
+            <div class="relative h-0 w-0 ">
+              <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
+                Watched {dayjs((props.v as HistoryItem).watchedAt).fromNow()}
+              </div>
             </div>
-          </div>
-        )}
+          </Match>
+          <Match
+            when={
+              (props.v as HistoryItem) &&
+              !(props.v as HistoryItem).watchedAt &&
+              progress() !== undefined
+            }
+          >
+            <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
+              Watched
+            </div>
+          </Match>
+        </Switch>
         <div class="relative h-0 w-12 place-self-end lg:w-16 ">
           <div class="absolute bottom-2 right-2 bg-bg1/90 rounded px-1 py-px border border-bg2 text-xs">
             <Show when={props.v.duration === -1}>Live</Show>
@@ -314,3 +315,5 @@ export default (props: {
     </div>
   );
 };
+
+export default VideoCard;

@@ -23,7 +23,10 @@ import { useSyncStore } from "~/stores/syncStore";
 import type { Virtualizer, VirtualizerOptions } from "@tanstack/virtual-core";
 import Button from "~/components/Button";
 import { useAppState } from "~/stores/appStateStore";
-import PlayerContainer from "~/components/PlayerContainer";
+import PlayerContainer, {
+  PlayerError,
+  PlayerLoading,
+} from "~/components/PlayerContainer";
 import { createQuery } from "@tanstack/solid-query";
 import { Chapter, PipedVideo, RelatedPlaylist } from "~/types";
 import { usePreferences } from "~/stores/preferencesStore";
@@ -31,6 +34,7 @@ import { Suspense } from "solid-js";
 import numeral from "numeral";
 import { isServer } from "solid-js/web";
 import PlaylistCard from "~/components/PlaylistCard";
+import Player from "~/components/Player";
 
 export interface SponsorSegment {
   category: string;
@@ -73,9 +77,6 @@ export async function fetchWithTimeout(
   return response;
 }
 
-const VIDEO_CARD_WIDTH = 300;
-const PLAYLIST_WIDTH = 400;
-
 export default function Watch() {
   console.log(new Date().toISOString().split("T")[1], "rendering watch page");
 
@@ -99,6 +100,7 @@ export default function Watch() {
       if (downloaded) {
         console.log("video downloaded");
         const manifest = await getHlsManifest(route.query.v);
+        console.log("manifest", manifest);
         setVideo({
           value: {
             ...downloaded,
@@ -141,6 +143,15 @@ export default function Watch() {
           !videoDownloaded()
           ? true
           : false;
+      },
+      select: (data) => {
+        if (!(data as any).error) {
+          setVideo("value", data);
+        } else {
+          setVideo("value", undefined);
+          setVideo("error", (data as any).error);
+        }
+        return data;
       },
       refetchOnReconnect: false,
     }
@@ -387,12 +398,25 @@ export default function Watch() {
           "w-full": theater(),
         }}
       >
-        <PlayerContainer
-          loading={videoQuery.isLoading}
-          error={videoQuery.error}
-          video={videoQuery.data}
-          onReload={() => videoQuery.refetch()}
-        />
+        {/* <PlayerContainer */}
+        {/*   loading={videoQuery.isLoading && !video.value} */}
+        {/*   error={videoQuery.error} */}
+        {/*   video={videoQuery.data ?? video.value} */}
+        {/*   onReload={() => videoQuery.refetch()} */}
+        {/* /> */}
+        <Suspense fallback={<PlayerLoading />}>
+          <Switch>
+            <Match when={videoQuery.isLoading && !video.value}>
+              <PlayerLoading />
+            </Match>
+            <Match when={videoQuery.error}>
+              <PlayerError error={videoQuery.error as Error} />
+            </Match>
+            <Match when={videoQuery.data || video.value}>
+              <Player video={videoQuery.data ?? video.value!} />
+            </Match>
+          </Switch>
+        </Suspense>
         <Show when={!theater()}>
           <div>
             <Suspense fallback="Watch page loading">

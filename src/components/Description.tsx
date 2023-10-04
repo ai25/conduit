@@ -135,7 +135,6 @@ const Description = (props: {
   };
 
   async function handleDownload() {
-    if (!(await navigator.storage.persist())) return;
     downloadVideo(videoId(props.video), preferences.instance.api_url);
   }
 

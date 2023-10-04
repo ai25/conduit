@@ -10,21 +10,20 @@ export default function BottomNav(props: {
   }[];
 }) {
   return (
-        <nav class="flex gap-2 px-2 py-2 justify-evenly">
-          <For each={props.items}>
-            {(item) => (
-              <A
-                activeClass="text-primary"
-                inactiveClass="text-text2"
-                href={item.href}
-                class="flex flex-col items-center justify-center text-sm ">
-                <div class="w-6 h-6">{item.icon}</div>
-                <span class="mt-1 text-xs font-semibold ">
-                  {item.label}
-                </span>
-              </A>
-            )}
-          </For>
-        </nav>
+    <nav class="flex gap-2 px-2 py-2 justify-evenly">
+      <For each={props.items}>
+        {(item) => (
+          <A
+            activeClass="text-primary"
+            inactiveClass="text-text2"
+            href={item.href}
+            class="flex flex-col items-center justify-center text-sm "
+          >
+            <div class="w-6 h-6">{item.icon}</div>
+            <span class="mt-1 text-xs font-semibold ">{item.label}</span>
+          </A>
+        )}
+      </For>
+    </nav>
   );
 }

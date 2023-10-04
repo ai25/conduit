@@ -42,13 +42,14 @@ export default function PlayerContainer(props: {
     };
     const theater = cookie().theater ?? "false";
     console.log("theater", theater);
+    console.log(props.video);
     setTheatre(theater === "true");
   });
   const Loading = () =>
-    route.pathname === "/watch" ? <LoadingState /> : <></>;
+    route.pathname === "/watch" ? <PlayerLoading /> : <></>;
   const Error = (props: any) =>
     route.pathname === "/watch" ? (
-      <ErrorState message={props.message} name={props.name} />
+      <PlayerError error={{ name: props.name, message: props.message }} />
     ) : (
       <></>
     );
@@ -139,7 +140,7 @@ export const Spinner = () => (
   </svg>
 );
 
-const LoadingState = () => {
+export const PlayerLoading = () => {
   return (
     <div class="pointer-events-none aspect-video bg-black flex h-full w-full max-w-full items-center justify-center">
       <Spinner />
@@ -147,14 +148,14 @@ const LoadingState = () => {
   );
 };
 
-function ErrorState(error: Error) {
+export function PlayerError(props: { error: Error }) {
   return (
     <div class="pointer-events-none flex-col text-center gap-2 col-span-3 aspect-video bg-black  flex h-full w-full items-center justify-center">
       <div class="text-lg sm:text-2xl font-bold text-red-300">
-        {error.name} :(
+        {props.error.name} :(
       </div>
       <div class="flex flex-col">
-        <div class="text-sm sm:text-lg text-white">{error.message}</div>
+        <div class="text-sm sm:text-lg text-white">{props.error.message}</div>
         <div class="text-sm sm:text-lg text-white">
           Please try switching to a different instance or refresh the page.
         </div>
