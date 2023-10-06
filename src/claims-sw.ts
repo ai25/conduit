@@ -5,26 +5,33 @@ import {
 } from "workbox-precaching";
 import { clientsClaim } from "workbox-core";
 import { NavigationRoute, registerRoute } from "workbox-routing";
-import { StaleWhileRevalidate } from "workbox-strategies";
+import { CacheFirst } from "workbox-strategies";
+import { CacheableResponsePlugin } from "workbox-cacheable-response";
+import { ExpirationPlugin } from "workbox-expiration";
 
 declare let self: ServiceWorkerGlobalScope;
+self.skipWaiting();
+clientsClaim();
 
-// self.__WB_MANIFEST is default injection point
-// precacheAndRoute(self.__WB_MANIFEST);
-
-// clean old assets
+// // clean old assets
 cleanupOutdatedCaches();
 
-let allowlist: undefined | RegExp[];
-allowlist = [/.*/];
 import { NetworkFirst } from "workbox-strategies";
 
 // Precache assets
 precacheAndRoute([
   ...self.__WB_MANIFEST,
   {
+    url: "/library",
+    revision: `${new Date().getTime()}`,
+  },
+  {
     url: "/",
-    revision: "1",
+    revision: `${new Date().getTime()}`,
+  },
+  {
+    url: "/library/history",
+    revision: `${new Date().getTime()}`,
   },
 ]);
 
@@ -32,15 +39,14 @@ precacheAndRoute([
 const networkFirstHandlerWithFallback = new NetworkFirst({
   cacheName: "dynamic-cache",
   plugins: [
-    // Any other plugins you might want to use
-    {
-      async handlerDidError() {
-        const cache = await caches.open("offline-cache");
-        return await cache.match("/offline.html");
-      },
-    },
+    new CacheableResponsePlugin({
+      statuses: [0, 200],
+    }),
+    new ExpirationPlugin({
+      maxEntries: 50,
+      maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
+    }),
   ],
-  // This is the important part:
   fetchOptions: {
     mode: "cors",
   },
@@ -52,10 +58,52 @@ registerRoute(
   })
 );
 
-// Cache other assets like CSS, JS, and images using StaleWhileRevalidate
 registerRoute(
-  /\.(?:css|js|jpg|jpeg|png|svg|gif|woff|woff2|ttf|eot|ico|webp|avif|json)$/,
-  new StaleWhileRevalidate({ cacheName: "static-resources" })
+  /\.(?:png|jpg|jpeg|svg|gif|com)$/,
+  new CacheFirst({
+    cacheName: "image-cache",
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+      }),
+      {
+        cacheKeyWillBeUsed: async ({ request }) => {
+          return request.url;
+        },
+      },
+    ],
+  })
 );
-self.skipWaiting();
-clientsClaim();
+
+// Forward messages (and ports) from client to client.
+self.addEventListener("message", async (event) => {
+  console.log("SW Received Message: " + event.data);
+  fetch("/api/claims", {
+    method: "POST",
+    body: JSON.stringify(event.data),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (event.data?.sharedService) {
+    const client = await self.clients.get(event.data.clientId);
+    client?.postMessage(event.data, event.ports);
+  }
+});
+
+// Tell clients their clientId. A service worker isn't actually needed
+// for a context to get its clientId, but this also doubles as a way
+// to verify that the service worker is active.
+self.addEventListener("fetch", async (event: FetchEvent) => {
+  if (event.request.url === self.registration.scope + "clientId") {
+    return event.respondWith(
+      new Response(event.clientId, {
+        headers: { "Content-Type": "text/plain" },
+      })
+    );
+  }
+});

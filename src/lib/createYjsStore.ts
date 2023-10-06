@@ -152,10 +152,10 @@ export default function <T extends { [key: string]: any }>(
     }
 
     if (isPrimitive(newValue)) {
-      setYValue(yparent, key, newValue);
+      setYValue(yparent, key, newValue, ydoc);
     } else if (newValue === undefined && yparent instanceof Y.Map) {
       // in solid setting undefined in setStore -> remove the key
-      deleteYValue(yparent, key);
+      deleteYValue(yparent, key, ydoc);
     } else if (Array.isArray(newValue)) {
       solidArrayToYjs(yparent, sparent, key, newValue);
     } else if (typeof newValue === "object") {
@@ -176,7 +176,7 @@ export default function <T extends { [key: string]: any }>(
 
     if (!yvalue) {
       yvalue = new Y.Array();
-      setYValue(yparent, key, yvalue);
+      setYValue(yparent, key, yvalue, ydoc);
     }
     if (!(yvalue instanceof Y.Array)) {
       UNEXPECTED(yvalue);
@@ -216,13 +216,13 @@ export default function <T extends { [key: string]: any }>(
 
     if (!yvalue) {
       yvalue = new Y.Map();
-      setYValue(yparent, key, yvalue);
+      setYValue(yparent, key, yvalue, ydoc);
 
       Object.entries(newValue).forEach(([key2, value2]) => {
         if (value === undefined) {
           UNEXPECTED();
         } else if (isPrimitive(value2)) {
-          setYValue(yvalue, key2, value2);
+          setYValue(yvalue, key2, value2, ydoc);
         } else {
           if (!(key2 in svalue))
             setLeaf(svalue)(key2, Array.isArray(value2) ? [] : {});

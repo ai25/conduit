@@ -79,13 +79,7 @@ a {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  transition: all 0.2s ease;
   max-height: 3em;
-}
-.two-line-ellipsis:hover {
-  -webkit-line-clamp: none;
-  max-height: 100%;
-  overflow-y: auto;
 }
 
 .toast__list {

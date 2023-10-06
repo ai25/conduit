@@ -37,7 +37,7 @@ const VideoCard = (props: {
   createEffect(() => {
     const id = videoId(props.v);
     if (!id) return;
-    const val = sync.store.history[id];
+    const val = sync.store.history?.[id];
     props = mergeProps(props, { v: { ...props.v, ...val } });
     setProgress(val?.currentTime ?? undefined);
   });
@@ -136,6 +136,7 @@ const VideoCard = (props: {
           <A
             href={props.v.url ?? `/watch?v=${videoId(props.v)}`}
             class=" two-line-ellipsis min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            title={props.v.title}
           >
             {props.v.title}
           </A>

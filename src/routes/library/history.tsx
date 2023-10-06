@@ -41,13 +41,14 @@ export default function History() {
   function deleteHistory() {
     batch(() => {
       Object.keys(sync.store.history).forEach((item) => {
-        sync.setStore("history", item, undefined!);
+        sync.setStore("history", item, undefined as any);
       });
     });
   }
 
   createEffect(() => {
-    console.log(Object.keys(sync.store.history).length);
+    if (!sync.store.history) return;
+    console.log(Object.keys(sync.store.history)?.length);
   });
   const [intersectionRef, setIntersectionRef] = createSignal<
     HTMLDivElement | undefined
@@ -104,6 +105,7 @@ export default function History() {
       const results = idxs?.map((idx) => history[idx])?.slice(0, limit()) ?? [];
       setHistory(results);
     } else {
+      if (!sync.store.history) return;
       setHistory(
         Object.values(sync.store.history).sort(sort).slice(0, limit())
       );

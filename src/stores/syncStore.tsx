@@ -15,6 +15,7 @@ import * as Y from "yjs";
 import { createStore } from "solid-js/store";
 import createYjsStore from "~/lib/createYjsStore";
 import { useAppState } from "./appStateStore";
+import OpfsPersistence from "~/utils/y-opfs";
 
 enum ProviderStatus {
   DISCONNECTED = "disconnected",
@@ -60,6 +61,7 @@ export const SyncedStoreProvider = (props: { children: any }) => {
 
   let webrtcProvider: WebrtcProvider | null = null;
   let idbProvider: IndexeddbPersistence | null = null;
+  let opfsProvider: OpfsPersistence | null = null;
 
   const initWebrtc = async () => {
     if (!room().id) {
@@ -147,6 +149,11 @@ export const SyncedStoreProvider = (props: { children: any }) => {
       .catch(() => {
         setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
       });
+    opfsProvider = new OpfsPersistence(room().id!, doc, true);
+    onCleanup(() => {
+      idbProvider?.destroy();
+      opfsProvider?.destroy();
+    });
   });
   onCleanup(() => {
     webrtcProvider?.disconnect();
