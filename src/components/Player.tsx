@@ -399,7 +399,6 @@ export default function Player(props: {
     console.log("ended");
     if (!mediaPlayer) return;
     if (!props.video) return;
-    if (loop()) return;
     setEnded(true);
     showToast();
     updateProgress();
@@ -905,7 +904,6 @@ export default function Player(props: {
   };
   const [preferences, setPreferences] = usePreferences();
   let mediaProvider: any;
-  const [loop, setLoop] = createSignal(false);
 
   return (
     <media-player
@@ -917,7 +915,6 @@ export default function Player(props: {
       playbackRate={preferences.speed}
       muted={preferences.muted}
       volume={preferences.volume}
-      loop={loop()}
       // key-shortcuts={{
       //   togglePaused: "k Space",
       //   toggleMuted: "m",
@@ -1090,8 +1087,6 @@ export default function Player(props: {
       </Show>
       {/* <PlayerSkin video={props.video} nextVideo={nextVideo()} /> */}
       <VideoLayout
-        loop={loop()}
-        onLoopChange={setLoop}
         thumbnails={generateStoryboard(props.video?.previewFrames?.[1]) ?? ""}
       />
       {/* <media-community-skin></media-community-skin> */}

@@ -412,8 +412,11 @@ export default function Watch() {
             <Match when={videoQuery.error}>
               <PlayerError error={videoQuery.error as Error} />
             </Match>
-            <Match when={videoQuery.data || video.value}>
-              <Player video={videoQuery.data ?? video.value!} />
+            <Match when={videoQuery.data}>
+              <Player
+                video={videoQuery.data!}
+                onReload={() => videoQuery.refetch()}
+              />
             </Match>
           </Switch>
         </Suspense>

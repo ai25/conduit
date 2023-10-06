@@ -80,8 +80,8 @@ dependencies:
     specifier: ^5.25.3
     version: 5.25.3
   vidstack:
-    specifier: ^1.1.5
-    version: 1.1.5
+    specifier: ^1.1.8
+    version: 1.1.8
   vite-plugin-pwa:
     specifier: ^0.16.5
     version: 0.16.5(vite@4.4.9)(workbox-build@7.0.0)(workbox-window@7.0.0)
@@ -3079,7 +3079,7 @@ packages:
       get-symbol-description: 1.0.0
       globalthis: 1.0.3
       gopd: 1.0.1
-      has: 1.0.3
+      has: 1.0.4
       has-property-descriptors: 1.0.0
       has-proto: 1.0.1
       has-symbols: 1.0.3
@@ -3117,7 +3117,7 @@ packages:
     engines: {node: '>= 0.4'}
     dependencies:
       get-intrinsic: 1.2.1
-      has: 1.0.3
+      has: 1.0.4
       has-tostringtag: 1.0.0
     dev: false
 
@@ -3420,7 +3420,7 @@ packages:
     resolution: {integrity: sha512-2DcsyfABl+gVHEfCOaTrWgyt+tb6MSEGmKq+kI5HwLbIYgjgmMcV8KQ41uaKz1xxUcn9tJtgFbQUEVcEbd0FYw==}
     dependencies:
       function-bind: 1.1.1
-      has: 1.0.3
+      has: 1.0.4
       has-proto: 1.0.1
       has-symbols: 1.0.3
     dev: false
@@ -3552,6 +3552,11 @@ packages:
     dependencies:
       function-bind: 1.1.1
 
+  /has@1.0.4:
+    resolution: {integrity: sha512-qdSAmqLF6209RFj4VVItywPMbm3vWylknmB3nvNiUIs72xAimcM8nVYxYr7ncvZq5qzk9MKIZR8ijqD/1QuYjQ==}
+    engines: {node: '>= 0.4.0'}
+    dev: false
+
   /hls.js@1.4.12:
     resolution: {integrity: sha512-1RBpx2VihibzE3WE9kGoVCtrhhDWTzydzElk/kyRbEOLnb1WIE+3ZabM/L8BqKFTCL3pUy4QzhXgD1Q6Igr1JA==}
     dev: false
@@ -3597,7 +3602,7 @@ packages:
     engines: {node: '>= 0.4'}
     dependencies:
       get-intrinsic: 1.2.1
-      has: 1.0.3
+      has: 1.0.4
       side-channel: 1.0.4
     dev: false
 
@@ -5332,8 +5337,8 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  /vidstack@1.1.5:
-    resolution: {integrity: sha512-4qTktjJ/Pf1WumM9p6laS6Ti7JDVl0MNqEEyQw+Dk0MlYtw2A7wPHxtX0DHkPiTPDIWODnlgroz/edbxfBO2/g==}
+  /vidstack@1.1.8:
+    resolution: {integrity: sha512-qugFSKlavZd6Nu3+sqpiJP1oJXYTcWQfHNDKYpltv6pghKD0rTo8vjfIffnR8AvVAIdhKaioiGaoQjmsjjNEsw==}
     engines: {node: '>=18'}
     dependencies:
       media-captions: 1.0.0
