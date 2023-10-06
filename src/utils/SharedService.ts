@@ -27,6 +27,7 @@ export class SharedService extends EventTarget {
   #providerChangeCleanup: (() => void)[] = [];
 
   proxy: Record<string, (...args: any[]) => Promise<any>>;
+  _ready = false;
 
   constructor(
     serviceName: string,
@@ -99,23 +100,25 @@ export class SharedService extends EventTarget {
                     },
                     { once: true }
                   );
-                  port.postMessage(data.clientId);
+                  if (this._ready) port.postMessage(data.clientId);
                 }
               );
 
               this.#sendPortToClient(data, requestedPort);
               callback();
+              this._ready = true;
             }
           },
           { signal: this.#onDeactivate?.signal }
         );
 
         // Tell everyone that we are the new provider.
-        broadcastChannel.postMessage({
-          type: "provider",
-          sharedService: this.#serviceName,
-          providerId,
-        });
+        if (this._ready)
+          broadcastChannel.postMessage({
+            type: "provider",
+            sharedService: this.#serviceName,
+            providerId,
+          });
 
         // Release the lock only on user abort or context destruction.
         return new Promise((_, reject) => {
@@ -158,7 +161,7 @@ export class SharedService extends EventTarget {
     // Use a Web Lock to determine our clientId.
     let clientId: string | null = null;
     while (!clientId) {
-      clientId = await fetch("./clientId").then((response) => {
+      clientId = await fetch("/clientId").then((response) => {
         if (response.ok) {
           return response.text();
         }

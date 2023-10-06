@@ -81,14 +81,6 @@ registerRoute(
 
 // Forward messages (and ports) from client to client.
 self.addEventListener("message", async (event) => {
-  console.log("SW Received Message: " + event.data);
-  fetch("/api/claims", {
-    method: "POST",
-    body: JSON.stringify(event.data),
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
   if (event.data?.sharedService) {
     const client = await self.clients.get(event.data.clientId);
     client?.postMessage(event.data, event.ports);
