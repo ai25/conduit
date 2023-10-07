@@ -10,81 +10,74 @@ import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { ExpirationPlugin } from "workbox-expiration";
 
 declare let self: ServiceWorkerGlobalScope;
-// self.skipWaiting();
-// clientsClaim();
+self.skipWaiting();
+clientsClaim();
 
-// // // clean old assets
-// cleanupOutdatedCaches();
+// // clean old assets
+cleanupOutdatedCaches();
 
-// import { NetworkFirst } from "workbox-strategies";
+import { NetworkFirst } from "workbox-strategies";
 
-// // Precache assets
-// precacheAndRoute([
-//   ...self.__WB_MANIFEST,
-//   {
-//     url: "/library",
-//     revision: `${new Date().getTime()}`,
-//   },
-//   {
-//     url: "/",
-//     revision: `${new Date().getTime()}`,
-//   },
-//   {
-//     url: "/library/history",
-//     revision: `${new Date().getTime()}`,
-//   },
-// ]);
+// Precache assets
+precacheAndRoute([
+  ...self.__WB_MANIFEST,
+  {
+    url: "/library",
+    revision: `${new Date().getTime()}`,
+  },
+  {
+    url: "/",
+    revision: `${new Date().getTime()}`,
+  },
+  {
+    url: "/library/history",
+    revision: `${new Date().getTime()}`,
+  },
+]);
 
-// // Custom handler to manage offline fallback
-// const networkFirstHandlerWithFallback = new NetworkFirst({
-//   cacheName: "dynamic-cache",
-//   plugins: [
-//     new CacheableResponsePlugin({
-//       statuses: [0, 200],
-//     }),
-//     new ExpirationPlugin({
-//       maxEntries: 50,
-//       maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
-//     }),
-//   ],
-//   fetchOptions: {
-//     mode: "cors",
-//   },
-// });
-
-// registerRoute(
-//   new NavigationRoute(networkFirstHandlerWithFallback, {
-//     denylist: [/^\/_/, new RegExp("/[^/?]+\\.[^/]+$")],
-//   })
-// );
-
-// registerRoute(
-//   /\.(?:png|jpg|jpeg|svg|gif|com)$/,
-//   new CacheFirst({
-//     cacheName: "image-cache",
-//     plugins: [
-//       new CacheableResponsePlugin({
-//         statuses: [0, 200],
-//       }),
-//       new ExpirationPlugin({
-//         maxEntries: 100,
-//         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
-//       }),
-//       {
-//         cacheKeyWillBeUsed: async ({ request }) => {
-//           return request.url;
-//         },
-//       },
-//     ],
-//   })
-// );
-// Install the service worker as soon as possible.
-self.addEventListener("install", (/** @type {ExtendableEvent} */ event) => {
-  event.waitUntil(globalThis.skipWaiting());
+// Custom handler to manage offline fallback
+const networkFirstHandlerWithFallback = new NetworkFirst({
+  cacheName: "dynamic-cache",
+  plugins: [
+    new CacheableResponsePlugin({
+      statuses: [0, 200],
+    }),
+    new ExpirationPlugin({
+      maxEntries: 50,
+      maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
+    }),
+  ],
+  fetchOptions: {
+    mode: "cors",
+  },
 });
-self.addEventListener("activate", (/** @type {ExtendableEvent} */ event) => {
-  event.waitUntil(globalThis.clients.claim());
-});
+
+registerRoute(
+  new NavigationRoute(networkFirstHandlerWithFallback, {
+    denylist: [/^\/_/, new RegExp("/[^/?]+\\.[^/]+$")],
+  })
+);
+
+registerRoute(
+  /\.(?:png|jpg|jpeg|svg|gif|com)$/,
+  new CacheFirst({
+    cacheName: "image-cache",
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+      }),
+      {
+        cacheKeyWillBeUsed: async ({ request }) => {
+          return request.url;
+        },
+      },
+    ],
+  })
+);
 
 // Forward messages (and ports) from client to client.
 self.addEventListener("message", async (event) => {
