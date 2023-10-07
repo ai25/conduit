@@ -7,6 +7,15 @@ dependencies:
   '@leeoniya/ufuzzy':
     specifier: ^1.0.10
     version: 1.0.10
+  '@solid-primitives/date':
+    specifier: ^2.0.18
+    version: 2.0.18(solid-js@1.7.12)
+  '@solid-primitives/keyboard':
+    specifier: ^1.2.5
+    version: 1.2.5(solid-js@1.7.12)
+  '@solid-primitives/state-machine':
+    specifier: ^0.0.1
+    version: 0.0.1(solid-js@1.7.12)
   '@solidjs/meta':
     specifier: ^0.28.6
     version: 0.28.6(solid-js@1.7.12)
@@ -2065,6 +2074,17 @@ packages:
       solid-js: 1.7.12
     dev: true
 
+  /@solid-primitives/date@2.0.18(solid-js@1.7.12):
+    resolution: {integrity: sha512-rEjHDoGlMAH8Cwmjxc7l8t+AkfFluLvjhgR21fcBcz09MpgW5vA/67A9hpnkqrZ6FJ+fWe8EW9b/mMJP9EIf3g==}
+    peerDependencies:
+      solid-js: ^1.6.12
+    dependencies:
+      '@solid-primitives/memo': 1.3.5(solid-js@1.7.12)
+      '@solid-primitives/timer': 1.3.7(solid-js@1.7.12)
+      '@solid-primitives/utils': 6.2.1(solid-js@1.7.12)
+      solid-js: 1.7.12
+    dev: false
+
   /@solid-primitives/event-bus@1.0.8(solid-js@1.7.12):
     resolution: {integrity: sha512-vw9Q8oHL8h3WOxFiFFBE8lwJ1oOmCEdtFsOck3i66GPaJbmzHwBtQxTkAgF+DtpeSpSyCHlxKE7ojHnL4nl1Ww==}
     peerDependencies:
@@ -2091,7 +2111,6 @@ packages:
       '@solid-primitives/rootless': 1.4.2(solid-js@1.7.12)
       '@solid-primitives/utils': 6.2.1(solid-js@1.7.12)
       solid-js: 1.7.12
-    dev: true
 
   /@solid-primitives/keyed@1.2.0(solid-js@1.7.12):
     resolution: {integrity: sha512-0DuTeJdxWjCTu73XnDZs24JzfXckBnpvCfQ6Mf/kTPKkMZJh7tjkBnZEk48ckrE9xmwat9stIdfrBmZctsepIw==}
@@ -2120,6 +2139,16 @@ packages:
       '@solid-primitives/static-store': 0.0.5(solid-js@1.7.12)
       '@solid-primitives/utils': 6.2.1(solid-js@1.7.12)
       solid-js: 1.7.12
+
+  /@solid-primitives/memo@1.3.5(solid-js@1.7.12):
+    resolution: {integrity: sha512-fTtyM3rBDrgFbz4xoQnMNzbBR4GzoaYeZHj5RRxceBU9QDz7u6HE8+5mbxd6pJ+SuntjI5aYiAtwuyI8gG3rhA==}
+    peerDependencies:
+      solid-js: ^1.6.12
+    dependencies:
+      '@solid-primitives/scheduled': 1.4.1(solid-js@1.7.12)
+      '@solid-primitives/utils': 6.2.1(solid-js@1.7.12)
+      solid-js: 1.7.12
+    dev: false
 
   /@solid-primitives/platform@0.0.105(solid-js@1.7.12):
     resolution: {integrity: sha512-GULqmMc5vNsLSsIxIEYYxJv/6ypGKG+ig9hzSi4lxVPfooX6Go6txDlhv53woUSvaG939ceZGRq+X5uADMed6g==}
@@ -2172,7 +2201,14 @@ packages:
       solid-js: ^1.6.12
     dependencies:
       solid-js: 1.7.12
-    dev: true
+
+  /@solid-primitives/state-machine@0.0.1(solid-js@1.7.12):
+    resolution: {integrity: sha512-sO+BEzLsKprl/ZAvtjaomrtnjKCg+Lv0QjdQG+gx/b0Rkf0IKSLUHciBrivrODk58/mzhm49hHwpeu4SFTb+lQ==}
+    peerDependencies:
+      solid-js: ^1.7.0
+    dependencies:
+      solid-js: 1.7.12
+    dev: false
 
   /@solid-primitives/static-store@0.0.4(solid-js@1.7.12):
     resolution: {integrity: sha512-NcLtDNA6H+Z9LmqaUe4SKfMx0YbszIMXEqfV15cB34t5XyEeOM5TihYwsVJ/dpkmpHYzflm0SwAL+P9uwyzvWQ==}
@@ -2200,6 +2236,14 @@ packages:
       '@solid-primitives/utils': 6.2.1(solid-js@1.7.12)
       solid-js: 1.7.12
     dev: true
+
+  /@solid-primitives/timer@1.3.7(solid-js@1.7.12):
+    resolution: {integrity: sha512-zS3qA7WVZYsW7+iTdk2M4W1wpMvRhdcMnO23Tcd+nX3YD7eMvjOnO15Oz2mymyfl/OC2ZgM1L5ec66GayEvPwQ==}
+    peerDependencies:
+      solid-js: ^1.6.12
+    dependencies:
+      solid-js: 1.7.12
+    dev: false
 
   /@solid-primitives/transition-group@1.0.3(solid-js@1.7.12):
     resolution: {integrity: sha512-TnFADZhx9sibdoW5gxkU1QmLabzV2H2OBKYGS2aR5IC61Q/+7v8wlxOJEevxXNbPiRo6qlE3STLU3L9XS8hDbA==}

@@ -61,17 +61,12 @@ async function fetchTabNextPage(
 }
 
 export default function Channel() {
-  const [channel, setChannel] = createSignal<PipedChannel | undefined>();
-  const [error, setError] = createSignal<Error | undefined>();
   const [tabs, setTabs] = createSignal<any[]>([]);
   const [preferences] = usePreferences();
   const route = useLocation();
   const [selectedTab, setSelectedTab] = createSignal(
     route.query.tab ?? "videos"
   );
-  // onMount(() => {
-  //   getChannelData();
-  // });
 
   const [appState, setAppState] = useAppState();
 
@@ -142,6 +137,7 @@ export default function Channel() {
   const [isNavigatingLeft, setIsNavigatingLeft] = createSignal(false);
 
   function loadTab(name: string) {
+    console.log("loadTab", name);
     let prevIndex = currentIndex();
     setCurrentIndex(
       tabs().findIndex((tab) => tab.name === name) ?? currentIndex()
@@ -196,103 +192,116 @@ export default function Channel() {
           class="w-full min-h-screen"
           value={selectedTab()}
           onChange={(value) => loadTab(value)}
+          activationMode="manual"
         >
           <Tabs.List class="relative flex items-center border-b overflow-x-auto scrollbar [&::-webkit-scrollbar]:!h-1">
-            <For each={tabs()}>
+            <For
+              each={[
+                "videos",
+                "shorts",
+                "livestreams",
+                "playlists",
+                "channels",
+              ]}
+            >
               {(tab) => {
                 return (
                   <Tabs.Trigger
                     class="inline-block pl-1 pt-2 pr-4 outline-none hover:bg-primary/20 focus-visible:bg-primary/20 first-letter:uppercase"
-                    value={tab.name}
+                    value={tab}
                   >
-                    {tab.name}
+                    {tab}
                   </Tabs.Trigger>
                 );
               }}
             </For>
             <Tabs.Indicator class="absolute -bottom-px w-full h-[2px] bg-primary transition-all duration-250" />
           </Tabs.List>
-          {/* <TransitionGroup */}
-          {/*   appear */}
-          {/*   enterActiveClass="transition-all ease-in-out duration-250 transform" */}
-          {/*   enterClass={ */}
-          {/*     isNavigatingLeft() ? "-translate-x-full" : "translate-x-full" */}
-          {/*   } */}
-          {/*   enterToClass="translate-x-0" */}
-          {/*   exitActiveClass="transition-all ease-in-out duration-250 transform" */}
-          {/*   exitClass="translate-x-0" */}
-          {/*   exitToClass={ */}
-          {/*     isNavigatingLeft() ? "translate-x-full" : "-translate-x-full" */}
-          {/*   } */}
-          {/* > */}
-          <Tabs.Content value="videos">
-            <div class="flex flex-wrap justify-center">
-              <Show when={query.error}>
-                <ErrorMessage error={query.error} />
-              </Show>
-              <Show when={query.data}>
-                <Switch fallback={<Spinner />}>
-                  <Match
-                    when={
-                      query.data!.pages &&
-                      query.data!.pages.length > 0 &&
-                      !query.data!.pages[0].relatedStreams?.length
-                    }
-                  >
-                    <EmptyState />
-                  </Match>
-                  <Match
-                    when={
-                      query.isSuccess &&
-                      query.data!.pages.length > 0 &&
-                      query.data!.pages[0].relatedStreams?.length
-                    }
-                  >
-                    <For
-                      each={query.data?.pages
-                        ?.map((page) => page.relatedStreams ?? [])
-                        .flat()}
-                    >
-                      {(item) => <VideoCard v={item} />}
-                    </For>
-                  </Match>
-                </Switch>
-              </Show>
-              <div
-                ref={(ref) => setIntersection(ref)}
-                class="w-full h-20 mt-2"
-              />
-            </div>
-          </Tabs.Content>
-          <Tabs.Content value="shorts">
-            <Suspense fallback={<Spinner />}>
-              <ShortsTab
-                tabData={tabs().find((tab) => tab.name == "shorts")?.data}
-              />
-            </Suspense>
-          </Tabs.Content>
-          <Tabs.Content value="playlists">
-            <Suspense fallback={<Spinner />}>
-              <PlaylistsTab
-                tabData={tabs().find((tab) => tab.name == "playlists")?.data}
-              />
-            </Suspense>
-          </Tabs.Content>
-          <Tabs.Content value="livestreams">
-            <Suspense fallback={<Spinner />}>
-              <LivestreamsTab
-                tabData={tabs().find((tab) => tab.name == "livestreams")?.data}
-              />
-            </Suspense>
-          </Tabs.Content>
-          <Tabs.Content value="channels">
-            <Suspense fallback={<Spinner />}>
-              <ChannelsTab
-                tabData={tabs().find((tab) => tab.name == "channels")?.data}
-              />
-            </Suspense>
-          </Tabs.Content>
-          {/* </TransitionGroup> */}
+          <TransitionGroup
+            appear
+            enterActiveClass="transition-all ease-in-out duration-250 transform"
+            enterClass={
+              isNavigatingLeft() ? "-translate-x-full" : "translate-x-full"
+            }
+            enterToClass="translate-x-0"
+            exitActiveClass="transition-all ease-in-out duration-250 transform"
+            exitClass="translate-x-0"
+            exitToClass={
+              isNavigatingLeft() ? "translate-x-full" : "-translate-x-full"
+            }
+          >
+            <Tabs.Content value="videos">
+              <div class="flex flex-wrap justify-center">
+                <Show when={query.error}>
+                  <ErrorMessage error={query.error} />
+                </Show>
+                <Suspense fallback={<Spinner />}>
+                  <Show when={query.data}>
+                    <Switch fallback={<Spinner />}>
+                      <Match
+                        when={
+                          query.data!.pages &&
+                          query.data!.pages.length > 0 &&
+                          !query.data!.pages[0].relatedStreams?.length
+                        }
+                      >
+                        <EmptyState />
+                      </Match>
+                      <Match
+                        when={
+                          query.isSuccess &&
+                          query.data!.pages.length > 0 &&
+                          query.data!.pages[0].relatedStreams?.length
+                        }
+                      >
+                        <For
+                          each={query.data?.pages
+                            ?.map((page) => page.relatedStreams ?? [])
+                            .flat()}
+                        >
+                          {(item) => <VideoCard v={item} />}
+                        </For>
+                      </Match>
+                    </Switch>
+                  </Show>
+                </Suspense>
+                <div
+                  ref={(ref) => setIntersection(ref)}
+                  class="w-full h-20 mt-2"
+                />
+              </div>
+            </Tabs.Content>
+            <Tabs.Content value="shorts">
+              <Suspense fallback={<Spinner />}>
+                <ShortsTab
+                  tabData={tabs().find((tab) => tab.name == "shorts")?.data}
+                />
+              </Suspense>
+            </Tabs.Content>
+            <Tabs.Content value="playlists">
+              <Suspense fallback={<Spinner />}>
+                <PlaylistsTab
+                  tabData={tabs().find((tab) => tab.name == "playlists")?.data}
+                />
+              </Suspense>
+            </Tabs.Content>
+            <Tabs.Content value="livestreams">
+              <Suspense fallback={<Spinner />}>
+                <LivestreamsTab
+                  tabData={
+                    tabs().find((tab) => tab.name == "livestreams")?.data
+                  }
+                />
+              </Suspense>
+            </Tabs.Content>
+            <Tabs.Content value="channels">
+              <Suspense fallback={<Spinner />}>
+                <ChannelsTab
+                  tabData={tabs().find((tab) => tab.name == "channels")?.data}
+                />
+              </Suspense>
+            </Tabs.Content>
+          </TransitionGroup>
         </Tabs.Root>
       </Show>
     </Suspense>

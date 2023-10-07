@@ -35,7 +35,6 @@ import VideoCard from "./VideoCard";
 import { videoId } from "~/routes/library/history";
 import { useQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
-import dayjs from "dayjs";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { usePlayerState } from "../stores/playerStateStore";
 import { MediaRemoteControl } from "vidstack";
@@ -315,7 +314,7 @@ export default function Player(props: {
       isShort: false,
       shortDescription: "",
       type: "video",
-      uploaded: dayjs(props.video.uploadDate).unix(),
+      uploaded: new Date(props.video.uploadDate).getTime(),
       views: props.video.views,
       uploadedDate: props.video.uploadDate,
       uploaderVerified: props.video.uploaderVerified,

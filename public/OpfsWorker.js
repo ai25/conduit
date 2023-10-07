@@ -24,33 +24,70 @@ const readWholeFile = async (accessHandle) => {
  * @param {Uint8Array} state - The encoded state.
  * @returns {Promise<void>} - A promise that resolves when the updates have been stored.
  */
-const trimUpdatesFile = async (accessHandle, state) => {
+
+const trimUpdatesFile = async (accessHandle, state, dirName) => {
   if (!accessHandle) {
-    throw new Error("Access handle is not initialized.");
+    throw new Error("Handles are not initialized.");
   }
 
-  // Create a backup of the original state
-  const backupState = await readWholeFile(accessHandle);
+  let tmpFileHandle;
+  let tmpAccessHandle;
+  let roomHandle;
+  try {
+    console.log("Getting root directory");
 
-  // Your logic here to combine the existing file's content and your new state
-  // For example, just appending the new state to the existing one:
-  const newState = new Uint8Array(state.length);
-  newState.set(state, 0);
+    const root = await navigator.storage.getDirectory();
+    console.log("Getting room directory");
+    roomHandle = await root.getDirectoryHandle(dirName);
+
+    // Create or get a temporary file handle
+    console.log("Creating temporary file");
+    tmpFileHandle = await roomHandle.getFileHandle("tmp_file", {
+      create: true,
+    });
+    console.log("Creating temporary file access handle");
+    tmpAccessHandle = await tmpFileHandle.createSyncAccessHandle();
+
+    // Write the new state to the temporary file
+    console.log("Writing new state to temporary file");
+    await tmpAccessHandle.write(state, { at: 0, resize: true });
+    console.log("Saving to disk");
+    await tmpAccessHandle.flush();
+  } catch (error) {
+    throw new Error("Failed to write to the temporary file.");
+  }
 
   try {
-    // Write the combined state back to the file
-    await accessHandle.write(newState, { at: 0 });
-    await accessHandle.flush();
-    const size = accessHandle.getSize();
+    console.log("closing access handle");
+    await accessHandle.close();
+    console.log("deleting file");
+    await roomHandle.removeEntry(UPDATES_FILE_NAME);
 
-    console.log("Updates file trimmed.");
+    await tmpAccessHandle.close();
+    // Rename the temporary file to replace the original file
+    console.log("renaming temporary file");
+    await tmpFileHandle.move(UPDATES_FILE_NAME);
+    accessHandle = null;
+    console.log("success");
   } catch (error) {
-    // If anything goes wrong, revert the file to its original state
-    await accessHandle.write(backupState, { at: 0 });
-    await accessHandle.flush();
-    throw new Error("Atomic operation failed. Reverted to original state.");
+    //rollback
+    try {
+      console.log("rollback");
+      const newFileHandle = await roomHandle.getFileHandle(UPDATES_FILE_NAME, {
+        create: true,
+      });
+      const newAccessHandle = await newFileHandle.createSyncAccessHandle();
+      newAccessHandle.write(state, { at: 0, resize: true });
+    } catch (error) {
+      console.log("rollback failed");
+      throw new Error(error);
+    }
+    throw new Error(error);
   }
+
+  console.log("Updates file trimmed.");
 };
+
 /**
  * Retrieves all stored updates from the updates binary file.
  *
@@ -109,13 +146,21 @@ const initialize = async (dirName) => {
 
 self.addEventListener("message", async (event) => {
   const { action, payload } = event.data;
+  console.log("Message received", action, payload);
   if (fileHandle === null || accessHandle === null) {
     await initialize(payload.roomName);
   }
   if (!accessHandle) {
     throw new Error("Could not create access handle.");
   }
-  let size = accessHandle.getSize();
+  let size;
+  try {
+    size = accessHandle.getSize();
+  } catch (error) {
+    console.error(error, "Trying to recreate access handle");
+    await initialize(payload.roomName);
+    size = accessHandle.getSize();
+  }
   switch (action) {
     case "write":
       console.log("write");
@@ -150,9 +195,9 @@ self.addEventListener("message", async (event) => {
       console.log("trim");
       const state = payload.content;
       console.time("trimUpdatesFile");
-      await trimUpdatesFile(accessHandle, state);
+      await trimUpdatesFile(accessHandle, state, payload.roomName);
       console.timeEnd("trimUpdatesFile");
-      size = accessHandle.getSize();
+      console.log(`Actual file size: ${(size / 1024 / 1024).toFixed(2)} MB`);
       self.postMessage({ success: true });
       break;
     default:

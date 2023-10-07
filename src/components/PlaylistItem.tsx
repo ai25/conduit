@@ -1,5 +1,4 @@
 import { A } from "@solidjs/router";
-import dayjs from "dayjs";
 import numeral from "numeral";
 import {
   createEffect,
@@ -15,6 +14,7 @@ import Modal from "./Modal";
 import {  useSyncStore } from "~/stores/syncStore";
 import { generateThumbnailUrl } from "~/utils/helpers";
 import { usePreferences } from "~/stores/preferencesStore";
+import { createTimeAgo } from "@solid-primitives/date";
 
 const PlaylistItem = (props: {
   v: RelatedStream;
@@ -54,6 +54,7 @@ const PlaylistItem = (props: {
     card.removeEventListener("contextmenu", () => {});
   });
   const [isOpen, setIsOpen] = createSignal(false);
+  const [timeAgo] = createTimeAgo(props.v.uploaded, {interval: 1000 * 60 })
 
   return (
     <A
@@ -125,7 +126,7 @@ const PlaylistItem = (props: {
               {numeral(props.v.views).format("0a").toUpperCase()} views •
             </div>
             <div class="inline-block mr-1">
-              {dayjs(props.v.uploadedDate).fromNow()}
+              {timeAgo()}
             </div>
           </div>
         </div>

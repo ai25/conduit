@@ -32,6 +32,9 @@
   "dependencies": {
     "@kobalte/core": "^0.11.0",
     "@leeoniya/ufuzzy": "^1.0.10",
+    "@solid-primitives/date": "^2.0.18",
+    "@solid-primitives/keyboard": "^1.2.5",
+    "@solid-primitives/state-machine": "^0.0.1",
     "@solidjs/meta": "^0.28.6",
     "@solidjs/router": "^0.8.3",
     "@syncedstore/core": "0.6.0-alpha.0",

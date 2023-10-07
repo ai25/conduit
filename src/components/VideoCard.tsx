@@ -15,8 +15,6 @@ import {
   For,
 } from "solid-js";
 import { videoId } from "~/routes/library/history";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 import { useSyncStore, HistoryItem } from "~/stores/syncStore";
 import { BsChevronRight, BsThreeDotsVertical } from "solid-icons/bs";
 import { generateThumbnailUrl } from "~/utils/helpers";
@@ -24,8 +22,7 @@ import { FaRegularEye, FaRegularEyeSlash, FaSolidBug } from "solid-icons/fa";
 import Modal from "./Modal";
 import { mergeProps } from "solid-js";
 import { DropdownMenu } from "@kobalte/core";
-
-dayjs.extend(relativeTime);
+import { createTimeAgo } from "@solid-primitives/date";
 
 const VideoCard = (props: {
   v?: (RelatedStream & { progress?: number }) | undefined;
@@ -57,6 +54,16 @@ const VideoCard = (props: {
         <div class="animate-pulse w-1/2 h-4 bg-bg2 rounded mt-2"></div>
       </div>
     );
+  const [watchedAtDate, setWatchedAtDate] = createSignal<Date | undefined>(
+    undefined
+  );
+  createEffect(() => {
+    if (!props.v?.watchedAt) return;
+    setWatchedAtDate(new Date(props.v?.watchedAt));
+  });
+
+  const [watchedAt] = createTimeAgo(watchedAtDate(), { interval: 1000 * 60 });
+  const [uploaded] = createTimeAgo(props.v.uploaded, { interval: 1000 * 60 });
 
   return (
     <div
@@ -94,7 +101,7 @@ const VideoCard = (props: {
           <Match when={(props.v as HistoryItem)?.watchedAt}>
             <div class="relative h-0 w-0 ">
               <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
-                Watched {dayjs((props.v as HistoryItem).watchedAt).fromNow()}
+                Watched {watchedAt()}
               </div>
             </div>
           </Match>
@@ -168,7 +175,10 @@ const VideoCard = (props: {
               </A>
               <div class="flex ">
                 <Show when={props.v.views}>
-                  <div class="w-fit  ">
+                  <div
+                    class="w-fit"
+                    title={`${numeral(props.v.views).format("0,0")} views`}
+                  >
                     {" "}
                     {numeral(props.v.views).format("0a").toUpperCase()} views
                   </div>
@@ -176,7 +186,13 @@ const VideoCard = (props: {
 
                 <div class="group w-fit pl-1">
                   <Show when={props.v.uploaded && props.v.uploaded !== -1}>
-                    <div class=""> • {dayjs(props.v.uploaded).fromNow()} </div>
+                    <div
+                      title={new Date(props.v.uploaded).toLocaleString()}
+                      class=""
+                    >
+                      {" "}
+                      • {uploaded()}{" "}
+                    </div>
                   </Show>
                 </div>
               </div>

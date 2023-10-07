@@ -62,6 +62,7 @@ export class SharedService extends EventTarget {
   }
 
   activate(callback: () => void): void {
+    console.log("SharedService activate called");
     if (this.#onDeactivate) return;
 
     // When acquire a lock on the service name then we become the service
@@ -84,7 +85,11 @@ export class SharedService extends EventTarget {
         broadcastChannel.addEventListener(
           "message",
           async ({ data }) => {
-            console.log("SharedService provider message", data);
+            console.log(
+              "SharedService provider message",
+              data,
+              navigator.locks.query()
+            );
             if (
               data?.type === "request" &&
               data?.sharedService === this.#serviceName
@@ -100,25 +105,23 @@ export class SharedService extends EventTarget {
                     },
                     { once: true }
                   );
-                  if (this._ready) port.postMessage(data.clientId);
+                  port.postMessage(data.clientId);
                 }
               );
 
               this.#sendPortToClient(data, requestedPort);
               callback();
-              this._ready = true;
             }
           },
           { signal: this.#onDeactivate?.signal }
         );
 
         // Tell everyone that we are the new provider.
-        if (this._ready)
-          broadcastChannel.postMessage({
-            type: "provider",
-            sharedService: this.#serviceName,
-            providerId,
-          });
+        broadcastChannel.postMessage({
+          type: "provider",
+          sharedService: this.#serviceName,
+          providerId,
+        });
 
         // Release the lock only on user abort or context destruction.
         return new Promise((_, reject) => {

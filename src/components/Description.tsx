@@ -11,9 +11,7 @@ import {
   JSX,
 } from "solid-js";
 import { A } from "solid-start";
-import { MediaPlayerElement } from "vidstack";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
-import dayjs from "dayjs";
 import Comment, { PipedCommentResponse } from "./Comment";
 import { videoId } from "~/routes/library/history";
 import { downloadVideo } from "~/utils/hls";
@@ -42,6 +40,8 @@ import Comments from "./Comments";
 import { Bottomsheet } from "./Bottomsheet";
 import { Suspense } from "solid-js";
 import DOMPurify from "dompurify";
+import { MediaPlayerElement } from "vidstack/elements";
+import { createDate, createTimeAgo } from "@solid-primitives/date";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -148,6 +148,11 @@ const Description = (props: {
   }
   const [debugInfoOpen, setDebugInfoOpen] = createSignal(false);
   const [commentsOpen, setCommentsOpen] = createSignal(false);
+  const [date, setDate] = createDate(props.video?.uploadDate ?? new Date());
+  createEffect(() => {
+    setDate(props.video?.uploadDate ?? new Date());
+  });
+  const [timeAgo] = createTimeAgo(date, { interval: 1000 * 60 });
 
   const Placeholder = () => (
     <div class="mb-2 w-full grow min-w-0 max-w-5xl p-4 bg-bg1">
@@ -171,8 +176,7 @@ const Description = (props: {
       <Modal
         isOpen={debugInfoOpen()}
         setIsOpen={setDebugInfoOpen}
-        title="Debug info"
-      >
+        title="Debug info">
         <IconButton
           icon={<FaSolidCopy class="w-4 h-4" />}
           title="Copy to clipboard"
@@ -206,8 +210,7 @@ const Description = (props: {
                 <div class="flex flex-col items-start justify-start">
                   <A
                     href={`${props.video!.uploaderUrl}`}
-                    class="link flex w-fit items-center gap-2"
-                  >
+                    class="link flex w-fit items-center gap-2">
                     {props.video!.uploader}{" "}
                     {props.video!.uploaderVerified && <Checkmark />}
                   </A>
@@ -215,8 +218,7 @@ const Description = (props: {
                     title={`${
                       props.video!.uploaderSubscriberCount
                     } subscribers`}
-                    class="flex w-full items-center text-start text-xs text-text2 sm:text-sm"
-                  >
+                    class="flex w-full items-center text-start text-xs text-text2 sm:text-sm">
                     {numeral(props.video!.uploaderSubscriberCount)
                       .format("0a")
                       .toUpperCase()}{" "}
@@ -275,14 +277,13 @@ const Description = (props: {
           </div>
           <div
             title={`Published ${(() => {
-              const substr = dayjs(props.video!.uploadDate)
+              const substr = date()
                 .toString()
                 .split(":")[0];
               return substr.slice(0, substr.length - 3);
             })()} • ${numeral(props.video!.views).format("0,0")} views`}
-            class="flex items-center gap-1 my-1 text-sm truncate max-w-full"
-          >
-            <p class="">{dayjs(props.video?.uploadDate).fromNow()}</p>•
+            class="flex items-center gap-1 my-1 text-sm truncate max-w-full">
+            <p class="">{timeAgo()}</p>•
             <p class="">
               {numeral(props.video!.views).format("0a").toUpperCase()} views
             </p>
@@ -290,8 +291,7 @@ const Description = (props: {
               <div class="flex items-center justify-between ">
                 <span
                   title={`${numeral(props.video!.likes).format("0,0")} likes`}
-                  class="flex items-center gap-2 "
-                >
+                  class="flex items-center gap-2 ">
                   <FaSolidThumbsUp class="w-5 h-5" fill="currentColor" />
                   {numeral(props.video!.likes).format("0a").toUpperCase()}{" "}
                 </span>
@@ -299,8 +299,7 @@ const Description = (props: {
                   title={`${numeral(props.video!.dislikes).format(
                     "0,0"
                   )} likes`}
-                  class="flex items-center gap-2"
-                >
+                  class="flex items-center gap-2">
                   <FaSolidThumbsDown class="h-5 w-5" fill="currentColor" />
                   {numeral(props.video!.dislikes)
                     .format("0a")
@@ -316,8 +315,7 @@ const Description = (props: {
                         (props.video!.likes + props.video!.dislikes)) *
                       100
                     }%`,
-                  }}
-                ></div>
+                  }}></div>
               </div>
             </div>
           </div>
@@ -340,8 +338,7 @@ const Description = (props: {
             onClick={() => {
               setExpanded(!expanded());
             }}
-            class="text-center text-sm text-accent1 hover:underline "
-          >
+            class="text-center text-sm text-accent1 hover:underline ">
             Show {expanded() ? "less" : "more"}
           </button>
         </div>
@@ -359,8 +356,7 @@ export const Checkmark = () => (
     class="h-4 w-4 "
     xmlns="http://www.w3.org/2000/svg"
     fill="currentColor"
-    viewBox="0 0 24 24"
-  >
+    viewBox="0 0 24 24">
     <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z" />
   </svg>
 );
@@ -373,8 +369,7 @@ const IconButton = (props: {
   <Tooltip.Root>
     <Tooltip.Trigger
       onClick={props.onClick}
-      class="aspect-square w-12 h-12 transition duration-300 flex items-center justify-center rounded-full  hover-fine:bg-bg1/80 outline-none active:scale-110 focus-visible:bg-bg2 focus-visible:ring-2 focus-visible:ring-primary"
-    >
+      class="aspect-square w-12 h-12 transition duration-300 flex items-center justify-center rounded-full  hover-fine:bg-bg1/80 outline-none active:scale-110 focus-visible:bg-bg2 focus-visible:ring-2 focus-visible:ring-primary">
       {props.icon}
     </Tooltip.Trigger>
     <Tooltip.Portal>

@@ -1,6 +1,5 @@
 import { A } from "@solidjs/router";
 import { createInfiniteQuery } from "@tanstack/solid-query";
-import dayjs from "dayjs";
 import { FaSolidThumbsUp } from "solid-icons/fa";
 import { Show, createSignal, useContext, Suspense, For } from "solid-js";
 import { usePreferences } from "~/stores/preferencesStore";

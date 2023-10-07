@@ -10,7 +10,6 @@ import {
 import { extractVideoId } from "~/routes/watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
-import dayjs from "dayjs";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { BsInfoCircleFill, BsXCircle } from "solid-icons/bs";
 import Button from "~/components/Button";
@@ -127,9 +126,7 @@ export default function History() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const fileName = `conduit-history-${dayjs().format(
-      "YYYY-MM-DDTHH-mm-ss"
-    )}.json`;
+    const fileName = `conduit-history-${new Date().toISOString()}.json`;
     a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
@@ -152,8 +149,7 @@ export default function History() {
       <Modal
         title="Delete history?"
         isOpen={deleteModalOpen()}
-        setIsOpen={setDeleteModalOpen}
-      >
+        setIsOpen={setDeleteModalOpen}>
         <div class="flex flex-col items-center justify-center">
           <div class="text-sm text-text1">This operation cannot be undone.</div>
           <div class="flex mt-4 flex-col gap-2 items-center">
@@ -231,8 +227,7 @@ export default function History() {
           uppercase
         `}
         disabled={isLoading()}
-        aria-disabled={isLoading()}
-      >
+        aria-disabled={isLoading()}>
         {isLoading() ? "Loading..." : "Subscribe"}
       </button>
       <div class="flex flex-wrap justify-center h-full min-h-[80vh]">

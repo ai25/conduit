@@ -1,9 +1,5 @@
 import type { RelatedPlaylist, RelatedStream } from "~/types";
 import { A } from "solid-start";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-
-dayjs.extend(relativeTime);
 
 export default ({ item }: { item?: RelatedPlaylist | undefined }) => {
   if (!item)

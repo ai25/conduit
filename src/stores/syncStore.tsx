@@ -24,7 +24,6 @@ enum ProviderStatus {
 }
 
 export type HistoryItem = RelatedStream & {
-  id: string;
   watchedAt: number;
   currentTime: number;
 };
@@ -34,12 +33,14 @@ export interface Store extends DocTypeDescription {
   history: Record<string, HistoryItem>;
   subscriptions: string[];
   preferences: Preferences;
+  watchLater: Record<string, RelatedStream>;
 }
 const [initialStore] = createStore<Store>({
   playlists: {},
   history: {},
   subscriptions: [],
   preferences: {} as Preferences,
+  watchLater: {},
 });
 
 const doc = new Y.Doc({
@@ -150,6 +151,7 @@ export const SyncedStoreProvider = (props: { children: any }) => {
         setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
       });
     opfsProvider = new OpfsPersistence(room().id!, doc, true);
+    opfsProvider.sync();
     onCleanup(() => {
       idbProvider?.destroy();
       opfsProvider?.destroy();
