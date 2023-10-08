@@ -137,19 +137,19 @@ export const SyncedStoreProvider = (props: { children: any }) => {
     }
     setAppState("sync", "providers", "idb", ProviderStatus.CONNECTING);
     console.time("indexeddb");
-    idbProvider = new IndexeddbPersistence(room().id!, doc);
-    idbProvider.whenSynced
-      .then(() => {
-        console.timeEnd("indexeddb");
-        console.log("synced");
+    // idbProvider = new IndexeddbPersistence(room().id!, doc);
+    // idbProvider.whenSynced
+    //   .then(() => {
+    //     console.timeEnd("indexeddb");
+    //     console.log("synced");
 
-        setTimeout(() => {
-          setAppState("sync", "providers", "idb", ProviderStatus.CONNECTED);
-        }, 0);
-      })
-      .catch(() => {
-        setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
-      });
+    //     setTimeout(() => {
+    //       setAppState("sync", "providers", "idb", ProviderStatus.CONNECTED);
+    //     }, 0);
+    //   })
+    //   .catch(() => {
+    //     setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
+    //   });
     opfsProvider = new OpfsPersistence(room().id!, doc, true);
     opfsProvider.sync();
     onCleanup(() => {

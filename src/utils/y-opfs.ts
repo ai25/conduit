@@ -81,8 +81,10 @@ export default class OpfsPersistence extends ObservableV2<{
         origin,
         this
       );
-      console.log("write");
-      this._sharedService?.proxy["write"](update);
+      const stateVector = Y.encodeStateVector(this.ydoc);
+      const diff = Y.encodeStateAsUpdate(this.ydoc, stateVector);
+      console.log("write", update.length, diff.length);
+      this._sharedService?.proxy["write"](diff);
       // Y.applyUpdate(this.ydoc, update, this);
 
       if (++this._updateCount >= 10) {

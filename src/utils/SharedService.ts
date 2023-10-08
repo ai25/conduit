@@ -61,80 +61,116 @@ export class SharedService extends EventTarget {
     this.proxy = this.#createProxy();
   }
 
-  activate(callback: () => void): void {
+  async activate(callback: () => void) {
     console.log("SharedService activate called");
-    if (this.#onDeactivate) return;
 
-    // When acquire a lock on the service name then we become the service
-    // provider. Only one instance at a time will get the lock; the rest
-    // will wait their turn.
+    if (this.#onDeactivate) {
+      console.warn("SharedService activate called twice");
+      return;
+    }
+
     this.#onDeactivate = new AbortController();
-    navigator.locks.request(
-      `SharedService-${this.#serviceName}`,
-      { signal: this.#onDeactivate.signal },
-      async () => {
-        // Get the port to request client ports.
-        const port = await this.#portProviderFunc();
-        port.start();
+    const lockName = `SharedService-${this.#serviceName}`;
 
-        // Listen for client requests. A separate BroadcastChannel
-        // instance is necessary because we may be serving our own
-        // request.
-        const providerId = await this.#clientId;
-        const broadcastChannel = new BroadcastChannel("SharedService");
-        broadcastChannel.addEventListener(
-          "message",
-          async ({ data }) => {
-            console.log(
-              "SharedService provider message",
-              data,
-              navigator.locks.query()
+    console.log(await navigator.locks.query());
+
+    try {
+      await navigator.locks.request(
+        lockName,
+        {
+          signal: this.#onDeactivate.signal,
+          mode: "exclusive",
+        },
+        async (lock) => {
+          console.log("SharedService lock acquired");
+          try {
+            await this.executeLockedSection(callback);
+          } catch (innerError) {
+            console.error(
+              "An error occurred within the lock-acquired section:",
+              innerError
             );
-            if (
-              data?.type === "request" &&
-              data?.sharedService === this.#serviceName
-            ) {
-              // Get a port to send to the client.
-              const requestedPort = await new Promise<MessagePort>(
-                (resolve) => {
-                  port.addEventListener(
-                    "message",
-                    (event) => {
-                      console.log("SharedService provider port message", event);
-                      resolve(event.ports[0]);
-                    },
-                    { once: true }
-                  );
-                  port.postMessage(data.clientId);
-                }
-              );
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error in lock acquisition or execution:", error);
+    } finally {
+      console.log("SharedService lock released");
+      this.cleanupResources();
+    }
+  }
+  private async executeLockedSection(callback: () => void) {
+    // Obtain the port and start listening
+    const port = await this.#portProviderFunc();
+    port.start();
 
-              this.#sendPortToClient(data, requestedPort);
-              callback();
-            }
-          },
-          { signal: this.#onDeactivate?.signal }
-        );
+    // Obtain a BroadcastChannel and listen for client requests
+    const providerId = await this.#clientId;
+    const broadcastChannel = new BroadcastChannel("SharedService");
+    this.listenForClientRequests(port, broadcastChannel, callback);
 
-        // Tell everyone that we are the new provider.
-        broadcastChannel.postMessage({
-          type: "provider",
-          sharedService: this.#serviceName,
-          providerId,
-        });
+    // Announce ourselves as the new provider
+    broadcastChannel.postMessage({
+      type: "provider",
+      sharedService: this.#serviceName,
+      providerId,
+    });
 
-        // Release the lock only on user abort or context destruction.
-        return new Promise((_, reject) => {
-          this.#onDeactivate?.signal.addEventListener("abort", () => {
-            broadcastChannel.close();
-            reject(this.#onDeactivate?.signal.reason);
-          });
-        });
-      }
+    // Wait for an abort signal to clean up
+    return new Promise<void>((_, reject) => {
+      this.#onDeactivate!.signal.addEventListener("abort", () => {
+        broadcastChannel.close();
+        reject(this.#onDeactivate!.signal.reason);
+      });
+    });
+  }
+
+  private listenForClientRequests(
+    port: MessagePort,
+    broadcastChannel: BroadcastChannel,
+    callback: () => void
+  ) {
+    broadcastChannel.addEventListener(
+      "message",
+      async ({ data }) => {
+        if (
+          data?.type === "request" &&
+          data?.sharedService === this.#serviceName
+        ) {
+          const requestedPort = await this.getPortForClient(
+            port,
+            data.clientId
+          );
+          this.#sendPortToClient(data, requestedPort);
+          callback();
+        }
+      },
+      { signal: this.#onDeactivate!.signal }
     );
   }
 
+  private async getPortForClient(
+    port: MessagePort,
+    clientId: string
+  ): Promise<MessagePort> {
+    return new Promise<MessagePort>((resolve) => {
+      port.addEventListener("message", (event) => resolve(event.ports[0]), {
+        once: true,
+      });
+      port.postMessage(clientId);
+    });
+  }
+
+  private cleanupResources() {
+    if (this.#onDeactivate) {
+      this.#onDeactivate.abort();
+      this.#onDeactivate = null;
+    }
+  }
+
   deactivate() {
+    console.log("SharedService deactivate called");
     this.#onDeactivate?.abort();
     this.#onDeactivate = null;
   }

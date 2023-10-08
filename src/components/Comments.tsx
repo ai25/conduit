@@ -38,27 +38,22 @@ export default function Comments(props: { videoId: string; uploader: string }) {
       },
     }
   );
-  async function loadComments() {
-    // const res = await fetch(`${instance().api_url}/comments/${videoId(props.video)}`);
-    // const data = await res.json();
-    // console.log(data, "comments");
-    // setComments(data);
-  }
-  async function loadMoreComments() {
-    // if (!comments()?.nextpage) return;
-    // const res = await fetch(
-    //   `${instance().api_url}/nextpage/comments/${videoId(props.video)}?nextpage=${
-    //     comments()!.nextpage
-    //   }`
-    // );
-    // const data = await res.json();
-    // console.log(data, "comments");
-    // setComments({
-    //   ...data,
-    //   comments: [...comments()!.comments, ...data.comments],
-    // });
-  }
   const [commentsOpen, setCommentsOpen] = createSignal(false);
+  const [intersectionRef, setIntersectionRef] = createSignal<
+    HTMLDivElement | undefined
+  >(undefined);
+
+  const isIntersecting = useIntersectionObserver({
+    setTarget: () => intersectionRef(),
+  });
+
+  createEffect(() => {
+    if (isIntersecting()) {
+      if (query.hasNextPage) {
+        query.fetchNextPage();
+      }
+    }
+  });
 
   return (
     <>
@@ -77,34 +72,33 @@ export default function Comments(props: { videoId: string; uploader: string }) {
             console.log("close");
             setCommentsOpen(false);
           }}
-          onIntersect={() => {
-            if (query.hasNextPage) {
-              query.fetchNextPage();
-            }
-          }}
         >
-          <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-h-full max-w-full overflow-auto">
-            <Suspense fallback={<p>Loading...</p>}>
-              <div class="flex flex-col gap-1 relative z-50 ">
-                <Show when={query.data}>
-                  <For each={query.data!.pages}>
-                    {(page) => (
-                      <For each={page.comments}>
-                        {(comment) => (
-                          <Comment
-                            videoId={props.videoId}
-                            comment={comment}
-                            uploader={props.uploader}
-                            nextpage={""}
-                          />
-                        )}
-                      </For>
-                    )}
-                  </For>
-                </Show>
-              </div>
-            </Suspense>
-          </div>
+          {/* <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-h-full max-w-full overflow-auto"> */}
+          <Suspense fallback={<p>Loading...</p>}>
+            <div id="sb-content" class="flex flex-col gap-1 relative z-50 ">
+              <Show when={query.data}>
+                <For each={query.data!.pages}>
+                  {(page) => (
+                    <For each={page.comments}>
+                      {(comment) => (
+                        <Comment
+                          videoId={props.videoId}
+                          comment={comment}
+                          uploader={props.uploader}
+                          nextpage={""}
+                        />
+                      )}
+                    </For>
+                  )}
+                </For>
+                <div
+                  class="w-full h-40 bg-primary"
+                  ref={(ref) => setIntersectionRef(ref)}
+                />
+              </Show>
+            </div>
+          </Suspense>
+          {/* </div> */}
         </Bottomsheet>
       )}
     </>

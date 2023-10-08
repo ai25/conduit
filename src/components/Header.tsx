@@ -217,7 +217,7 @@ const Header = () => {
       <div class="flex items-center justify-between w-full max-w-full min-w-0">
         <A href="/" class="text-text1 mx-2 w-8 h-8">
           <img
-            src="/logo.png"
+            src="/logo.svg"
             alt="Conduit"
             class="h-8 w-8 aspect-square min-w-max "
           />

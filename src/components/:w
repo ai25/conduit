@@ -203,7 +203,7 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
           }
           setContentScrollTop(Math.max(0, contentScrollTop() - 1));
           console.log("touchend", contentScrollTop(), isInitialTouch());
-          if (contentScrollTop() > 0) {
+          if (contentScrollTop() > 0 || isInitialTouch()) {
             return;
           }
         }
@@ -292,6 +292,7 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
             }}
             onScroll={(e) => {
               setContentScrollTop(e.currentTarget.scrollTop + 1);
+              console.log("contentScrollTop", contentScrollTop());
             }}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMoveContent}

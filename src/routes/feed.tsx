@@ -66,6 +66,8 @@ export default function Feed() {
           : false;
       },
       placeholderData: Array(50).fill(undefined),
+      refetchOnMount: true,
+      refetchOnReconnect: true,
     }
   );
 

@@ -21,18 +21,18 @@ import { NetworkFirst } from "workbox-strategies";
 // Precache assets
 precacheAndRoute([
   ...self.__WB_MANIFEST,
-  {
-    url: "/library",
-    revision: `${new Date().getTime()}`,
-  },
-  {
-    url: "/",
-    revision: `${new Date().getTime()}`,
-  },
-  {
-    url: "/library/history",
-    revision: `${new Date().getTime()}`,
-  },
+  // {
+  //   url: "/library",
+  //   revision: `${new Date().getTime()}`,
+  // },
+  // {
+  //   url: "/",
+  //   revision: `${new Date().getTime()}`,
+  // },
+  // {
+  //   url: "/library/history",
+  //   revision: `${new Date().getTime()}`,
+  // },
 ]);
 
 // Custom handler to manage offline fallback
