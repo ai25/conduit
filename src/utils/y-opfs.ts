@@ -67,7 +67,10 @@ export default class OpfsPersistence extends ObservableV2<{
       if (this._timerId) {
         clearTimeout(this._timerId);
       }
-      if (!this.synced) {
+      const lock = (await navigator.locks.query()).held?.find(
+        (lock) => lock.name === `SharedService-${this.room}`
+      );
+      if (!this.synced && !lock) {
         this.log("Waiting for sync...");
         this._timerId = setTimeout(() => {
           this._storeUpdate(update, origin);
@@ -85,22 +88,21 @@ export default class OpfsPersistence extends ObservableV2<{
       const diff = Y.encodeStateAsUpdate(this.ydoc, stateVector);
       console.log("write", update.length, diff.length);
       this._sharedService?.proxy["write"](diff);
-      // Y.applyUpdate(this.ydoc, update, this);
 
-      if (++this._updateCount >= 10) {
-        if (this._storeTimeoutId !== null) {
-          clearTimeout(this._storeTimeoutId);
-        }
-        const updates: Uint8Array = Y.encodeStateAsUpdate(this.ydoc);
-        const updatesSizeMB = updates.byteLength / 1024 / 1024;
-        console.log(`updates size: ${updatesSizeMB} MB`);
-        this._storeTimeoutId = setTimeout(() => {
-          this.log("Trimming updates file...");
-          this._sharedService?.proxy["trim"](updates);
-          this._storeTimeoutId = null;
-          this._updateCount = 0;
-        }, this.DEBOUNCE_TIMEOUT);
-      }
+      // if (++this._updateCount >= 10) {
+      //   if (this._storeTimeoutId !== null) {
+      //     clearTimeout(this._storeTimeoutId);
+      //   }
+      //   const updates: Uint8Array = Y.encodeStateAsUpdate(this.ydoc);
+      //   const updatesSizeMB = updates.byteLength / 1024 / 1024;
+      //   console.log(`updates size: ${updatesSizeMB} MB`);
+      //   this._storeTimeoutId = setTimeout(() => {
+      //     this.log("Trimming updates file...");
+      //     this._sharedService?.proxy["trim"](updates);
+      //     this._storeTimeoutId = null;
+      //     this._updateCount = 0;
+      //   }, this.DEBOUNCE_TIMEOUT);
+      // }
     }
   };
 
@@ -147,7 +149,7 @@ export default class OpfsPersistence extends ObservableV2<{
     //   action: "read",
     //   payload: { roomName: this.room },
     // });
-    this._sharedService = new SharedService("test", () => {
+    this._sharedService = new SharedService(this.room, () => {
       return createSharedServicePort({
         read: async () => {
           console.log("Calling read");
@@ -185,6 +187,7 @@ export default class OpfsPersistence extends ObservableV2<{
           });
         },
         trim: (content: Uint8Array) => {
+          console.log("Calling trim");
           return this.sendMessage({
             action: "trim",
             payload: { roomName: this.room, content },
@@ -193,7 +196,7 @@ export default class OpfsPersistence extends ObservableV2<{
       });
     });
 
-    this._sharedService.activate(async () => {
+    await this._sharedService.activate(async () => {
       console.log("SharedService activated");
 
       const res = await this._sharedService?.proxy["read"]();
@@ -203,6 +206,8 @@ export default class OpfsPersistence extends ObservableV2<{
       console.timeEnd("OPFS: getStoredUpdates");
       this.log("Received updates from OPFS.", updates.length);
       this._updateCount = updates.length;
+
+      const stateVector = Y.encodeStateVector(this.ydoc);
 
       // Apply each stored update to the Y.js document.
       Y.transact(
@@ -224,6 +229,8 @@ export default class OpfsPersistence extends ObservableV2<{
 
       console.timeEnd("OPFS");
     });
+    console.log("synced");
+    this.emit("synced", []);
   }
 
   async destroy() {

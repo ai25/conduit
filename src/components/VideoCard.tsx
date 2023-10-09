@@ -27,21 +27,6 @@ import { createTimeAgo } from "@solid-primitives/date";
 const VideoCard = (props: {
   v?: (RelatedStream & { progress?: number }) | undefined;
 }) => {
-  const [progress, setProgress] = createSignal<number | undefined>(undefined);
-  const [imgError, setImgError] = createSignal(false);
-  const sync = useSyncStore();
-
-  createEffect(() => {
-    const id = videoId(props.v);
-    if (!id) return;
-    const val = sync.store.history?.[id];
-    props = mergeProps(props, { v: { ...props.v, ...val } });
-    setProgress(val?.currentTime ?? undefined);
-  });
-
-  const [dropdownOpen, setDropdownOpen] = createSignal(false);
-  const [modalOpen, setModalOpen] = createSignal(false);
-
   if (!props.v)
     return (
       <div
@@ -54,15 +39,34 @@ const VideoCard = (props: {
         <div class="animate-pulse w-1/2 h-4 bg-bg2 rounded mt-2"></div>
       </div>
     );
+  const [progress, setProgress] = createSignal<number | undefined>(undefined);
+  const sync = useSyncStore();
+
+  createEffect(() => {
+    const id = videoId(props.v);
+    if (!id) return;
+    const val = sync.store.history?.[id];
+    if (val?.watchedAt) {
+      setWatchedAtDate(new Date(val.watchedAt));
+    }
+    props = mergeProps(props, { v: { ...props.v, ...val } });
+    setProgress(val?.currentTime ?? undefined);
+  });
+
+  const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  const [modalOpen, setModalOpen] = createSignal(false);
+
   const [watchedAtDate, setWatchedAtDate] = createSignal<Date | undefined>(
     undefined
   );
+  const [watchedAt, setWatchedAt] = createSignal<string | undefined>(undefined);
   createEffect(() => {
-    if (!props.v?.watchedAt) return;
-    setWatchedAtDate(new Date(props.v?.watchedAt));
+    const [watchedAt] = createTimeAgo(watchedAtDate() ?? new Date(), {
+      interval: 1000 * 60,
+    });
+    setWatchedAt(watchedAt());
   });
 
-  const [watchedAt] = createTimeAgo(watchedAtDate(), { interval: 1000 * 60 });
   const [uploaded] = createTimeAgo(props.v.uploaded, { interval: 1000 * 60 });
 
   return (
@@ -74,29 +78,21 @@ const VideoCard = (props: {
         class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
         title={props.v.title}
       >
-        <Show when={!imgError()}>
-          <img
-            class={`cursor-pointer w-full aspect-video max-w-md break-words ${
-              progress() !== undefined ? "saturate-[0.35] opacity-75" : ""
-            } `}
-            src={generateThumbnailUrl(
-              sync.store!.preferences?.instance?.image_proxy_url ??
-                "https://pipedproxy.kavin.rocks",
-              videoId(props.v)
-            )}
-            onError={() => setImgError(true)}
-            // placeholder="blur"
-            width={2560}
-            height={1440}
-            alt=""
-            loading="lazy"
-          />
-        </Show>
-        <Show when={imgError()}>
-          <div class="flex w-full h-full items-center justify-center">
-            <div class="text-text2">Image not found</div>
-          </div>
-        </Show>
+        <img
+          class={`cursor-pointer w-full aspect-video max-w-md break-words ${
+            progress() !== undefined ? "saturate-[0.35] opacity-75" : ""
+          } `}
+          src={generateThumbnailUrl(
+            sync.store!.preferences?.instance?.image_proxy_url ??
+              "https://pipedproxy.kavin.rocks",
+            videoId(props.v)
+          )}
+          // placeholder="blur"
+          width={2560}
+          height={1440}
+          alt=""
+          loading="lazy"
+        />
         <Switch>
           <Match when={(props.v as HistoryItem)?.watchedAt}>
             <div class="relative h-0 w-0 ">

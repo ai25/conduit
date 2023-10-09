@@ -201,10 +201,16 @@ export default function Player(props: {
     });
   };
 
-  const init = () => {
+  function yieldToMain() {
+    return new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  }
+  const init = async () => {
     if (!props.video) throw new Error("No video");
     console.time("init");
     initMediaSession();
+    await yieldToMain();
     fetchSubtitles(props.video.subtitles);
     if (!props.video?.subtitles) return;
     const subs = new Map<string, string>();

@@ -27,7 +27,6 @@ export class SharedService extends EventTarget {
   #providerChangeCleanup: (() => void)[] = [];
 
   proxy: Record<string, (...args: any[]) => Promise<any>>;
-  _ready = false;
 
   constructor(
     serviceName: string,
@@ -138,10 +137,12 @@ export class SharedService extends EventTarget {
           data?.type === "request" &&
           data?.sharedService === this.#serviceName
         ) {
+          console.log("SharedService request received", data);
           const requestedPort = await this.getPortForClient(
             port,
             data.clientId
           );
+          console.log("SharedService port obtained", requestedPort);
           this.#sendPortToClient(data, requestedPort);
           callback();
         }
@@ -154,10 +155,18 @@ export class SharedService extends EventTarget {
     port: MessagePort,
     clientId: string
   ): Promise<MessagePort> {
+    console.log("SharedService getPortForClient called", clientId);
     return new Promise<MessagePort>((resolve) => {
-      port.addEventListener("message", (event) => resolve(event.ports[0]), {
-        once: true,
-      });
+      port.addEventListener(
+        "message",
+        (event) => {
+          console.log("SharedService getPortForClient message received", event);
+          resolve(event.ports[0]);
+        },
+        {
+          once: true,
+        }
+      );
       port.postMessage(clientId);
     });
   }
@@ -185,6 +194,7 @@ export class SharedService extends EventTarget {
 
   async #sendPortToClient(message: any, port: MessagePort): Promise<void> {
     // Return the port to the client via the service worker.
+    console.log("SharedService port sent to client", navigator.serviceWorker);
     const serviceWorker = await navigator.serviceWorker.ready;
     serviceWorker.active?.postMessage(message, [port]);
   }
@@ -201,7 +211,9 @@ export class SharedService extends EventTarget {
     let clientId: string | null = null;
     while (!clientId) {
       clientId = await fetch("/clientId").then((response) => {
-        if (response.ok) {
+        console.log("SharedService clientId response", response);
+        const contentType = response.headers.get("content-type");
+        if (response.ok && contentType?.startsWith("text/plain")) {
           return response.text();
         }
         console.warn("service worker not ready, retrying...");

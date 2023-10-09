@@ -144,13 +144,14 @@ export default function ImportHistoryModal(props: {
     const newItems: Record<string, HistoryItem>[] = [];
     if (!sync.store) return;
     for (const item of items() as HistoryItem[]) {
-      const existing = sync.store.history[item.id];
+      const id = videoId(item);
+      const existing = sync.store.history[id];
       if (existing) {
         setIndex(index() + 1);
         setSkipped(skipped() + 1);
         continue;
       }
-      newItems.push({ [item.id]: item });
+      newItems.push({ [id]: item });
       setIndex(index() + 1);
       setSuccess(success() + 1);
     }
@@ -191,9 +192,12 @@ export default function ImportHistoryModal(props: {
           <input ref={fileSelector} type="file" onInput={fileChange} />
         </div>
         <textarea
+          class="text-black"
           onInput={(e) => {
             // setV(e.currentTarget.value)
-            setItems(JSON.parse(e.currentTarget.value));
+            console.log(e.currentTarget.value);
+            setItems(JSON.parse(e.currentTarget.value).history);
+            console.log(items());
           }}
         />
         <br />

@@ -144,15 +144,15 @@ export default function Watch() {
           ? true
           : false;
       },
-      select: (data) => {
-        if (!(data as any).error) {
-          setVideo("value", data);
-        } else {
-          setVideo("value", undefined);
-          setVideo("error", (data as any).error);
-        }
-        return data;
-      },
+      // select: (data) => {
+      //   if (!(data as any).error) {
+      //     setVideo("value", data);
+      //   } else {
+      //     setVideo("value", undefined);
+      //     setVideo("error", (data as any).error);
+      //   }
+      //   return data;
+      // },
       refetchOnReconnect: false,
     }
   );
