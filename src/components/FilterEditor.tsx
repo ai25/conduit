@@ -1,10 +1,11 @@
 import { RelatedChannel, RelatedPlaylist, RelatedStream } from "~/types";
 import { RadioGroup } from "@kobalte/core";
-import { For, Show, createEffect, createSignal } from "solid-js";
+import { For, Show, createEffect, createSignal, Match } from "solid-js";
 import { FaSolidX } from "solid-icons/fa";
 import { Transition } from "solid-headless";
 import Select from "./Select";
 import Field from "./Field";
+import { Switch } from "solid-js";
 
 type FieldNames =
   | keyof RelatedStream
@@ -18,7 +19,10 @@ type Condition = {
     | "LESS_THAN"
     | "GREATER_THAN"
     | "NOT_INCLUDES"
-    | "IS_NOT";
+    | "IS_NOT"
+    | "IS_BEFORE"
+    | "IS_AFTER"
+    | "IS_BETWEEN";
   field: FieldNames;
   value: string;
 };
@@ -58,7 +62,10 @@ const RadioGroupItem = (props: {
     <div class="flex items-center gap-2">
       <For each={props.options}>
         {(operator) => (
-          <RadioGroup.Item value={operator} class="flex items-center gap-1 rounded  focus-within:ring-2 focus-within:ring-primary">
+          <RadioGroup.Item
+            value={operator}
+            class="flex items-center gap-1 rounded  focus-within:ring-2 focus-within:ring-primary"
+          >
             <RadioGroup.ItemInput class="flex items-center gap-1" />
             <RadioGroup.ItemControl class="flex items-center justify-center w-5 h-5 rounded-full  border border-text2 data-[checked]:border-primary data-[checked]:bg-white focus-visible:border-spacing-1 focus-visible:border-primary">
               <RadioGroup.ItemIndicator class="w-2.5 h-2.5 rounded-full bg-primary" />
@@ -94,7 +101,7 @@ const Filter = (props: {
   const [showConditionEditor, setShowConditionEditor] = createSignal(false);
   return (
     <>
-      <div class="flex gap-2 items-center mb-2">
+      <div class="flex gap-2 items-center mb-2 flex-wrap">
         <div class="flex items-center gap-1">
           <FieldText field={props.field} />
           <span class="font-bold">{props.operatorText}</span>
@@ -118,7 +125,8 @@ const Filter = (props: {
         leaveFrom="opacity-100 translate-y-0"
         leaveTo="opacity-0 translate-y-2"
         class="my-2"
-        show={showConditionEditor()}>
+        show={showConditionEditor()}
+      >
         <ConditionEditor
           addCondition={(condition) => {
             setShowConditionEditor(false);
@@ -153,7 +161,7 @@ const ConditionEditor = (props: {
     createSignal<Condition["type"]>("INCLUDES");
 
   return (
-    <div class="flex gap-2 items-center">
+    <div class="flex gap-2 items-center flex-wrap">
       <Select
         value={currentField()}
         options={contentItemKeys}
@@ -170,18 +178,108 @@ const ConditionEditor = (props: {
           "GREATER_THAN",
           "IS",
           "IS_NOT",
+          "IS_BEFORE",
+          "IS_AFTER",
+          "IS_BETWEEN",
         ]}
       />
 
-      <Field
-        placeholder="String or Regex"
-        type="text"
-        value={currentValue()}
-        validationState={
-          Number.isNaN(parseInt(currentValue())) ? "invalid" : "valid"
-        }
-        onInput={(value) => setCurrentValue(value)}
-      />
+      <Switch>
+        <Match
+          when={
+            currentOperator() === "IS_BEFORE" ||
+            currentOperator() === "IS_AFTER"
+          }
+        >
+          <input
+            type="date"
+            class="bg-accent1 text-text3 rounded px-2"
+            value={currentValue()}
+            onInput={(e) => setCurrentValue(e.currentTarget.value)}
+          />
+        </Match>
+        <Match when={currentOperator() === "IS_BETWEEN"}>
+          {(() => {
+            setCurrentValue(
+              JSON.stringify({
+                start: new Date("1970-01-01").toISOString(),
+                end: new Date().toISOString(),
+              })
+            );
+            return <></>;
+          })()}
+          <div class="flex gap-2 items-center flex-wrap">
+            <input
+              type="date"
+              class="bg-accent1 text-text3 rounded px-2"
+              value={JSON.parse(currentValue()).start}
+              onInput={(e) =>
+                setCurrentValue(
+                  JSON.stringify({
+                    start: e.currentTarget.value,
+                    end: JSON.parse(currentValue()).end,
+                  })
+                )
+              }
+            />
+            <span class="font-bold">AND</span>
+            <input
+              type="date"
+              class="bg-accent1 text-text3 rounded px-2"
+              value={JSON.parse(currentValue()).end}
+              onInput={(e) =>
+                setCurrentValue(
+                  JSON.stringify({
+                    start: JSON.parse(currentValue()).start,
+                    end: e.currentTarget.value,
+                  })
+                )
+              }
+            />
+          </div>
+        </Match>
+
+        <Match
+          when={
+            currentOperator() === "INCLUDES" ||
+            currentOperator() === "NOT_INCLUDES"
+          }
+        >
+          <Field
+            placeholder="String or Regex"
+            type="text"
+            value={currentValue()}
+            validationState={
+              Number.isNaN(parseInt(currentValue())) ? "invalid" : "valid"
+            }
+            onInput={(value) => setCurrentValue(value)}
+          />
+        </Match>
+        <Match
+          when={
+            currentOperator() === "LESS_THAN" ||
+            currentOperator() === "GREATER_THAN"
+          }
+        >
+          <Field
+            type="number"
+            value={currentValue()}
+            validationState={
+              Number.isNaN(parseInt(currentValue())) ? "invalid" : "valid"
+            }
+            onInput={(value) => setCurrentValue(value)}
+          />
+        </Match>
+        <Match
+          when={currentOperator() === "IS" || currentOperator() === "IS_NOT"}
+        >
+          <Select
+            value={currentValue()}
+            options={["true", "false"]}
+            onChange={(value) => setCurrentValue(value as string)}
+          />
+        </Match>
+      </Switch>
 
       <button
         onClick={() => {
@@ -190,7 +288,8 @@ const ConditionEditor = (props: {
             field: currentField(),
             value: currentValue(),
           });
-        }}>
+        }}
+      >
         Add Condition
       </button>
     </div>
@@ -228,7 +327,8 @@ const FilterEditor = (props: {
         leaveFrom="opacity-100 "
         leaveTo="opacity-0 "
         class="my-2"
-        show={visible()}>
+        show={visible()}
+      >
         <Filter
           operatorText={condition.type}
           field={condition.field}
@@ -337,6 +437,48 @@ export const evaluateFilter = (
           result = !new RegExp(condition.value).test(
             video[condition.field]?.toString()
           );
+        case "IS_BEFORE":
+          const date = new Date(condition.value);
+          const fieldDate = new Date(video[condition.field]?.toString());
+          result =
+            isNaN(date.getTime()) || isNaN(fieldDate.getTime())
+              ? false
+              : fieldDate.getTime() < date.getTime();
+          break;
+        case "IS_AFTER":
+          const dateAfter = new Date(condition.value);
+          const fieldDateAfter = new Date(video[condition.field]?.toString());
+          result =
+            isNaN(dateAfter.getTime()) || isNaN(fieldDateAfter.getTime())
+              ? false
+              : fieldDateAfter.getTime() > dateAfter.getTime();
+          break;
+        case "IS_BETWEEN":
+          let start: Date | null = null,
+            end: Date | null = null;
+          try {
+            let values = JSON.parse(condition.value);
+            if (values.start) {
+              start = new Date(values.start);
+            }
+            if (values.end) {
+              end = new Date(values.end);
+            }
+          } catch (error) {
+            onError(error);
+            result = false;
+            break;
+          }
+          if (!start || !end) {
+            result = false;
+            break;
+          }
+          const fieldDateBetween = new Date(video[condition.field]?.toString());
+          result = isNaN(fieldDateBetween.getTime())
+            ? false
+            : fieldDateBetween.getTime() >= start.getTime() &&
+              fieldDateBetween.getTime() <= end.getTime();
+          break;
       }
       conditionResults.push(result);
     }

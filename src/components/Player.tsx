@@ -81,18 +81,17 @@ export default function Player(props: {
       uploaderVerified: props.video.uploaderVerified,
       views: props.video.views,
     };
-    const historyItem: Record<string, HistoryItem> = {
-      [id]: val as HistoryItem,
-    };
     console.log("updating progress", val);
 
-    setTimeout(
-      () => (
-        sync.setStore("history", historyItem),
-        console.timeEnd("updating progress")
-      ),
-      0
-    );
+    setTimeout(() => {
+      if (sync.store.history[id]) {
+        sync.setStore("history", id, "currentTime", currentTime);
+        sync.setStore("history", id, "watchedAt", new Date().getTime());
+      } else {
+        sync.setStore("history", id, val);
+      }
+      console.timeEnd("updating progress");
+    }, 0);
   };
   const state = usePlayerState();
 

@@ -10,6 +10,7 @@ import {
   onCleanup,
   onMount,
   useContext,
+  ErrorBoundary,
 } from "solid-js";
 import { set, z } from "zod";
 import { getStorageValue } from "~/utils/storage";
@@ -195,10 +196,13 @@ export default function Search() {
 
   const [filtersModalOpen, setFiltersModalOpen] = createSignal(false);
   const [filterErrors, setFilterErrors] = createSignal<string[]>([]);
-  const [filter, setFilter] = createSignal<Filter>({
-    conditions: [],
-    operators: [],
-  });
+  const [filter, setFilter] = createSignal<Filter>(
+    (!isServer &&
+      JSON.parse(localStorage.getItem("search_filter") ?? "null")) ?? {
+      conditions: [],
+      operators: [],
+    }
+  );
 
   return (
     <>
@@ -229,15 +233,34 @@ export default function Search() {
             <span>x{filterErrors().length}</span>{" "}
           </div>
         </Show>
-        <Modal
-          isOpen={filtersModalOpen()}
-          setIsOpen={setFiltersModalOpen}
-          title="Advanced Filters"
+        <ErrorBoundary
+          fallback={(err, reset) => (
+            <div>
+              Something went wrong {"\n"}
+              {err.message}
+              <button onClick={reset}>Retry</button>
+            </div>
+          )}
         >
-          <div class="flex justify-center items-start h-full min-w-[20rem] min-h-[10rem]">
-            <FilterEditor filter={filter()} setFilter={setFilter} />
-          </div>
-        </Modal>
+          <Modal
+            isOpen={filtersModalOpen()}
+            setIsOpen={setFiltersModalOpen}
+            title="Advanced Filters"
+          >
+            <div class="flex flex-col justify-center items-center gap-2 h-full min-w-[20rem] min-h-[10rem]">
+              <FilterEditor filter={filter()} setFilter={setFilter} />
+              <Button
+                label="Save Filter"
+                onClick={() => {
+                  localStorage.setItem(
+                    "search_filter",
+                    JSON.stringify(filter())
+                  );
+                }}
+              />
+            </div>
+          </Modal>
+        </ErrorBoundary>
         <Show when={query.data?.pages?.[0].corrected}>
           <div class="mt-2">
             <p class="">
@@ -282,7 +305,7 @@ export default function Search() {
                 .flat()
                 .filter(
                   (item, index, self) =>
-                    self.findIndex((t) => t.url === item.url) === index
+                    self.findIndex((t) => t?.url === item?.url) === index
                 )}
             >
               {(item) => (

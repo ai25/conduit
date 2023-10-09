@@ -28,12 +28,6 @@ import { memo } from "solid-js/web";
 import { routeCacheStore } from "~/root";
 
 export default function Feed() {
-  const key = "/feed";
-  const cached = routeCacheStore.get(key);
-
-  if (cached) {
-    return cached.component;
-  }
   const [limit, setLimit] = createSignal(10);
   const [preferences] = usePreferences();
   const sync = useSyncStore();
@@ -115,19 +109,7 @@ export default function Feed() {
         </Tooltip.Root>
         <Title>Feed | Conduit</Title>
 
-        <Show when={appState.sync.providers.idb === "connecting"}>
-          <div class="fixed inset-0 flex items-center justify-center">
-            <div class="bg-bg2 rounded p-4">
-              <p class="text-center">Syncing...</p>
-            </div>
-          </div>
-        </Show>
-        <Show
-          when={
-            !sync.store.subscriptions?.length &&
-            !(appState.sync.providers.idb === "connecting")
-          }
-        >
+        <Show when={!sync.store.subscriptions?.length}>
           <div class="h-[80vh] w-full flex items-center justify-center">
             <EmptyState />
           </div>
@@ -154,11 +136,6 @@ export default function Feed() {
       </Suspense>
     </>
   );
-  routeCacheStore.set(key, newComponent, null);
 
-  // Optionally, cleanup cache on component unmount
-  onCleanup(() => {
-    routeCacheStore.remove(key);
-  });
   return newComponent;
 }

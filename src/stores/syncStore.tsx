@@ -31,14 +31,14 @@ export type HistoryItem = RelatedStream & {
 export interface Store extends DocTypeDescription {
   playlists: Record<string, Playlist>;
   history: Record<string, HistoryItem>;
-  subscriptions: string[];
+  subscriptions: Record<string, { subscribedAt: number }>;
   preferences: Preferences;
   watchLater: Record<string, RelatedStream>;
 }
 const [initialStore] = createStore<Store>({
   playlists: {},
   history: {},
-  subscriptions: [],
+  subscriptions: {},
   preferences: {} as Preferences,
   watchLater: {},
 });
