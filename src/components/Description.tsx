@@ -42,6 +42,7 @@ import { Suspense } from "solid-js";
 import DOMPurify from "dompurify";
 import { MediaPlayerElement } from "vidstack/elements";
 import { createDate, createTimeAgo } from "@solid-primitives/date";
+import DownloadModal from "./DownloadModal";
 
 function handleTimestamp(videoId: string, t: string) {
   console.log(t);
@@ -134,6 +135,8 @@ const Description = (props: {
     }
   };
 
+  const [downloadModalOpen, setDownloadModalOpen] = createSignal(false);
+
   async function handleDownload() {
     downloadVideo(videoId(props.video), preferences.instance.api_url);
   }
@@ -188,6 +191,7 @@ const Description = (props: {
           <JSONViewer data={props.video} folded={false} />
         </div>
       </Modal>
+      <DownloadModal id={videoId(props.video)} isOpen={downloadModalOpen()} setIsOpen={setDownloadModalOpen} />
       <div class="mb-2 bg-bg1 p-4 ">
         <div class="flex flex-col gap-2">
           <div class="flex flex-col gap-2 ">
@@ -248,7 +252,7 @@ const Description = (props: {
                 <IconButton
                   title="Download"
                   icon={<FaSolidDownload class="h-6 w-6" />}
-                  onClick={handleDownload}
+                  onClick={()=>setDownloadModalOpen(true)}
                 />
               </Match>
             </Switch>
@@ -369,7 +373,7 @@ const IconButton = (props: {
   <Tooltip.Root>
     <Tooltip.Trigger
       onClick={props.onClick}
-      class="aspect-square w-12 h-12 transition duration-300 flex items-center justify-center rounded-full  hover-fine:bg-bg1/80 outline-none active:scale-110 focus-visible:bg-bg2 focus-visible:ring-2 focus-visible:ring-primary">
+      class="aspect-square w-12 h-12 transition duration-300 flex items-center justify-center rounded-full hover:bg-bg1/80 outline-none active:scale-110 focus-visible:bg-bg2 focus-visible:ring-2 focus-visible:ring-primary">
       {props.icon}
     </Tooltip.Trigger>
     <Tooltip.Portal>

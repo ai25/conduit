@@ -1,92 +1,111 @@
-import {
-  cleanupOutdatedCaches,
-  createHandlerBoundToURL,
-  precacheAndRoute,
-} from "workbox-precaching";
-import { clientsClaim } from "workbox-core";
-import { NavigationRoute, registerRoute } from "workbox-routing";
-import { CacheFirst } from "workbox-strategies";
-import { CacheableResponsePlugin } from "workbox-cacheable-response";
-import { ExpirationPlugin } from "workbox-expiration";
-
+// import {
+//   cleanupOutdatedCaches,
+//   createHandlerBoundToURL,
+//   precacheAndRoute,
+// } from "workbox-precaching";
+// import { clientsClaim } from "workbox-core";
+// import { NavigationRoute, registerRoute } from "workbox-routing";
+// import { CacheFirst } from "workbox-strategies";
+// import { CacheableResponsePlugin } from "workbox-cacheable-response";
+// import { ExpirationPlugin } from "workbox-expiration";
+//
 declare let self: ServiceWorkerGlobalScope;
-self.skipWaiting();
-clientsClaim();
-
-// // clean old assets
-cleanupOutdatedCaches();
-
-import { NetworkFirst } from "workbox-strategies";
-
-// Precache assets
-precacheAndRoute([
-  ...self.__WB_MANIFEST,
-  // {
-  //   url: "/library",
-  //   revision: `${new Date().getTime()}`,
-  // },
-  // {
-  //   url: "/",
-  //   revision: `${new Date().getTime()}`,
-  // },
-  // {
-  //   url: "/library/history",
-  //   revision: `${new Date().getTime()}`,
-  // },
-]);
-
-// Custom handler to manage offline fallback
-const networkFirstHandlerWithFallback = new NetworkFirst({
-  cacheName: "dynamic-cache",
-  plugins: [
-    new CacheableResponsePlugin({
-      statuses: [0, 200],
-    }),
-    new ExpirationPlugin({
-      maxEntries: 50,
-      maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
-    }),
-  ],
-  fetchOptions: {
-    mode: "cors",
-  },
+// self.skipWaiting();
+// clientsClaim();
+//
+// // // clean old assets
+// cleanupOutdatedCaches();
+//
+// import { NetworkFirst } from "workbox-strategies";
+//
+// // Precache assets
+// precacheAndRoute([
+//   ...self.__WB_MANIFEST,
+//   // {
+//   //   url: "/library",
+//   //   revision: `${new Date().getTime()}`,
+//   // },
+//   // {
+//   //   url: "/",
+//   //   revision: `${new Date().getTime()}`,
+//   // },
+//   // {
+//   //   url: "/library/history",
+//   //   revision: `${new Date().getTime()}`,
+//   // },
+// ]);
+//
+// // Custom handler to manage offline fallback
+// const networkFirstHandlerWithFallback = new NetworkFirst({
+//   cacheName: "dynamic-cache",
+//   plugins: [
+//     new CacheableResponsePlugin({
+//       statuses: [0, 200],
+//     }),
+//     new ExpirationPlugin({
+//       maxEntries: 50,
+//       maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
+//     }),
+//   ],
+//   fetchOptions: {
+//     mode: "cors",
+//   },
+// });
+//
+// registerRoute(
+//   new NavigationRoute(networkFirstHandlerWithFallback, {
+//     denylist: [/^\/_/, new RegExp("/[^/?]+\\.[^/]+$")],
+//   })
+// );
+//
+// registerRoute(
+//   /\.(?:png|jpg|jpeg|svg|gif|com)$/,
+//   new CacheFirst({
+//     cacheName: "image-cache",
+//     plugins: [
+//       new CacheableResponsePlugin({
+//         statuses: [0, 200],
+//       }),
+//       new ExpirationPlugin({
+//         maxEntries: 100,
+//         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+//       }),
+//       {
+//         cacheKeyWillBeUsed: async ({ request }) => {
+//           return request.url;
+//         },
+//       },
+//     ],
+//   })
+// );
+// Install the service worker as soon as possible.
+self.addEventListener('install', (/** @type {ExtendableEvent} */ event: ExtendableEvent) => {
+  event.waitUntil(globalThis.skipWaiting());
 });
-
-registerRoute(
-  new NavigationRoute(networkFirstHandlerWithFallback, {
-    denylist: [/^\/_/, new RegExp("/[^/?]+\\.[^/]+$")],
-  })
-);
-
-registerRoute(
-  /\.(?:png|jpg|jpeg|svg|gif|com)$/,
-  new CacheFirst({
-    cacheName: "image-cache",
-    plugins: [
-      new CacheableResponsePlugin({
-        statuses: [0, 200],
-      }),
-      new ExpirationPlugin({
-        maxEntries: 100,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
-      }),
-      {
-        cacheKeyWillBeUsed: async ({ request }) => {
-          return request.url;
-        },
-      },
-    ],
-  })
-);
+self.addEventListener('activate', (/** @type {ExtendableEvent} */ event: ExtendableEvent) => {
+  event.waitUntil(globalThis.clients.claim());
+});
 
 // Forward messages (and ports) from client to client.
-self.addEventListener("message", async (event) => {
+self.addEventListener("message", async (event: ExtendableMessageEvent) => {
+  console.log('Received message in service worker:', event.data); // Log the received data
+
   if (event.data?.sharedService) {
+    console.log('Entering sharedService condition');
+
     const client = await self.clients.get(event.data.clientId);
-    client?.postMessage(event.data, event.ports);
+    
+    if (client) {
+      console.log('Client found:', client);
+      client.postMessage(event.data, event.ports);
+    } else {
+      console.error('Client not found for clientId:', event.data.clientId); // Log if client is not found
+    }
+
+  } else {
+    console.warn('sharedService property not found in event data'); // Warning if sharedService is not present in the message
   }
 });
-
 // Tell clients their clientId. A service worker isn't actually needed
 // for a context to get its clientId, but this also doubles as a way
 // to verify that the service worker is active.

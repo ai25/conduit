@@ -126,6 +126,11 @@ export default function Watch() {
   const [preferences] = usePreferences();
   const isLocalPlaylist = () => route.query.list?.startsWith("conduit-");
 
+  createEffect(() => {
+    if (!route.query.v) return;
+    console.log("setting video id queue", route.query.v);
+  });
+
   const videoQuery = createQuery(
     () => ["streams", route.query.v, preferences.instance.api_url],
     async (): Promise<PipedVideo> =>

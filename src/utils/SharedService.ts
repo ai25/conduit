@@ -1,3 +1,5 @@
+import { WorkerResponse } from "./y-opfs";
+
 //https://github.com/rhashimoto/wa-sqlite/blob/master/demo/SharedService/SharedService.js
 const PROVIDER_REQUEST_TIMEOUT: number = 1000;
 
@@ -30,7 +32,7 @@ export class SharedService extends EventTarget {
 
   constructor(
     serviceName: string,
-    portProviderFunc: () => MessagePort | Promise<MessagePort>
+    portProviderFunc: () => MessagePort | Promise<MessagePort>,
   ) {
     super();
 
@@ -48,6 +50,7 @@ export class SharedService extends EventTarget {
           data?.type === "provider" &&
           data?.sharedService === this.#serviceName
         ) {
+          console.log("SharedService provider change", data);
           // A context (possibly this one) announced itself as the new provider.
           // Discard any old provider and connect to the new one.
           this.#closeProviderPort(this.#providerPort);
@@ -118,7 +121,8 @@ export class SharedService extends EventTarget {
 
     // Wait for an abort signal to clean up
     return new Promise<void>((_, reject) => {
-      this.#onDeactivate!.signal.addEventListener("abort", () => {
+      this.#onDeactivate!.signal.addEventListener("abort", async () => {
+        await this.proxy["cleanup"]()
         broadcastChannel.close();
         reject(this.#onDeactivate!.signal.reason);
       });
@@ -126,8 +130,7 @@ export class SharedService extends EventTarget {
   }
 
   private listenForClientRequests(
-    port: MessagePort,
-    broadcastChannel: BroadcastChannel,
+    port: MessagePort, broadcastChannel: BroadcastChannel,
     callback: () => void
   ) {
     broadcastChannel.addEventListener(
@@ -192,9 +195,15 @@ export class SharedService extends EventTarget {
     }
   }
 
-  async #sendPortToClient(message: any, port: MessagePort): Promise<void> {
+  async #sendPortToClient(message: {
+    type: string;
+    sharedService: string;
+    clientId: string;
+    nonce: string;
+  }
+    , port: MessagePort): Promise<void> {
     // Return the port to the client via the service worker.
-    console.log("SharedService port sent to client", navigator.serviceWorker);
+    console.log("SharedService port sent to client", navigator.serviceWorker, message, port);
     const serviceWorker = await navigator.serviceWorker.ready;
     serviceWorker.active?.postMessage(message, [port]);
   }
@@ -223,6 +232,7 @@ export class SharedService extends EventTarget {
 
     navigator.serviceWorker.addEventListener("message", (event) => {
       event.data.ports = event.ports;
+      console.log("SharedService message received FROM SERVICEWORKER", event);
       this.dispatchEvent(new MessageEvent("message", { data: event.data }));
     });
     // Acquire a Web Lock named after the clientId. This lets other contexts
@@ -264,6 +274,7 @@ export class SharedService extends EventTarget {
         this.addEventListener(
           "message",
           (event) => {
+            console.log("Provider port received", event);
             if ((event as MessageEvent).data?.nonce === nonce) {
               resolve((event as MessageEvent).data.ports[0]);
               abortController.abort();
@@ -344,20 +355,20 @@ export class SharedService extends EventTarget {
     );
   }
 
-  static #acquireContextLock = (function () {
+  static #acquireContextLock = (function() {
     let p: Promise<void> | undefined;
-    return function (clientId: string): Promise<void> {
+    return function(clientId: string): Promise<void> {
       return p
         ? p
         : (p = new Promise((resolve) => {
-            navigator.locks.request(
-              clientId,
-              () =>
-                new Promise((_) => {
-                  resolve();
-                })
-            );
-          }));
+          navigator.locks.request(
+            clientId,
+            () =>
+              new Promise((_) => {
+                resolve();
+              })
+          );
+        }));
     };
   })();
 }
@@ -367,20 +378,24 @@ export class SharedService extends EventTarget {
  * @param {object} target
  * @returns
  */
-export function createSharedServicePort(target: {
-  [method: string]: (...args: any[]) => any;
-}): MessagePort {
+type Res = Record<"read" | "write" | "trim" | "cleanup"
+, (...args: any[]) => Promise<WorkerResponse<"read" | "write" | "trim" | "cleanup">>>;
+export function createSharedServicePort(target: Res
+): MessagePort {
+  console.log("createSharedServicePort", target);
   const { port1: providerPort1, port2: providerPort2 } = new MessageChannel();
+  console.log("Listening to message events on provider port 1", providerPort1);
   providerPort1.addEventListener("message", ({ data: clientId }) => {
     const { port1, port2 } = new MessageChannel();
 
     // The port requester holds a lock while using the channel. When the
     // lock is released by the requester, clean up the port on this side.
+    console.log("Requesting lock", clientId);
     navigator.locks.request(clientId, () => {
       port1.close();
     });
 
-    port1.addEventListener("message", async ({ data }) => {
+    port1.addEventListener("message", async ({ data }: {data:{ nonce: string, method: "read" | "write" | "trim" | "cleanup", args: any[] }}) => {
       console.log("service worker received message", data);
       const response: any = { nonce: data.nonce };
       try {
@@ -390,8 +405,8 @@ export function createSharedServicePort(target: {
         const error =
           e instanceof Error
             ? Object.fromEntries(
-                Object.getOwnPropertyNames(e).map((k) => [k, e[k]])
-              )
+              Object.getOwnPropertyNames(e).map((k) => [k, e[k]])
+            )
             : e;
         response.error = error;
       }

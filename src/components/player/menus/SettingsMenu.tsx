@@ -1,4 +1,6 @@
 import type { MenuPlacement, TooltipPlacement } from "vidstack";
+import { AudioSubmenu } from "./AudioSubmenu";
+import { SpeedSubmenu } from "./SpeedSubmenu";
 
 import { CaptionSubmenu } from "./CaptionSubmenu";
 import { Menu } from "./Menu";
@@ -12,6 +14,7 @@ export function SettingsMenu(props: SettingsMenuProps) {
         <media-icon
           class="h-8 w-8 transform transition-transform duration-200 ease-out group-data-[open]:rotate-90"
           type="settings"
+          aria-label="Settings"
         />
       }
       tooltipPlacement={props.tooltipPlacement}
@@ -19,6 +22,8 @@ export function SettingsMenu(props: SettingsMenuProps) {
     >
       <QualitySubmenu />
       <CaptionSubmenu />
+      <AudioSubmenu />
+      <SpeedSubmenu />
     </Menu>
   );
 }

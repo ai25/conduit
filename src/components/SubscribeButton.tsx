@@ -5,15 +5,18 @@ import { useSyncStore } from "~/stores/syncStore";
 
 const SubscribeButton = (props: { id: string; class?: string }) => {
   const sync = useSyncStore();
-  const isSubscribed = () => sync.store.subscriptions.includes(props.id);
+  const isSubscribed = () => !!sync.store.subscriptions[props.id];
   const toggleSubscribed = () => {
     const channels = sync.store.subscriptions;
     if (!isSubscribed()) {
-      sync.setStore("subscriptions", [...channels, props.id].sort());
+      sync.setStore("subscriptions", props.id, {
+        subscribedAt: Date.now(),
+      });
     } else {
       sync.setStore(
         "subscriptions",
-        channels.filter((c) => c !== props.id)
+        props.id,
+        undefined!,
       );
     }
   };

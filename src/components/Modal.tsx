@@ -36,6 +36,9 @@ export default function Modal(props: {
             <Dialog.Content
               class=" z-50 
     max-w-[calc(100vw-16px)] 
+    max-h-[85vh]
+              my-auto
+    overflow-hidden
     border 
     border-bg3
     rounded-md 
@@ -61,7 +64,9 @@ export default function Modal(props: {
                   <FaSolidX fill="currentColor" class="w-4 h-4" />
                 </Dialog.CloseButton>
               </div>
-              <Dialog.Description class="text-base">
+              <Dialog.Description class="text-base 
+    max-h-[calc(100vh-50px)] overflow-y-auto"
+              >
                 {props.children}
               </Dialog.Description>
             </Dialog.Content>

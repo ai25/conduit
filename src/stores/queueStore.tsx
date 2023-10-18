@@ -81,7 +81,7 @@ export const QueueProvider = (props: { children: any }) => {
       localStorage.setItem("videoQueue", JSON.stringify(updatedQueue));
       setQueue(updatedQueue);
     }
-    setCurrentVideoId(videoId(video));
+
   };
 
   const addToQueue = (video: RelatedStream) => {
@@ -116,6 +116,7 @@ export const QueueProvider = (props: { children: any }) => {
     localStorage.removeItem("videoQueue");
     setQueue([]);
   };
+
 
   const getTotalDuration = () => {
     return queue().reduce((sum, video) => sum + video.duration, 0);
@@ -153,3 +154,143 @@ export const useQueue = () => {
   }
   return context;
 };
+
+
+class Node {
+  value: RelatedStream;
+  next: Node | null = null;
+  prev: Node | null = null;
+  constructor(value: RelatedStream) {
+    this.value = value;
+  }
+}
+
+export class VideoQueue {
+  head: Node | null = null;
+  tail: Node | null = null;
+  current: Node | null = null;
+  private _length: number = 0;
+  
+  constructor(videos: RelatedStream[] = []) {
+    videos.forEach((video) => this.add(video));
+    this.current = this.head;
+  }
+
+  list(): RelatedStream[] {
+    const list: RelatedStream[] = [];
+    let temp = this.head;
+    while (temp) {
+      list.push(temp.value);
+      temp = temp.next;
+    }
+    console.log(list, "queue list");
+    return list;
+  }
+
+  // Add a video to the end of the queue
+  add(video: RelatedStream) {
+    const newNode = new Node(video);
+    if (this.tail) {
+      this.tail.next = newNode;
+      newNode.prev = this.tail;
+      this.tail = newNode;
+    } else {
+      this.head = this.tail = newNode;
+    }
+    this._length++;
+  }
+  
+  // Enqueue a video next to the currently playing video
+  enqueueNext(video: RelatedStream) {
+    if (!this.current) {
+      this.add(video);
+      return;
+    }
+    const newNode = new Node(video);
+    const temp = this.current.next;
+    this.current.next = newNode;
+    newNode.prev = this.current;
+    newNode.next = temp;
+    if (temp) temp.prev = newNode;
+    if (this.current === this.tail) this.tail = newNode;
+    this._length++;
+  }
+  
+  // Move to the next video
+  next():  RelatedStream | null {
+    if (!this.current?.next) return null;
+    this.current = this.current.next;
+    return this.current.value;
+  }
+
+  // Move to the previous video
+  prev(): RelatedStream | null {
+    if (!this.current?.prev) return null;
+    this.current = this.current.prev;
+    return this.current.value;
+  }
+
+
+  // Get the length of the queue
+  length(): number {
+    return this._length;
+  }
+
+  // Check if the queue is empty
+  isEmpty(): boolean {
+    return this._length === 0;
+  }
+
+  // Get the current video
+  getCurrentVideo(): RelatedStream | null {
+    return this.current?.value || null;
+  }
+
+  // Set the current video by ID
+  setCurrentVideo(id: string): boolean {
+    let temp = this.head;
+    while (temp) {
+      if (videoId(temp.value) === id) {
+        this.current = temp;
+        return true;
+      }
+      temp = temp.next;
+    }
+    return false;
+  }
+
+  // Remove a video by ID
+  remove(id: string): boolean {
+    let temp = this.head;
+    while (temp) {
+      if (videoId(temp.value) === id) {
+        if (temp.prev) temp.prev.next = temp.next;
+        if (temp.next) temp.next.prev = temp.prev;
+        if (temp === this.head) this.head = temp.next;
+        if (temp === this.tail) this.tail = temp.prev;
+        if (temp === this.current) this.current = temp.next;
+        this._length--;
+        return true;
+      }
+      temp = temp.next;
+    }
+    return false;
+  }
+
+  // Clear the queue
+  clear() {
+    this.head = this.tail = this.current = null;
+    this._length = 0;
+  }
+
+  // Get the total duration of the queue
+  getTotalDuration(): number {
+    let temp = this.head;
+    let totalDuration = 0;
+    while (temp) {
+      totalDuration += temp.value.duration;
+      temp = temp.next;
+    }
+    return totalDuration;
+  }
+}

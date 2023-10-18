@@ -1,4 +1,4 @@
-import { Accessor, Signal, createContext, createSignal, useContext } from "solid-js";
+import { Signal, createContext, createSignal, useContext } from "solid-js";
 import { Playlist } from "~/types";
 
 

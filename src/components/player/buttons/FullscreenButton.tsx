@@ -11,10 +11,12 @@ export function FullscreenButton(props: FullscreenButtonProps) {
           <media-icon
             class="media-fullscreen:hidden h-8 w-8"
             type="fullscreen"
+            aria-label="Enter Fullscreen"
           />
           <media-icon
             class="media-fullscreen:block hidden h-8 w-8"
             type="fullscreen-exit"
+            aria-label="Exit Fullscreen"
           />
         </media-fullscreen-button>
       }

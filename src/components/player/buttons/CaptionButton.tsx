@@ -11,10 +11,12 @@ export function CaptionButton(props: CaptionButtonProps) {
           <media-icon
             class="media-captions:block hidden h-8 w-8"
             type="closed-captions-on"
+            aria-label="Closed-Captions On"
           />
           <media-icon
             class="media-captions:hidden h-8 w-8"
             type="closed-captions"
+            aria-label="Closed-Captions Off"
           />
         </media-caption-button>
       }

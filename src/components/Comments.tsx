@@ -1,5 +1,5 @@
 import { createInfiniteQuery } from "@tanstack/solid-query";
-import { createEffect, createSignal, Show, Suspense } from "solid-js";
+import { createEffect, createSignal, Match, Show, Suspense, Switch } from "solid-js";
 import { For } from "solid-js";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import { usePreferences } from "~/stores/preferencesStore";
@@ -57,50 +57,82 @@ export default function Comments(props: { videoId: string; uploader: string }) {
 
   return (
     <>
-      <button
-        class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mt-2"
-        onClick={() => setCommentsOpen(true)}
-      >
-        Comments
-      </button>
-      {commentsOpen() && (
-        <Bottomsheet
-          variant="snap"
-          defaultSnapPoint={({ maxHeight }) => maxHeight / 2}
-          snapPoints={({ maxHeight }) => [maxHeight - 40, maxHeight / 2]}
-          onClose={() => {
-            console.log("close");
-            setCommentsOpen(false);
-          }}
-        >
-          {/* <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-h-full max-w-full overflow-auto"> */}
-          <Suspense fallback={<p>Loading...</p>}>
-            <div id="sb-content" class="flex flex-col gap-1 relative z-50 ">
-              <Show when={query.data}>
-                <For each={query.data!.pages}>
-                  {(page) => (
-                    <For each={page.comments}>
-                      {(comment) => (
-                        <Comment
-                          videoId={props.videoId}
-                          comment={comment}
-                          uploader={props.uploader}
-                          nextpage={""}
-                        />
+      <Switch>
+        <Match when={navigator.maxTouchPoints > 0}>
+          <button
+            class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mt-2"
+            onClick={() => setCommentsOpen(true)}
+          >
+            Comments
+          </button>
+          {commentsOpen() && (
+            <Bottomsheet
+              variant="snap"
+              defaultSnapPoint={({ maxHeight }) => maxHeight / 2}
+              snapPoints={({ maxHeight }) => [maxHeight - 40, maxHeight / 2]}
+              onClose={() => {
+                console.log("close");
+                setCommentsOpen(false);
+              }}
+            >
+              {/* <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-h-full max-w-full overflow-auto"> */}
+              <Suspense fallback={<p>Loading...</p>}>
+                <div id="sb-content" class="flex flex-col gap-1 relative z-50 ">
+                  <Show when={query.data}>
+                    <For each={query.data!.pages}>
+                      {(page) => (
+                        <For each={page.comments}>
+                          {(comment) => (
+                            <Comment
+                              videoId={props.videoId}
+                              comment={comment}
+                              uploader={props.uploader}
+                              nextpage={""}
+                            />
+                          )}
+                        </For>
                       )}
                     </For>
-                  )}
-                </For>
-                <div
-                  class="w-full h-40 bg-primary"
-                  ref={(ref) => setIntersectionRef(ref)}
-                />
-              </Show>
-            </div>
-          </Suspense>
-          {/* </div> */}
-        </Bottomsheet>
-      )}
+                    <div
+                      class="w-full h-40 bg-primary"
+                      ref={(ref) => setIntersectionRef(ref)}
+                    />
+                  </Show>
+                </div>
+              </Suspense>
+              {/* </div> */}
+            </Bottomsheet>
+          )}
+        </Match>
+        <Match when={!("maxTouchPoints" in navigator) || navigator.maxTouchPoints === 0}>
+          <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto max-h-96">
+            <Suspense fallback={<p>Loading...</p>}>
+              <div id="sb-content" class="flex flex-col gap-1 relative z-50 ">
+                <Show when={query.data}>
+                  <For each={query.data!.pages}>
+                    {(page) => (
+                      <For each={page.comments}>
+                        {(comment) => (
+                          <Comment
+                            videoId={props.videoId}
+                            comment={comment}
+                            uploader={props.uploader}
+                            nextpage={""}
+                          />
+                        )}
+                      </For>
+                    )}
+                  </For>
+                  <div
+                    class="w-full h-40 bg-primary"
+                    ref={(ref) => setIntersectionRef(ref)}
+                  />
+                </Show>
+              </div>
+            </Suspense>
+          </div>
+        </Match>
+      </Switch>
     </>
   );
 }

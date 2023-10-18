@@ -96,10 +96,7 @@ const trimUpdatesFile = async (accessHandle, state, dirName) => {
 let fileHandle = null;
 let accessHandle = null;
 const UPDATES_FILE_NAME = "yjs_updates.bin";
-const getStoredUpdates = (
-  //@ts-ignore
-  accessHandle
-) => {
+const getStoredUpdates = (accessHandle) => {
   if (!accessHandle) {
     throw new Error("Access handle is not initialized.");
   }
@@ -143,6 +140,19 @@ const initialize = async (dirName) => {
   accessHandle = await fileHandle.createSyncAccessHandle();
   console.log("accessHandle", accessHandle);
 };
+
+const cleanup = () => {
+  if (accessHandle) {
+    accessHandle.close();  // Release the access handle
+    accessHandle = null;
+  }
+
+  if (fileHandle) {
+    // No explicit close method for fileHandle but nullify for GC
+    fileHandle = null;
+  }
+};
+
 
 self.addEventListener("message", async (event) => {
   const { action, payload } = event.data;
@@ -199,6 +209,10 @@ self.addEventListener("message", async (event) => {
       console.timeEnd("trimUpdatesFile");
       console.log(`Actual file size: ${(size / 1024 / 1024).toFixed(2)} MB`);
       self.postMessage({ success: true });
+      break;
+    case "cleanup":
+      cleanup()
+      self.postMessage({ success: true })
       break;
     default:
       throw new Error(`Unknown action: ${action}`);

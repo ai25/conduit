@@ -10,6 +10,7 @@ const preferences = createStore({
   speed: 1,
   quality: "auto",
   theatreMode: false,
+  loop: false,
   instance: {
     name: "Piped",
     api_url: "https://pipedapi.kavin.rocks",

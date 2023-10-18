@@ -18,6 +18,7 @@ import {
   onCleanup,
   onMount,
   useContext,
+  untrack,
 } from "solid-js";
 import { PlayerContext } from "~/root";
 import {
@@ -28,12 +29,12 @@ import {
   Subtitle,
 } from "~/types";
 import { chaptersVtt } from "~/lib/chapters";
-import { useIsRouting, useLocation, useNavigate } from "solid-start";
+import { useIsRouting, useLocation, useNavigate, useSearchParams } from "solid-start";
 import { ttml2srt } from "~/lib/ttml";
 import PlayerSkin from "./PlayerSkin";
 import VideoCard from "./VideoCard";
 import { videoId } from "~/routes/library/history";
-import { useQueue } from "~/stores/queueStore";
+import { useQueue, VideoQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { usePlayerState } from "../stores/playerStateStore";
@@ -48,8 +49,10 @@ import { usePreferences } from "~/stores/preferencesStore";
 
 export default function Player(props: {
   video: PipedVideo;
+  setVideoId: (id: string) => void;
   onReload?: () => void;
 }) {
+  console.log("player render");
   const route = useLocation();
   let mediaPlayer!: MediaPlayerElement;
   const sync = useSyncStore();
@@ -97,17 +100,25 @@ export default function Player(props: {
 
   const [playlist] = usePlaylist();
 
-  const queueStore = useQueue();
+  // const queueStore = useQueue();
+  const queue = new VideoQueue([{
+    url: `/watch?v=${videoId(props.video)}`,
+    title: props.video.title,
+    thumbnail: props.video.thumbnailUrl,
+    duration: props.video.duration,
+    uploaderName: props.video.uploader,
+    uploaderAvatar: props.video.uploaderAvatar,
+    uploaderUrl: props.video.uploaderUrl,
+    isShort: false,
+    shortDescription: "",
+    type: "video",
+    uploaded: new Date(props.video.uploadDate).getTime(),
+    views: props.video.views,
+    uploadedDate: props.video.uploadDate,
+    uploaderVerified: props.video.uploaderVerified,
+  }]);
 
   const [vtt, setVtt] = createSignal<string | undefined>(undefined);
-
-  const [error, setError] = createSignal<{
-    name: string;
-    details: string;
-    fatal: boolean;
-    message: string;
-    code: number | undefined;
-  }>();
 
   const [tracks, setTracks] = createSignal<
     {
@@ -227,15 +238,15 @@ export default function Player(props: {
   const onCanPlay = (event: Event) => {
     console.log("can play", route.search.match("fullscreen"));
     console.log(event);
-    setError(undefined);
+    setErrors([]);
     init();
     if (!props.video?.chapters) return;
     if (!mediaPlayer) return;
     if (route.search.match("fullscreen")) {
       //@ts-ignore
-      if (navigator.userActivation.isActive) {
+      // if (navigator.userActivation.isActive) {
         mediaPlayer?.requestFullscreen();
-      }
+      // }
     }
     let chapters = [];
     for (let i = 0; i < props.video.chapters.length; i++) {
@@ -283,7 +294,24 @@ export default function Player(props: {
       }
       setCurrentTime(start);
     }
+    handleSetNextVideo();
+    handleSetPrevVideo();
   };
+
+  const [list, setList] = createSignal<RelatedStream[] | undefined>();
+
+  createEffect(() => {
+    console.log(nextVideo(), prevVideo());
+    if (playlist()) {
+      if (Array.isArray(playlist()!.videos)) {
+        setList((playlist() as any).videos);
+      } else {
+        setList(playlist()!.relatedStreams);
+      }
+    } else {
+      setList(queue.list());
+    }
+  });
 
   createEffect(() => {
     if (!props.video) return;
@@ -302,51 +330,55 @@ export default function Player(props: {
     console.timeEnd("getting progress");
   });
 
+  const [nextVideo, setNextVideo] = createSignal<{
+    url: string;
+    info: RelatedStream;
+  } | null>(null);
+  const [prevVideo, setPrevVideo] = createSignal<{
+    url: string;
+    info: RelatedStream;
+  } | null>(null);
+
   createEffect(() => {
     const nextVideo = props.video?.relatedStreams?.[0];
     if (!nextVideo) return;
     if (!mediaPlayer) return;
     if (!props.video) return;
     if (route.query.list) return;
-    queueStore.setCurrentVideo({
-      url: `/watch?v=${videoId(props.video)}`,
-      title: props.video.title,
-      thumbnail: props.video.thumbnailUrl,
-      duration: props.video.duration,
-      uploaderName: props.video.uploader,
-      uploaderAvatar: props.video.uploaderAvatar,
-      uploaderUrl: props.video.uploaderUrl,
-      isShort: false,
-      shortDescription: "",
-      type: "video",
-      uploaded: new Date(props.video.uploadDate).getTime(),
-      views: props.video.views,
-      uploadedDate: props.video.uploadDate,
-      uploaderVerified: props.video.uploaderVerified,
-    });
-    if (queueStore.isCurrentLast()) {
-      queueStore.addToQueue(nextVideo);
+    if (!queue.next()) {
+      console.log("adding next video to queue", nextVideo);
+      queue.add(nextVideo);
+      console.log("queue", queue);
     }
   });
 
+
+  const [searchParams, setSearchParams] = useSearchParams();
   const playNext = () => {
     console.log("playing next", nextVideo());
     if (!nextVideo()) return;
 
-    navigate(nextVideo()!.url, { replace: false });
+    // navigate(nextVideo()!.url, { replace: true});
+    // props.setVideoId(videoId(nextVideo()!.info));
+    setSearchParams({"v": videoId(nextVideo()!.info)});
     setEnded(false);
   };
 
   function handleSetNextVideo() {
-    console.log("setting next video");
-    let url = `/watch?v=`;
+    console.log("setting next queue video");
+    const params = new URLSearchParams(window.location.search);
+    let url = new URL(window.location.href);
+    const urlParams = new URLSearchParams(url.search);
+    for (let key of urlParams.keys()) {
+      params.set(key, urlParams.get(key)!);
+    }
     if (playlist()) {
       const local = "videos" in playlist()!;
-      const listId =
-        route.query.list ?? (playlist() as unknown as { id: string })!.id;
+      const listId = params.get("list")
+         ?? (playlist() as unknown as { id: string })!.id;
       let index; // index starts from 1
-      if (route.query.index) {
-        index = parseInt(route.query.index);
+      if (params.get("index")) {
+        index = parseInt(params.get("index")!);
       } else if (local) {
         index = (playlist() as unknown as {
           videos: RelatedStream[];
@@ -361,8 +393,12 @@ export default function Player(props: {
 
       if (index < playlist()!.relatedStreams?.length) {
         const next = playlist()!.relatedStreams[index]; // index is already +1
-        url += `${videoId(next)}&list=${listId}&index=${index + 1}`;
-        setNextVideo({ url: url, info: next });
+        const id = videoId(next);
+        params.set("v", id);
+        params.set("list", listId);
+        params.set("index", (index +1).toString());
+        url.search = params.toString();
+        setNextVideo({ url: (url.pathname + url.search.toString()), info: next });
       } else if (
         index <
         (playlist() as unknown as { videos: RelatedStream[] })!.videos?.length
@@ -370,34 +406,66 @@ export default function Player(props: {
         const next = (playlist() as unknown as {
           videos: RelatedStream[];
         })!.videos[index]; // index is already +1
-        url += `${videoId(next)}&list=${listId}&index=${index + 1}`;
-        setNextVideo({
-          url: url,
-          info: next,
-        });
+        const id = videoId(next);
+        params.set("v", id);
+        params.set("list", listId);
+        params.set("index", (index +1).toString());
+        url.search = params.toString();
+        setNextVideo({ url: (url.pathname + url.search.toString()), info: next });
       }
       return;
     }
-    const next = queueStore.next();
+    const next = queue.next();
     if (!next) return;
+        const id = videoId(next);
+        params.set("v", id);
+        url.search = params.toString();
+    console.log((url.pathname + url.search.toString()), "next video");
+        setNextVideo({ url:(url.pathname + url.search.toString()), info: next });
 
-    setNextVideo({
-      url: `/watch?v=${videoId(next)}`,
-      info: next,
-    });
   }
 
-  createEffect(() => {
-    if (!props.video) return;
-    if (!mediaPlayer) return;
-    handleSetNextVideo();
-  });
+  const handleSetPrevVideo = () => {
+    console.log("setting prev queue video");
+    const params = new URLSearchParams(window.location.search);
+    let url = new URL(window.location.href);
+    const urlParams = new URLSearchParams(url.search);
+    for (let key of urlParams.keys()) {
+      params.set(key, urlParams.get(key)!);
+    }
+    if (params.get("list")) {
+      if (params.get("index")) {
+        const index = parseInt(params.get("index")!);
+        if (index > 1) {
+          if (Array.isArray(playlist()!.videos)) {
+            const prev = (playlist() as any).videos[index - 2];
+            const id = videoId(prev);
+            params.set("v", id);
+            params.set("index", (index - 1).toString());
+            url.search = params.toString();
+            setPrevVideo({ url: (url.pathname + url.search.toString()), info: prev });
+          } else {
+            const prev = playlist()!.relatedStreams![index - 2];
+            const id = videoId(prev);
+            params.set("v", id);
+            params.set("index", (index - 1).toString());
+            url.search = params.toString();
+            setPrevVideo({ url: (url.pathname + url.search.toString()), info: prev });
+          }
+        }
+      }
+      return;
+    }
+    const prev = queue.prev();
+    if (!prev) return;
+    const id = videoId(prev);
+    params.set("v", id);
+    url.search = params.toString();
+    setPrevVideo({ url: (url.pathname + url.search.toString()), info: prev });
+  };
+
 
   const [ended, setEnded] = createSignal(false);
-  const [nextVideo, setNextVideo] = createSignal<{
-    url: string;
-    info: RelatedStream;
-  } | null>(null);
 
   const handleEnded = () => {
     console.log("ended");
@@ -415,7 +483,6 @@ export default function Player(props: {
 
   createEffect(() => {
     console.log("ended effect", ended());
-    console.log(navigator.storage.estimate());
     if (!ended()) return;
     if (!mediaPlayer) return;
     if (!props.video) return;
@@ -603,8 +670,8 @@ export default function Player(props: {
       return `${hours.toString().padStart(2, "0")}:${minutes
         .toString()
         .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${ms
-        .toString()
-        .padStart(3, "0")}`;
+          .toString()
+          .padStart(3, "0")}`;
     }
 
     const blob = new Blob([output], { type: "text/vtt" });
@@ -661,16 +728,18 @@ export default function Player(props: {
         const captions = mediaPlayer!.textTracks
           .toArray()
           .find(
-            (t: any) =>
+            (t: any) => ((t.id.startsWith("track-")) && (
               t.language === "en" ||
               t.language === "en_US" ||
-              t.language === "en_GB"
+              t.language === "en_GB")
+            )
           );
         if (captions) {
-          console.log(captions);
+          console.log(captions.id);
           const trackUrl = tracks().find((t) => t.id === captions.id)?.metadata
             .url;
 
+          console.log(trackUrl, "track url");
           if (trackUrl)
             ttml2srt(trackUrl, null).then(({ srtUrl }: { srtUrl: string }) => {
               (captions as any).src = srtUrl;
@@ -691,11 +760,15 @@ export default function Player(props: {
         e.preventDefault();
         break;
       case " ":
-        if (document.activeElement?.tagName === "BUTTON") return;
+        e.preventDefault();
+        console.log(document.activeElement?.tagName);
+        if (document.activeElement?.tagName === "BUTTON") {
+          (document.activeElement as HTMLButtonElement).click();
+          return;
+        }
         if (document.activeElement?.tagName.startsWith("MEDIA-")) return;
         if (mediaPlayer!.paused) mediaPlayer!.play();
         else mediaPlayer!.pause();
-        e.preventDefault();
         break;
       case "ArrowUp":
         mediaPlayer!.volume = Math.min(mediaPlayer!.volume + 0.05, 1);
@@ -709,6 +782,7 @@ export default function Player(props: {
         if (e.shiftKey) {
           prevChapter();
         } else {
+          if (document.activeElement?.tagName.startsWith("MEDIA-")) return;
           mediaPlayer!.currentTime = Math.max(mediaPlayer!.currentTime - 5, 0);
         }
         e.preventDefault();
@@ -792,6 +866,7 @@ export default function Player(props: {
         }
         break;
 
+
       // case "return":
       //   self.skipSegment(mediaPlayer!);
       //   break;
@@ -868,6 +943,7 @@ export default function Player(props: {
     let currentChapter: Chapter | undefined;
     for (let i = 0; i < props.video.chapters.length; i++) {
       const chapter = props.video.chapters[i];
+      console.log(currentTime, chapter.start, props.video.chapters[i + 1]?.start, "is between: ", currentTime >= chapter.start && currentTime <= props.video.chapters[i + 1]?.start);
       if (
         currentTime >= chapter.start &&
         currentTime < props.video.chapters[i + 1]?.start
@@ -876,9 +952,10 @@ export default function Player(props: {
         break;
       }
     }
+    console.log(currentChapter, currentTime, props.video.chapters);
     if (!currentChapter) return;
-    const prevChapter = props.video.chapters.find(
-      (c) => c.start < currentChapter!.start
+    const prevChapter = props.video.chapters.slice().reverse().find(
+      (c) => c.start < currentChapter!.start - 1
     );
     if (!prevChapter) return;
     mediaPlayer.currentTime = prevChapter.start;
@@ -909,6 +986,9 @@ export default function Player(props: {
   const [preferences, setPreferences] = usePreferences();
   let mediaProvider: any;
 
+
+      
+
   return (
     <media-player
       id="player"
@@ -916,40 +996,13 @@ export default function Player(props: {
       current-time={currentTime()}
       // onTextTrackChange={handleTextTrackChange}
       load="eager"
+      key-disabled
+      tabIndex={-1}
       playbackRate={preferences.speed}
       muted={preferences.muted}
       volume={preferences.volume}
-      // key-shortcuts={{
-      //   togglePaused: "k Space",
-      //   toggleMuted: "m",
-      //   toggleFullscreen: "f",
-      //   togglePictureInPicture: "i",
-      //   toggleCaptions: "c",
-      //   seekBackward: "ArrowLeft h",
-      //   seekForward: "ArrowRight l",
-      //   volumeUp: "ArrowUp",
-      //   volumeDown: "ArrowDown",
-      // }}
-      // on:text-track-change={async (e) => {
-      //   console.log(e);
-      //   const track = e.detail;
-      //   if (track) {
-      //     const trackUrl = tracks().find((t) => t.id === track.id)?.metadata
-      //       .url;
-      //     if (trackUrl) {
-      //       const { srtUrl, srtText } = await ttml2srt(trackUrl);
-      //       mediaPlayer!.textTracks.getById(track.id)!.content = srtText;
-
-      //       console.log(
-      //         mediaPlayer!.textTracks.toArray().find((t) => t.id === track.id)!
-      //           .content
-      //       );
-      //     }
-      //   }
-      // }}
-      key-disabled
       on:volume-change={(e) => {
-        console.log(e.detail);
+        console.log("volume change", e.detail);
         setPreferences("volume", e.detail.volume);
         setPreferences("muted", e.detail.muted);
       }}
@@ -989,12 +1042,26 @@ export default function Player(props: {
       // 16 / 9}
       aspect-ratio={16 / 9}
       crossorigin="anonymous"
+      on:fullscreen-change={(e) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (e.detail) {
+          urlParams.set("fullscreen", "true");
+        } else {
+          urlParams.delete("fullscreen");
+        }
+        history.replaceState(
+          null,
+          "",
+          window.location.pathname + "?" + urlParams.toString()
+        );
+      }}
     >
       <media-provider
         ref={mediaProvider}
-        // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
+      // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
       >
         <media-poster
+          aria-hidden="true"
           src={props.video?.thumbnailUrl ?? ""}
           class="absolute inset-0 block h-full w-full rounded-md opacity-0 transition-opacity data-[visible]:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
         ></media-poster>
@@ -1092,6 +1159,15 @@ export default function Player(props: {
       {/* <PlayerSkin video={props.video} nextVideo={nextVideo()} /> */}
       <VideoLayout
         thumbnails={generateStoryboard(props.video?.previewFrames?.[1]) ?? ""}
+        loop={preferences.loop}
+        chapters={vtt()}
+
+        onLoopChange={(value) => {
+          setPreferences("loop", value);
+        }}
+        navigateNext={nextVideo()?.url ? playNext : undefined}
+        navigatePrev={prevVideo()?.url ? () => navigate(prevVideo()!.url) : undefined}
+        playlist={list()}
       />
       {/* <media-community-skin></media-community-skin> */}
     </media-player>
