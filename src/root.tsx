@@ -46,19 +46,20 @@ import BottomNav from "./components/BottomNav";
 import { TiHome } from "solid-icons/ti";
 import { AiOutlineFire, AiOutlineMenu } from "solid-icons/ai";
 import { Toast } from "@kobalte/core";
-import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
+import { createQuery, QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { getStorageValue } from "./utils/storage";
-import { PreferencesProvider } from "./stores/preferencesStore";
+import { PreferencesProvider, usePreferences } from "./stores/preferencesStore";
 import ReloadPrompt from "./components/ReloadPrompt";
 import Watch from "./routes/watch";
 import Playlists from "./routes/library/playlists";
 import History from "./routes/library/history";
 import Playlist from "./routes/playlist";
-import Search from "./routes/search";
 import Trending from "./routes/trending";
 import Import from "./routes/import";
 import { splitProps } from "solid-js";
 import { TransitionGroup } from "solid-transition-group";
+import { useSearchParams } from "solid-start";
+import Player from "./components/Player";
 
 const [theme, setTheme] = createSignal("");
 export const ThemeContext = createContext<Signal<string>>([theme, setTheme]);
@@ -174,7 +175,7 @@ export default function Root() {
                       <PlayerStateProvider>
                         <SyncedStoreProvider>
                           <Body
-                            class={`${theme()} bg-bg1 font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 mx-2 overflow-x-hidden`}
+                            class={`${theme()} bg-bg1 font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 overflow-x-hidden`}
                           >
                             <Suspense fallback={<div>Loading...</div>}>
                               <ErrorBoundary>
@@ -194,17 +195,17 @@ export default function Root() {
                                 <div aria-hidden="true" class="h-10" />
                                 <Portal>
                                   <Toast.Region>
-                                    <Toast.List class="toast__list" />
+                                    <Toast.List class="fixed bottom-0 right-0 p-4 flex flex-col gap-2 z-[9999] w-[400px] max-w-[100vw] outline-none" />
                                   </Toast.Region>
                                 </Portal>
-                                {/* <PlayerContainer /> */}
+                                <PlayerContainer />
                                 <main>
                                   <Routes>
                                     <FileRoutes />
                                   </Routes>
-                                  <Show when={!isServer}>
+                                  {/* <Show when={!isServer}>
                                     <ReloadPrompt />
-                                  </Show>
+                                  </Show> */}
                                 </main>
                                 <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
                                   <BottomNav
@@ -243,6 +244,7 @@ export default function Root() {
                                   />
                                 </div>
                                 <div class="h-20 md:h-0" />
+                                <RouteAnnouncer />
                               </ErrorBoundary>
                             </Suspense>
                             <Scripts />
@@ -259,6 +261,61 @@ export default function Root() {
       </QueryClientProvider>
     </Html>
   );
+}
+const PlayerContainer = () => {
+  const [searchParams] = useSearchParams();
+  const [preferences] = usePreferences();
+  console.log(preferences.instance.api_url, "api url");
+  const [v, setV] = createSignal<string | undefined>(undefined);
+  createEffect(() => {
+    if (!searchParams.v) return;
+    setV(searchParams.v);
+  });
+  const videoQuery = createQuery(
+    () => ["streams", v(), preferences.instance.api_url],
+    async (): Promise<PipedVideo> =>
+      await fetch(
+        preferences.instance.api_url + "/streams/" + v()
+      ).then((res) => {
+        if (!res.ok) throw new Error("video not found");
+        return res.json();
+      }),
+    {
+      get enabled() {
+        return preferences.instance?.api_url &&
+          !isServer &&
+          v()
+          ? true
+          : false;
+      },
+      refetchOnReconnect: false,
+      refetchOnMount: false,
+      cacheTime: Infinity,
+      staleTime: 100 * 60 * 1000,
+    }
+  );
+
+  return <Show when={!isServer && videoQuery.data}>
+    <Player
+      onReload={() => videoQuery.refetch()}
+    />
+
+  </Show>
+
+}
+
+const RouteAnnouncer = () => {
+  const location = useLocation();
+  return (
+    <Portal>
+      <div
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        class="sr-only"
+      >Current page {location.pathname} </div>
+    </Portal>
+  )
 }
 
 // const PipContainer = () => {

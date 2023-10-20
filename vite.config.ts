@@ -62,5 +62,7 @@ export default defineConfig({
     sourcemap: true,
   },
 
-  plugins: [solid({ adapter: vercel() }), VitePWA(pwaOptions)],
+  plugins: [solid({ adapter: vercel() }),
+    // VitePWA(pwaOptions)
+  ],
 });

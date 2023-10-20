@@ -40,8 +40,8 @@ import { Match } from "solid-js";
 import { BsCloudCheck, BsCloudSlash, BsDatabaseX } from "solid-icons/bs";
 import { TiTimes } from "solid-icons/ti";
 import { isServer } from "solid-js/web";
-import ToastComponent from "./Toast";
 import { createMachine } from "@solid-primitives/state-machine";
+import { toast } from "./Toast";
 enum SyncState {
   DISCONNECTED = "disconnected",
   OFFLINE = "offline",
@@ -170,19 +170,13 @@ const Header = () => {
     currentInstanceIndex = currentInstanceIndex > -1 ? currentInstanceIndex : 0;
     const nextInstanceIndex = (currentInstanceIndex + 1) % instances.length;
     setPreferences("instance", instances[nextInstanceIndex]);
-    toaster.show((props) => (
-      <ToastComponent
-        toastId={props.toastId}
-        tite="Instance changed"
-        description={`You are now connected to ${instances[nextInstanceIndex].name}`}
-      />
-    ));
+    toast.show(`You are now connected to ${instances[nextInstanceIndex].name}`)
   };
 
   onMount(() => {
     if (isServer) return;
     document.addEventListener("keydown", (e) => {
-      if (e.key === "i" && e.ctrlKey) {
+      if (e.key === "I" && e.shiftKey && !e.ctrlKey && !e.altKey) {
         cycleInstances();
         e.preventDefault();
       }
@@ -191,7 +185,7 @@ const Header = () => {
   onCleanup(() => {
     if (isServer) return;
     document.removeEventListener("keydown", (e) => {
-      if (e.key === "i" && e.ctrlKey) {
+      if (e.key === "I" && e.shiftKey && !e.ctrlKey && !e.altKey) {
         cycleInstances();
         e.preventDefault();
       }

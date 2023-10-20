@@ -4,7 +4,7 @@ import { videoId } from "~/routes/library/history";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import Button from "./Button";
 import Modal from "./Modal";
-import ToastComponent from "./Toast";
+import { toast } from "./Toast";
 
 export default function ImportHistoryModal(props: {
   isOpen: () => boolean;
@@ -165,19 +165,24 @@ export default function ImportHistoryModal(props: {
       return 0;
     });
 
-    setTimeout(() => {
+    const importHistory =async()=> new Promise<string>( (resolve) => {
       batch(() => {
         newItems.forEach((item) => {
           sync.setStore("history", item);
         });
       });
-      toaster.show((props) => (
-        <ToastComponent toastId={props.toastId} tite="Import conmlete!" />
-      ));
-    }, 1000);
-    toaster.show((props) => (
-      <ToastComponent toastId={props.toastId} tite="Saving..." />
-    ));
+      resolve("done");
+    });
+    toast.promise(importHistory, {
+      loading: "Importing history",
+      success: (data) => {
+        return data;
+      },
+      error: () => {
+        return "Error importing history";
+      }
+    });
+    await importHistory()
   }
 
   return (

@@ -40,49 +40,78 @@ import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { usePlayerState } from "../stores/playerStateStore";
 import { MediaRemoteControl } from "vidstack";
 import { toaster } from "@kobalte/core";
-import ToastComponent from "./Toast";
 import { Suspense } from "solid-js";
 import { isServer } from "solid-js/web";
 import { MediaPlayerElement } from "vidstack/elements";
 import { VideoLayout } from "./player/layouts/VideoLayout";
 import { usePreferences } from "~/stores/preferencesStore";
+import { createQuery } from "@tanstack/solid-query";
+import { Spinner } from "./PlayerContainer";
 
 export default function Player(props: {
-  video: PipedVideo;
-  setVideoId: (id: string) => void;
+  // video: PipedVideo;
   onReload?: () => void;
 }) {
   console.log("player render");
   const route = useLocation();
   let mediaPlayer!: MediaPlayerElement;
   const sync = useSyncStore();
+  const [preferences, setPreferences] = usePreferences();
+  const [v, setV] = createSignal<string | undefined>(undefined);
+  createEffect(() => {
+    if (!route.query.v) return;
+    setV(route.query.v);
+  });
+  const videoQuery = createQuery(
+    () => ["streams", v(), preferences.instance.api_url],
+    async (): Promise<PipedVideo> =>
+      await fetch(
+        preferences.instance.api_url + "/streams/" + v()
+      ).then((res) => {
+        if (!res.ok) throw new Error("video not found");
+        return res.json();
+      }),
+    {
+      get enabled() {
+        return preferences.instance?.api_url &&
+          !isServer &&
+          v()
+          ? true
+          : false;
+      },
+      refetchOnReconnect: false,
+      refetchOnMount: false,
+      cacheTime: Infinity,
+      staleTime: 100 * 60 * 1000,
+    }
+  );
   const updateProgress = async () => {
-    if (!props.video) return;
+    if (!videoQuery.data) return;
     if (!started()) {
       return;
     }
     let currentTime = mediaPlayer?.currentTime;
-    if (props.video.category === "Music") {
+    if (videoQuery.data.category === "Music") {
       currentTime = 0;
     }
-    const id = videoId(props.video);
+    const id = videoId(videoQuery.data);
     if (!id) return;
     console.time("updating progress");
 
     const val = {
-      title: props.video.title,
-      duration: props.video.duration,
-      thumbnail: props.video.thumbnailUrl,
-      uploaderName: props.video.uploader,
-      uploaderAvatar: props.video.uploaderAvatar,
-      uploaderUrl: props.video.uploaderUrl,
+      title: videoQuery.data.title,
+      duration: videoQuery.data.duration,
+      thumbnail: videoQuery.data.thumbnailUrl,
+      uploaderName: videoQuery.data.uploader,
+      uploaderAvatar: videoQuery.data.uploaderAvatar,
+      uploaderUrl: videoQuery.data.uploaderUrl,
       url: `/watch?v=${id}`,
-      currentTime: currentTime ?? props.video.duration,
+      currentTime: currentTime ?? videoQuery.data.duration,
       watchedAt: new Date().getTime(),
       type: "stream",
-      uploaded: new Date(props.video.uploadDate).getTime(),
-      uploaderVerified: props.video.uploaderVerified,
-      views: props.video.views,
+      uploaded: new Date(videoQuery.data.uploadDate).getTime(),
+      uploaderVerified: videoQuery.data.uploaderVerified,
+      views: videoQuery.data.views,
     };
     console.log("updating progress", val);
 
@@ -98,25 +127,32 @@ export default function Player(props: {
   };
   const state = usePlayerState();
 
+
   const [playlist] = usePlaylist();
+  let queue = new VideoQueue([]);
 
   // const queueStore = useQueue();
-  const queue = new VideoQueue([{
-    url: `/watch?v=${videoId(props.video)}`,
-    title: props.video.title,
-    thumbnail: props.video.thumbnailUrl,
-    duration: props.video.duration,
-    uploaderName: props.video.uploader,
-    uploaderAvatar: props.video.uploaderAvatar,
-    uploaderUrl: props.video.uploaderUrl,
-    isShort: false,
-    shortDescription: "",
-    type: "video",
-    uploaded: new Date(props.video.uploadDate).getTime(),
-    views: props.video.views,
-    uploadedDate: props.video.uploadDate,
-    uploaderVerified: props.video.uploaderVerified,
-  }]);
+  createEffect(() => {
+    if (!videoQuery.data) return;
+    if (queue.isEmpty()) {
+      queue.add({
+        url: `/watch?v=${videoId(videoQuery.data)}`,
+        title: videoQuery.data.title,
+        thumbnail: videoQuery.data.thumbnailUrl,
+        duration: videoQuery.data.duration,
+        uploaderName: videoQuery.data.uploader,
+        uploaderAvatar: videoQuery.data.uploaderAvatar,
+        uploaderUrl: videoQuery.data.uploaderUrl,
+        isShort: false,
+        shortDescription: "",
+        type: "video",
+        uploaded: new Date(videoQuery.data.uploadDate).getTime(),
+        views: videoQuery.data.views,
+        uploadedDate: videoQuery.data.uploadDate,
+        uploaderVerified: videoQuery.data.uploaderVerified,
+      });
+    }
+  });
 
   const [vtt, setVtt] = createSignal<string | undefined>(undefined);
 
@@ -175,14 +211,14 @@ export default function Player(props: {
 
   const initMediaSession = () => {
     if (!navigator.mediaSession) return;
-    if (!props.video) return;
+    if (!videoQuery.data) return;
     if (!mediaPlayer) return;
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: props.video.title,
-      artist: props.video.uploader,
+      title: videoQuery.data.title,
+      artist: videoQuery.data.uploader,
       artwork: [
         {
-          src: props.video?.thumbnailUrl,
+          src: videoQuery.data?.thumbnailUrl,
           sizes: "128x128",
           type: "image/png",
         },
@@ -217,14 +253,14 @@ export default function Player(props: {
     });
   }
   const init = async () => {
-    if (!props.video) throw new Error("No video");
+    if (!videoQuery.data) throw new Error("No video");
     console.time("init");
     initMediaSession();
     await yieldToMain();
-    fetchSubtitles(props.video.subtitles);
-    if (!props.video?.subtitles) return;
+    fetchSubtitles(videoQuery.data.subtitles);
+    if (!videoQuery.data?.subtitles) return;
     const subs = new Map<string, string>();
-    props.video.subtitles.forEach((subtitle) => {
+    videoQuery.data.subtitles.forEach((subtitle) => {
       if (!subtitle.url) return;
       subs.set(subtitle.code, subtitle.url);
     });
@@ -240,30 +276,30 @@ export default function Player(props: {
     console.log(event);
     setErrors([]);
     init();
-    if (!props.video?.chapters) return;
+    if (!videoQuery.data?.chapters) return;
     if (!mediaPlayer) return;
     if (route.search.match("fullscreen")) {
       //@ts-ignore
       // if (navigator.userActivation.isActive) {
-        mediaPlayer?.requestFullscreen();
+      mediaPlayer?.requestFullscreen();
       // }
     }
     let chapters = [];
-    for (let i = 0; i < props.video.chapters.length; i++) {
-      const chapter = props.video.chapters[i];
+    for (let i = 0; i < videoQuery.data.chapters.length; i++) {
+      const chapter = videoQuery.data.chapters[i];
       const name = chapter.title;
       // seconds to 00:00:00
       const timestamp = new Date(chapter.start * 1000)
         .toISOString()
         .slice(11, 22);
       const seconds =
-        props.video.chapters[i + 1]?.start - chapter.start ??
-        props.video.duration - chapter.start;
+        videoQuery.data.chapters[i + 1]?.start - chapter.start ??
+        videoQuery.data.duration - chapter.start;
       chapters.push({ name, timestamp, seconds });
     }
 
     console.time("chapters vtt");
-    setVtt(chaptersVtt(chapters, props.video.duration));
+    setVtt(chaptersVtt(chapters, videoQuery.data.duration));
     if (vtt()) {
       mediaPlayer.textTracks.add({
         kind: "chapters",
@@ -314,16 +350,16 @@ export default function Player(props: {
   });
 
   createEffect(() => {
-    if (!props.video) return;
+    if (!videoQuery.data) return;
     if (!mediaPlayer) return;
     if (time) return;
-    const id = videoId(props.video);
+    const id = videoId(videoQuery.data);
     if (!id) return;
     console.time("getting progress");
     const val = sync.store.history[id];
     const progress = val?.currentTime;
     if (progress) {
-      if (progress < props.video.duration * 0.9) {
+      if (progress < videoQuery.data.duration * 0.9) {
         setCurrentTime(progress);
       }
     }
@@ -340,10 +376,10 @@ export default function Player(props: {
   } | null>(null);
 
   createEffect(() => {
-    const nextVideo = props.video?.relatedStreams?.[0];
+    const nextVideo = videoQuery.data?.relatedStreams?.[0];
     if (!nextVideo) return;
     if (!mediaPlayer) return;
-    if (!props.video) return;
+    if (!videoQuery.data) return;
     if (route.query.list) return;
     if (!queue.next()) {
       console.log("adding next video to queue", nextVideo);
@@ -354,13 +390,14 @@ export default function Player(props: {
 
 
   const [searchParams, setSearchParams] = useSearchParams();
+
   const playNext = () => {
     console.log("playing next", nextVideo());
     if (!nextVideo()) return;
 
     // navigate(nextVideo()!.url, { replace: true});
     // props.setVideoId(videoId(nextVideo()!.info));
-    setSearchParams({"v": videoId(nextVideo()!.info)});
+    setSearchParams({ "v": videoId(nextVideo()!.info) });
     setEnded(false);
   };
 
@@ -375,18 +412,18 @@ export default function Player(props: {
     if (playlist()) {
       const local = "videos" in playlist()!;
       const listId = params.get("list")
-         ?? (playlist() as unknown as { id: string })!.id;
+        ?? (playlist() as unknown as { id: string })!.id;
       let index; // index starts from 1
       if (params.get("index")) {
         index = parseInt(params.get("index")!);
       } else if (local) {
         index = (playlist() as unknown as {
           videos: RelatedStream[];
-        })!.videos!.findIndex((v) => videoId(v) === videoId(props.video));
+        })!.videos!.findIndex((v) => videoId(v) === videoId(videoQuery.data));
         if (index !== -1) index++;
       } else {
         index = playlist()!.relatedStreams!.findIndex(
-          (v) => videoId(v) === videoId(props.video)
+          (v) => videoId(v) === videoId(videoQuery.data)
         );
         if (index !== -1) index++;
       }
@@ -396,7 +433,7 @@ export default function Player(props: {
         const id = videoId(next);
         params.set("v", id);
         params.set("list", listId);
-        params.set("index", (index +1).toString());
+        params.set("index", (index + 1).toString());
         url.search = params.toString();
         setNextVideo({ url: (url.pathname + url.search.toString()), info: next });
       } else if (
@@ -409,7 +446,7 @@ export default function Player(props: {
         const id = videoId(next);
         params.set("v", id);
         params.set("list", listId);
-        params.set("index", (index +1).toString());
+        params.set("index", (index + 1).toString());
         url.search = params.toString();
         setNextVideo({ url: (url.pathname + url.search.toString()), info: next });
       }
@@ -417,11 +454,11 @@ export default function Player(props: {
     }
     const next = queue.next();
     if (!next) return;
-        const id = videoId(next);
-        params.set("v", id);
-        url.search = params.toString();
+    const id = videoId(next);
+    params.set("v", id);
+    url.search = params.toString();
     console.log((url.pathname + url.search.toString()), "next video");
-        setNextVideo({ url:(url.pathname + url.search.toString()), info: next });
+    setNextVideo({ url: (url.pathname + url.search.toString()), info: next });
 
   }
 
@@ -470,7 +507,7 @@ export default function Player(props: {
   const handleEnded = () => {
     console.log("ended");
     if (!mediaPlayer) return;
-    if (!props.video) return;
+    if (!videoQuery.data) return;
     setEnded(true);
     showToast();
     updateProgress();
@@ -480,13 +517,6 @@ export default function Player(props: {
   const defaultCounter = 5;
   const [counter, setCounter] = createSignal(defaultCounter);
   let timeoutCounter: any;
-
-  createEffect(() => {
-    console.log("ended effect", ended());
-    if (!ended()) return;
-    if (!mediaPlayer) return;
-    if (!props.video) return;
-  });
 
   function showToast() {
     console.log("showing toast");
@@ -592,7 +622,7 @@ export default function Player(props: {
   }
   createEffect(() => {
     if (!mediaPlayer) return;
-    if (!props.video) return;
+    if (!videoQuery.data) return;
     selectDefaultQuality();
   });
 
@@ -684,7 +714,7 @@ export default function Player(props: {
 
   createEffect(() => {
     if (!mediaPlayerConnected()) return;
-    if (!props.video) return;
+    if (!videoQuery.data) return;
     document.addEventListener("keydown", handleKeyDown);
   });
   createEffect(() => {
@@ -697,15 +727,20 @@ export default function Player(props: {
     document.removeEventListener("keydown", handleKeyDown);
   });
 
+
   const handleKeyDown = (e: KeyboardEvent) => {
     // if an input is focused
     if (document.activeElement?.tagName === "INPUT") return;
     switch (e.key) {
       case "f":
         if (document.fullscreenElement) {
-          mediaPlayer?.exitFullscreen();
+          document.exitFullscreen();
+          screen.orientation.unlock();
+          setSearchParams({ fullscreen: undefined });
         } else {
-          mediaPlayer?.requestFullscreen();
+          document.documentElement.requestFullscreen();
+          screen.orientation.lock("landscape");
+          setSearchParams({ fullscreen: true });
         }
         e.preventDefault();
         break;
@@ -718,9 +753,10 @@ export default function Player(props: {
         e.preventDefault();
         break;
       case "l":
+        if (!videoQuery.data?.duration) return;
         mediaPlayer!.currentTime = Math.min(
           mediaPlayer!.currentTime + 10,
-          props.video!.duration
+          videoQuery.data.duration
         );
         e.preventDefault();
         break;
@@ -771,12 +807,16 @@ export default function Player(props: {
         else mediaPlayer!.pause();
         break;
       case "ArrowUp":
-        mediaPlayer!.volume = Math.min(mediaPlayer!.volume + 0.05, 1);
-        e.preventDefault();
+        if (e.shiftKey) {
+          mediaPlayer!.volume = Math.min(mediaPlayer!.volume + 0.05, 1);
+          e.preventDefault();
+        }
         break;
       case "ArrowDown":
-        mediaPlayer!.volume = Math.max(mediaPlayer!.volume - 0.05, 0);
-        e.preventDefault();
+        if (e.shiftKey) {
+          mediaPlayer!.volume = Math.max(mediaPlayer!.volume - 0.05, 0);
+          e.preventDefault();
+        }
         break;
       case "ArrowLeft":
         if (e.shiftKey) {
@@ -800,39 +840,48 @@ export default function Player(props: {
         e.preventDefault();
         break;
       case "1":
-        mediaPlayer!.currentTime = props.video!.duration * 0.1;
+        if (!videoQuery.data?.duration) return;
+        mediaPlayer!.currentTime = videoQuery.data.duration * 0.1;
         e.preventDefault();
         break;
       case "2":
-        mediaPlayer!.currentTime = props.video!.duration * 0.2;
+        if (!videoQuery.data?.duration) return;
+        mediaPlayer!.currentTime = videoQuery.data.duration * 0.2;
         e.preventDefault();
         break;
       case "3":
-        mediaPlayer!.currentTime = props.video!.duration * 0.3;
+        if (!videoQuery.data?.duration) return;
+        mediaPlayer!.currentTime = videoQuery.data.duration * 0.3;
         e.preventDefault();
         break;
       case "4":
-        mediaPlayer!.currentTime = props.video!.duration * 0.4;
+        if (!videoQuery.data?.duration) return;
+        mediaPlayer!.currentTime = videoQuery.data.duration * 0.4;
         e.preventDefault();
         break;
       case "5":
-        mediaPlayer!.currentTime = props.video!.duration * 0.5;
+        if (!videoQuery.data?.duration) return;
+        mediaPlayer!.currentTime = videoQuery.data.duration * 0.5;
         e.preventDefault();
         break;
       case "6":
-        mediaPlayer!.currentTime = props.video!.duration * 0.6;
+        if (!videoQuery.data?.duration) return;
+        mediaPlayer!.currentTime = videoQuery.data.duration * 0.6;
         e.preventDefault();
         break;
       case "7":
-        mediaPlayer!.currentTime = props.video!.duration * 0.7;
+        if (!videoQuery.data?.duration) return;
+        mediaPlayer!.currentTime = videoQuery.data.duration * 0.7;
         e.preventDefault();
         break;
       case "8":
-        mediaPlayer!.currentTime = props.video!.duration * 0.8;
+        if (!videoQuery.data?.duration) return;
+        mediaPlayer!.currentTime = videoQuery.data.duration * 0.8;
         e.preventDefault();
         break;
       case "9":
-        mediaPlayer!.currentTime = props.video!.duration * 0.9;
+        if (!videoQuery.data?.duration) return;
+        mediaPlayer!.currentTime = videoQuery.data.duration * 0.9;
         e.preventDefault();
         break;
       case "N":
@@ -879,15 +928,15 @@ export default function Player(props: {
   }
   const [sponsorSegments, setSponsorSegments] = createSignal<Segment[]>([]);
   createEffect(() => {
-    if (!props.video?.chapters) return;
+    if (!videoQuery.data?.chapters) return;
     const segments: Segment[] = [];
 
-    for (let i = 0; i < props.video.chapters.length; i++) {
-      const chapter = props.video.chapters[i];
+    for (let i = 0; i < videoQuery.data.chapters.length; i++) {
+      const chapter = videoQuery.data.chapters[i];
       if (chapter.title.startsWith("Sponsor")) {
         segments.push({
           ...chapter,
-          end: props.video.chapters[i + 1]?.start || props.video.duration,
+          end: videoQuery.data.chapters[i + 1]?.start || videoQuery.data.duration,
           manuallyNavigated: false,
           autoSkipped: false,
         });
@@ -938,23 +987,21 @@ export default function Player(props: {
 
   const prevChapter = () => {
     if (!mediaPlayer) return;
-    if (!props.video?.chapters) return;
+    if (!videoQuery.data?.chapters) return;
     const currentTime = mediaPlayer.currentTime;
     let currentChapter: Chapter | undefined;
-    for (let i = 0; i < props.video.chapters.length; i++) {
-      const chapter = props.video.chapters[i];
-      console.log(currentTime, chapter.start, props.video.chapters[i + 1]?.start, "is between: ", currentTime >= chapter.start && currentTime <= props.video.chapters[i + 1]?.start);
+    for (let i = 0; i < videoQuery.data.chapters.length; i++) {
+      const chapter = videoQuery.data.chapters[i];
       if (
         currentTime >= chapter.start &&
-        currentTime < props.video.chapters[i + 1]?.start
+        currentTime < videoQuery.data.chapters[i + 1]?.start
       ) {
         currentChapter = chapter;
         break;
       }
     }
-    console.log(currentChapter, currentTime, props.video.chapters);
     if (!currentChapter) return;
-    const prevChapter = props.video.chapters.slice().reverse().find(
+    const prevChapter = videoQuery.data.chapters.slice().reverse().find(
       (c) => c.start < currentChapter!.start - 1
     );
     if (!prevChapter) return;
@@ -963,213 +1010,301 @@ export default function Player(props: {
 
   const nextChapter = () => {
     if (!mediaPlayer) return;
-    if (!props.video?.chapters) return;
+    if (!videoQuery.data?.chapters) return;
     const currentTime = mediaPlayer.currentTime;
     let currentChapter: Chapter | undefined;
-    for (let i = 0; i < props.video.chapters.length; i++) {
-      const chapter = props.video.chapters[i];
+    for (let i = 0; i < videoQuery.data.chapters.length; i++) {
+      const chapter = videoQuery.data.chapters[i];
       if (
         currentTime >= chapter.start &&
-        currentTime < props.video.chapters[i + 1]?.start
+        currentTime < videoQuery.data.chapters[i + 1]?.start
       ) {
         currentChapter = chapter;
         break;
       }
     }
     if (!currentChapter) return;
-    const nextChapter = props.video.chapters.find(
+    const nextChapter = videoQuery.data.chapters.find(
       (c) => c.start > currentChapter!.start
     );
     if (!nextChapter) return;
     mediaPlayer.currentTime = nextChapter.start;
   };
-  const [preferences, setPreferences] = usePreferences();
   let mediaProvider: any;
+  async function fetchPartial(url: string, start: number, end: number): Promise<ArrayBuffer> {
+    const response = await fetch(url, {
+      headers: {
+        'Range': `bytes=${start}-${end}`
+      }
+    });
+
+    const data = await response.arrayBuffer();
+    return data;
+  }
+  async function appendSegment(
+    sourceBuffer: SourceBuffer,
+    url: string,
+    start: number,
+    end: number
+  ): Promise<void> {
+    const segment = await fetchPartial(url, start, end);
+    return new Promise<void>((resolve, reject) => {
+      sourceBuffer.addEventListener('updateend', () => resolve(), { once: true });
+      sourceBuffer.addEventListener('error', () => reject('Error appending buffer'), { once: true });
+      sourceBuffer.appendBuffer(segment);
+    });
+  }
+  async function setupMSE(
+    videoElement: HTMLVideoElement,
+    videoStream: any,
+    audioStream: any
+  ): Promise<void> {
+    if (
+      !window.MediaSource ||
+      !MediaSource.isTypeSupported(`video/mp4; codecs="${videoStream.codec}"`) ||
+      !MediaSource.isTypeSupported(`audio/mp4; codecs="${audioStream.codec}"`)
+    ) {
+      throw new Error("Unsupported MIME type or codec");
+    }
+
+    const mediaSource = new MediaSource();
+    videoElement.src = URL.createObjectURL(mediaSource);
+
+    mediaSource.addEventListener('sourceopen', async () => {
+      const videoSourceBuffer = mediaSource.addSourceBuffer(`video/mp4; codecs="${videoStream.codec}"`);
+      const audioSourceBuffer = mediaSource.addSourceBuffer(`audio/mp4; codecs="${audioStream.codec}"`);
+
+      // Append init segments
+      await Promise.all([
+        appendSegment(videoSourceBuffer, videoStream.url, videoStream.initStart, videoStream.initEnd),
+        appendSegment(audioSourceBuffer, audioStream.url, audioStream.initStart, audioStream.initEnd)
+      ]);
+
+      // Append remaining segments (simplified example)
+      let videoNextStart = videoStream.indexStart;
+      let audioNextStart = audioStream.indexStart;
+
+      let videoEnd = videoStream.indexEnd;
+      let audioEnd = audioStream.indexEnd;
+
+      while (videoNextStart <= videoEnd && audioNextStart <= audioEnd) {
+        await Promise.all([
+          appendSegment(videoSourceBuffer, videoStream.url, videoNextStart, videoNextStart + 2000), // Fetch 2000 bytes as an example
+          appendSegment(audioSourceBuffer, audioStream.url, audioNextStart, audioNextStart + 2000)
+        ]);
+
+        videoNextStart += 2001; // 2001 to avoid overlapping byte ranges
+        audioNextStart += 2001;
+      }
+
+      // End the streams
+      if (mediaSource.readyState === 'open') {
+        mediaSource.endOfStream();
+      }
+    });
+  }
+  let videoElement: any;
+  createEffect(() => {
+    if (!videoElement){
+      console.log("video element not ready");
+      return;
+    }
+    console.log("setting up mse");
+    if (!videoQuery.data) return;
+    setupMSE(videoElement, videoQuery.data?.videoStreams?.[0], videoQuery.data?.audioStreams?.[0]);
+  });
 
 
-      
 
-  return (
-    <media-player
-      id="player"
-      class="w-full aspect-video bg-slate-900 text-white font-sans overflow-hidden rounded-md ring-primary data-[focus]:ring-4"
-      current-time={currentTime()}
-      // onTextTrackChange={handleTextTrackChange}
-      load="eager"
-      key-disabled
-      tabIndex={-1}
-      playbackRate={preferences.speed}
-      muted={preferences.muted}
-      volume={preferences.volume}
-      on:volume-change={(e) => {
-        console.log("volume change", e.detail);
-        setPreferences("volume", e.detail.volume);
-        setPreferences("muted", e.detail.muted);
-      }}
-      on:time-update={() => {
-        autoSkipHandler();
-      }}
-      on:can-play={onCanPlay}
-      on:provider-change={onProviderChange}
-      on:hls-error={handleHlsError}
-      on:ended={handleEnded}
-      on:play={() => {
-        setStarted(true);
-        setTimeout(() => {
-          updateProgress();
-        }, 0);
-      }}
-      on:seeked={() => {
-        updateProgress();
-        userNavigationHandler();
-      }}
-      on:pause={() => {
-        updateProgress();
-      }}
-      on:hls-manifest-loaded={(e: any) => {
-        console.log(e.detail, "levels");
-      }}
-      on:media-player-connect={() => setMediaPlayerConnected(true)}
-      autoplay
-      ref={mediaPlayer}
-      title={props.video?.title ?? ""}
-      // src={props.video?.hls ?? ""}
-      poster={props.video?.thumbnailUrl ?? ""}
-      //       aspect-ratio={props.video?.videoStreams?.[0]
-      //           ? props.video.videoStreams[0]?.width /
-      //             props.video.videoStreams[0]?.height
-      //           :
-      // 16 / 9}
-      aspect-ratio={16 / 9}
-      crossorigin="anonymous"
-      on:fullscreen-change={(e) => {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (e.detail) {
-          urlParams.set("fullscreen", "true");
-        } else {
-          urlParams.delete("fullscreen");
-        }
-        history.replaceState(
-          null,
-          "",
-          window.location.pathname + "?" + urlParams.toString()
-        );
-      }}
-    >
-      <media-provider
-        ref={mediaProvider}
-      // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
-      >
-        <media-poster
-          aria-hidden="true"
-          src={props.video?.thumbnailUrl ?? ""}
-          class="absolute inset-0 block h-full w-full rounded-md opacity-0 transition-opacity data-[visible]:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
-        ></media-poster>
-        {tracks().map((track) => {
-          return (
-            <track
-              id={track.id}
-              kind={track.kind as any}
-              src={track.src}
-              srclang={track.srcLang}
-              label={track.label}
-              data-type={track.dataType}
-            />
-          );
-        })}
-        {/* <media-captions class="transition-[bottom] not-can-control:opacity-100 user-idle:opacity-100 not-user-idle:bottom-[80px]" /> */}
-        <source src={props.video!.hls} type="application/x-mpegurl" />
-      </media-provider>
-      <Show
-        when={
-          errors().length > 0 &&
-          showErrorScreen().show &&
-          !showErrorScreen().dismissed
-        }
-      >
-        <div
-          // classList={{hidden: preferences.pip}}
-          class="absolute z-50 top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50"
-        >
-          <div class="flex flex-col items-center justify-center w-full h-full gap-3">
-            <div class="text-2xl font-bold text-white">
-              {errors()[errors().length - 1]?.name}{" "}
-              {errors()[errors().length - 1]?.details}
-            </div>
-            <div class="flex flex-col">
-              <div class="text-lg text-white">
-                {errors()[errors().length - 1]?.message}
-              </div>
-              <div class="text-lg text-white">
-                Please try switching to a different instance or refresh the
-                page.
-              </div>
-            </div>
-            <div class="flex justify-center gap-2">
-              <button
-                class="px-4 py-2 text-lg text-white border border-white rounded-md"
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setShowErrorScreen({ show: false, dismissed: true });
-                  }
-                }}
-                onClick={() => {
-                  setShowErrorScreen({ show: false, dismissed: true });
-                }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </Show>
-      <Show when={showEndScreen() && nextVideo()}>
-        <div class="absolute z-50 scale-50 sm:scale-75 md:scale-100 top-0 right-0 w-full h-full pointer-events-auto">
-          <div class="flex flex-col items-center justify-center w-full h-full gap-3">
-            <div class="text-2xl font-bold text-white">
-              Playing next in {counter()} seconds
-            </div>
-            <div class="flex flex-col">
-              <div class="text-lg text-white w-72">
-                <VideoCard v={nextVideo()?.info ?? undefined} />
-              </div>
-            </div>
-            <div class="flex justify-center gap-2">
-              <button
-                class="px-4 py-2 text-lg text-black bg-white rounded-md"
-                onClick={() => {
-                  dismiss();
-                  playNext();
-                }}
-              >
-                Play now (Shift + N)
-              </button>
-              <button
-                class="px-4 py-2 text-lg text-white bg-black rounded-md"
-                onClick={() => {
-                  dismiss();
-                }}
-              >
-                Dismiss (Esc)
-              </button>
-            </div>
-          </div>
-        </div>
-      </Show>
-      {/* <PlayerSkin video={props.video} nextVideo={nextVideo()} /> */}
-      <VideoLayout
-        thumbnails={generateStoryboard(props.video?.previewFrames?.[1]) ?? ""}
-        loop={preferences.loop}
-        chapters={vtt()}
-
-        onLoopChange={(value) => {
-          setPreferences("loop", value);
+  return (<Suspense fallback={<div>Loading...</div>}>
+    <Show when={videoQuery.data}>
+      <media-player
+        id="player"
+        classList={{
+          " z-[99999] aspect-video relative bg-slate-900 text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4": true,
+          "absolute  inset-0 w-full h-full": !!route.query.fullscreen,
+          "sticky md:relative top-0 sm:block ": !route.query.fullscreen,
         }}
-        navigateNext={nextVideo()?.url ? playNext : undefined}
-        navigatePrev={prevVideo()?.url ? () => navigate(prevVideo()!.url) : undefined}
-        playlist={list()}
-      />
-      {/* <media-community-skin></media-community-skin> */}
-    </media-player>
+        current-time={currentTime()}
+        // onTextTrackChange={handleTextTrackChange}
+        load="eager"
+        key-disabled
+        tabIndex={-1}
+        playbackRate={preferences.speed}
+        muted={preferences.muted}
+        volume={preferences.volume}
+        on:volume-change={(e) => {
+          console.log("volume change", e.detail);
+          setPreferences("volume", e.detail.volume);
+          setPreferences("muted", e.detail.muted);
+        }}
+        on:time-update={() => {
+          autoSkipHandler();
+        }}
+        on:can-play={onCanPlay}
+        on:provider-change={onProviderChange}
+        on:hls-error={handleHlsError}
+        on:ended={handleEnded}
+        on:play={() => {
+          setStarted(true);
+          setTimeout(() => {
+            updateProgress();
+          }, 0);
+        }}
+        on:seeked={() => {
+          updateProgress();
+          userNavigationHandler();
+        }}
+        on:pause={() => {
+          updateProgress();
+        }}
+        on:hls-manifest-loaded={(e: any) => {
+          console.log(e.detail, "levels");
+        }}
+        on:media-player-connect={() => setMediaPlayerConnected(true)}
+        autoplay
+        ref={mediaPlayer}
+        title={videoQuery.data?.title ?? ""}
+        // src={videoQuery.data?.hls ?? ""}
+        poster={videoQuery.data?.thumbnailUrl ?? ""}
+        //       aspect-ratio={videoQuery.data?.videoStreams?.[0]
+        //           ? videoQuery.data.videoStreams[0]?.width /
+        //             videoQuery.data.videoStreams[0]?.height
+        //           :
+        // 16 / 9}
+        aspect-ratio={16 / 9}
+        crossorigin="anonymous"
+        on:fullscreen-change={(e) => {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (e.detail) {
+            urlParams.set("fullscreen", "true");
+          } else {
+            urlParams.delete("fullscreen");
+          }
+          history.replaceState(
+            null,
+            "",
+            window.location.pathname + "?" + urlParams.toString()
+          );
+        }}
+      >
+        <media-provider
+          ref={mediaProvider}
+        // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
+        >
+          <media-poster
+            aria-hidden="true"
+            src={videoQuery.data?.thumbnailUrl ?? ""}
+            class="absolute inset-0 block h-full w-full rounded-md opacity-0 transition-opacity data-[visible]:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
+          ></media-poster>
+          {tracks().map((track) => {
+            return (
+              <track
+                id={track.id}
+                kind={track.kind as any}
+                src={track.src}
+                srclang={track.srcLang}
+                label={track.label}
+                data-type={track.dataType}
+              />
+            );
+          })}
+          {/* <media-captions class="transition-[bottom] not-can-control:opacity-100 user-idle:opacity-100 not-user-idle:bottom-[80px]" /> */}
+          <Show when={videoQuery.data?.hls}>
+            {(() => { console.log("hls", videoQuery.data?.hls); return null; })()}
+            <source src={videoQuery.data?.hls} type="application/x-mpegurl" />
+          </Show>
+        </media-provider>
+        <Show
+          when={
+            errors().length > 0 &&
+            showErrorScreen().show &&
+            !showErrorScreen().dismissed
+          }
+        >
+          <div
+            // classList={{hidden: preferences.pip}}
+            class="absolute z-50 top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50"
+          >
+            <div class="flex flex-col items-center justify-center w-full h-full gap-3">
+              <div class="text-2xl font-bold text-white">
+                {errors()[errors().length - 1]?.name}{" "}
+                {errors()[errors().length - 1]?.details}
+              </div>
+              <div class="flex flex-col">
+                <div class="text-lg text-white">
+                  {errors()[errors().length - 1]?.message}
+                </div>
+                <div class="text-lg text-white">
+                  Please try switching to a different instance or refresh the
+                  page.
+                </div>
+              </div>
+              <div class="flex justify-center gap-2">
+                <button
+                  class="px-4 py-2 text-lg text-white border border-white rounded-md"
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setShowErrorScreen({ show: false, dismissed: true });
+                    }
+                  }}
+                  onClick={() => {
+                    setShowErrorScreen({ show: false, dismissed: true });
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </Show>
+        <Show when={showEndScreen() && nextVideo()}>
+          <div class="absolute z-50 scale-50 sm:scale-75 md:scale-100 top-0 right-0 w-full h-full pointer-events-auto">
+            <div class="flex flex-col items-center justify-center w-full h-full gap-3">
+              <div class="text-2xl font-bold text-white">
+                Playing next in {counter()} seconds
+              </div>
+              <div class="flex flex-col">
+                <div class="text-lg text-white w-72">
+                  <VideoCard v={nextVideo()?.info ?? undefined} />
+                </div>
+              </div>
+              <div class="flex justify-center gap-2">
+                <button
+                  class="px-4 py-2 text-lg text-black bg-white rounded-md"
+                  onClick={() => {
+                    dismiss();
+                    playNext();
+                  }}
+                >
+                  Play now (Shift + N)
+                </button>
+                <button
+                  class="px-4 py-2 text-lg text-white bg-black rounded-md"
+                  onClick={() => {
+                    dismiss();
+                  }}
+                >
+                  Dismiss (Esc)
+                </button>
+              </div>
+            </div>
+          </div>
+        </Show>
+        <VideoLayout
+          thumbnails={generateStoryboard(videoQuery.data?.previewFrames?.[1]) ?? ""}
+          loop={preferences.loop}
+          chapters={vtt()}
+
+          onLoopChange={(value) => {
+            setPreferences("loop", value);
+          }}
+          navigateNext={nextVideo()?.url ? playNext : undefined}
+          navigatePrev={prevVideo()?.url ? () => navigate(prevVideo()!.url) : undefined}
+          playlist={list()}
+        />
+      </media-player>
+    </Show>
+  </Suspense>
   );
 }

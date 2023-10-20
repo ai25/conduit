@@ -12,7 +12,7 @@ import { QueryClient, createQuery } from "@tanstack/solid-query";
 import { usePreferences } from "~/stores/preferencesStore";
 import { FaSolidX } from "solid-icons/fa";
 import { setStorageValue } from "~/utils/storage";
-import { isServer } from "solid-js/web";
+import { isServer, Portal } from "solid-js/web";
 import { useAppState } from "~/stores/appStateStore";
 
 const SearchInput = () => {
@@ -66,7 +66,7 @@ const SearchInput = () => {
   function handleSearch(input: string) {
     // setAppState("loading", true);
     console.log(input);
-    navigate(`/search?q=${input}`, { replace: true });
+    navigate(`/results?search_query=${input}`, { replace: true });
     // setAppState("loading", false);
   }
 
@@ -90,6 +90,9 @@ const SearchInput = () => {
     switch (e.key) {
       case "ArrowDown":
         setActiveIndex((prev) => {
+          if (prev === -1 || suggestions().length === 0) {
+            return 0;
+          }
           const newIndex = Math.min(prev + 1, suggestions().length - 1);
           setInputValue(suggestions()[newIndex].value);
           return newIndex;
@@ -97,6 +100,9 @@ const SearchInput = () => {
         break;
       case "ArrowUp":
         setActiveIndex((prev) => {
+          if (prev === -1 || suggestions().length === 0) {
+            return 0;
+          }
           const newIndex = Math.max(prev - 1, 0);
           setInputValue(suggestions()[newIndex].value);
           return newIndex;
@@ -140,10 +146,10 @@ const SearchInput = () => {
   onMount(() => {
     if (!isServer)
       document.addEventListener("keydown", handleKeyboardShortcuts);
-  });
-  onCleanup(() => {
-    if (!isServer)
-      document.removeEventListener("keydown", handleKeyboardShortcuts);
+    onCleanup(() => {
+      if (!isServer)
+        document.removeEventListener("keydown", handleKeyboardShortcuts);
+    });
   });
   let inputRef: HTMLInputElement | undefined = undefined;
   function handleKeyboardShortcuts(e: KeyboardEvent) {
@@ -152,6 +158,9 @@ const SearchInput = () => {
         e.preventDefault();
         inputRef?.focus();
       }
+    }
+    if (e.key === "Escape") {
+      inputRef?.blur();
     }
   }
   const handleInputFocus = () => {
@@ -190,18 +199,23 @@ const SearchInput = () => {
     }, 150);
   };
   return (
-    <div
-      id="search-combobox"
-      class="relative"
-      role="combobox"
-      aria-haspopup="listbox"
-      aria-owns="suggestion-list"
-      aria-expanded={suggestions().length > 0}
-    >
+    <div class="relative">
+
+      <label
+        for="search-input"
+        class="sr-only"
+      >
+        Search
+      </label>
       <input
+        aria-haspopup="listbox"
+        aria-owns="suggestion-list"
+        aria-expanded={suggestions().length > 0 && showSuggestions()}
+        aria-controls="suggestion-list"
+        id="search-input"
         ref={inputRef}
         class="w-full max-w-full outline-none bg-bg1 border border-bg2 focus:ring-2 text-text1 text-sm rounded-lg focus:ring-primary focus:border-primary py-1 px-2.5"
-        type="text"
+        type="combobox"
         value={inputValue()}
         placeholder="Search... (Ctrl + K)"
         onInput={handleInputChange}
@@ -209,54 +223,58 @@ const SearchInput = () => {
         onBlur={handleInputBlur}
         onKeyDown={handleKeyDown}
         aria-autocomplete="list"
-        aria-controls="suggestion-list"
         aria-activedescendant={
           activeIndex() > -1 ? `option-${activeIndex()}` : undefined
         }
       />
-      {suggestions().length > 0 && showSuggestions() && (
-        <div
+      <Show when={suggestions().length > 0 && showSuggestions()}>
+        <ul
           class="absolute w-full top-full bg-bg2 z-[999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-contentHide"
-          role="listbox"
+          aria-multiselectable="false"
+          aria-live="polite"
+          aria-label="Suggestions"
           id="suggestion-list"
         >
-          {suggestions().map((suggestion, index) => (
-            <div
-              class={`text-sm leading-none text-text1 bg-bg2 rounded-md flex items-center justify-between h-8 px-2 relative select-none outline-none cursor-pointer hover:bg-bg3 ${
-                activeIndex() === index && "bg-bg3"
-              }`}
-              role="option"
-              id={`option-${index}`}
-              aria-selected={activeIndex() === index}
-              onClick={() => {
-                console.log("click");
-                setSearch(suggestion.value);
-                handleSearch(suggestion.value);
-                setSuggestions([]);
-              }}
-              title={suggestion.value}
-            >
-              {suggestion.value}
-              <Show when={suggestion.isHistory}>
-                <button
-                  class="ml-2 text-xs text-gray-500"
-                  onClick={(e) => {
-                    console.log("remove");
-                    if (suggestion.isHistory) {
-                      e.stopPropagation();
-                      removeSuggestion(suggestion.value);
-                    }
-                  }}
-                  aria-label={`Remove ${suggestion} (Ctrl+Delete)`}
-                  title="Remove suggestion (Ctrl+Delete)"
-                >
-                  <FaSolidX />
-                </button>
-              </Show>
-            </div>
-          ))}
-        </div>
-      )}
+          <For each={suggestions()}>
+            {((suggestion, index) => (
+              <li
+                class={`text-sm leading-none text-text1 bg-bg2 rounded-md flex items-center justify-between h-8 px-2 relative select-none outline-none cursor-pointer hover:bg-bg3 ${activeIndex() === index() && "bg-bg3"
+                  }`}
+                id={`option-${index()}`}
+                aria-selected={activeIndex() === index()}
+                tabindex={0}
+                onClick={() => {
+                  console.log("click");
+                  setSearch(suggestion.value);
+                  handleSearch(suggestion.value);
+                  setSuggestions([]);
+                }}
+                aria-label={suggestion.value}
+              >
+                <span aria-hidden="true">{suggestion.value}</span>
+                <Show when={suggestion.isHistory}>
+                  <button
+                    role="none"
+                    class="ml-2 text-xs text-gray-500"
+                    onClick={(e) => {
+                      console.log("remove");
+                      if (suggestion.isHistory) {
+                        e.stopPropagation();
+                        removeSuggestion(suggestion.value);
+                      }
+                    }}
+                    aria-label={`Remove suggestion ${suggestion.value} (Ctrl+Delete)`}
+                  >
+                    <FaSolidX
+                      aria-hidden="true"
+                    />
+                  </button>
+                </Show>
+              </li>
+            ))}
+          </For>
+        </ul>
+      </Show>
     </div>
   );
 };

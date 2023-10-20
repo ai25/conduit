@@ -22,7 +22,7 @@ import {
 } from "~/types";
 import { Match } from "solid-js";
 import PlaylistCard from "~/components/PlaylistCard";
-import { A } from "@solidjs/router";
+import { A, useSearchParams } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";
 import { assertType, fetchJson } from "~/utils/helpers";
 import numeral from "numeral";
@@ -66,9 +66,9 @@ export default function Search() {
     "music_albums",
     "music_playlists",
   ];
-  const route = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedFilter, setSelectedFilter] = createSignal(
-    route.query.filter ?? "all"
+    searchParams.filter ?? "all"
   );
   const sync = useSyncStore();
   const [appState, setAppState] = useAppState();
@@ -80,7 +80,7 @@ export default function Search() {
       return await (
         await fetch(
           `${preferences.instance.api_url}/search?q=${
-            route.query.q
+            searchParams.search_query
           }&filter=${selectedFilter()}`
         )
       ).json();
@@ -89,7 +89,7 @@ export default function Search() {
         `${preferences.instance.api_url}/nextpage/search`,
         {
           nextpage: pageParam,
-          q: route.query.q,
+          q: searchParams.search_query,
           filter: selectedFilter(),
         }
       );
@@ -97,13 +97,12 @@ export default function Search() {
   };
 
   const query = createInfiniteQuery(
-    () => ["search", route.query.q, selectedFilter()],
+    () => ["search", searchParams.search_query, selectedFilter()],
     fetchSearch,
     {
       get enabled() {
-        console.log("enabled", route.query.q);
         return preferences.instance?.api_url &&
-          route.query.q &&
+          searchParams.search_query &&
           selectedFilter() &&
           !isServer
           ? true
@@ -118,7 +117,7 @@ export default function Search() {
   );
 
   onMount(() => {
-    document.title = route.query.q + " - Conduit";
+    document.title = searchParams.search_query+ " - Conduit";
     saveQueryToHistory();
   });
   createEffect(() => {
@@ -159,18 +158,14 @@ export default function Search() {
       }
     }, 1000);
   });
-  const navigate = useNavigate();
   function updateFilter(value: string) {
     setSelectedFilter(value);
-    console.log(location, route);
-    const url = new URL(location.origin + route.pathname + route.search);
-    url.searchParams.set("filter", value);
-    navigate(url.pathname + url.search);
+    setSearchParams({ filter: value });
     // fetchResults()
   }
 
   function saveQueryToHistory() {
-    const query = route.query.q;
+    const query = searchParams.search_query;
     if (!query) return;
     const searchHistory = getStorageValue(
       "search_history",

@@ -30,13 +30,15 @@ const VideoCard = (props: {
   if (!props.v)
     return (
       <div
-        class={` flex w-full max-w-md mx-2 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-1`}
+        class={` flex w-full min-w-full max-w-md mx-2 mb-2 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-1`}
       >
-        <div class="animate-pulse w-full h-full bg-bg2 flex aspect-video flex-col overflow-hidden rounded text-text1">
+        <div class="animate-pulse w-96 max-w-sm h-full bg-bg2 flex aspect-video flex-col overflow-hidden rounded text-text1">
           <div class="bg-bg2 w-full h-full"></div>
         </div>
+      <div class="max-w-sm w-full">
         <div class="animate-pulse w-3/4 h-4 bg-bg2 rounded mt-2"></div>
         <div class="animate-pulse w-1/2 h-4 bg-bg2 rounded mt-2"></div>
+        </div>
       </div>
     );
   const [progress, setProgress] = createSignal<number | undefined>(undefined);

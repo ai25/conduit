@@ -4,12 +4,12 @@ export function Gestures() {
       <media-gesture
         class="absolute inset-0 z-0 block h-full w-full"
         event="dblpointerup"
-        action="toggle:fullscreen"
+        action="toggle:paused"
       />
       <media-gesture
         class="absolute inset-0 z-0 block h-full w-full"
         event="pointerup"
-        action="toggle:paused"
+        action="toggle:controls"
       />
       <media-gesture
         class="absolute left-0 top-0 z-10 block h-full w-1/5"

@@ -9,7 +9,7 @@ import {
   Switch,
   Match,
 } from "solid-js";
-import { useLocation } from "solid-start";
+import { useLocation, useSearchParams } from "solid-start";
 import { For } from "solid-js";
 import { PlayerContext, useTheater } from "~/root";
 import VideoCard from "~/components/VideoCard";
@@ -35,6 +35,7 @@ import numeral from "numeral";
 import { isServer } from "solid-js/web";
 import PlaylistCard from "~/components/PlaylistCard";
 import Player from "~/components/Player";
+import { toaster } from "@kobalte/core";
 
 export interface SponsorSegment {
   category: string;
@@ -130,12 +131,17 @@ export default function Watch() {
     if (!route.query.v) return;
     console.log("setting video id queue", route.query.v);
   });
+  const [v, setV] = createSignal<string | undefined>(undefined);
+  createEffect(() => {
+    if (!route.query.v) return;
+    setV(route.query.v);
+  });
 
   const videoQuery = createQuery(
-    () => ["streams", route.query.v, preferences.instance.api_url],
+    () => ["streams", v(), preferences.instance.api_url],
     async (): Promise<PipedVideo> =>
       await fetch(
-        preferences.instance.api_url + "/streams/" + route.query.v
+        preferences.instance.api_url + "/streams/" + v()
       ).then((res) => {
         if (!res.ok) throw new Error("video not found");
         return res.json();
@@ -144,29 +150,19 @@ export default function Watch() {
       get enabled() {
         return preferences.instance?.api_url &&
           !isServer &&
-          route.query.v &&
+          v() &&
           !videoDownloaded()
           ? true
           : false;
       },
-      // select: (data) => {
-      //   if (!(data as any).error) {
-      //     setVideo("value", data);
-      //   } else {
-      //     setVideo("value", undefined);
-      //     setVideo("error", (data as any).error);
-      //   }
-      //   return data;
-      // },
       refetchOnReconnect: false,
+      refetchOnMount: false,
+      staleTime: 100 * 60 * 1000,
+      cacheTime: Infinity,
+      suspense: true,
     }
   );
-  const [shouldFetchSponsors, setShouldFetchSponsors] = createSignal(false);
-  createEffect(() => {
-    if (videoQuery.isSuccess) {
-      setShouldFetchSponsors(true);
-    }
-  });
+
   const sponsorsQuery = createQuery<SponsorSegment[]>(
     () => ["sponsors", route.query.v, preferences.instance.api_url],
     async (): Promise<SponsorSegment[]> => {
@@ -182,7 +178,6 @@ export default function Watch() {
       const urlObj = new URL(
         "https://sponsor.ajay.app/api/skipSegments/" + prefix
       );
-      // urlObj.searchParams.set("videoID", route.query.v);
       urlObj.searchParams.set(
         "categories",
         JSON.stringify([
@@ -212,7 +207,9 @@ export default function Watch() {
     },
     {
       get enabled() {
-        return preferences.instance?.api_url && shouldFetchSponsors()
+        return preferences.instance?.api_url &&
+          !isServer &&
+          route.query.v
           ? true
           : false;
       },
@@ -356,6 +353,7 @@ export default function Watch() {
       return;
     }
   });
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // createEffect(async () => {
   //   if (!route.query.list) return;
@@ -366,10 +364,11 @@ export default function Watch() {
   //   setPlaylist({ ...json, id: route.query.list });
   //   console.log(json);
   // });
+
   createEffect(async () => {
     if (!route.query.list) {
       setPlaylist(undefined);
-      console.log("fetching playlistno list id");
+      console.log("fetching playlist no list id");
       return;
     }
     if (!isLocalPlaylist()) return;
@@ -387,29 +386,26 @@ export default function Watch() {
       });
     }, 100);
   });
+  createEffect(() => {
+
+    console.log(videoQuery.data, "render");
+  });
 
   return (
     <div
       class="flex"
       classList={{
-        "flex-col": theater(),
-        "flex-col lg:flex-row": !theater(),
+        "flex-col": theater() || !!searchParams.fullscreen,
+        "flex-col lg:flex-row": !theater() && !searchParams.fullscreen,
       }}
     >
       <div
         class="flex flex-col"
         classList={{
-          "flex-grow": !theater(),
-          "w-full": theater(),
+          "flex-grow": !theater() && !searchParams.fullscreen,
+          "w-full": theater() || !!searchParams.fullscreen,
         }}
       >
-        {/* <PlayerContainer */}
-        {/*   loading={videoQuery.isLoading && !video.value} */}
-        {/*   error={videoQuery.error} */}
-        {/*   video={videoQuery.data ?? video.value} */}
-        {/*   onReload={() => videoQuery.refetch()} */}
-        {/* /> */}
-        <Suspense fallback={<PlayerLoading />}>
           <Switch>
             <Match when={videoQuery.isLoading && !video.value}>
               <PlayerLoading />
@@ -418,34 +414,15 @@ export default function Watch() {
               <PlayerError error={videoQuery.error as Error} />
             </Match>
             <Match when={videoQuery.data}>
-              <Player
-                video={videoQuery.data!}
-                onReload={() => videoQuery.refetch()}
-              />
+              <Show when={searchParams.fullscreen}>
+                <div class="h-screen" />
+              </Show>
             </Match>
           </Switch>
-        </Suspense>
-        <Show when={!theater()}>
-          <div>
-            <Suspense fallback="Watch page loading">
-              <Description
-                video={video.value}
-                downloaded={videoDownloaded()}
-                onRefetch={() => videoQuery.refetch()}
-              />
-            </Suspense>
-          </div>
-        </Show>
       </div>
       <div
-        class="flex flex-col"
-        classList={{
-          "flex-col": !theater(),
-          "lg:flex-row": theater(),
-          "w-full": theater(),
-        }}
+        class="flex lg:flex-row flex-col gap-2 w-full"
       >
-        <Show when={theater()}>
           <div class="w-full max-w-full">
             <Suspense fallback="Watch page loading">
               <Description
@@ -455,7 +432,6 @@ export default function Watch() {
               />
             </Suspense>
           </div>
-        </Show>
         <div
           class={`flex flex-col gap-2 items-center w-full min-w-0 max-w-max`}
         >

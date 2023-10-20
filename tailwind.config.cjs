@@ -16,6 +16,7 @@ module.exports = {
         contentShow: "contentShow 0.2s ease-in-out",
         slideDown: "slideDown 0.2s ease-in-out",
         slideUp: "slideUp 0.2s ease-in-out",
+        swipeOut: "swipeOut 0.2s ease-in-out",
       },
     },
   },

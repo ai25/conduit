@@ -109,9 +109,9 @@ export default function PlayerContainer(props: {
   );
 }
 
-export const Spinner = () => (
+export const Spinner = (props:{class?:string}) => (
   <svg
-    class="h-24 w-24 text-white  transition-opacity duration-200 ease-linear animate-spin"
+    classList={{"h-24 w-24 text-white duration-300 animate-spin":true, [props.class!]:!!props.class}}
     fill="none"
     viewBox="0 0 120 120"
     aria-hidden="true"
@@ -142,7 +142,7 @@ export const Spinner = () => (
 
 export const PlayerLoading = () => {
   return (
-    <div class="pointer-events-none aspect-video bg-black flex h-full w-full max-w-full items-center justify-center">
+    <div class="pointer-events-none aspect-video bg-black flex h-fit w-full max-w-full items-center justify-center">
       <Spinner />
     </div>
   );

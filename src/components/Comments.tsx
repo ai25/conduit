@@ -107,7 +107,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
         <Match when={!("maxTouchPoints" in navigator) || navigator.maxTouchPoints === 0}>
           <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto max-h-96">
             <Suspense fallback={<p>Loading...</p>}>
-              <div id="sb-content" class="flex flex-col gap-1 relative z-50 ">
+              <div id="sb-content" class="flex flex-col gap-1 relative  ">
                 <Show when={query.data}>
                   <For each={query.data!.pages}>
                     {(page) => (
