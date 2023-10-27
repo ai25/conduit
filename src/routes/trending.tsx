@@ -1,4 +1,4 @@
-import { createQuery } from "@tanstack/solid-query";
+import { createQuery, isServer } from "@tanstack/solid-query";
 import {
   FaSolidArrowsSpin,
   FaSolidArrowsUpDown,
@@ -37,7 +37,10 @@ export default function Trending() {
     },
     {
       get enabled() {
-        return preferences.instance?.api_url ? true : false;
+        return preferences.instance?.api_url &&
+          !isServer 
+          ?
+          true : false;
       },
       placeholderData: Array(40).fill(undefined),
     }

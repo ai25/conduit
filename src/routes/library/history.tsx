@@ -7,7 +7,6 @@ import {
   useContext,
   batch,
 } from "solid-js";
-import { extractVideoId } from "~/routes/watch";
 import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
@@ -17,21 +16,12 @@ import { toaster, Toast } from "@kobalte/core";
 import { Portal } from "solid-js/web";
 import { Title } from "solid-start";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
-import ToastComponent from "~/components/Toast";
 import ImportHistoryModal from "~/components/ImportHistoryModal";
 import uFuzzy from "@leeoniya/ufuzzy";
 import Modal from "~/components/Modal";
 import Field from "~/components/Field";
+import { getVideoId } from "~/utils/helpers";
 
-export const videoId = (item: any) => {
-  if (!item) return undefined;
-  if (item.videoId) return item.videoId;
-  else if (item.id) return item.id;
-  else if (item.url) return extractVideoId(item.url);
-  else if (item.thumbnailUrl) return extractVideoId(item.thumbnailUrl);
-  else if (item.thumbnail) return extractVideoId(item.thumbnail);
-  else return undefined;
-};
 
 export default function History() {
   const [limit, setLimit] = createSignal(50);
@@ -238,7 +228,7 @@ export default function History() {
                 <VideoCard
                   v={{
                     ...item,
-                    url: `/watch?v=${videoId(item)}`,
+                    url: `/watch?v=${getVideoId(item)}`,
                   }}
                 />
               </div>

@@ -1,10 +1,10 @@
 import { toaster } from "@kobalte/core";
 import { batch, createSignal, Show } from "solid-js";
-import { videoId } from "~/routes/library/history";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import Button from "./Button";
 import Modal from "./Modal";
 import { toast } from "./Toast";
+import { getVideoId } from "~/utils/helpers";
 
 export default function ImportHistoryModal(props: {
   isOpen: () => boolean;
@@ -64,7 +64,7 @@ export default function ImportHistoryModal(props: {
         console.log(json);
         const items = json.watchHistory.map((video: any) => {
           const item = {
-            id: videoId(video),
+            id: getVideoId(video),
             duration: video.duration,
             url: video.url,
             title: video.title,
@@ -144,7 +144,12 @@ export default function ImportHistoryModal(props: {
     const newItems: Record<string, HistoryItem>[] = [];
     if (!sync.store) return;
     for (const item of items() as HistoryItem[]) {
-      const id = videoId(item);
+      const id = getVideoId(item);
+      if (!id) {
+        setError(error() + 1);
+        setIndex(index() + 1);
+        continue;
+      }
       const existing = sync.store.history[id];
       if (existing) {
         setIndex(index() + 1);

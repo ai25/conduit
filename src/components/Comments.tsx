@@ -1,6 +1,7 @@
 import { createInfiniteQuery } from "@tanstack/solid-query";
 import { createEffect, createSignal, Match, Show, Suspense, Switch } from "solid-js";
 import { For } from "solid-js";
+import { isServer } from "solid-js/web";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import { usePreferences } from "~/stores/preferencesStore";
 import { fetchJson } from "~/utils/helpers";
@@ -58,7 +59,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
   return (
     <>
       <Switch>
-        <Match when={navigator.maxTouchPoints > 0}>
+        <Match when={!isServer && navigator.maxTouchPoints > 0}>
           <button
             class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mt-2"
             onClick={() => setCommentsOpen(true)}
@@ -104,7 +105,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
             </Bottomsheet>
           )}
         </Match>
-        <Match when={!("maxTouchPoints" in navigator) || navigator.maxTouchPoints === 0}>
+        <Match when={!isServer && (!("maxTouchPoints" in navigator) || navigator.maxTouchPoints === 0)}>
           <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto max-h-96">
             <Suspense fallback={<p>Loading...</p>}>
               <div id="sb-content" class="flex flex-col gap-1 relative  ">

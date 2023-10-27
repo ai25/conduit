@@ -8,11 +8,10 @@ import {
   onMount,
   useContext,
 } from "solid-js";
-import { videoId } from "~/routes/library/history";
 import { RelatedStream } from "~/types";
 import Modal from "./Modal";
 import {  useSyncStore } from "~/stores/syncStore";
-import { generateThumbnailUrl } from "~/utils/helpers";
+import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
 import { usePreferences } from "~/stores/preferencesStore";
 import { createTimeAgo } from "@solid-primitives/date";
 
@@ -28,7 +27,7 @@ const PlaylistItem = (props: {
 
   createRenderEffect(async () => {
     const val = sync.store.playlists[props.list]?.relatedStreams?.find(
-      (v) => videoId(v) === videoId(props.v)
+      (v) => getVideoId(v) === getVideoId(props.v)
     ) as any;
     setProgress(val?.currentTime);
   });
@@ -86,7 +85,7 @@ const PlaylistItem = (props: {
             class="object-cover w-full h-full max-w-full max-h-full rounded-lg "
             src={generateThumbnailUrl(
               preferences.instance.image_proxy_url,
-              videoId(props.v)
+              getVideoId(props.v)
             )}
           />
           {!!progress() && (

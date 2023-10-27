@@ -64,7 +64,7 @@ export function VideoLayout(props: VideoLayoutProps) {
           />
           <CaptionButton tooltipPlacement="top" />
           <PIPButton tooltipPlacement="top" />
-          <FullscreenButton tooltipPlacement="top end" />
+          <FullscreenButton tooltipPlacement="top-end" />
         </media-controls-group>
       </media-controls>
     </>

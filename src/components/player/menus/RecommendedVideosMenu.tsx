@@ -3,8 +3,12 @@ import { Menu } from "./Menu";
 import { MenuPlacement, TooltipPlacement } from "vidstack";
 import { For } from "solid-js";
 import { A } from "solid-start";
+import { useQueue } from "~/stores/queueStore";
+import { getVideoId } from "~/utils/helpers";
 
 export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps ) => {
+  const queue = useQueue()
+  console.log("RecommendedVideosMenu", props.videos)
   return (
     <Menu
       placement={props.placement}
@@ -22,7 +26,9 @@ export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps ) => {
               role="menuitem"
               tabIndex={-1}
 
-              class="max-w-[calc(var(--media-width)-20px)] ring-primary parent left-0 flex w-full cursor-pointer select-none items-center justify-start rounded-sm p-2.5 bg-black/95 outline-none ring-inset  hover:bg-neutral-800/80 focus-visible:bg-neutral-800/80 focus-visible:ring-[3px] aria-hidden:hidden">
+              classList={{"max-w-[calc(var(--media-width)-20px)] ring-primary parent left-0 flex w-full cursor-pointer select-none items-center justify-start rounded-sm p-2.5 bg-black/95 outline-none ring-inset  hover:bg-neutral-800/80 focus-visible:bg-neutral-800/80 focus-visible:ring-[3px] aria-hidden:hidden":true,
+              "border-l-2 border-primary": getVideoId(queue.currentVideo) === getVideoId(video)
+              }}>
               <img
                 class="h-18 w-32 shrink-0 rounded-md bg-bg1 aspect-video"
                 src={video.thumbnail}

@@ -63,6 +63,6 @@ export default defineConfig({
   },
 
   plugins: [solid({ adapter: vercel() }),
-    // VitePWA(pwaOptions)
+    VitePWA(pwaOptions)
   ],
 });

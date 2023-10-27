@@ -9,8 +9,7 @@ import {
 import { A } from "solid-start";
 import { Playlist } from "~/types";
 import { useSyncStore } from "~/stores/syncStore";
-import { generateThumbnailUrl } from "~/utils/helpers";
-import { videoId } from "./history";
+import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
 import { usePreferences } from "~/stores/preferencesStore";
 import { useAppState } from "~/stores/appStateStore";
 import EmptyState from "~/components/EmptyState";
@@ -25,7 +24,7 @@ export default function Playlists() {
     //   [playlist.id]: {
     //     bannerUrl: generateThumbnailUrl(
     //       preferences.instance.image_proxy_url,
-    //       videoId(playlist.videos[0].thumbnail)
+    //       getVideoId(playlist.videos[0].thumbnail)
     //     ),
     //     description: "",
     //     name: playlist.name,
@@ -69,7 +68,7 @@ export default function Playlists() {
                 playlistType: "playlist",
                 thumbnail: generateThumbnailUrl(
                   preferences.instance.image_proxy_url,
-                  videoId(playlist.relatedStreams[0])
+                  getVideoId(playlist.relatedStreams[0])
                 ),
                 type: "playlist",
                 uploaderName: playlist.uploader,

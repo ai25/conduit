@@ -13,7 +13,6 @@ import { useLocation, useSearchParams } from "solid-start";
 import { For } from "solid-js";
 import { PlayerContext, useTheater } from "~/root";
 import VideoCard from "~/components/VideoCard";
-import { videoId } from "~/routes/library/history";
 import { getHlsManifest, getStreams } from "~/utils/hls";
 import PlaylistItem from "~/components/PlaylistItem";
 import { createVirtualizer, elementScroll } from "@tanstack/solid-virtual";
@@ -36,6 +35,8 @@ import { isServer } from "solid-js/web";
 import PlaylistCard from "~/components/PlaylistCard";
 import Player from "~/components/Player";
 import { toaster } from "@kobalte/core";
+import api from "~/utils/api";
+import RelatedVideos from "~/components/RelatedVideos";
 
 export interface SponsorSegment {
   category: string;
@@ -48,15 +49,6 @@ export interface SponsorSegment {
   description: string;
 }
 
-export function extractVideoId(url: string | undefined): string | undefined {
-  let id;
-  if (url?.includes("/watch?v=")) {
-    id = url.split("/watch?v=")[1];
-  } else {
-    id = url?.match("vi(?:_webp)?/([a-zA-Z0-9_-]{11})")?.[1];
-  }
-  return id ?? undefined;
-}
 export async function fetchWithTimeout(
   resource: string,
   options: RequestInit & { timeout: number } = { timeout: 800 }
@@ -126,43 +118,6 @@ export default function Watch() {
   const sync = useSyncStore();
   const [preferences] = usePreferences();
   const isLocalPlaylist = () => route.query.list?.startsWith("conduit-");
-
-  createEffect(() => {
-    if (!route.query.v) return;
-    console.log("setting video id queue", route.query.v);
-  });
-  const [v, setV] = createSignal<string | undefined>(undefined);
-  createEffect(() => {
-    if (!route.query.v) return;
-    setV(route.query.v);
-  });
-
-  const videoQuery = createQuery(
-    () => ["streams", v(), preferences.instance.api_url],
-    async (): Promise<PipedVideo> =>
-      await fetch(
-        preferences.instance.api_url + "/streams/" + v()
-      ).then((res) => {
-        if (!res.ok) throw new Error("video not found");
-        return res.json();
-      }),
-    {
-      get enabled() {
-        return preferences.instance?.api_url &&
-          !isServer &&
-          v() &&
-          !videoDownloaded()
-          ? true
-          : false;
-      },
-      refetchOnReconnect: false,
-      refetchOnMount: false,
-      staleTime: 100 * 60 * 1000,
-      cacheTime: Infinity,
-      suspense: true,
-    }
-  );
-
   const sponsorsQuery = createQuery<SponsorSegment[]>(
     () => ["sponsors", route.query.v, preferences.instance.api_url],
     async (): Promise<SponsorSegment[]> => {
@@ -215,6 +170,8 @@ export default function Watch() {
       },
       refetchOnReconnect: false,
       retry: false,
+      suspense: false,
+      useErrorBoundary: false,
     }
   );
   const playlistQuery = createQuery(
@@ -309,34 +266,34 @@ export default function Watch() {
 
     return result;
   };
-  createEffect(() => {
-    console.log(sponsorsQuery.data);
-    if (!sponsorsQuery.data) return;
-    const video = untrack(() => videoQuery.data);
-    if (!video) return;
-    const mergedChapters = mergeChaptersAndSponsors(
-      video.chapters,
-      sponsorsQuery.data
-    );
-    console.log(mergedChapters);
-    setVideo("value", "chapters", mergedChapters);
-  });
-
-  createEffect(() => {
-    setAppState({
-      loading:
-        videoQuery.isInitialLoading ||
-        videoQuery.isFetching ||
-        videoQuery.isRefetching,
-    });
-  });
-
-  createEffect(() => {
-    if (videoQuery.data) {
-      setVideo({ value: videoQuery.data });
-    }
-  });
-
+  // createEffect(() => {
+  //   console.log(sponsorsQuery.data);
+  //   if (!sponsorsQuery.data) return;
+  //   const video = untrack(() => videoQuery.data);
+  //   if (!video) return;
+  //   const mergedChapters = mergeChaptersAndSponsors(
+  //     video.chapters,
+  //     sponsorsQuery.data
+  //   );
+  //   console.log(mergedChapters);
+  //   // setVideo("value", "chapters", mergedChapters);
+  // });
+  //
+  // createEffect(() => {
+  //   setAppState({
+  //     loading:
+  //       videoQuery.isInitialLoading ||
+  //       videoQuery.isFetching ||
+  //       videoQuery.isRefetching,
+  //   });
+  // });
+  //
+  // createEffect(() => {
+  //   if (videoQuery.data) {
+  //     setVideo({ value: videoQuery.data });
+  //   }
+  // });
+  //
   createEffect(() => {
     if (!video.value) return;
     document.title = `${video.value?.title} - Conduit`;
@@ -386,11 +343,6 @@ export default function Watch() {
       });
     }, 100);
   });
-  createEffect(() => {
-
-    console.log(videoQuery.data, "render");
-  });
-
   return (
     <div
       class="flex"
@@ -406,19 +358,19 @@ export default function Watch() {
           "w-full": theater() || !!searchParams.fullscreen,
         }}
       >
-          <Switch>
+          {/* <Switch>
             <Match when={videoQuery.isLoading && !video.value}>
               <PlayerLoading />
             </Match>
             <Match when={videoQuery.error}>
               <PlayerError error={videoQuery.error as Error} />
             </Match>
-            <Match when={videoQuery.data}>
+            <Match when={videoQuery.data}> */}
               <Show when={searchParams.fullscreen}>
-                <div class="h-screen" />
+                <div class="h-[calc(100vh-2rem)]" />
               </Show>
-            </Match>
-          </Switch>
+            {/* </Match>
+          </Switch> */}
       </div>
       <div
         class="flex lg:flex-row flex-col gap-2 w-full"
@@ -426,9 +378,7 @@ export default function Watch() {
           <div class="w-full max-w-full">
             <Suspense fallback="Watch page loading">
               <Description
-                video={video.value}
                 downloaded={videoDownloaded()}
-                onRefetch={() => videoQuery.refetch()}
               />
             </Suspense>
           </div>
@@ -466,32 +416,7 @@ export default function Watch() {
               </div>
             )}
           </Show>
-          <Show
-            when={video.value}
-            keyed
-            fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}
-          >
-            <Show when={video.value?.relatedStreams}>
-              <div class="w-full max-w-max">
-                <For each={video.value?.relatedStreams}>
-                  {(stream) => {
-                    return (
-                      <Switch>
-                        <Match when={stream.type === "stream"}>
-                          <VideoCard v={stream} />
-                        </Match>
-                        <Match when={stream.type === "playlist"}>
-                          <PlaylistCard
-                            item={stream as unknown as RelatedPlaylist}
-                          />
-                        </Match>
-                      </Switch>
-                    );
-                  }}
-                </For>
-              </div>
-            </Show>
-          </Show>
+          <RelatedVideos />
         </div>
       </div>
     </div>

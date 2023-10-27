@@ -1,11 +1,11 @@
 import { A } from "@solidjs/router";
 import { createInfiniteQuery } from "@tanstack/solid-query";
 import { FaSolidThumbsUp } from "solid-icons/fa";
-import { Show, createSignal, useContext, Suspense, For } from "solid-js";
+import { Show, createSignal, useContext, Suspense, For, createEffect } from "solid-js";
 import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncStore } from "~/stores/syncStore";
 import { fetchJson } from "~/utils/helpers";
-import { rewriteDescription } from "./Description";
+import { sanitizeText } from "./Description";
 export interface PipedCommentResponse {
   comments: PipedComment[];
   disabled: boolean;
@@ -86,6 +86,11 @@ export default function Comment(props: Props) {
     setShowingReplies(false);
   }
 
+  const [sanitizedText, setSanitizedText] = createSignal("");
+  createEffect(async() => {
+    setSanitizedText(await sanitizeText(props.comment.commentText));
+  });
+
   return (
     <>
       {/* <div class="comment flex mt-1.5">
@@ -159,10 +164,12 @@ export default function Comment(props: Props) {
             <p class="text-xs text-text2">{props.comment.commentedTime}</p>
             {/* {props.comment.&& <p class="text-sm">edited</p>} */}
           </span>
+          <Suspense fallback={<p>Loading...</p>}>
           <p
             class="text-xs"
-            innerHTML={rewriteDescription(props.comment.commentText)}
+            innerHTML={sanitizedText()}
           ></p>
+          </Suspense>
           <span class="flex gap-1 items-center text-xs ">
             <FaSolidThumbsUp />
             {props.comment.likeCount}

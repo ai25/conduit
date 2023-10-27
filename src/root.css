@@ -58,7 +58,7 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 .link {
-  @apply focus-visible:outline-none text-text1 hover:text-accent1 hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-accent1 outline-none rounded focus-visible:underline;
+  @apply focus-visible:outline-none text-accent1 hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-accent1 outline-none rounded focus-visible:underline;
 }
 
 @keyframes stripe {

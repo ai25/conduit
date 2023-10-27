@@ -607,9 +607,10 @@ const ChannelsTab = (props: { tabData: string }) => {
                 {(item) => (
                   <div class="w-44 mx-1 flex flex-col gap-2 items-start">
                     <A href={item.url} class="group outline-none">
-                      <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
+                      <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-shadow duration-300"
+                      >
                         <img
-                          class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
+                          class="w-full rounded-full transition-transform duration-300 group-hover:scale-105 group-focus-visible:scale-105"
                           src={item.thumbnail}
                           loading="lazy"
                         />

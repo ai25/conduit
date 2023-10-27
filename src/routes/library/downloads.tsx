@@ -2,8 +2,7 @@ import { createEffect, createSignal, For } from "solid-js";
 import VideoCard from "~/components/VideoCard";
 import { usePreferences } from "~/stores/preferencesStore";
 import { PipedVideo } from "~/types";
-import { generateThumbnailUrl } from "~/utils/helpers";
-import { videoId } from "./history";
+import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
 
 export default function Downloads() {
   const [videos, setVideos] = createSignal<Array<PipedVideo>>([]);
@@ -34,11 +33,11 @@ export default function Downloads() {
             <VideoCard
               v={{
                 ...video,
-                url: `/watch?v=${videoId(video)}`,
+                url: `/watch?v=${getVideoId(video)}`,
                 type: "stream",
                 thumbnail: generateThumbnailUrl(
                   preferences.instance.image_proxy_url,
-                  videoId(video)
+                  getVideoId(video)
                 ),
                 uploaderName: video.uploader,
                 uploadedDate: video.uploadDate,

@@ -10,10 +10,9 @@ import {
   useContext,
   JSX,
 } from "solid-js";
-import { A } from "solid-start";
+import { A, useSearchParams } from "solid-start";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import Comment, { PipedCommentResponse } from "./Comment";
-import { videoId } from "~/routes/library/history";
 import { downloadVideo } from "~/utils/hls";
 import Button from "./Button";
 import { Toaster } from "solid-headless";
@@ -39,107 +38,101 @@ import { createQuery } from "@tanstack/solid-query";
 import Comments from "./Comments";
 import { Bottomsheet } from "./Bottomsheet";
 import { Suspense } from "solid-js";
-import DOMPurify from "dompurify";
 import { MediaPlayerElement } from "vidstack/elements";
 import { createDate, createTimeAgo } from "@solid-primitives/date";
 import DownloadModal from "./DownloadModal";
+import { getVideoId } from "~/utils/helpers";
+import api from "~/utils/api";
+import { isServer } from "solid-js/web";
+import SubscribeButton from "./SubscribeButton";
 
-function handleTimestamp(videoId: string, t: string) {
-  console.log(t);
+function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
   const player = document.querySelector("media-player") as MediaPlayerElement;
-  player.currentTime = parseInt(t);
-  // push state to history
-  history.pushState({}, "", `/watch?v=${videoId}&t=${t}`);
+  player.currentTime = parseInt(t, 10);
+  
+  const newUrl = new URL(`/watch?v=${videoId}`, window.location.origin);
+  const searchParams = new URLSearchParams(extraQueryParams);
+
+  searchParams.set('t', t);
+  
+  newUrl.search = searchParams.toString();
+
+  history.pushState({}, "", newUrl.toString());
 }
+
 (globalThis as any).handleTimestamp = handleTimestamp;
-export function rewriteDescription(text: string) {
-  const t = DOMPurify.sanitize(text)
-    .replaceAll(
-      /(?:http(?:s)?:\/\/)?(?:www\.)?youtube\.com(\/[/a-zA-Z0-9_?=&-]*)/gm,
-      "$1"
-    )
-    .replaceAll(
-      /(?:http(?:s)?:\/\/)?(?:www\.)?youtu\.be\/(?:watch\?v=)?([/a-zA-Z0-9_?=&-]*)/gm,
-      "/watch?v=$1"
-    )
+
+export async function sanitizeText(text: string) {
+  const dompurify = await import("dompurify");
+  const sanitize = dompurify.default().sanitize;
+  const t = sanitize(text)
+    .replaceAll(/(?:http(?:s)?:\/\/)?(?:www\.)?youtube\.com(\/[/a-zA-Z0-9_?=&-]*)/gm, "$1")
+    .replaceAll(/(?:http(?:s)?:\/\/)?(?:www\.)?youtu\.be\/(?:watch\?v=)?([/a-zA-Z0-9_?=&-]*)/gm, "/watch?v=$1")
     .replaceAll("\n", "<br>")
-    // replace all <a> tags that contain a timestamp with a button
-    .replaceAll(
-      /<a href="\/watch\?v=([a-zA-Z0-9_?=&-]*)&amp;t=([0-9]*)">([a-zA-Z0-9_?=&-:]*)<\/a>/gm,
-      `<button
-        class="link" onclick="handleTimestamp('$1','$2')">$3</button>`
+    .replace(
+      /<a href="\/watch\?v=([a-zA-Z0-9_?=&-]*)&amp;([^"]*)">([a-zA-Z0-9_?=&-:]*)<\/a>/gm,
+      (_, videoId, params, textContent) => {
+        const url = new URL(`https://youtube.com/watch?v=${videoId}`);
+        const searchParams = new URLSearchParams(params);
+        const existingParams = new URLSearchParams(window.location.search);
+        
+        const timestamp = searchParams.get('t') || '0';
+        
+        const allParams = new URLSearchParams();
+        searchParams.forEach((value, key) => {
+          allParams.set(key, value);
+        });
+        existingParams.forEach((value, key) => {
+          allParams.set(key, value);
+        });
+        
+        allParams.forEach((value, key) => {
+          url.searchParams.set(key, value);
+        });
+        
+        return `<button class="link" onclick="handleTimestamp('${videoId}','${timestamp}', '${url.search}')">${textContent}</button>`;
+      }
     )
-    // add a class to all <a> tags
     .replaceAll(/<a href/gm, '<a class="link" href');
   return t;
 }
 
+
 const Description = (props: {
-  video: PipedVideo | null | undefined;
   downloaded: boolean;
-  onRefetch: () => void;
 }) => {
-  const [isSubscribed, setIsSubscribed] = createSignal(false);
   const [preferences] = usePreferences();
 
-  const [comments, setComments] = createSignal<PipedCommentResponse>();
+  const [searchParams] = useSearchParams();
+  const [v, setV] = createSignal<string | undefined>(undefined);
+  createEffect(() => {
+    if (!searchParams.v) return;
+    setV(searchParams.v);
+  });
+
+  const videoQuery = createQuery(
+    () => ["streams", v(), preferences.instance.api_url],
+    () => api.fetchVideo(v(), preferences.instance.api_url),
+    {
+      get enabled() {
+        return preferences.instance?.api_url &&
+          !isServer &&
+          v()
+          ? true
+          : false;
+      },
+      refetchOnReconnect: false,
+      refetchOnMount: false,
+      staleTime: 100 * 60 * 1000,
+      cacheTime: Infinity,
+    }
+  );
+
 
   const [expanded, setExpanded] = createSignal(false);
-  createEffect(() => {
-    if (!props.video) return;
-    let channels = getStorageValue(
-      "localSubscriptions",
-      [],
-      "json",
-      "localStorage"
-    ) as string[];
-    console.log(typeof channels);
-    if (typeof channels === "string") channels = JSON.parse(channels);
-    setIsSubscribed(
-      channels.find(
-        (channel) => channel === props.video!.uploaderUrl.split("/channel/")[1]
-      )
-        ? true
-        : false
-    );
-  });
-  const toggleSubscribed = () => {
-    const channels = getStorageValue(
-      "localSubscriptions",
-      [],
-      "json",
-      "localStorage"
-    ) as string[];
-    if (!isSubscribed()) {
-      setStorageValue(
-        "localSubscriptions",
-        JSON.stringify([
-          ...channels,
-          props.video!.uploaderUrl.split("/channel/")[1],
-        ]),
-        "localStorage"
-      );
-      setIsSubscribed(true);
-    } else {
-      setStorageValue(
-        "localSubscriptions",
-        JSON.stringify(
-          channels.filter(
-            (channel) =>
-              channel !== props.video!.uploaderUrl.split("/channel/")[1]
-          )
-        ),
-        "localStorage"
-      );
-      setIsSubscribed(false);
-    }
-  };
 
   const [downloadModalOpen, setDownloadModalOpen] = createSignal(false);
 
-  async function handleDownload() {
-    downloadVideo(videoId(props.video), preferences.instance.api_url);
-  }
 
   async function deleteVideo(id: string) {
     try {
@@ -150,12 +143,18 @@ const Description = (props: {
     }
   }
   const [debugInfoOpen, setDebugInfoOpen] = createSignal(false);
-  const [commentsOpen, setCommentsOpen] = createSignal(false);
-  const [date, setDate] = createDate(props.video?.uploadDate ?? new Date());
+  const [date, setDate] = createDate(videoQuery.data?.uploadDate ?? new Date());
   createEffect(() => {
-    setDate(props.video?.uploadDate ?? new Date());
+    setDate(videoQuery.data?.uploadDate ?? new Date());
   });
   const [timeAgo] = createTimeAgo(date, { interval: 1000 * 60 });
+  const [sanitizedDescription, setSanitizedDescription] = createSignal<string | undefined>(undefined);
+  createEffect(async () => {
+    if (!videoQuery.data) return;
+    setSanitizedDescription(
+      await sanitizeText(videoQuery.data.description));
+  }
+  );
 
   const Placeholder = () => (
     <div class="mb-2 w-full grow min-w-0 max-w-5xl p-4 bg-bg1">
@@ -175,183 +174,179 @@ const Description = (props: {
   );
 
   return (
-    <Show when={props.video} fallback={<Placeholder />}>
-      <Modal
-        isOpen={debugInfoOpen()}
-        setIsOpen={setDebugInfoOpen}
-        title="Debug info">
-        <IconButton
-          icon={<FaSolidCopy class="w-4 h-4" />}
-          title="Copy to clipboard"
-          onClick={() => {
-            navigator.clipboard.writeText(JSON.stringify(props.video, null, 2));
-          }}
-        />
-        <div class="max-w-screen-sm max-h-[80vh] overflow-auto">
-          <JSONViewer data={props.video} folded={false} />
-        </div>
-      </Modal>
-      <DownloadModal id={videoId(props.video)} isOpen={downloadModalOpen()} setIsOpen={setDownloadModalOpen} />
-      <div class="mb-2 bg-bg1 p-4 ">
-        <div class="flex flex-col gap-2">
-          <div class="flex flex-col gap-2 ">
-            <div class="flex items-start justify-between">
-              <h1 class="text-lg leading-tight font-bold sm:text-xl ">
-                {props.video!.title}
-              </h1>
-            </div>
-            <div class="my-1 flex justify-between items-center gap-4 sm:justify-start ">
-              <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
-                <A class="link" href={`${props.video!.uploaderUrl}`}>
-                  <img
-                    src={props.video!.uploaderAvatar}
-                    width={42}
-                    height={42}
-                    alt={props.video!.uploader}
-                    class="rounded-full"
-                  />
-                </A>
-                <div class="flex flex-col items-start justify-start">
-                  <A
-                    href={`${props.video!.uploaderUrl}`}
-                    class="link flex w-fit items-center gap-2">
-                    {props.video!.uploader}{" "}
-                    {props.video!.uploaderVerified && <Checkmark />}
+    <Suspense fallback={<Placeholder />}>
+      <Show when={videoQuery.data} fallback={<Placeholder />}>
+        <Modal
+          isOpen={debugInfoOpen()}
+          setIsOpen={setDebugInfoOpen}
+          title="Debug info">
+          <IconButton
+            icon={<FaSolidCopy class="w-4 h-4" />}
+            title="Copy to clipboard"
+            onClick={() => {
+              navigator.clipboard.writeText(JSON.stringify(videoQuery.data, null, 2));
+            }}
+          />
+          <div class="max-w-screen-sm max-h-[80vh] overflow-auto">
+            <JSONViewer data={videoQuery.data} folded={false} />
+          </div>
+        </Modal>
+        <DownloadModal id={getVideoId(videoQuery.data)!} isOpen={downloadModalOpen()} setIsOpen={setDownloadModalOpen} />
+        <div class="mb-2 bg-bg1 p-4 ">
+          <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-2 ">
+              <div class="flex items-start justify-between">
+                <h1 class="text-lg leading-tight font-bold sm:text-xl ">
+                  {videoQuery.data!.title}
+                </h1>
+              </div>
+              <div class="my-1 flex justify-between items-center gap-4 sm:justify-start ">
+                <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
+                  <A class="link" href={`${videoQuery.data!.uploaderUrl}`}>
+                    <img
+                      src={videoQuery.data!.uploaderAvatar}
+                      width={42}
+                      height={42}
+                      alt={videoQuery.data!.uploader}
+                      class="rounded-full"
+                    />
                   </A>
-                  <div
-                    title={`${
-                      props.video!.uploaderSubscriberCount
-                    } subscribers`}
-                    class="flex w-full items-center text-start text-xs text-text2 sm:text-sm">
-                    {numeral(props.video!.uploaderSubscriberCount)
-                      .format("0a")
-                      .toUpperCase()}{" "}
-                    subscribers
+                  <div class="flex flex-col items-start justify-start">
+                    <A
+                      href={`${videoQuery.data!.uploaderUrl}`}
+                      class="link flex w-fit items-center gap-2">
+                      {videoQuery.data!.uploader}{" "}
+                      {videoQuery.data!.uploaderVerified && <Checkmark />}
+                    </A>
+                    <div
+                      title={`${videoQuery.data!.uploaderSubscriberCount
+                        } subscribers`}
+                      class="flex w-full items-center text-start text-xs text-text2 sm:text-sm">
+                      {numeral(videoQuery.data!.uploaderSubscriberCount)
+                        .format("0a")
+                        .toUpperCase()}{" "}
+                      subscribers
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <Button
-                onClick={toggleSubscribed}
-                activated={isSubscribed()}
-                label={`Subscribe${isSubscribed() ? "d" : ""}`}
-                class="h-10"
+                <SubscribeButton id={getVideoId(videoQuery.data)!} />
+              </div>
+            </div>
+            <div class="flex items-center justify-evenly rounded p-2 bg-bg2">
+              <Switch>
+                <Match when={props.downloaded}>
+                  <IconButton
+                    title="Delete"
+                    icon={<FaSolidTrashCan class="h-6 w-6" />}
+                    onClick={() => deleteVideo(getVideoId(videoQuery.data)!)}
+                  />
+                </Match>
+                <Match when={!props.downloaded}>
+                  <IconButton
+                    title="Download"
+                    icon={<FaSolidDownload class="h-6 w-6" />}
+                    onClick={() => setDownloadModalOpen(true)}
+                  />
+                </Match>
+              </Switch>
+              <IconButton
+                title="Share"
+                icon={<FaSolidShare class="h-6 w-6" />}
+                onClick={() => { }}
+              />
+              <IconButton
+                title="Save"
+                icon={<FaSolidBookmark class="h-6 w-6" />}
+                onClick={() => { }}
+              />
+              <IconButton
+                title="Debug info"
+                icon={<FaSolidBug class="h-6 w-6" />}
+                onClick={() => {
+                  setDebugInfoOpen(true);
+                }}
+              />
+              <IconButton
+                title="Soft Refresh (Shift+R)"
+                icon={<FaSolidArrowsRotate class="h-6 w-6" />}
+                onClick={() => videoQuery.refetch()}
               />
             </div>
-          </div>
-          <div class="flex items-center justify-evenly rounded p-2 bg-bg2">
-            <Switch>
-              <Match when={props.downloaded}>
-                <IconButton
-                  title="Delete"
-                  icon={<FaSolidTrashCan class="h-6 w-6" />}
-                  onClick={() => deleteVideo(videoId(props.video))}
-                />
-              </Match>
-              <Match when={!props.downloaded}>
-                <IconButton
-                  title="Download"
-                  icon={<FaSolidDownload class="h-6 w-6" />}
-                  onClick={()=>setDownloadModalOpen(true)}
-                />
-              </Match>
-            </Switch>
-            <IconButton
-              title="Share"
-              icon={<FaSolidShare class="h-6 w-6" />}
-              onClick={() => {}}
-            />
-            <IconButton
-              title="Save"
-              icon={<FaSolidBookmark class="h-6 w-6" />}
-              onClick={() => {}}
-            />
-            <IconButton
-              title="Debug info"
-              icon={<FaSolidBug class="h-6 w-6" />}
-              onClick={() => {
-                setDebugInfoOpen(true);
-              }}
-            />
-            <IconButton
-              title="Soft Refresh (Shift+R)"
-              icon={<FaSolidArrowsRotate class="h-6 w-6" />}
-              onClick={props.onRefetch}
-            />
-          </div>
-          <div
-            title={`Published ${(() => {
-              const substr = date()
-                .toString()
-                .split(":")[0];
-              return substr.slice(0, substr.length - 3);
-            })()} • ${numeral(props.video!.views).format("0,0")} views`}
-            class="flex items-center gap-1 my-1 text-sm truncate max-w-full">
-            <p class="">{timeAgo()}</p>•
-            <p class="">
-              {numeral(props.video!.views).format("0a").toUpperCase()} views
-            </p>
-            <div class="flex flex-col w-32 ml-auto ">
-              <div class="flex items-center justify-between ">
-                <span
-                  title={`${numeral(props.video!.likes).format("0,0")} likes`}
-                  class="flex items-center gap-2 ">
-                  <FaSolidThumbsUp class="w-5 h-5" fill="currentColor" />
-                  {numeral(props.video!.likes).format("0a").toUpperCase()}{" "}
-                </span>
-                <span
-                  title={`${numeral(props.video!.dislikes).format(
-                    "0,0"
-                  )} likes`}
-                  class="flex items-center gap-2">
-                  <FaSolidThumbsDown class="h-5 w-5" fill="currentColor" />
-                  {numeral(props.video!.dislikes)
-                    .format("0a")
-                    .toUpperCase()}{" "}
-                </span>
-              </div>
-              <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
-                <div
-                  class="h-full bg-accent1 rounded-r"
-                  style={{
-                    width: `${
-                      (props.video!.dislikes /
-                        (props.video!.likes + props.video!.dislikes)) *
-                      100
-                    }%`,
-                  }}></div>
+            <div
+              title={`Published ${(() => {
+                const substr = date()
+                  .toString()
+                  .split(":")[0];
+                return substr.slice(0, substr.length - 3);
+              })()} • ${numeral(videoQuery.data!.views).format("0,0")} views`}
+              class="flex items-center gap-1 my-1 text-sm truncate max-w-full">
+              <p class="">{timeAgo()}</p>•
+              <p class="">
+                {numeral(videoQuery.data!.views).format("0a").toUpperCase()} views
+              </p>
+              <div class="flex flex-col w-32 ml-auto ">
+                <div class="flex items-center justify-between ">
+                  <span
+                    title={`${numeral(videoQuery.data!.likes).format("0,0")} likes`}
+                    class="flex items-center gap-2 ">
+                    <FaSolidThumbsUp class="w-5 h-5" fill="currentColor" />
+                    {numeral(videoQuery.data!.likes).format("0a").toUpperCase()}{" "}
+                  </span>
+                  <span
+                    title={`${numeral(videoQuery.data!.dislikes).format(
+                      "0,0"
+                    )} likes`}
+                    class="flex items-center gap-2">
+                    <FaSolidThumbsDown class="h-5 w-5" fill="currentColor" />
+                    {numeral(videoQuery.data!.dislikes)
+                      .format("0a")
+                      .toUpperCase()}{" "}
+                  </span>
+                </div>
+                <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
+                  <div
+                    class="h-full bg-accent1 rounded-r"
+                    style={{
+                      width: `${(videoQuery.data!.dislikes /
+                          (videoQuery.data!.likes + videoQuery.data!.dislikes)) *
+                        100
+                        }%`,
+                    }}></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
-          <div
-            tabIndex={0}
-            id="description"
-            aria-expanded={expanded()}
-            class={`min-w-0 max-w-full overflow-hidden ${
-              expanded() ? "" : "max-h-20"
-            }`}
-            innerHTML={rewriteDescription(props.video!.description)}
-          />
-          <div classList={{ hidden: expanded() }} class="w-full h-0 relative">
-            <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
+          <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
+            <Suspense fallback={<p>Desc Loading...</p>}>
+            <div
+              tabIndex={0}
+              id="description"
+              aria-expanded={expanded()}
+              class={`min-w-0 max-w-full overflow-hidden ${expanded() ? "" : "max-h-20"
+                }`}
+              innerHTML={sanitizedDescription()!}
+            />
+            </Suspense>
+            <div classList={{ hidden: expanded() }} class="w-full h-0 relative">
+              <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
+            </div>
+            <button
+              aria-controls="description"
+              onClick={() => {
+                setExpanded(!expanded());
+              }}
+              class="text-center text-sm text-accent1 hover:underline ">
+              Show {expanded() ? "less" : "more"}
+            </button>
           </div>
-          <button
-            aria-controls="description"
-            onClick={() => {
-              setExpanded(!expanded());
-            }}
-            class="text-center text-sm text-accent1 hover:underline ">
-            Show {expanded() ? "less" : "more"}
-          </button>
+          <Comments
+            videoId={getVideoId(videoQuery.data)!}
+            uploader={videoQuery.data!.uploader}
+          />
         </div>
-        <Comments
-          videoId={videoId(props.video)}
-          uploader={props.video!.uploader}
-        />
-      </div>
-    </Show>
+      </Show>
+    </Suspense>
   );
 };
 

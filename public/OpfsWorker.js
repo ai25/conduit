@@ -142,6 +142,7 @@ const initialize = async (dirName) => {
 };
 
 const cleanup = () => {
+      console.warn("CLEANUP CALL RECEIVED");
   if (accessHandle) {
     accessHandle.close();  // Release the access handle
     accessHandle = null;
@@ -218,3 +219,8 @@ self.addEventListener("message", async (event) => {
       throw new Error(`Unknown action: ${action}`);
   }
 });
+
+self.addEventListener("unload", () => {
+  cleanup()
+}
+);

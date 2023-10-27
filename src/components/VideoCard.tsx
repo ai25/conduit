@@ -14,10 +14,9 @@ import {
   createMemo,
   For,
 } from "solid-js";
-import { videoId } from "~/routes/library/history";
 import { useSyncStore, HistoryItem } from "~/stores/syncStore";
 import { BsChevronRight, BsThreeDotsVertical } from "solid-icons/bs";
-import { generateThumbnailUrl } from "~/utils/helpers";
+import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
 import { FaRegularEye, FaRegularEyeSlash, FaSolidBug } from "solid-icons/fa";
 import Modal from "./Modal";
 import { mergeProps } from "solid-js";
@@ -30,9 +29,9 @@ const VideoCard = (props: {
   if (!props.v)
     return (
       <div
-        class={` flex w-full min-w-full max-w-md mx-2 mb-2 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-1`}
+        class={` flex w-full min-w-min max-w-sm mx-2 mb-2 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-1`}
       >
-        <div class="animate-pulse w-96 max-w-sm h-full bg-bg2 flex aspect-video flex-col overflow-hidden rounded text-text1">
+        <div class="animate-pulse w-96 lg:w-72 max-w-sm h-full bg-bg2 flex aspect-video flex-col overflow-hidden rounded text-text1">
           <div class="bg-bg2 w-full h-full"></div>
         </div>
       <div class="max-w-sm w-full">
@@ -45,7 +44,7 @@ const VideoCard = (props: {
   const sync = useSyncStore();
 
   createEffect(() => {
-    const id = videoId(props.v);
+    const id = getVideoId(props.v);
     if (!id) return;
     const val = sync.store.history?.[id];
     if (val?.watchedAt) {
@@ -73,10 +72,10 @@ const VideoCard = (props: {
 
   return (
     <div
-      class={` flex w-full max-w-md mx-1 lg:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}
+      class={` flex w-full max-w-md mx-1 sm:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}
     >
       <A
-        href={`/watch?v=${videoId(props.v)}`}
+        href={`/watch?v=${getVideoId(props.v)}`}
         class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
         title={props.v.title}
       >
@@ -87,7 +86,7 @@ const VideoCard = (props: {
           src={generateThumbnailUrl(
             sync.store!.preferences?.instance?.image_proxy_url ??
               "https://pipedproxy.kavin.rocks",
-            videoId(props.v)
+            getVideoId(props.v)
           )}
           // placeholder="blur"
           width={2560}
@@ -139,7 +138,7 @@ const VideoCard = (props: {
       <div class="mt-2 flex w-full max-h-20 min-w-0 max-w-full justify-between ">
         <div class="flex flex-col gap-2 pr-2 ">
           <A
-            href={props.v.url ?? `/watch?v=${videoId(props.v)}`}
+            href={props.v.url ?? `/watch?v=${getVideoId(props.v)}`}
             class=" two-line-ellipsis min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-primary"
             title={props.v.title}
           >
@@ -258,7 +257,7 @@ const VideoCard = (props: {
                     onSelect={() => {
                       if (!props.v) return;
                       const item = {
-                        [videoId(props.v) as string]: {
+                        [getVideoId(props.v) as string]: {
                           title: props.v.title,
                           url: props.v.url,
                           duration: props.v.duration,
@@ -294,7 +293,7 @@ const VideoCard = (props: {
                     }}
                     onSelect={() => {
                       sync.setStore("history", {
-                        [videoId(props.v)]: undefined,
+                        [getVideoId(props.v)]: undefined,
                       });
                     }}
                   >

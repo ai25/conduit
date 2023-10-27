@@ -75,6 +75,7 @@ export class SharedService extends EventTarget {
     const lockName = `SharedService-${this.#serviceName}`;
 
     console.log(await navigator.locks.query());
+    window.addEventListener("beforeunload", () => this.cleanupResources());
 
     try {
       await navigator.locks.request(
@@ -122,9 +123,10 @@ export class SharedService extends EventTarget {
     // Wait for an abort signal to clean up
     return new Promise<void>((_, reject) => {
       this.#onDeactivate!.signal.addEventListener("abort", async () => {
+        console.log("Cleanup");
         await this.proxy["cleanup"]()
         broadcastChannel.close();
-        reject(this.#onDeactivate!.signal.reason);
+        reject(this.#onDeactivate?.signal.reason);
       });
     });
   }
@@ -176,7 +178,7 @@ export class SharedService extends EventTarget {
 
   private cleanupResources() {
     if (this.#onDeactivate) {
-      this.#onDeactivate.abort();
+      this.#onDeactivate?.abort();
       this.#onDeactivate = null;
     }
   }
@@ -188,6 +190,7 @@ export class SharedService extends EventTarget {
   }
 
   close() {
+    console.log("cleanup")
     this.deactivate();
     this.#onClose.abort();
     for (const { reject } of this.providerCallbacks.values()) {

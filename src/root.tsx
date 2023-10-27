@@ -12,6 +12,7 @@ import {
   JSX,
   createMemo,
   lazy,
+  onMount,
 } from "solid-js";
 import {
   Body,
@@ -38,7 +39,6 @@ import { IDBPDatabase, openDB } from "idb";
 import Header from "./components/Header";
 import { Transition } from "solid-headless";
 import { PlaylistProvider } from "./stores/playlistStore";
-import { QueueProvider } from "./stores/queueStore";
 import { PlayerStateProvider } from "./stores/playerStateStore";
 import { SyncedStoreProvider, useSyncStore } from "./stores/syncStore";
 import { AppStateProvider, useAppState } from "./stores/appStateStore";
@@ -49,7 +49,6 @@ import { Toast } from "@kobalte/core";
 import { createQuery, QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { getStorageValue } from "./utils/storage";
 import { PreferencesProvider, usePreferences } from "./stores/preferencesStore";
-import ReloadPrompt from "./components/ReloadPrompt";
 import Watch from "./routes/watch";
 import Playlists from "./routes/library/playlists";
 import History from "./routes/library/history";
@@ -60,6 +59,10 @@ import { splitProps } from "solid-js";
 import { TransitionGroup } from "solid-transition-group";
 import { useSearchParams } from "solid-start";
 import Player from "./components/Player";
+import { QueueProvider } from "./stores/queueStore";
+import api from "./utils/api";
+import { PlayerLoading } from "./components/PlayerContainer";
+import ReloadPrompt from "./components/ReloadPrompt";
 
 const [theme, setTheme] = createSignal("");
 export const ThemeContext = createContext<Signal<string>>([theme, setTheme]);
@@ -135,6 +138,11 @@ export default function Root() {
     const theater = cookie().theater ?? "false";
     setTheater(theater === "true");
   });
+  onMount(async() => {
+    await navigator.serviceWorker.register("/dev-sw.js", {  
+      scope: "/",
+    });
+  });
   const [appState] = useAppState();
 
   const queryClient = new QueryClient({
@@ -147,6 +155,7 @@ export default function Root() {
         retry: (failureCount) => {
           return failureCount < 3;
         },
+        suspense: true,
       },
     },
   });
@@ -165,12 +174,12 @@ export default function Root() {
         <Link rel="manifest" href="manifest.webmanifest" />
       </Head>
       <QueryClientProvider client={queryClient}>
-        <QueueProvider>
-          <ThemeContext.Provider value={[theme, setTheme]}>
-            <TheaterContext.Provider value={[theater, setTheater]}>
-              <PreferencesProvider>
-                <AppStateProvider>
-                  <PlaylistProvider>
+        <ThemeContext.Provider value={[theme, setTheme]}>
+          <TheaterContext.Provider value={[theater, setTheater]}>
+            <PreferencesProvider>
+              <AppStateProvider>
+                <PlaylistProvider>
+                  <QueueProvider>
                     <PlayerContext.Provider value={video}>
                       <PlayerStateProvider>
                         <SyncedStoreProvider>
@@ -183,6 +192,10 @@ export default function Root() {
                               </ErrorBoundary>
                             </Suspense>
 
+                            <div aria-hidden="true" class="h-10" />
+                            <Suspense fallback={<PlayerLoading />}>
+                              <PlayerContainer />
+                            </Suspense>
                             <Suspense>
                               <ErrorBoundary>
                                 <Show when={appState.loading}>
@@ -192,20 +205,18 @@ export default function Root() {
                                     />
                                   </div>
                                 </Show>
-                                <div aria-hidden="true" class="h-10" />
                                 <Portal>
                                   <Toast.Region>
                                     <Toast.List class="fixed bottom-0 right-0 p-4 flex flex-col gap-2 z-[9999] w-[400px] max-w-[100vw] outline-none" />
                                   </Toast.Region>
                                 </Portal>
-                                <PlayerContainer />
                                 <main>
                                   <Routes>
                                     <FileRoutes />
                                   </Routes>
-                                  {/* <Show when={!isServer}>
+                                   <Show when={!isServer}>
                                     <ReloadPrompt />
-                                  </Show> */}
+                                  </Show> 
                                 </main>
                                 <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
                                   <BottomNav
@@ -252,12 +263,12 @@ export default function Root() {
                         </SyncedStoreProvider>
                       </PlayerStateProvider>
                     </PlayerContext.Provider>
-                  </PlaylistProvider>
-                </AppStateProvider>
-              </PreferencesProvider>
-            </TheaterContext.Provider>
-          </ThemeContext.Provider>
-        </QueueProvider>
+                  </QueueProvider>
+                </PlaylistProvider>
+              </AppStateProvider>
+            </PreferencesProvider>
+          </TheaterContext.Provider>
+        </ThemeContext.Provider>
       </QueryClientProvider>
     </Html>
   );
@@ -273,13 +284,7 @@ const PlayerContainer = () => {
   });
   const videoQuery = createQuery(
     () => ["streams", v(), preferences.instance.api_url],
-    async (): Promise<PipedVideo> =>
-      await fetch(
-        preferences.instance.api_url + "/streams/" + v()
-      ).then((res) => {
-        if (!res.ok) throw new Error("video not found");
-        return res.json();
-      }),
+    () => api.fetchVideo(v(), preferences.instance.api_url),
     {
       get enabled() {
         return preferences.instance?.api_url &&
@@ -295,12 +300,15 @@ const PlayerContainer = () => {
     }
   );
 
-  return <Show when={!isServer && videoQuery.data}>
-    <Player
-      onReload={() => videoQuery.refetch()}
-    />
+  return (
+      <Show when={videoQuery.data} fallback={<PlayerLoading />}
+      >
+        <Player
+          onReload={() => videoQuery.refetch()}
+        />
 
-  </Show>
+      </Show>
+  )
 
 }
 
@@ -313,7 +321,7 @@ const RouteAnnouncer = () => {
         aria-live="assertive"
         aria-atomic="true"
         class="sr-only"
-      >Current page {location.pathname} </div>
+      >Current page: {location.pathname} </div>
     </Portal>
   )
 }
@@ -336,7 +344,7 @@ const RouteAnnouncer = () => {
 
 //   createEffect(() => {
 //     if (!video[0].value) return;
-//     console.log("setting player and outlet", videoId(video[0].value));
+//     console.log("setting player and outlet", getVideoId(video[0].value));
 //     setPlayer(document.querySelector("media-player"));
 //     setOutlet(document.querySelector("media-outlet"));
 //     if (player()) {
@@ -404,7 +412,7 @@ const RouteAnnouncer = () => {
 //               if (player() && outlet()) {
 //                 player()!.prepend(outlet()!);
 //                 hideContainer();
-//                 const id = videoId(video[0].value);
+//                 const id = getVideoId(video[0].value);
 //                 if (!id) {
 //                   console.log("no id", id);
 //                   return;

@@ -53,12 +53,12 @@ export function FullscreenButton(props: FullscreenButtonProps) {
           onChange={(value) => {
             if (value) {
               document.documentElement.requestFullscreen();
-              screen.orientation.lock("landscape");
-              setParams({ fullscreen: true });
+              screen.orientation.lock("landscape").catch(() => { });
+              setParams({ fullscreen: true }, { replace: true });
             } else {
               document.exitFullscreen();
               screen.orientation.unlock();
-              setParams({ fullscreen: undefined });
+              setParams({ fullscreen: undefined }, { replace: true });
             }
           }}
         >
