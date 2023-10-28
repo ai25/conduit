@@ -80,10 +80,10 @@ precacheAndRoute([
 // );
 // Install the service worker as soon as possible.
 self.addEventListener('install', (/** @type {ExtendableEvent} */ event: ExtendableEvent) => {
-  event.waitUntil(globalThis.skipWaiting());
+  event.waitUntil(self.skipWaiting());
 });
 self.addEventListener('activate', (/** @type {ExtendableEvent} */ event: ExtendableEvent) => {
-  event.waitUntil(globalThis.clients.claim());
+  event.waitUntil(self.clients.claim());
 });
 
 // Forward messages (and ports) from client to client.

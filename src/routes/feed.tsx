@@ -12,7 +12,7 @@ import { Spinner } from "~/components/PlayerContainer";
 import { RelatedStream } from "~/types";
 import { getStorageValue } from "~/utils/storage";
 import { Title } from "solid-start";
-import { createQuery } from "@tanstack/solid-query";
+import { createQuery, isServer } from "@tanstack/solid-query";
 import { useSyncStore } from "~/stores/syncStore";
 import { ErrorComponent } from "~/components/Error";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
@@ -44,7 +44,7 @@ export default function Feed() {
         preferences.instance.api_url + "/feed/unauthenticated",
         {
           method: "POST",
-          body: JSON.stringify(sync.store.subscriptions),
+          body: JSON.stringify(Object.keys(sync.store.subscriptions)),
         }
       );
       if (!res.ok) {
@@ -54,8 +54,9 @@ export default function Feed() {
     },
     {
       get enabled() {
-        return preferences.instance?.api_url &&
-          sync.store.subscriptions?.length > 0
+        return !isServer &&
+          preferences.instance?.api_url &&
+          Object.keys(sync.store.subscriptions).length > 0
           ? true
           : false;
       },
@@ -78,6 +79,7 @@ export default function Feed() {
   });
   const [appState, setAppState] = useAppState();
   createEffect(() => {
+    console.log(sync.store.subscriptions, Object.keys(sync.store.subscriptions), "feed");
     setAppState({
       loading: query.isInitialLoading || query.isRefetching || query.isFetching,
     });
@@ -109,12 +111,12 @@ export default function Feed() {
         </Tooltip.Root>
         <Title>Feed | Conduit</Title>
 
-        <Show when={!sync.store.subscriptions?.length}>
+        <Show when={!Object.keys(sync.store.subscriptions).length}>
           <div class="h-[80vh] w-full flex items-center justify-center">
             <EmptyState />
           </div>
         </Show>
-        <Show when={sync.store.subscriptions?.length}>
+        <Show when={Object.keys(sync.store.subscriptions).length}>
           <div class="mx-2 flex flex-wrap justify-center">
             <Show when={!Array.isArray(query.data)}>
               <ErrorComponent error={query.data} />

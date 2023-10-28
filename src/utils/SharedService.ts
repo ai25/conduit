@@ -75,7 +75,6 @@ export class SharedService extends EventTarget {
     const lockName = `SharedService-${this.#serviceName}`;
 
     console.log(await navigator.locks.query());
-    window.addEventListener("beforeunload", () => this.cleanupResources());
 
     try {
       await navigator.locks.request(

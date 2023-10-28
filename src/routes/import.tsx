@@ -3,27 +3,34 @@ import Toggle from "~/components/Toggle";
 import { useSyncStore } from "~/stores/syncStore";
 
 export default function Import() {
-  const [subscriptions, setSubscriptions] = createSignal<string[]>([]);
+  const [subscriptions, setSubscriptions] = createSignal<Record<string, {subscribedAt:number}>>({});
   const [override, setOverride] = createSignal(false);
-  const selectedSubscriptions = () => subscriptions().length;
+  const selectedSubscriptions = () => Object.keys(subscriptions()).length;
   const sync = useSyncStore();
+  sync.store.subscriptions
   let fileSelector: HTMLInputElement | undefined = undefined;
   function fileChange() {
     console.log("fileChange", fileSelector?.files?.[0]?.name);
     if (!fileSelector?.files?.[0]) return;
     const file = fileSelector.files[0];
     file.text().then((text) => {
-      setSubscriptions([]);
 
+      // Conduit
+      if (text.includes("Conduit")) {
+        console.log("Conduit");
+        const json = JSON.parse(text);
+        setSubscriptions(json.subscriptions);
+      }
       // Invidious
       if (text.indexOf("opml") != -1) {
+        console.log("Invidious");
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(text, "text/xml");
         xmlDoc.querySelectorAll("outline[xmlUrl]").forEach((item) => {
           const url = item.getAttribute("xmlUrl");
           const id = url?.slice(-24);
           if (id) {
-            setSubscriptions((subscriptions) => [...subscriptions, id]);
+            setSubscriptions({[id]: {subscribedAt: Date.now()}});
           }
         });
       }
@@ -36,27 +43,32 @@ export default function Import() {
           .forEach((item: any) => {
             const url = item.url;
             const id = url.slice(-24);
-            setSubscriptions((subscriptions) => [...subscriptions, id]);
+            setSubscriptions({[id]: {subscribedAt: Date.now()}});
           });
       }
       // Invidious JSON
       else if (text.indexOf("thin_mode") != -1) {
+        console.log("Invidious JSON");
         const json = JSON.parse(text);
-        setSubscriptions(json.subscriptions);
+        json.subscriptions.forEach((id: string) => {
+          setSubscriptions((subs) => ({...subs, [id]: {subscribedAt: Date.now()}}));
+        });
       }
       // FreeTube DB
       else if (text.indexOf("allChannels") != -1) {
+        console.log("FreeTube DB");
         const json = JSON.parse(text);
         json.subscriptions.forEach((item: any) => {
-          setSubscriptions((subscriptions) => [...subscriptions, item.id]);
+          setSubscriptions({[item.id]: {subscribedAt: Date.now()}});
         });
       }
       // Google Takeout JSON
       else if (text.indexOf("contentDetails") != -1) {
+        console.log("Google Takeout JSON");
         const json = JSON.parse(text);
         json.forEach((item: any) => {
           const id = item.snippet.resourceId.channelId;
-          setSubscriptions((subscriptions) => [...subscriptions, id]);
+          setSubscriptions({[id]: {subscribedAt: Date.now()}});
         });
       }
 
@@ -65,28 +77,29 @@ export default function Import() {
         file.name.length >= 5 &&
         file.name.slice(-4).toLowerCase() == ".csv"
       ) {
+        console.log("Google Takeout CSV");
         const lines = text.split("\n");
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i];
           const id = line.slice(0, line.indexOf(","));
           if (id.length === 24)
-            setSubscriptions((subscriptions) => [...subscriptions, id]);
+            setSubscriptions({[id]: {subscribedAt: Date.now()}});
         }
       }
     });
   }
-  function handleImport() {
-    const subs = override()
-      ? [...new Set(subscriptions())]
-      : ([
-          ...new Set((getLocalSubscriptions() ?? []).concat(subscriptions())),
-        ] as string[]);
-    // Sort for better cache hits
-    console.log("importSubscriptionsLocally", subs.sort());
-    setSubscriptions(subs.sort());
+  function handleImport(e: Event) {
+    e.preventDefault();
+    if (override()) {
+      Object.keys(sync.store.subscriptions).forEach((id) => {
+        sync.setStore("subscriptions", id, undefined!);
+      });
+    }
+
+    console.log("subs", subscriptions(), getLocalSubscriptions());
 
     try {
-      sync.setStore("subscriptions", subs);
+      sync.setStore("subscriptions", subscriptions());
     } catch (e) {
       alert("Error saving subscriptions");
     }
@@ -110,15 +123,13 @@ export default function Import() {
               {`Selected Subscriptions: ${selectedSubscriptions()}`}{" "}
             </strong>
           </div>
-          <div>
-            <strong>
-              Override:{" "}
-              {/* <Toggle
+          <div class="flex items-center justify-center my-2 gap-2" >
+              Override{" "}
+               <Toggle
                 label="Override"
                 checked={override()}
                 onChange={() => setOverride(!override())}
-              /> */}
-            </strong>
+              /> 
           </div>
           <div>
             <button class="btn w-auto" onClick={handleImport}>

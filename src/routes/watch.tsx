@@ -197,6 +197,7 @@ export default function Watch() {
     }
   );
   createEffect(() => {
+    console.log(sync.store, "STORE");
     console.log(sponsorsQuery.data, sponsorsQuery.error);
   });
 

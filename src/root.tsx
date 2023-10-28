@@ -138,11 +138,7 @@ export default function Root() {
     const theater = cookie().theater ?? "false";
     setTheater(theater === "true");
   });
-  onMount(async() => {
-    await navigator.serviceWorker.register("/dev-sw.js", {  
-      scope: "/",
-    });
-  });
+
   const [appState] = useAppState();
 
   const queryClient = new QueryClient({
@@ -301,7 +297,7 @@ const PlayerContainer = () => {
   );
 
   return (
-      <Show when={videoQuery.data} fallback={<PlayerLoading />}
+      <Show when={videoQuery.data} fallback={v()?<PlayerLoading />:null}
       >
         <Player
           onReload={() => videoQuery.refetch()}

@@ -126,7 +126,7 @@ const getStoredUpdates = (accessHandle) => {
   return updates;
 };
 
-const initialize = async (dirName) => {
+const acquireFileHandle = async (dirName) => {
   const opfsRoot = await navigator.storage.getDirectory();
   console.log("opfsRoot", opfsRoot);
   const roomHandle = await opfsRoot.getDirectoryHandle(dirName, {
@@ -137,39 +137,52 @@ const initialize = async (dirName) => {
     create: true,
   });
   console.log("fileHandle", fileHandle);
+}
+
+const acquireAccessHandle = async () => {
   accessHandle = await fileHandle.createSyncAccessHandle();
   console.log("accessHandle", accessHandle);
 };
 
 const cleanup = () => {
-      console.warn("CLEANUP CALL RECEIVED");
+  console.warn("CLEANUP CALL RECEIVED");
   if (accessHandle) {
-    accessHandle.close();  // Release the access handle
-    accessHandle = null;
+    try{
+    accessHandle.flush();
+    accessHandle.close();
+    } catch (error) {
+      console.error(error, "Trying to recreate access handle");
+      accessHandle = null;
+      return
+    }
+    console.warn("accessHandle closed", JSON.stringify(accessHandle));
   }
 
   if (fileHandle) {
-    // No explicit close method for fileHandle but nullify for GC
+    // nullify for GC
     fileHandle = null;
   }
 };
+let initializedCount = 0;
 
 
 self.addEventListener("message", async (event) => {
   const { action, payload } = event.data;
   console.log("Message received", action, payload);
-  if (fileHandle === null || accessHandle === null) {
-    await initialize(payload.roomName);
+  if (fileHandle === null) {
+    await acquireFileHandle(payload.roomName);
   }
   if (!accessHandle) {
-    throw new Error("Could not create access handle.");
+    initializedCount++;
+    console.log("accessHandle is null", initializedCount);
+    await acquireAccessHandle();
   }
   let size;
   try {
     size = accessHandle.getSize();
   } catch (error) {
     console.error(error, "Trying to recreate access handle");
-    await initialize(payload.roomName);
+    await acquireAccessHandle();
     size = accessHandle.getSize();
   }
   switch (action) {
@@ -220,7 +233,3 @@ self.addEventListener("message", async (event) => {
   }
 });
 
-self.addEventListener("unload", () => {
-  cleanup()
-}
-);

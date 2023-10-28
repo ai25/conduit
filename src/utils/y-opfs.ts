@@ -63,9 +63,19 @@ export default class OpfsPersistence extends ObservableV2<{
     });
   }
 
+  private _getSessionId = (): string => {
+  let sessionId = sessionStorage.getItem("sessionId");
+  if (!sessionId) {
+    sessionId = Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem("sessionId", sessionId);
+  }
+  return sessionId;
+};
+
   private _storeUpdate = async (update: any, origin: any) => {
     this.log("Received update from Y.Doc...");
-    if (origin !== this && !this._destroyed) {
+    const sessionId = this._getSessionId();
+    if (origin !== sessionId && !this._destroyed) {
       if (this._timerId) {
         clearTimeout(this._timerId);
       }
@@ -210,7 +220,6 @@ export default class OpfsPersistence extends ObservableV2<{
         return;
       }
       this.activateCalled = true;
-      console.log("SharedService activated", this._sharedService?.proxy["read"]());
 
       const res = await this._sharedService?.proxy["read"]();
       console.log("res", res);

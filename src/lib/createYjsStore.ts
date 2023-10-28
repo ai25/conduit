@@ -436,6 +436,7 @@ Multiple entry-points are currently not supported in yjsStore.`
               }));
             nextLayer.push(...filtered);
           } else {
+            console.warn(yparent, sparent, nextArg);
             UNEXPECTED(sparent, yparent);
           }
         });

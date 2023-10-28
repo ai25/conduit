@@ -584,6 +584,8 @@ export default function Player(props: {
     document.addEventListener("visibilitychange", updateProgressParametrized);
     document.addEventListener("pagehide", updateProgressParametrized);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("beforeunload", updateProgressParametrized)
+    window.addEventListener("unload", updateProgressParametrized)
     onCleanup(() => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("visibilitychange", updateProgressParametrized);
