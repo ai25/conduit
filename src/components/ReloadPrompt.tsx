@@ -1,3 +1,4 @@
+/// <reference types="vite-plugin-pwa/info" />
 import type { Component } from "solid-js";
 import { Show } from "solid-js";
 import { useRegisterSW } from "virtual:pwa-register/solid";
@@ -33,7 +34,7 @@ const ReloadPrompt: Component = () => {
       }
     },
     onRegisterError(error) {
-      console.error("SW registration error", error);
+      console.trace("SW registration error", error);
     },
   });
 
@@ -77,3 +78,23 @@ const ReloadPrompt: Component = () => {
 
 export default ReloadPrompt;
 
+import { Link } from "solid-start"; // if missing, just use html <link> tag
+import { pwaInfo } from 'virtual:pwa-info';
+
+export function VitePwaManifest() {
+  if (pwaInfo) {
+    const { webManifest } = pwaInfo;
+    if (webManifest) {
+      const { href, useCredentials } = webManifest
+      return (
+        <>
+          { useCredentials
+            ? <Link rel="manifest" href={href} crossorigin="use-credentials" />
+            : <Link rel="manifest" href={href} />
+          }
+        </>
+      )
+    }
+  }
+  return null;
+}

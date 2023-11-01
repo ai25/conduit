@@ -13,12 +13,11 @@ const pwaOptions: Partial<VitePWAOptions> = {
   srcDir: "src",
   filename: "claims-sw.ts",
   strategies: "injectManifest",
-  registerType: "autoUpdate",
-
+  scope: "/",
+  // selfDestroying: true,
   devOptions: {
     enabled: true,
-    type: "module",
-
+    type:"module"
     // navigateFallback: "/",
   },
   minify: false,

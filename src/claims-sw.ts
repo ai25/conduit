@@ -10,6 +10,7 @@ import {
 // import { ExpirationPlugin } from "workbox-expiration";
 //
 declare let self: ServiceWorkerGlobalScope;
+try{
 // self.skipWaiting();
 // clientsClaim();
 //
@@ -19,6 +20,7 @@ declare let self: ServiceWorkerGlobalScope;
 // import { NetworkFirst } from "workbox-strategies";
 //
 // // Precache assets
+try {
 precacheAndRoute([
   ...self.__WB_MANIFEST,
   // {
@@ -34,6 +36,9 @@ precacheAndRoute([
   //   revision: `${new Date().getTime()}`,
   // },
 ]);
+} catch (e) {
+  console.error('Error in precacheAndRoute:', e);
+}
 //
 // // Custom handler to manage offline fallback
 // const networkFirstHandlerWithFallback = new NetworkFirst({
@@ -118,3 +123,6 @@ self.addEventListener("fetch", async (event: FetchEvent) => {
     );
   }
 });
+} catch (e) {
+  console.error('Error in service worker:', e);
+}

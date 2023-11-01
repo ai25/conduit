@@ -228,7 +228,7 @@ export class SharedService extends EventTarget {
           return response.text();
         }
         console.warn("service worker not ready, retrying...");
-        return new Promise((resolve) => setTimeout(resolve, 100));
+        return new Promise((resolve) => setTimeout(resolve, 3000));
       });
     }
 

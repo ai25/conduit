@@ -1,5 +1,5 @@
 import { toaster } from "@kobalte/core";
-import { batch, createSignal, Show } from "solid-js";
+import { batch, createEffect, createSignal, Show } from "solid-js";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import Button from "./Button";
 import Modal from "./Modal";
@@ -7,7 +7,7 @@ import { toast } from "./Toast";
 import { getVideoId } from "~/utils/helpers";
 
 export default function ImportHistoryModal(props: {
-  isOpen: () => boolean;
+  isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }) {
   const [items, setItems] = createSignal([]);
@@ -190,10 +190,12 @@ export default function ImportHistoryModal(props: {
     await importHistory()
   }
 
+
+
   return (
     <Modal
       title="Import History"
-      isOpen={props.isOpen()}
+      isOpen={props.isOpen}
       setIsOpen={props.setIsOpen}
     >
       <form>

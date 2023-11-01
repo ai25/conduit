@@ -9,32 +9,41 @@ interface Option {
 }
 
 interface DropdownProps {
-  isOpen: () => boolean;
+  isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   triggerIcon: JSX.Element;
   options: Option[];
-  selectedValue?: () => string;
+  selectedValue?: string;
   onChange?: (value: string) => void;
 }
 
 export const Dropdown = (props: DropdownProps) => {
   return (
-    <DropdownMenu.Root open={props.isOpen()} onOpenChange={props.onOpenChange}>
+    <DropdownMenu.Root open={props.isOpen} onOpenChange={props.onOpenChange}>
       <DropdownMenu.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
         <DropdownMenu.Icon>{props.triggerIcon}</DropdownMenu.Icon>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content class="bg-bg2 p-2 rounded-md z-50">
-          <DropdownMenu.Arrow />
+        <DropdownMenu.Content class="bg-bg2 rounded-md z-[999999]
+          -top-2
+          animate-in
+          fade-in
+          slide-in-from-top-10
+          duration-200
+          ">
+           <DropdownMenu.Arrow />
           <DropdownMenu.RadioGroup
-            value={props.selectedValue?.()}
+            class="max-h-[40vh] overflow-y-auto
+            p-2
+            "
+            value={props.selectedValue}
             onChange={props.onChange}
           >
             <For each={props.options}>
               {(option) => (
                 <DropdownMenu.RadioItem
                   value={option.value ?? option.label}
-                  class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                  class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b last:border-none hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-primary focus-visible:outline-none"
                   onClick={option.onClick}
                 >
                   <DropdownMenu.ItemIndicator class="inline-flex absolute left-0">

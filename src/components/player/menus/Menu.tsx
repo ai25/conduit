@@ -4,8 +4,7 @@ import type { MenuPlacement, TooltipPlacement } from "vidstack";
 import { Tooltip } from "../Tooltip";
 
 export function Menu(props: MenuProps) {
-  const isPlacementBot = () => props.placement.includes("bottom");
-  console.log(props.placement, isPlacementBot());
+  const isPlacementBottom = () => props.placement.includes("bottom");
   return (
     <media-menu>
       <Tooltip
@@ -20,8 +19,10 @@ export function Menu(props: MenuProps) {
 
       <media-menu-items
         classList={{
-          "animate-out fade-out slide-out-to-bottom-2 data-[open]:animate-in data-[open]:fade-in data-[open]:slide-in-from-bottom-4 flex h-[var(--menu-height)] max-h-[130px] sm:max-h-[300px] lg:max-h-[400px] min-w-[260px] flex-col overflow-y-auto overscroll-y-contain rounded-md border border-white/10 bg-black/95 p-2.5 font-sans text-sm font-medium outline-none backdrop-blur-sm transition-[height] duration-300 will-change-[height] data-[resizing]:overflow-hidden z-10 max-w-[calc(var(--media-width)-20px)]": true,
-          "!top-12 max-h-[200px]": isPlacementBot(),
+          "animate-out fade-out slide-out-to-bottom-2 data-[open]:animate-in data-[open]:fade-in data-[open]:slide-in-from-bottom-4 flex h-[var(--menu-height)]  min-w-[260px] flex-col overflow-y-auto overscroll-y-contain rounded-md border border-white/10 bg-black/95 p-2.5 font-sans text-sm font-medium outline-none backdrop-blur-sm transition-[height] duration-300 will-change-[height] data-[resizing]:overflow-hidden z-10 !fixed !bottom-[4.2rem] !left-0 !right-0 !top-auto sm:!bottom-auto sm:!left-auto sm:max-w-[calc(var(--media-width)-20px)] sm:max-h-[var(--media-height)] mx-auto sm:ml-[unset] sm:mr-[unset]": true, 
+          "sm:!top-24 ": isPlacementBottom(),
+          "sm:!left-4  sm:right-auto": props.placement.includes("start"),
+          "sm:!right-4 sm:left-auto": props.placement.includes("end"),
         }}
 
         placement={props.placement}

@@ -310,7 +310,12 @@ const Header = () => {
               </Switch>
             </KobaltePopover.Trigger>
             <KobaltePopover.Portal>
-              <KobaltePopover.Content class="bg-bg2 p-2 rounded-md">
+              <KobaltePopover.Content class="bg-bg2 p-2 rounded-md
+                animate-in
+                fade-in
+                slide-in-from-top-10
+                duration-200
+                ">
                 <KobaltePopover.Arrow />
                 <KobaltePopover.Description
                   class={`text-sm p-1 text-left flex flex-col gap-2 items-center ${
@@ -359,7 +364,7 @@ const Header = () => {
             </KobaltePopover.Portal>
           </KobaltePopover.Root>
           <Dropdown
-            isOpen={themeOpen}
+            isOpen={themeOpen()}
             onOpenChange={setThemeOpen}
             onChange={(value) => {
               setTheme(value);
@@ -372,16 +377,16 @@ const Header = () => {
               { value: "discord", label: "Discord" },
               { value: "github", label: "Github" },
             ]}
-            selectedValue={theme}
+            selectedValue={theme()}
             triggerIcon={
               <FaSolidBrush fill="currentColor" class="h-5 w-5 text-text1" />
             }
           />
 
           <Dropdown
-            isOpen={instanceOpen}
+            isOpen={instanceOpen()}
             onOpenChange={setInstanceOpen}
-            selectedValue={() => preferences.instance.api_url}
+            selectedValue={preferences.instance.api_url}
             onChange={(value) => {
               let instance = (query.data as PipedInstance[]).find(
                 (i) => i.api_url === value

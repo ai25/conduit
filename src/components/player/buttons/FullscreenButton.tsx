@@ -2,6 +2,7 @@ import { useSearchParams } from "solid-start";
 import { ToggleButton } from "@kobalte/core";
 import { Tooltip, type TooltipPlacement } from "~/components/Tooltip";
 import { createEffect, createSignal, Show } from "solid-js";
+import { isServer } from "solid-js/web";
 
 export function FullscreenButton(props: FullscreenButtonProps) {
   const [params, setParams] = useSearchParams();
@@ -22,6 +23,10 @@ export function FullscreenButton(props: FullscreenButtonProps) {
       else setParams({ fullscreen: undefined });
     }
   });
+  const [fullscreen, setFullscreen] = createSignal("fullscreen");
+  createEffect(() => {
+    setFullscreen(JSON.stringify({ fullscreen: params.fullscreen, document: document.fullscreenElement }));
+  })
 
   return (
     <Tooltip
@@ -62,6 +67,9 @@ export function FullscreenButton(props: FullscreenButtonProps) {
             }
           }}
         >
+          <div class="absolute right-44 bottom-44 text-xl">
+            {fullscreen()}
+          </div>
           <Show when={params.fullscreen}>
             <media-icon
               class="h-8 w-8"
@@ -81,10 +89,10 @@ export function FullscreenButton(props: FullscreenButtonProps) {
       }
       contentSlot={
         <>
-          <Show when={document.fullscreenElement}>
+          <Show when={params.fullscreen}>
             <span class="">Exit Fullscreen</span>
           </Show>
-          <Show when={!document.fullscreenElement}>
+          <Show when={!params.fullscreen}>
             <span class="">Enter Fullscreen</span>
           </Show>
         </>

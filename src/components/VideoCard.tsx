@@ -201,6 +201,7 @@ const VideoCard = (props: {
             overlap={true}
             open={dropdownOpen()}
             onOpenChange={setDropdownOpen}
+            gutter={0}
           >
             <DropdownMenu.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
               <BsThreeDotsVertical
@@ -209,7 +210,12 @@ const VideoCard = (props: {
               />
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
-              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md z-50">
+              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md z-50
+                animate-in
+                fade-in
+                slide-in-from-top-10
+                duration-200
+                ">
                 <DropdownMenu.Arrow />
                 <DropdownMenu.Sub>
                   <DropdownMenu.SubTrigger class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">
@@ -304,7 +310,7 @@ const VideoCard = (props: {
                   </DropdownMenu.Item>
                 </Show>
                 <DropdownMenu.Item
-                  class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                  class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded  hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
                   onSelect={() => setModalOpen(true)}
                 >
                   <div class="flex items-center gap-2">

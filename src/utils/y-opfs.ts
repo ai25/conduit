@@ -57,7 +57,9 @@ export default class OpfsPersistence extends ObservableV2<{
         });
       });
 
-    ydoc.on("update", this._storeUpdate);
+    ydoc.on("update", (update, origin) => {
+      this._storeUpdate(update, this._getSessionId());
+    });
     ydoc.on("destroy", () => {
       this.destroy();
     });
@@ -71,6 +73,7 @@ export default class OpfsPersistence extends ObservableV2<{
   }
   return sessionId;
 };
+  
 
   private _storeUpdate = async (update: any, origin: any) => {
     this.log("Received update from Y.Doc...");
@@ -235,7 +238,7 @@ export default class OpfsPersistence extends ObservableV2<{
         () => {
           updates.forEach((update) => {
             // this.log("Applying stored update to Y.Doc...");
-            Y.applyUpdate(this.ydoc, update, this);
+            Y.applyUpdate(this.ydoc, update, this._getSessionId());
           });
         },
         this,

@@ -102,7 +102,12 @@ export default function Trending() {
             </KobalteSelect.Icon>
           </KobalteSelect.Trigger>
           <KobalteSelect.Portal>
-            <KobalteSelect.Content class="bg-bg2 rounded-md z-50 ">
+            <KobalteSelect.Content class="bg-bg2 rounded-md z-50
+                animate-in
+                fade-in
+                slide-in-from-top-10
+                duration-200
+              ">
               <KobalteSelect.Arrow />
               <KobalteSelect.Listbox class="max-h-[40vh] p-2 overflow-y-auto scrollbar" />
             </KobalteSelect.Content>

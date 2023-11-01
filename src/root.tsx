@@ -62,7 +62,7 @@ import Player from "./components/Player";
 import { QueueProvider } from "./stores/queueStore";
 import api from "./utils/api";
 import { PlayerLoading } from "./components/PlayerContainer";
-import ReloadPrompt from "./components/ReloadPrompt";
+const ReloadPrompt = lazy(() => import("./components/ReloadPrompt"));
 
 const [theme, setTheme] = createSignal("");
 export const ThemeContext = createContext<Signal<string>>([theme, setTheme]);
@@ -210,9 +210,13 @@ export default function Root() {
                                   <Routes>
                                     <FileRoutes />
                                   </Routes>
-                                   <Show when={!isServer}>
-                                    <ReloadPrompt />
-                                  </Show> 
+                                  <Suspense fallback={<div>Loading...</div>}>
+                                    <ErrorBoundary>
+                                      <Show when={!isServer}>
+                                        <ReloadPrompt />
+                                      </Show>
+                                    </ErrorBoundary>
+                                  </Suspense>
                                 </main>
                                 <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
                                   <BottomNav
@@ -297,13 +301,13 @@ const PlayerContainer = () => {
   );
 
   return (
-      <Show when={videoQuery.data} fallback={v()?<PlayerLoading />:null}
-      >
-        <Player
-          onReload={() => videoQuery.refetch()}
-        />
+    <Show when={videoQuery.data} fallback={v() ? <PlayerLoading /> : null}
+    >
+      <Player
+        onReload={() => videoQuery.refetch()}
+      />
 
-      </Show>
+    </Show>
   )
 
 }

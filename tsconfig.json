@@ -13,6 +13,6 @@
     "paths": {
       "~/*": ["./src/*"]
     },
-    "lib": ["ESNext", "DOM", "WebWorker"]
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "WebWorker"]
   }
 }

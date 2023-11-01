@@ -131,8 +131,11 @@ export default function History() {
       <Title>History | Conduit</Title>
       <Button label="Import" onClick={() => setImportModalOpen(true)} />
       <ImportHistoryModal
-        isOpen={importModalOpen}
-        setIsOpen={setImportModalOpen}
+        isOpen={importModalOpen()}
+        setIsOpen={(isOpen) => {
+          console.log(isOpen, "setIsOpen");
+          setImportModalOpen(isOpen);
+        }}
       />
       <Button label="Export" onClick={exportHistory} />
       <Button label="Clear" onClick={() => setDeleteModalOpen(true)} />

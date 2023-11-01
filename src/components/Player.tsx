@@ -231,6 +231,7 @@ export default function Player(props: {
     console.timeEnd("chapters vtt");
   };
 
+
   const [currentTime, setCurrentTime] = createSignal(0);
   const time = route.query.t;
   const [started, setStarted] = createSignal(false);
@@ -507,6 +508,8 @@ export default function Player(props: {
       console.log(provider);
       provider.config = {
         startLevel: 13,
+        backBufferLength: 300,
+        maxBufferLength: 400,
       };
     }
   };
@@ -606,6 +609,17 @@ export default function Player(props: {
       updateProgressParametrized();
     }
   });
+  let showControlsTimeout: NodeJS.Timeout;
+
+  const showControls = () => {
+    if (!mediaPlayer) return;
+      mediaPlayer.controls.show();
+    clearTimeout(showControlsTimeout);
+    showControlsTimeout = setTimeout(() => {
+      mediaPlayer.controls.hide();
+    }, 3000);
+  };
+
 
   const handleKeyDown = (e: KeyboardEvent) => {
     // if an input is focused
@@ -615,11 +629,11 @@ export default function Player(props: {
         if (document.fullscreenElement) {
           document.exitFullscreen();
           screen.orientation.unlock();
-          setSearchParams({ fullscreen: undefined });
+          setSearchParams({ fullscreen: undefined }, { replace: true });
         } else {
           document.documentElement.requestFullscreen();
           screen.orientation.lock("landscape").catch(() => { });
-          setSearchParams({ fullscreen: true });
+          setSearchParams({ fullscreen: true }, { replace: true });
         }
         e.preventDefault();
         break;
@@ -629,6 +643,7 @@ export default function Player(props: {
         break;
       case "j":
         mediaPlayer!.currentTime = Math.max(mediaPlayer!.currentTime - 10, 0);
+        showControls();
         e.preventDefault();
         break;
       case "l":
@@ -637,6 +652,7 @@ export default function Player(props: {
           mediaPlayer!.currentTime + 10,
           videoQuery.data.duration
         );
+        showControls();
         e.preventDefault();
         break;
       case "c":
@@ -671,7 +687,10 @@ export default function Player(props: {
           setTimeout(() => {
             mediaPlayer.controls.hide(0);
           }, 100);
-        } else mediaPlayer!.pause();
+        } else {
+          mediaPlayer!.pause();
+          showControls();
+        }
         e.preventDefault();
         break;
       case " ":
@@ -701,9 +720,9 @@ export default function Player(props: {
         if (e.shiftKey) {
           prevChapter();
         } else {
-          if (document.activeElement?.tagName.startsWith("MEDIA-")) return;
           mediaPlayer!.currentTime = Math.max(mediaPlayer!.currentTime - 5, 0);
         }
+        showControls();
         e.preventDefault();
         break;
       case "ArrowRight":
@@ -712,6 +731,7 @@ export default function Player(props: {
         } else {
           mediaPlayer!.currentTime = mediaPlayer!.currentTime + 5;
         }
+        showControls();
         e.preventDefault();
         break;
       case "0":
@@ -913,15 +933,14 @@ export default function Player(props: {
   };
 
 
-
   return (
     <Show when={videoQuery.data}>
       <media-player
         id="player"
         classList={{
           " z-[99999] aspect-video bg-slate-900 text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4": true,
-          "absolute inset-0 w-full h-full": !!searchParams.fullscreen,
-          "sticky sm:relative top-0 sm:block ": !searchParams.fullscreen,
+          "!absolute inset-0 w-screen h-screen": !!searchParams.fullscreen,
+          "sticky sm:relative top-0": !searchParams.fullscreen,
         }}
         current-time={currentTime()}
         // onTextTrackChange={handleTextTrackChange}
@@ -931,6 +950,13 @@ export default function Player(props: {
         playbackRate={preferences.speed}
         muted={preferences.muted}
         volume={preferences.volume}
+        onMouseMove={() => {
+          if (navigator.maxTouchPoints > 0) return;
+            showControls();
+        }}
+        onMouseLeave={() => {
+          mediaPlayer?.controls.hide(0);
+        }}
         on:volume-change={(e) => {
           console.log("volume change", e.detail);
           setPreferences("volume", e.detail.volume);
@@ -944,6 +970,7 @@ export default function Player(props: {
         on:hls-error={handleHlsError}
         on:ended={handleEnded}
         on:play={() => {
+          mediaPlayer.controls.hide(0);
           setStarted(true);
           updateProgressParametrized();
         }}
@@ -952,6 +979,7 @@ export default function Player(props: {
           userNavigationHandler();
         }}
         on:pause={() => {
+          showControls();
           updateProgressParametrized();
         }}
         on:hls-manifest-loaded={(e: any) => {
@@ -960,30 +988,25 @@ export default function Player(props: {
         autoplay
         ref={mediaPlayer}
         title={videoQuery.data?.title ?? ""}
-        // src={videoQuery.data?.hls ?? ""}
         poster={videoQuery.data?.thumbnailUrl ?? ""}
-        //       aspect-ratio={videoQuery.data?.videoStreams?.[0]
-        //           ? videoQuery.data.videoStreams[0]?.width /
-        //             videoQuery.data.videoStreams[0]?.height
-        //           :
-        // 16 / 9}
         aspect-ratio={16 / 9}
         crossorigin="anonymous"
-        on:fullscreen-change={(e) => {
-          const urlParams = new URLSearchParams(window.location.search);
-          if (e.detail) {
-            urlParams.set("fullscreen", "true");
-          } else {
-            urlParams.delete("fullscreen");
-          }
-          history.replaceState(
-            null,
-            "",
-            window.location.pathname + "?" + urlParams.toString()
-          );
-        }}
+        // on:fullscreen-change={(e) => {
+        //   const urlParams = new URLSearchParams(window.location.search);
+        //   if (e.detail) {
+        //     urlParams.set("fullscreen", "true");
+        //   } else {
+        //     urlParams.delete("fullscreen");
+        //   }
+        //   history.replaceState(
+        //     null,
+        //     "",
+        //     window.location.pathname + "?" + urlParams.toString()
+        //   );
+        // }}
       >
         <media-provider
+          class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen"
         // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
         >
           <media-poster

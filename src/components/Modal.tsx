@@ -1,6 +1,6 @@
 import { Dialog } from "@kobalte/core";
 import { FaSolidX } from "solid-icons/fa";
-import { createSignal, JSX } from "solid-js";
+import { createEffect, createSignal, JSX } from "solid-js";
 
 export default function Modal(props: {
   isOpen: boolean;
@@ -8,22 +8,20 @@ export default function Modal(props: {
   title: string;
   children: JSX.Element;
 }): JSX.Element {
+
   return (
     <>
-      <Dialog.Root open={props.isOpen} onOpenChange={props.setIsOpen}>
+      <Dialog.Root modal open={props.isOpen} onOpenChange={props.setIsOpen}>
         <Dialog.Portal>
           <Dialog.Overlay
             class=" fixed 
     inset-0 
     z-50 
     bg-black/20
-    animate-[overlayHide] 
-    duration-250 
-    ease-linear 
-    delay-100
-    data-[expanded]:animate-[overlayShow]
-    data-[expanded]:duration-500
-    data-[expanded]:ease-linear
+    animate-out
+    fade-out
+    data-[expanded]:animate-in
+    data-[expanded]:fade-in
     "
           />
           <div
@@ -45,11 +43,12 @@ export default function Modal(props: {
     p-4 
     bg-bg1
     shadow-md 
-    animate-[contentHide] 
-    duration-300 
+    animate-out
+    fade-out
     ease-in
-    data-[expanded]:animate-[contentShow]
-    data-[expanded]:duration-500
+    data-[expanded]:animate-in
+    data-[expanded]:fade-in
+    data-[expanded]:duration-300
     data-[expanded]:ease-out
     ">
               <div
