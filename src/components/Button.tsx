@@ -1,6 +1,7 @@
 import { JSX, Show } from "solid-js";
 import { Button as KobalteButton } from "@kobalte/core";
 import { Spinner } from "./PlayerContainer";
+import { useNavigate } from "solid-start";
 
 export default function Button(props: {
   class?: string;
@@ -11,6 +12,8 @@ export default function Button(props: {
   isLoading?: boolean;
   isDisabled?: boolean;
   appearance?: "primary" | "subtle" | "link" | "danger" | "warning";
+  as?: keyof JSX.IntrinsicElements;
+  href?: string;
 }) {
   const getAppearanceClasses = (appearance?: string) => {
     const map: Record<string, Record<string, boolean>> = {
@@ -33,9 +36,15 @@ export default function Button(props: {
 
     return map[appearance ?? "primary"];
   };
+  const navigate = useNavigate();
   return (
     <KobalteButton.Root
-      onClick={props.onClick}
+      as={props.as ?? "button"}
+      onClick={props.onClick ?? (() => {
+        if (props.href !== undefined) {
+          navigate(props.href);
+        }
+      })}
       disabled={props.isDisabled}
       classList={{
         "relative focus-visible:ring-4 focus-visible:ring-primary/50 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed duration-200 ease-in-out py-1 px-3 text-sm rounded-full border-4  appearance-none transition-colors cursor-pointer select-none focus:outline-none active:translate-y-[2px]": true,
@@ -69,9 +78,9 @@ export default function Button(props: {
   );
 }
 
-export const LoadingDots=(props:{class?:string}) => {
+export const LoadingDots = (props: { class?: string }) => {
   return (
-    <div 
+    <div
       classList={{
         "flex space-x-1": true,
         [props.class!]: props.class !== undefined,

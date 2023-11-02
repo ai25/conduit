@@ -20,12 +20,13 @@ import EmptyState from "~/components/EmptyState";
 import { A } from "@solidjs/router";
 import { useAppState } from "~/stores/appStateStore";
 import { usePreferences } from "~/stores/preferencesStore";
-import { Button, Tooltip } from "@kobalte/core";
+import { Tooltip } from "@kobalte/core";
 import { FaSolidArrowsRotate } from "solid-icons/fa";
 import { lazy } from "solid-js";
 import VideoCard from "~/components/VideoCard";
 import { memo } from "solid-js/web";
 import { routeCacheStore } from "~/root";
+import Button from "~/components/Button";
 
 export default function Feed() {
   const [limit, setLimit] = createSignal(10);
@@ -113,7 +114,9 @@ export default function Feed() {
 
         <Show when={!Object.keys(sync.store.subscriptions).length}>
           <div class="h-[80vh] w-full flex items-center justify-center">
-            <EmptyState />
+            <EmptyState message="You have no subscriptions.">
+              <Button as="a" label="Import" href="/import" />
+            </EmptyState>
           </div>
         </Show>
         <Show when={Object.keys(sync.store.subscriptions).length}>
@@ -125,12 +128,6 @@ export default function Feed() {
               <For each={query.data?.slice(0, limit())}>
                 {(video) => <VideoCard v={video} />}
               </For>
-            </Show>
-            <Show when={query.data && query.data.length === 0}>
-              <div class="h-[80vh] items-center justify-center flex flex-col gap-2">
-                <EmptyState />
-                <A href="/import">Import subscriptions</A>
-              </div>
             </Show>
           </div>
         </Show>

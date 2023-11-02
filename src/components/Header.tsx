@@ -373,7 +373,6 @@ const Header = () => {
             options={[
               { value: "monokai", label: "Monokai" },
               { value: "dracula", label: "Dracula" },
-              { value: "kawaii", label: "Kawaii" },
               { value: "discord", label: "Discord" },
               { value: "github", label: "Github" },
             ]}
