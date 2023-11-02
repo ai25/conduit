@@ -62,6 +62,14 @@ export default function Import() {
           setSubscriptions({[item.id]: {subscribedAt: Date.now()}});
         });
       }
+      //FreeTube JSON
+      else if (text.indexOf("subscriptions") != -1) {
+        console.log("FreeTube JSON");
+        const json = JSON.parse(text);
+        json.subscriptions.forEach((item: any) => {
+          setSubscriptions({[item.id]: {subscribedAt: Date.now()}});
+        });
+      }
       // Google Takeout JSON
       else if (text.indexOf("contentDetails") != -1) {
         console.log("Google Takeout JSON");

@@ -229,7 +229,7 @@ const SearchInput = () => {
       />
       <Show when={suggestions().length > 0 && showSuggestions()}>
         <ul
-          class="absolute w-full top-full bg-bg2 z-[999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-contentHide"
+          class="absolute w-full top-full bg-bg2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out "
           aria-multiselectable="false"
           aria-live="polite"
           aria-label="Suggestions"
