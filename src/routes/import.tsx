@@ -34,6 +34,14 @@ export default function Import() {
           }
         });
       }
+      //LibreTube
+      else if (text.indexOf("localSubscriptions") != -1) {
+        console.log("LibreTube");
+        const json = JSON.parse(text);
+        json.localSubscriptions.forEach((item: any) => {
+          setSubscriptions({[item.channelId]: {subscribedAt: Date.now()}});
+        });
+      }
       // NewPipe
       else if (text.indexOf("app_version") != -1) {
         console.log("NewPipe");
