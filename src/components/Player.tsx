@@ -741,6 +741,7 @@ export default function Player(props: {
         }
         break;
       case "ArrowLeft":
+        if (e.altKey) return;
         if (e.shiftKey) {
           prevChapter();
         } else {
@@ -750,6 +751,7 @@ export default function Player(props: {
         e.preventDefault();
         break;
       case "ArrowRight":
+        if (e.altKey) return;
         if (e.shiftKey) {
           nextChapter();
         } else {

@@ -9,13 +9,13 @@ import {
 } from "solid-js";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { WebrtcProvider } from "y-webrtc";
-import { videoId } from "~/routes/library/history";
 import { Playlist, Preferences, RelatedStream } from "~/types";
 import * as Y from "yjs";
 import { createStore } from "solid-js/store";
 import createYjsStore from "~/lib/createYjsStore";
 import { useAppState } from "./appStateStore";
 import OpfsPersistence from "~/utils/y-opfs";
+import { toast } from "~/components/Toast";
 
 enum ProviderStatus {
   DISCONNECTED = "disconnected",
@@ -151,7 +151,15 @@ export const SyncedStoreProvider = (props: { children: any }) => {
     //     setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
     //   });
     opfsProvider = new OpfsPersistence(room().id!, doc, true);
+    setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTING);
     opfsProvider.sync();
+    await opfsProvider.whenSynced()
+    opfsProvider.on("error", (e) => {
+      setAppState("sync", "providers", "opfs", ProviderStatus.DISCONNECTED);
+      toast.error("Error syncing with OPFS");
+    });
+    setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTED);
+
     onCleanup(() => {
       idbProvider?.destroy();
       opfsProvider?.destroy();

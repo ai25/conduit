@@ -270,7 +270,7 @@ const Header = () => {
                 <Match
                   when={
                     getSyncStatus(
-                      appState.sync.providers.idb,
+                      appState.sync.providers.opfs,
                       appState.sync.providers.webrtc
                     ) === SyncState.ONLINE
                   }
@@ -280,7 +280,7 @@ const Header = () => {
                 <Match
                   when={
                     getSyncStatus(
-                      appState.sync.providers.idb,
+                      appState.sync.providers.opfs,
                       appState.sync.providers.webrtc
                     ) === SyncState.DISCONNECTED
                   }
@@ -290,7 +290,7 @@ const Header = () => {
                 <Match
                   when={
                     getSyncStatus(
-                      appState.sync.providers.idb,
+                      appState.sync.providers.opfs,
                       appState.sync.providers.webrtc
                     ) === SyncState.OFFLINE
                   }
@@ -300,7 +300,7 @@ const Header = () => {
                 <Match
                   when={
                     getSyncStatus(
-                      appState.sync.providers.idb,
+                      appState.sync.providers.opfs,
                       appState.sync.providers.webrtc
                     ) === SyncState.VOLATILE
                   }
@@ -343,6 +343,7 @@ const Header = () => {
                       </div>
                       <div>IndexedDB: {appState.sync.providers.idb}</div>
                       <div>WebRTC: {appState.sync.providers.webrtc}</div>
+                      <div>OPFS: {appState.sync.providers.opfs}</div>
                     </div>
                     <Button
                       label="Leave"

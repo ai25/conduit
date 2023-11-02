@@ -8,6 +8,7 @@ const store = createStore({
     providers: {
       idb: "disconnected" as ProviderStatus,
       webrtc: "disconnected" as ProviderStatus,
+      opfs: "disconnected" as ProviderStatus,
     },
     syncing: false,
     lastSync: 0,
