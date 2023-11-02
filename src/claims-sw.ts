@@ -1,3 +1,4 @@
+import { clientsClaim, skipWaiting } from "workbox-core";
 import {
   cleanupOutdatedCaches,
   createHandlerBoundToURL,
@@ -10,13 +11,11 @@ import {
 // import { ExpirationPlugin } from "workbox-expiration";
 //
 declare let self: ServiceWorkerGlobalScope;
-try{
-// self.skipWaiting();
-// clientsClaim();
-//
-// // // clean old assets
-// cleanupOutdatedCaches();
-//
+
+skipWaiting();
+clientsClaim();
+// clean old assets
+cleanupOutdatedCaches();
 // import { NetworkFirst } from "workbox-strategies";
 //
 // // Precache assets
@@ -83,13 +82,6 @@ precacheAndRoute([
 //     ],
 //   })
 // );
-// Install the service worker as soon as possible.
-self.addEventListener('install', (/** @type {ExtendableEvent} */ event: ExtendableEvent) => {
-  event.waitUntil(self.skipWaiting());
-});
-self.addEventListener('activate', (/** @type {ExtendableEvent} */ event: ExtendableEvent) => {
-  event.waitUntil(self.clients.claim());
-});
 
 // Forward messages (and ports) from client to client.
 self.addEventListener("message", async (event: ExtendableMessageEvent) => {
@@ -123,6 +115,3 @@ self.addEventListener("fetch", async (event: FetchEvent) => {
     );
   }
 });
-} catch (e) {
-  console.error('Error in service worker:', e);
-}

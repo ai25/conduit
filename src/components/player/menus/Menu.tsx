@@ -1,10 +1,12 @@
 import { JSX, Show } from "solid-js";
+import { useSearchParams } from "solid-start";
 import type { MenuPlacement, TooltipPlacement } from "vidstack";
 
 import { Tooltip } from "../Tooltip";
 
 export function Menu(props: MenuProps) {
   const isPlacementBottom = () => props.placement.includes("bottom");
+  const [params] = useSearchParams();
   return (
     <media-menu>
       <Tooltip
@@ -20,9 +22,10 @@ export function Menu(props: MenuProps) {
       <media-menu-items
         classList={{
           "animate-out fade-out slide-out-to-bottom-2 data-[open]:animate-in data-[open]:fade-in data-[open]:slide-in-from-bottom-4 flex h-[var(--menu-height)]  min-w-[260px] flex-col overflow-y-auto overscroll-y-contain rounded-md border border-white/10 bg-black/95 p-2.5 font-sans text-sm font-medium outline-none backdrop-blur-sm transition-[height] duration-300 will-change-[height] data-[resizing]:overflow-hidden z-10 !fixed !bottom-[4.2rem] !left-0 !right-0 !top-auto sm:!bottom-auto sm:!left-auto sm:max-w-[calc(var(--media-width)-20px)] sm:max-h-[var(--media-height)] mx-auto sm:ml-[unset] sm:mr-[unset]": true, 
-          "sm:!top-24 ": isPlacementBottom(),
-          "sm:!left-4  sm:right-auto": props.placement.includes("start"),
-          "sm:!right-4 sm:left-auto": props.placement.includes("end"),
+          "sm:!top-[5.4rem]": (isPlacementBottom() && !params.fullscreen),
+          "sm:!top-12": !!(isPlacementBottom() && params.fullscreen),
+          "sm:!left-4  sm:!right-auto": props.placement.includes("start"),
+          "sm:!right-4 sm:!left-auto": props.placement.includes("end"),
         }}
 
         placement={props.placement}

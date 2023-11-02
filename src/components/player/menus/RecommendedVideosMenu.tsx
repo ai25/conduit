@@ -2,12 +2,13 @@ import { RelatedStream } from "~/types";
 import { Menu } from "./Menu";
 import { MenuPlacement, TooltipPlacement } from "vidstack";
 import { For } from "solid-js";
-import { A } from "solid-start";
+import { A, useNavigate } from "solid-start";
 import { useQueue } from "~/stores/queueStore";
 import { getVideoId } from "~/utils/helpers";
 
 export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps ) => {
   const queue = useQueue()
+  const navigate = useNavigate()
   console.log("RecommendedVideosMenu", props.videos)
   return (
     <Menu
@@ -21,12 +22,18 @@ export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps ) => {
     >
         <For each={props.videos}>
           {(video) => (
-            <A
-              href={video.url}
+            <button
+              onClick={() => {
+                const params = new URLSearchParams(window.location.search);
+                params.set("v", getVideoId(video)!);
+                const url = `${window.location.pathname}?${params.toString()}`;
+                navigate(url);
+              }}
+
               role="menuitem"
               tabIndex={-1}
 
-              classList={{"max-w-[calc(var(--media-width)-20px)] ring-primary parent left-0 flex w-full cursor-pointer select-none items-center justify-start rounded-sm p-2.5 bg-black/95 outline-none ring-inset  hover:bg-neutral-800/80 focus-visible:bg-neutral-800/80 focus-visible:ring-[3px] aria-hidden:hidden":true,
+              classList={{"text-start max-w-[calc(var(--media-width)-20px)] ring-primary parent left-0 flex w-full cursor-pointer select-none items-center justify-start rounded-sm p-2.5 bg-black/95 outline-none ring-inset  hover:bg-neutral-800/80 focus-visible:bg-neutral-800/80 focus-visible:ring-[3px] aria-hidden:hidden":true,
               "border-l-2 border-primary": getVideoId(queue.currentVideo) === getVideoId(video)
               }}>
               <img
@@ -37,7 +44,7 @@ export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps ) => {
                 <div class="text-sm text-text1 truncate">{video.title}</div>
                 <div class="text-xs text-text1/50">{video.uploaderName}</div>
               </div>
-            </A>
+            </button>
           )}
         </For>
     </Menu>

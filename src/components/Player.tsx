@@ -81,19 +81,40 @@ export default function Player(props: {
   const [playlist] = usePlaylist();
   const queue = useQueue();
 
-  const [orientation, setOrientation] = createSignal<"landscape" | "portrait">(
-    "landscape"
-  );
+  createEffect(async() => {
+    if (v()) {
+      if (!queue.has(v()!)) {
+      const awaitLoad = async () => {
+        if (videoQuery.isLoading) {
+          await new Promise<void>((resolve) => {
+            setTimeout(() => {
+              resolve();
+            }, 100);
+          });
 
-  createEffect(() => {
-    if (!mediaPlayer) return;
-    const { width, height } = mediaPlayer.getBoundingClientRect();
-    if (width < height) {
-      setOrientation("portrait");
-    } else {
-      setOrientation("landscape");
+          await awaitLoad();
+        }
+      };
+      await awaitLoad();
+        queue.add({
+          url: `/watch?v=${v()}`,
+          title: videoQuery.data!.title,
+          thumbnail: videoQuery.data!.thumbnailUrl,
+          duration: videoQuery.data!.duration,
+          uploaderName: videoQuery.data!.uploader,
+          uploaderAvatar: videoQuery.data!.uploaderAvatar,
+          uploaderUrl: videoQuery.data!.uploaderUrl,
+          isShort: false,
+          shortDescription: "",
+          type: "video",
+          uploaded: new Date(videoQuery.data!.uploadDate).getTime(),
+          views: videoQuery.data!.views,
+          uploadedDate: videoQuery.data!.uploadDate,
+          uploaderVerified: videoQuery.data!.uploaderVerified,
+        });
+      }
+      queue.setCurrentVideo(v()!);
     }
-
   });
 
   // const queueStore = useQueue();
@@ -310,6 +331,7 @@ export default function Player(props: {
     if (!mediaPlayer) return;
     if (!videoQuery.data) return;
     if (route.query.list) return;
+    console.log("adding ", nextVideo);
     if (!queue.peekNext()) {
       console.log("adding next video to queue", nextVideo);
       queue.add(nextVideo);
@@ -336,9 +358,10 @@ export default function Player(props: {
     console.log("playing next", nextVideo());
     if (!nextVideo()) return;
 
-    queue.next();
     // setSearchParams({ "v": getVideoId(nextVideo()!.info) });
-    navigate(nextVideo()!.url);
+    const url = new URL(window.location.origin + nextVideo()!.url);
+    url.searchParams.set("fullscreen", searchParams.fullscreen)
+    navigate(url.pathname + url.search.toString());
     setNextVideo(null);
   };
 
@@ -350,6 +373,7 @@ export default function Player(props: {
     for (let key of urlParams.keys()) {
       params.set(key, urlParams.get(key)!);
     }
+    console.log(params, "playing");
     // exclude timestamp
     params.delete("t");
     if (playlist()) {
@@ -951,7 +975,7 @@ export default function Player(props: {
         muted={preferences.muted}
         volume={preferences.volume}
         onMouseMove={() => {
-          if (navigator.maxTouchPoints > 0) return;
+          if (typeof screen.orientation === undefined) return;
             showControls();
         }}
         onMouseLeave={() => {

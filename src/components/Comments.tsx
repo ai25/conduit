@@ -105,7 +105,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
             </Bottomsheet>
           )}
         </Match>
-        <Match when={!isServer && (!("maxTouchPoints" in navigator) || navigator.maxTouchPoints === 0)}>
+        <Match when={!isServer && typeof screen.orientation !== "undefined"}>
           <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto max-h-96">
             <Suspense fallback={<p>Loading...</p>}>
               <div id="sb-content" class="flex flex-col gap-1 relative  ">

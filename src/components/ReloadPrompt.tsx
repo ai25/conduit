@@ -30,7 +30,7 @@ const ReloadPrompt: Component = () => {
           }, 20000 /* 20s for testing purposes */);
       } else {
         // eslint-disable-next-line no-console
-        console.log(`SW Registered: ${r}`);
+        console.dir(r)
       }
     },
     onRegisterError(error) {

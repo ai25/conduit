@@ -45,6 +45,7 @@ export function Tooltip(props: TooltipProps) {
       openDelay={props.openDelay ?? 0}
     >
       <KobalteTooltip.Trigger as={props.as ?? "button"}
+        onFocus={props.onFocus}
         disabled={props.disabled} class={props.class} onClick={props.onClick} >
         {props.triggerSlot}
       </KobalteTooltip.Trigger>
@@ -71,4 +72,5 @@ export interface TooltipProps {
   onOpenChange?: (open: boolean) => void;
   gutter?: number;
   openDelay?: number;
+  onFocus?: (e: FocusEvent) => void;
 }

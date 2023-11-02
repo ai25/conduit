@@ -23,11 +23,7 @@ export function FullscreenButton(props: FullscreenButtonProps) {
       else setParams({ fullscreen: undefined });
     }
   });
-  const [fullscreen, setFullscreen] = createSignal("fullscreen");
-  createEffect(() => {
-    setFullscreen(JSON.stringify({ fullscreen: params.fullscreen, document: document.fullscreenElement }));
-  })
-
+  const isFullscreen = () => (!!params.fullscreen)
   return (
     <Tooltip
       as="span"
@@ -36,9 +32,9 @@ export function FullscreenButton(props: FullscreenButtonProps) {
       open={open()}
       triggerSlot={
         <ToggleButton.Root
+          pressed={isFullscreen()}
           role="button"
           class="ring-primary group relative mr-0.5 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md outline-none ring-inset hover:bg-white/20 focus-visible:ring-4 aria-hidden:hidden"
-
           onFocus={(e) => {
             e.stopPropagation();
             handleOpenChange(true);
@@ -67,9 +63,6 @@ export function FullscreenButton(props: FullscreenButtonProps) {
             }
           }}
         >
-          <div class="absolute right-44 bottom-44 text-xl">
-            {fullscreen()}
-          </div>
           <Show when={params.fullscreen}>
             <media-icon
               class="h-8 w-8"

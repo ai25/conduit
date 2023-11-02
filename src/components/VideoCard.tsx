@@ -15,16 +15,13 @@ import {
   For,
 } from "solid-js";
 import { useSyncStore, HistoryItem } from "~/stores/syncStore";
-import { BsChevronRight, BsThreeDotsVertical } from "solid-icons/bs";
 import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
-import { FaRegularEye, FaRegularEyeSlash, FaSolidBug } from "solid-icons/fa";
-import Modal from "./Modal";
 import { mergeProps } from "solid-js";
-import { DropdownMenu } from "@kobalte/core";
 import { createTimeAgo } from "@solid-primitives/date";
+import VideoCardMenu from "./VideoCardMenu"
 
 const VideoCard = (props: {
-  v?: (RelatedStream & { progress?: number }) | undefined;
+  v?: (RelatedStream) | undefined;
 }) => {
   if (!props.v)
     return (
@@ -34,32 +31,17 @@ const VideoCard = (props: {
         <div class="animate-pulse w-96 lg:w-72 max-w-sm h-full bg-bg2 flex aspect-video flex-col overflow-hidden rounded text-text1">
           <div class="bg-bg2 w-full h-full"></div>
         </div>
-      <div class="max-w-sm w-full">
-        <div class="animate-pulse w-3/4 h-4 bg-bg2 rounded mt-2"></div>
-        <div class="animate-pulse w-1/2 h-4 bg-bg2 rounded mt-2"></div>
+        <div class="max-w-sm w-full">
+          <div class="animate-pulse w-3/4 h-4 bg-bg2 rounded mt-2"></div>
+          <div class="animate-pulse w-1/2 h-4 bg-bg2 rounded mt-2"></div>
         </div>
       </div>
     );
-  const [progress, setProgress] = createSignal<number | undefined>(undefined);
+
   const sync = useSyncStore();
 
-  createEffect(() => {
-    const id = getVideoId(props.v);
-    if (!id) return;
-    const val = sync.store.history?.[id];
-    if (val?.watchedAt) {
-      setWatchedAtDate(new Date(val.watchedAt));
-    }
-    props = mergeProps(props, { v: { ...props.v, ...val } });
-    setProgress(val?.currentTime ?? undefined);
-  });
+  const watchedAtDate = () => sync.store.history[getVideoId(props.v)!]?.watchedAt;
 
-  const [dropdownOpen, setDropdownOpen] = createSignal(false);
-  const [modalOpen, setModalOpen] = createSignal(false);
-
-  const [watchedAtDate, setWatchedAtDate] = createSignal<Date | undefined>(
-    undefined
-  );
   const [watchedAt, setWatchedAt] = createSignal<string | undefined>(undefined);
   createEffect(() => {
     const [watchedAt] = createTimeAgo(watchedAtDate() ?? new Date(), {
@@ -70,23 +52,24 @@ const VideoCard = (props: {
 
   const [uploaded] = createTimeAgo(props.v.uploaded, { interval: 1000 * 60 });
 
+  const historyItem = () => sync.store.history[getVideoId(props.v)!]
+
   return (
     <div
       class={` flex w-full max-w-md mx-1 sm:w-72 flex-col items-start rounded-xl bg-bg1 p-2`}
     >
       <A
         href={`/watch?v=${getVideoId(props.v)}`}
-        class="flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        class="relative flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
         title={props.v.title}
       >
         <img
-          class={`cursor-pointer w-full aspect-video max-w-md break-words ${
-            progress() !== undefined ? "saturate-[0.35] opacity-75" : ""
-          } `}
+          class={`cursor-pointer w-full aspect-video max-w-md break-words ${historyItem() ? "saturate-[0.35] opacity-75" : ""
+            } `}
           src={generateThumbnailUrl(
             sync.store!.preferences?.instance?.image_proxy_url ??
-              "https://pipedproxy.kavin.rocks",
-            getVideoId(props.v)
+            "https://pipedproxy.kavin.rocks",
+            getVideoId(props.v)!
           )}
           // placeholder="blur"
           width={2560}
@@ -95,7 +78,7 @@ const VideoCard = (props: {
           loading="lazy"
         />
         <Switch>
-          <Match when={(props.v as HistoryItem)?.watchedAt}>
+          <Match when={historyItem()?.watchedAt}>
             <div class="relative h-0 w-0 ">
               <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
                 Watched {watchedAt()}
@@ -104,9 +87,8 @@ const VideoCard = (props: {
           </Match>
           <Match
             when={
-              (props.v as HistoryItem) &&
-              !(props.v as HistoryItem).watchedAt &&
-              progress() !== undefined
+              historyItem() &&
+              !historyItem()?.watchedAt
             }
           >
             <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
@@ -122,13 +104,12 @@ const VideoCard = (props: {
             </Show>
           </div>
         </div>
-        {!!progress() && (
+        {!!historyItem()?.currentTime && (
           <div class="relative h-0 w-full">
             <div
               style={{
-                width: `clamp(0%, ${
-                  (progress()! / props.v.duration) * 100
-                }%, 100%`,
+                width: `clamp(0%, ${(historyItem().currentTime! / props.v.duration) * 100
+                  }%, 100%`,
               }}
               class="absolute bottom-0 h-1 bg-highlight"
             ></div>
@@ -197,139 +178,7 @@ const VideoCard = (props: {
           </div>
         </div>
         <div class="flex flex-col justify-between">
-          <DropdownMenu.Root
-            overlap={true}
-            open={dropdownOpen()}
-            onOpenChange={setDropdownOpen}
-            gutter={0}
-          >
-            <DropdownMenu.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
-              <BsThreeDotsVertical
-                fill="currentColor"
-                class="text-text2 w-6 h-6 group-hover:text-text1"
-              />
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content class="bg-bg2 p-2 rounded-md z-50
-                animate-in
-                fade-in
-                slide-in-from-top-10
-                duration-200
-                ">
-                <DropdownMenu.Arrow />
-                <DropdownMenu.Sub>
-                  <DropdownMenu.SubTrigger class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">
-                    <div class="flex items-center w-full justify-between">
-                      <div class="text-text1">Add to playlist</div>
-                      <BsChevronRight
-                        class="justify-self-end"
-                        fill="currentColor"
-                      />
-                    </div>
-                  </DropdownMenu.SubTrigger>
-                  <DropdownMenu.Portal>
-                    <DropdownMenu.SubContent class="bg-bg2 p-2 rounded-md shadow">
-                      <For each={Object.entries(sync.store.playlists)}>
-                        {([id, playlist]) => (
-                          <DropdownMenu.Item
-                            class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-                            onSelect={() => {
-                              console.log(playlist.relatedStreams, props.v);
-                              // sync.setStore("playlists", id, "relatedStreams", [
-                              //   props.v as RelatedStream,
-                              //   ...playlist.relatedStreams,
-                              // ]);
-                            }}
-                          >
-                            <div class="flex items-center gap">
-                              <div class="text-text1">{playlist.name}</div>
-                            </div>
-                          </DropdownMenu.Item>
-                        )}
-                      </For>
-                    </DropdownMenu.SubContent>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Sub>
-                <Show when={progress() === undefined}>
-                  <DropdownMenu.Item
-                    class="cursor-pointer z-50 w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onPointerUp={(e) => {
-                      e.stopPropagation();
-                    }}
-                    as="button"
-                    onSelect={() => {
-                      if (!props.v) return;
-                      const item = {
-                        [getVideoId(props.v) as string]: {
-                          title: props.v.title,
-                          url: props.v.url,
-                          duration: props.v.duration,
-                          uploaderName: props.v.uploaderName,
-                          uploaderUrl: props.v.uploaderUrl,
-                          uploaderAvatar: props.v.uploaderAvatar,
-                          views: props.v.views,
-                          uploaded: props.v.uploaded,
-                          thumbnail: props.v.thumbnail,
-                          uploaderVerified: props.v.uploaderVerified,
-                          currentTime: props.v!.duration,
-                          watchedAt: Date.now(),
-                        },
-                      } as Record<string, HistoryItem>;
-                      sync.setStore("history", item);
-                      console.log("added to history");
-                    }}
-                  >
-                    <div class="flex items-center gap-2">
-                      <FaRegularEye fill="currentColor" />
-                      <div class="text-text1">Mark as watched</div>
-                    </div>
-                  </DropdownMenu.Item>
-                </Show>
-                <Show when={progress() !== undefined}>
-                  <DropdownMenu.Item
-                    class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onPointerUp={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onSelect={() => {
-                      sync.setStore("history", {
-                        [getVideoId(props.v)]: undefined,
-                      });
-                    }}
-                  >
-                    <div class="flex items-center gap-2">
-                      <FaRegularEyeSlash fill="currentColor" />
-                      <div class="text-text1">Remove from history</div>
-                    </div>
-                  </DropdownMenu.Item>
-                </Show>
-                <DropdownMenu.Item
-                  class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded  hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-                  onSelect={() => setModalOpen(true)}
-                >
-                  <div class="flex items-center gap-2">
-                    <FaSolidBug fill="currentColor" />
-                    <div class="text-text1">Debug info</div>
-                  </div>
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-          <Modal
-            isOpen={modalOpen()}
-            setIsOpen={setModalOpen}
-            title="Debug info"
-          >
-            <pre class="break-all text-text1 max-w-full min-w-0 overflow-auto">
-              {JSON.stringify(props.v, null, 2)}
-            </pre>
-          </Modal>
+          <VideoCardMenu v={props.v} progress={historyItem()?.currentTime} />
         </div>
       </div>
     </div>

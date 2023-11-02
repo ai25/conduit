@@ -48,6 +48,7 @@ export class VideoQueue implements Iterable<RelatedStream> {
   
   add(video: RelatedStream) {
     const id = getVideoId(video);
+    console.log("adding", id);
     if (!id) return;
     if (this.videoIdSet.has(id)) return;
     const newNode = new Node(video);

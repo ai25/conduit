@@ -1,3 +1,4 @@
+import { exponentialBackoff } from "./helpers";
 import { WorkerResponse } from "./y-opfs";
 
 //https://github.com/rhashimoto/wa-sqlite/blob/master/demo/SharedService/SharedService.js
@@ -220,17 +221,19 @@ export class SharedService extends EventTarget {
     // worker is handling requests.
     // Use a Web Lock to determine our clientId.
     let clientId: string | null = null;
-    while (!clientId) {
-      clientId = await fetch("/clientId").then((response) => {
-        console.log("SharedService clientId response", response);
-        const contentType = response.headers.get("content-type");
-        if (response.ok && contentType?.startsWith("text/plain")) {
-          return response.text();
-        }
-        console.warn("service worker not ready, retrying...");
-        return new Promise((resolve) => setTimeout(resolve, 3000));
-      });
+    async function fetchClientId(): Promise<string> {
+      const response = await fetch("/clientId");
+      console.log("SharedService clientId response", response);
+      const contentType = response.headers.get("content-type");
+
+      if (response.ok && contentType?.startsWith("text/plain")) {
+        return response.text();
+      }
+
+      throw new Error("Service worker not ready or other error");
     }
+      clientId = await exponentialBackoff(fetchClientId, 5, 1000, 16000);
+      console.log("Successfully fetched clientId:", clientId);
 
     navigator.serviceWorker.addEventListener("message", (event) => {
       event.data.ports = event.ports;
@@ -381,7 +384,7 @@ export class SharedService extends EventTarget {
  * @returns
  */
 type Res = Record<"read" | "write" | "trim" | "cleanup"
-, (...args: any[]) => Promise<WorkerResponse<"read" | "write" | "trim" | "cleanup">>>;
+  , (...args: any[]) => Promise<WorkerResponse<"read" | "write" | "trim" | "cleanup">>>;
 export function createSharedServicePort(target: Res
 ): MessagePort {
   console.log("createSharedServicePort", target);
@@ -397,7 +400,7 @@ export function createSharedServicePort(target: Res
       port1.close();
     });
 
-    port1.addEventListener("message", async ({ data }: {data:{ nonce: string, method: "read" | "write" | "trim" | "cleanup", args: any[] }}) => {
+    port1.addEventListener("message", async ({ data }: { data: { nonce: string, method: "read" | "write" | "trim" | "cleanup", args: any[] } }) => {
       console.log("service worker received message", data);
       const response: any = { nonce: data.nonce };
       try {

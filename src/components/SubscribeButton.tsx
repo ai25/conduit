@@ -7,7 +7,6 @@ const SubscribeButton = (props: { id: string; class?: string }) => {
   const sync = useSyncStore();
   const isSubscribed = () => !!sync.store.subscriptions[props.id];
   const toggleSubscribed = () => {
-    const channels = sync.store.subscriptions;
     if (!isSubscribed()) {
       sync.setStore("subscriptions", props.id, {
         subscribedAt: Date.now(),
@@ -23,10 +22,12 @@ const SubscribeButton = (props: { id: string; class?: string }) => {
 
   return (
     <Button
+      appearance="primary"
       class={props.class}
       onClick={toggleSubscribed}
-      activated={isSubscribed()}
+      isSelected={isSubscribed()}
       label={`Subscribe${isSubscribed() ? "d" : ""}`}
+      isLoading={!sync.store.subscriptions}
     />
   );
 };

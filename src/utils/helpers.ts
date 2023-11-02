@@ -112,3 +112,46 @@ export function getVideoId(item: any): string | undefined {
 
   return
 }
+
+/**
+ * Execute a function with exponential backoff.
+ *
+ * @param fn - Function to execute
+ * @param retries - Maximum number of retries
+ * @param minDelay - Minimum delay in milliseconds
+ * @param maxDelay - Maximum delay in milliseconds
+ * @return Promise containing the result of the function execution
+ */
+export async function exponentialBackoff<T>(
+  fn: () => Promise<T>,
+  retries: number = 5,
+  minDelay: number = 1000,
+  maxDelay: number = 60000
+): Promise<T> {
+  let attempts = 0;
+  
+  if (minDelay >= maxDelay) {
+    throw new Error("minDelay should be less than maxDelay.");
+  }
+  if (retries < 0) {
+    throw new Error("Number of retries should be non-negative.");
+  }
+
+  while (true) {
+    try {
+      return await fn();
+    } catch (e) {
+      attempts++;
+      if (attempts > retries) {
+        throw new Error("Maximum retries reached.");
+      }
+
+      const delay = Math.min(
+        minDelay * Math.pow(2, attempts),
+        maxDelay
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}

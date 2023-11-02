@@ -1,4 +1,5 @@
 import { toaster } from "@kobalte/core";
+import { FaSolidBug } from "solid-icons/fa";
 import { createEffect, createSignal } from "solid-js";
 import Button from "~/components/Button";
 import Modal from "~/components/Modal";
@@ -14,9 +15,12 @@ export default () => {
       >
       </Modal>
       <Button
-        label="x"
+        isLoading
+        appearance="primary"
+        label="dajflaeijfpo"
+        icon={<FaSolidBug />}
         onClick={() => {
-          setIsOpen(true);
+          // setIsOpen(true);
          toast.promise(
             new Promise((resolve) => {
               setTimeout(() => {

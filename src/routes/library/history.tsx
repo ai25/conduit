@@ -190,39 +190,6 @@ export default function History() {
         class="my-2 mx-auto"
         placeholder="Search..."
       />
-      <button
-        onClick={() => {
-          setLoading(true);
-          setTimeout(() => setLoading(false), 1000);
-        }}
-        class={`
-        bg-primary
-          hover:bg-primary/90
-          focus-visible:ring-4
-          focus-visible:ring-primary/50
-          focus-visible:outline-none
-          active:bg-primary/80
-          disabled:opacity-50
-          disabled:cursor-not-allowed
-          transition
-          duration-200
-          ease-in-out
-          shadow
-          hover:shadow-3xl
-          py-2
-          px-3
-          text-text1
-          text-sm
-          rounded-full
-          border-4
-          border-transparent
-          hover:border-primary/30
-          uppercase
-        `}
-        disabled={isLoading()}
-        aria-disabled={isLoading()}>
-        {isLoading() ? "Loading..." : "Subscribe"}
-      </button>
       <div class="flex flex-wrap justify-center h-full min-h-[80vh]">
         <Show when={history()}>
           <For each={history()}>
