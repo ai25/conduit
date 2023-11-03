@@ -3,6 +3,7 @@ import { ToggleButton } from "@kobalte/core";
 import { Tooltip, type TooltipPlacement } from "~/components/Tooltip";
 import { createEffect, createSignal, Show } from "solid-js";
 import { isServer } from "solid-js/web";
+import { toast } from "~/components/Toast";
 
 export function FullscreenButton(props: FullscreenButtonProps) {
   const [params, setParams] = useSearchParams();
@@ -53,6 +54,7 @@ export function FullscreenButton(props: FullscreenButtonProps) {
           }}
           onChange={(value) => {
             if (value) {
+              console.log(`fullscreen button pressed, entering fullscreen`)
               document.documentElement.requestFullscreen();
               screen.orientation.lock("landscape").catch(() => { });
               setParams({ fullscreen: true }, { replace: true });

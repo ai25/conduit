@@ -330,7 +330,6 @@ export default function Player(props: {
     if (!nextVideo) return;
     if (!mediaPlayer) return;
     if (!videoQuery.data) return;
-    if (route.query.list) return;
     console.log("adding ", nextVideo);
     if (!queue.peekNext()) {
       console.log("adding next video to queue", nextVideo);
@@ -367,6 +366,7 @@ export default function Player(props: {
 
   function handleSetNextVideo() {
     console.log("setting next queue video");
+      console.log("playlist", playlist());
     const params = new URLSearchParams(window.location.search);
     let url = new URL(window.location.href);
     const urlParams = new URLSearchParams(url.search);
@@ -613,10 +613,31 @@ export default function Player(props: {
     document.addEventListener("keydown", handleKeyDown);
     window.addEventListener("beforeunload", updateProgressParametrized)
     window.addEventListener("unload", updateProgressParametrized)
+    document.addEventListener('media-enter-fullscreen-request', (event: Event) => {
+  // Check if this event can be canceled
+    // Prevent the event from triggering the default action, e.g., entering full screen
+    event.preventDefault();
+    // Stop the event from propagating further
+    event.stopPropagation();
+
+  // Alternatively, if you control the event dispatching mechanism,
+  // you can conditionally not dispatch the 'fullscreenchange' event
+  // or not call the method that triggers the full screen request.
+  console.log('Full screen request intercepted. Element will not go full screen.');
+}, { capture: true }); // U
     onCleanup(() => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("visibilitychange", updateProgressParametrized);
       document.removeEventListener("pagehide", updateProgressParametrized);
+      document.removeEventListener("media-enter-fullscreen-request", (e) => {
+        console.log("fullscreen change", document.fullscreenElement, e);
+        if (e.target !== document) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
+      );
     });
   });
 
@@ -650,6 +671,7 @@ export default function Player(props: {
     if (document.activeElement?.tagName === "INPUT") return;
     switch (e.key) {
       case "f":
+        console.log(`f key pressed, fullscreen: ${document.fullscreenElement}`)
         if (document.fullscreenElement) {
           document.exitFullscreen();
           screen.orientation.unlock();
@@ -977,7 +999,9 @@ export default function Player(props: {
         muted={preferences.muted}
         volume={preferences.volume}
         onMouseMove={() => {
-          if (typeof screen.orientation === undefined) return;
+          if (typeof screen.orientation !== undefined) {
+            return
+          }
             showControls();
         }}
         onMouseLeave={() => {
@@ -991,11 +1015,13 @@ export default function Player(props: {
         on:time-update={() => {
           autoSkipHandler();
         }}
+        
         on:can-play={onCanPlay}
         on:provider-change={onProviderChange}
         on:hls-error={handleHlsError}
         on:ended={handleEnded}
-        on:play={() => {
+        on:play={(e) => {
+          e.stopPropagation();
           mediaPlayer.controls.hide(0);
           setStarted(true);
           updateProgressParametrized();

@@ -12,7 +12,7 @@ import {
 //
 declare let self: ServiceWorkerGlobalScope;
 
-skipWaiting();
+self.skipWaiting();
 clientsClaim();
 // clean old assets
 cleanupOutdatedCaches();

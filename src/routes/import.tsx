@@ -19,10 +19,16 @@ export default function Import() {
       if (text.includes("Conduit")) {
         console.log("Conduit");
         const json = JSON.parse(text);
+        console.log(json);
         setSubscriptions(json.subscriptions);
+        if (json.playlists) {
+          json.playlists.forEach((playlist: any) => {
+            sync.setStore("playlists", playlist.id, playlist);
+          });
+        }
       }
       // Invidious
-      if (text.indexOf("opml") != -1) {
+      else if (text.indexOf("opml") != -1) {
         console.log("Invidious");
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(text, "text/xml");

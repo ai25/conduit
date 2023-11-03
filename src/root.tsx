@@ -203,7 +203,7 @@ export default function Root() {
                                 </Show>
                                 <Portal>
                                   <Toast.Region>
-                                    <Toast.List class="fixed bottom-0 right-0 p-4 flex flex-col gap-2 z-[9999] w-[400px] max-w-[100vw] outline-none" />
+                                    <Toast.List class="fixed bottom-0 right-0 p-4 flex flex-col gap-2 z-[999999] w-[400px] max-w-[100vw] outline-none" />
                                   </Toast.Region>
                                 </Portal>
                                 <main>

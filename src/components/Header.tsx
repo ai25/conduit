@@ -333,7 +333,7 @@ const Header = () => {
                           {(user) => (
                             <div class="flex items-center gap-2">
                               ID: {user.id}
-                              Name: {user.name}
+                              Name: {user.name} {user.name === name() && "(You)"}
                             </div>
                           )}
                         </For>
