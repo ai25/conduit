@@ -81,21 +81,21 @@ export default function Player(props: {
   const [playlist] = usePlaylist();
   const queue = useQueue();
 
-  createEffect(async() => {
+  createEffect(async () => {
     if (v()) {
       if (!queue.has(v()!)) {
-      const awaitLoad = async () => {
-        if (videoQuery.isLoading) {
-          await new Promise<void>((resolve) => {
-            setTimeout(() => {
-              resolve();
-            }, 100);
-          });
+        const awaitLoad = async () => {
+          if (videoQuery.isLoading) {
+            await new Promise<void>((resolve) => {
+              setTimeout(() => {
+                resolve();
+              }, 100);
+            });
 
-          await awaitLoad();
-        }
-      };
-      await awaitLoad();
+            await awaitLoad();
+          }
+        };
+        await awaitLoad();
         queue.add({
           url: `/watch?v=${v()}`,
           title: videoQuery.data!.title,
@@ -366,7 +366,7 @@ export default function Player(props: {
 
   function handleSetNextVideo() {
     console.log("setting next queue video");
-      console.log("playlist", playlist());
+    console.log("playlist", playlist());
     const params = new URLSearchParams(window.location.search);
     let url = new URL(window.location.href);
     const urlParams = new URLSearchParams(url.search);
@@ -614,28 +614,17 @@ export default function Player(props: {
     window.addEventListener("beforeunload", updateProgressParametrized)
     window.addEventListener("unload", updateProgressParametrized)
     document.addEventListener('media-enter-fullscreen-request', (event: Event) => {
-  // Check if this event can be canceled
-    // Prevent the event from triggering the default action, e.g., entering full screen
-    event.preventDefault();
-    // Stop the event from propagating further
-    event.stopPropagation();
-
-  // Alternatively, if you control the event dispatching mechanism,
-  // you can conditionally not dispatch the 'fullscreenchange' event
-  // or not call the method that triggers the full screen request.
-  console.log('Full screen request intercepted. Element will not go full screen.');
-}, { capture: true }); // U
+      event.preventDefault();
+      event.stopPropagation();
+      console.log('Full screen request intercepted. Element will not go full screen.');
+    }, { capture: true });
     onCleanup(() => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("visibilitychange", updateProgressParametrized);
       document.removeEventListener("pagehide", updateProgressParametrized);
       document.removeEventListener("media-enter-fullscreen-request", (e) => {
-        console.log("fullscreen change", document.fullscreenElement, e);
-        if (e.target !== document) {
-          e.preventDefault();
-          e.stopPropagation();
-          return;
-        }
+        e.preventDefault();
+        e.stopPropagation();
       }
       );
     });
@@ -658,7 +647,7 @@ export default function Player(props: {
 
   const showControls = () => {
     if (!mediaPlayer) return;
-      mediaPlayer.controls.show();
+    mediaPlayer.controls.show();
     clearTimeout(showControlsTimeout);
     showControlsTimeout = setTimeout(() => {
       mediaPlayer.controls.hide();
@@ -992,7 +981,7 @@ export default function Player(props: {
         }}
         current-time={currentTime()}
         // onTextTrackChange={handleTextTrackChange}
-        load="eager"
+        // load="eager"
         key-disabled
         tabIndex={-1}
         playbackRate={preferences.speed}
@@ -1002,7 +991,7 @@ export default function Player(props: {
           if (typeof screen.orientation !== undefined) {
             return
           }
-            showControls();
+          showControls();
         }}
         onMouseLeave={() => {
           mediaPlayer?.controls.hide(0);
@@ -1015,13 +1004,12 @@ export default function Player(props: {
         on:time-update={() => {
           autoSkipHandler();
         }}
-        
+
         on:can-play={onCanPlay}
         on:provider-change={onProviderChange}
         on:hls-error={handleHlsError}
         on:ended={handleEnded}
-        on:play={(e) => {
-          e.stopPropagation();
+        on:play={() => {
           mediaPlayer.controls.hide(0);
           setStarted(true);
           updateProgressParametrized();
@@ -1037,25 +1025,24 @@ export default function Player(props: {
         on:hls-manifest-loaded={(e: any) => {
           console.log(e.detail, "levels");
         }}
-        autoplay
+        autoplay={true}
         ref={mediaPlayer}
         title={videoQuery.data?.title ?? ""}
         poster={videoQuery.data?.thumbnailUrl ?? ""}
-        aspect-ratio={16 / 9}
         crossorigin="anonymous"
-        // on:fullscreen-change={(e) => {
-        //   const urlParams = new URLSearchParams(window.location.search);
-        //   if (e.detail) {
-        //     urlParams.set("fullscreen", "true");
-        //   } else {
-        //     urlParams.delete("fullscreen");
-        //   }
-        //   history.replaceState(
-        //     null,
-        //     "",
-        //     window.location.pathname + "?" + urlParams.toString()
-        //   );
-        // }}
+      // on:fullscreen-change={(e) => {
+      //   const urlParams = new URLSearchParams(window.location.search);
+      //   if (e.detail) {
+      //     urlParams.set("fullscreen", "true");
+      //   } else {
+      //     urlParams.delete("fullscreen");
+      //   }
+      //   history.replaceState(
+      //     null,
+      //     "",
+      //     window.location.pathname + "?" + urlParams.toString()
+      //   );
+      // }}
       >
         <media-provider
           class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen"
@@ -1078,9 +1065,7 @@ export default function Player(props: {
               />
             );
           })}
-          {/* <media-captions class="transition-[bottom] not-can-control:opacity-100 user-idle:opacity-100 not-user-idle:bottom-[80px]" /> */}
           <Show when={videoQuery.data?.hls}>
-            {(() => { console.log("hls", videoQuery.data?.hls); return null; })()}
             <source src={videoQuery.data?.hls} type="application/x-mpegurl" />
           </Show>
         </media-provider>
@@ -1171,8 +1156,6 @@ export default function Player(props: {
           navigateNext={nextVideo()?.url ? playNext : undefined}
           navigatePrev={prevVideo()?.url ? () => {
             navigate(prevVideo()!.url)
-            queue.prev();
-            console.log("navigating to prev video", queue.currentVideo);
             setPrevVideo(null);
           }
             : undefined}

@@ -92,8 +92,8 @@ dependencies:
     specifier: ^5.25.3
     version: 5.25.3
   vidstack:
-    specifier: ^1.5.1
-    version: 1.5.1
+    specifier: ^1.5.0
+    version: 1.5.0
   vite-plugin-pwa:
     specifier: ^0.16.5
     version: 0.16.5(vite@4.4.9)(workbox-build@7.0.0)(workbox-window@7.0.0)
@@ -6479,8 +6479,8 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  /vidstack@1.5.1:
-    resolution: {integrity: sha512-owQE+xrMe/XtIPUGfdSMlWshPRCYBm4YcXOEbX28lecfbSiTxf20+vSPAE00Ot85AGNOFOS+Nr/o9h6NrMu/hg==}
+  /vidstack@1.5.0:
+    resolution: {integrity: sha512-dc+DdAkLahGGz0PpHhB9G0TAWb2yYeq1ACOOpf4xCYovW1FFhvCQbWDv9hxb3FGCN07BY/XFYFJnWZlVWR4N8A==}
     engines: {node: '>=18'}
     dependencies:
       media-captions: 1.0.1

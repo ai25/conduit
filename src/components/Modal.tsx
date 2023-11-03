@@ -27,14 +27,14 @@ export default function Modal(props: {
           <div
             class="fixed 
     inset-0 
-    z-50 
+    z-[999999]
     flex 
     items-center 
     justify-center">
             <Dialog.Content
               class=" z-50 
     max-w-[calc(100vw-16px)] 
-    max-h-[85vh]
+    max-h-[80vh]
               my-auto
     overflow-hidden
     border 

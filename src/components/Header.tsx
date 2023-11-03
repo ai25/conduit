@@ -315,6 +315,7 @@ const Header = () => {
                 fade-in
                 slide-in-from-top-10
                 duration-200
+                z-[99999]
                 ">
                 <KobaltePopover.Arrow />
                 <KobaltePopover.Description
