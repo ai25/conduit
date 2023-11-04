@@ -21,7 +21,7 @@ export default function Button(props: {
         "bg-primary hover:bg-primary/90 shadow hover:shadow-3xl text-text1 border-transparent hover:border-primary/30 active:bg-primary/80": true,
       },
       "subtle": {
-        "bg-transparent hover:bg-bg3/80 shadow hover:shadow-3xl text-text1 border-transparent ": true,
+        "bg-transparent hover:bg-bg3/80 hover:shadow-3xl text-text1 border-transparent ": true,
       },
       "link": {
         "bg-transparent text-primary border-transparent hover:border-transparent": true,

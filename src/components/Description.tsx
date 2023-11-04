@@ -11,11 +11,6 @@ import {
   JSX,
 } from "solid-js";
 import { A, useSearchParams } from "solid-start";
-import { getStorageValue, setStorageValue } from "~/utils/storage";
-import Comment, { PipedCommentResponse } from "./Comment";
-import { downloadVideo } from "~/utils/hls";
-import Button from "./Button";
-import { Toaster } from "solid-headless";
 import { usePreferences } from "~/stores/preferencesStore";
 import {
   FaSolidArrowsRotate,
@@ -30,7 +25,6 @@ import {
   FaSolidThumbsUp,
   FaSolidTrashCan,
 } from "solid-icons/fa";
-import { Tooltip } from "@kobalte/core";
 import "solid-bottomsheet/styles.css";
 import { SolidBottomsheet } from "solid-bottomsheet";
 import Modal from "./Modal";
@@ -45,16 +39,18 @@ import { getVideoId } from "~/utils/helpers";
 import api from "~/utils/api";
 import { isServer } from "solid-js/web";
 import SubscribeButton from "./SubscribeButton";
+import { Tooltip } from "./Tooltip";
+import Button from "./Button";
 
 function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
   const player = document.querySelector("media-player") as MediaPlayerElement;
   player.currentTime = parseInt(t, 10);
-  
+
   const newUrl = new URL(`/watch?v=${videoId}`, window.location.origin);
   const searchParams = new URLSearchParams(extraQueryParams);
 
   searchParams.set('t', t);
-  
+
   newUrl.search = searchParams.toString();
 
   history.pushState({}, "", newUrl.toString());
@@ -75,9 +71,9 @@ export async function sanitizeText(text: string) {
         const url = new URL(`https://youtube.com/watch?v=${videoId}`);
         const searchParams = new URLSearchParams(params);
         const existingParams = new URLSearchParams(window.location.search);
-        
+
         const timestamp = searchParams.get('t') || '0';
-        
+
         const allParams = new URLSearchParams();
         searchParams.forEach((value, key) => {
           allParams.set(key, value);
@@ -85,11 +81,11 @@ export async function sanitizeText(text: string) {
         existingParams.forEach((value, key) => {
           allParams.set(key, value);
         });
-        
+
         allParams.forEach((value, key) => {
           url.searchParams.set(key, value);
         });
-        
+
         return `<button class="link" onclick="handleTimestamp('${videoId}','${timestamp}', '${url.search}')">${textContent}</button>`;
       }
     )
@@ -180,9 +176,15 @@ const Description = (props: {
           isOpen={debugInfoOpen()}
           setIsOpen={setDebugInfoOpen}
           title="Debug info">
-          <IconButton
-            icon={<FaSolidCopy class="w-4 h-4" />}
-            title="Copy to clipboard"
+          <Tooltip
+            contentSlot="Copy to clipboard"
+            triggerSlot={
+              <Button
+                as="div"
+                appearance="subtle"
+                icon={<FaSolidCopy class="w-4 h-4" />}
+              />
+            }
             onClick={() => {
               navigator.clipboard.writeText(JSON.stringify(videoQuery.data, null, 2));
             }}
@@ -236,41 +238,74 @@ const Description = (props: {
             <div class="flex items-center justify-evenly rounded p-2 bg-bg2">
               <Switch>
                 <Match when={props.downloaded}>
-                  <IconButton
-                    title="Delete"
-                    icon={<FaSolidTrashCan class="h-6 w-6" />}
-                    onClick={() => deleteVideo(getVideoId(videoQuery.data)!)}
+                  <Tooltip
+                    as="div"
+                    contentSlot="Delete"
+                    triggerSlot={
+                      <Button
+                        icon={<FaSolidTrashCan class="h-6 w-6" />}
+                        appearance="subtle"
+                        onClick={() => deleteVideo(getVideoId(videoQuery.data)!)}
+                      />
+                    }
                   />
                 </Match>
                 <Match when={!props.downloaded}>
-                  <IconButton
-                    title="Download"
-                    icon={<FaSolidDownload class="h-6 w-6" />}
-                    onClick={() => setDownloadModalOpen(true)}
+                  <Tooltip
+                    as="div"
+                    contentSlot="Download"
+                    triggerSlot={
+                      <Button
+                        icon={<FaSolidDownload class="h-6 w-6" />}
+                        appearance="subtle"
+                        onClick={() => setDownloadModalOpen(true)}
+                      />
+                    }
                   />
                 </Match>
               </Switch>
-              <IconButton
-                title="Share"
-                icon={<FaSolidShare class="h-6 w-6" />}
-                onClick={() => { }}
+              <Tooltip
+                as="div"
+                contentSlot={"Share"}
+                triggerSlot={
+                  <Button
+                    icon={<FaSolidShare class="h-6 w-6" />}
+                    appearance="subtle"
+                  />}
               />
-              <IconButton
-                title="Save"
-                icon={<FaSolidBookmark class="h-6 w-6" />}
-                onClick={() => { }}
+              <Tooltip
+                as="div"
+                contentSlot="Save"
+                triggerSlot={
+                  <Button
+                    icon={<FaSolidBookmark class="h-6 w-6" />}
+                    appearance="subtle"
+                  />
+                }
               />
-              <IconButton
-                title="Debug info"
-                icon={<FaSolidBug class="h-6 w-6" />}
-                onClick={() => {
-                  setDebugInfoOpen(true);
-                }}
+              <Tooltip
+                as="div"
+                contentSlot="Debug info"
+                triggerSlot={
+                  <Button
+                    icon={<FaSolidBug class="h-6 w-6" />}
+                    appearance="subtle"
+                    onClick={() => {
+                      setDebugInfoOpen(true);
+                    }}
+                  />
+                }
               />
-              <IconButton
-                title="Soft Refresh (Shift+R)"
-                icon={<FaSolidArrowsRotate class="h-6 w-6" />}
-                onClick={() => videoQuery.refetch()}
+              <Tooltip
+                as="div"
+                contentSlot="Soft Refresh (Shift+R)"
+                triggerSlot={
+                  <Button
+                    icon={<FaSolidArrowsRotate class="h-6 w-6" />}
+                    appearance="subtle"
+                    onClick={() => videoQuery.refetch()}
+                  />
+                }
               />
             </div>
             <div
@@ -309,7 +344,7 @@ const Description = (props: {
                     class="h-full bg-accent1 rounded-r"
                     style={{
                       width: `${(videoQuery.data!.dislikes /
-                          (videoQuery.data!.likes + videoQuery.data!.dislikes)) *
+                        (videoQuery.data!.likes + videoQuery.data!.dislikes)) *
                         100
                         }%`,
                     }}></div>
@@ -319,14 +354,14 @@ const Description = (props: {
           </div>
           <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
             <Suspense fallback={<p>Desc Loading...</p>}>
-            <div
-              tabIndex={0}
-              id="description"
-              aria-expanded={expanded()}
-              class={`min-w-0 max-w-full overflow-hidden ${expanded() ? "" : "max-h-20"
-                }`}
-              innerHTML={sanitizedDescription()!}
-            />
+              <div
+                tabIndex={0}
+                id="description"
+                aria-expanded={expanded()}
+                class={`min-w-0 max-w-full overflow-hidden ${expanded() ? "" : "max-h-20"
+                  }`}
+                innerHTML={sanitizedDescription()!}
+              />
             </Suspense>
             <div classList={{ hidden: expanded() }} class="w-full h-0 relative">
               <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
@@ -358,26 +393,6 @@ export const Checkmark = () => (
     viewBox="0 0 24 24">
     <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z" />
   </svg>
-);
-
-const IconButton = (props: {
-  icon: JSX.Element;
-  title?: string;
-  onClick: () => void;
-}) => (
-  <Tooltip.Root>
-    <Tooltip.Trigger
-      onClick={props.onClick}
-      class="aspect-square w-12 h-12 transition duration-300 flex items-center justify-center rounded-full hover:bg-bg1/80 outline-none active:scale-110 focus-visible:bg-bg2 focus-visible:ring-2 focus-visible:ring-primary">
-      {props.icon}
-    </Tooltip.Trigger>
-    <Tooltip.Portal>
-      <Tooltip.Content class="p-2 z-50 bg-bg2 rounded max-w-[min(calc(100vw-16px),380px)] animate-[contentHide] data-[expanded]:animate-[contentShow]">
-        <Tooltip.Arrow />
-        <p>{props.title}</p>
-      </Tooltip.Content>
-    </Tooltip.Portal>
-  </Tooltip.Root>
 );
 
 type JSONViewerProps = {

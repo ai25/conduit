@@ -28,7 +28,7 @@ export function VideoLayout(props: VideoLayoutProps) {
       <Gestures />
       <Captions />
       <media-controls
-        class={`${styles.controls} font-sans media-controls:opacity-100 absolute inset-0 z-10 flex h-full w-full flex-col bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity`}
+        class={`${styles.controls} font-sans media-controls:opacity-100 invisible media-controls:visible  absolute inset-0 z-10 flex h-full w-full flex-col bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity`}
       >
         <media-controls-group class="flex w-full items-center px-2 my-2 justify-between h-[30px]">
           <div class="flex items-center justify-between">

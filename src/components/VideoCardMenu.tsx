@@ -1,12 +1,15 @@
 import { DropdownMenu } from "@kobalte/core";
 import { BsChevronRight, BsThreeDotsVertical } from "solid-icons/bs";
-import { FaRegularEye, FaRegularEyeSlash, FaSolidBug } from "solid-icons/fa";
-import { createEffect, createSignal, createUniqueId, For, Match, Show, Switch } from "solid-js";
+import { FaRegularEye, FaRegularEyeSlash, FaSolidBan, FaSolidBug, FaSolidHeartCircleMinus, FaSolidHeartCirclePlus, FaSolidPlus, FaSolidShare } from "solid-icons/fa";
+import { TbClockPlus } from "solid-icons/tb";
+import { createEffect, createSignal, For, Match, Show, Switch } from "solid-js";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
-import { RelatedStream } from "~/types";
+import { ConduitPlaylist, Playlist, RelatedStream } from "~/types";
 import { getVideoId } from "~/utils/helpers";
 import Button from "./Button";
 import Modal from "./Modal";
+import Select from "./Select";
+import { toast } from "./Toast";
 
 export default function VideoCardMenu(props: { v: RelatedStream, progress: number | undefined }) {
 
@@ -29,7 +32,7 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
         />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content class="bg-bg2 p-2 rounded-md z-50
+        <DropdownMenu.Content class="bg-bg1 border border-bg2 shadow p-2 rounded-md z-50
                 -translate-y-4
                 animate-in
                 fade-in
@@ -47,14 +50,55 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
             onSelect={() => {
               setPlaylistModalOpen(true);
             }}
+            class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+          >
 
-            class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none">
-            <div class="flex items-center w-full justify-between">
-              <div class="text-text1">Add to playlist</div>
-              <BsChevronRight
-                class="justify-self-end"
-                fill="currentColor"
+            <div class="flex items-center gap-2">
+              <FaSolidPlus
+                class=""
               />
+              <div class="text-text1">Add to playlist</div>
+            </div>
+          </DropdownMenu.Item>
+          <DropdownMenu.Item
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            onPointerUp={(e) => {
+              e.stopPropagation();
+            }}
+            onSelect={() => {
+              try {
+                sync.setStore("watchLater", {
+                  [getVideoId(props.v) as string]: {
+                    title: props.v.title,
+                    url: props.v.url,
+                    duration: props.v.duration,
+                    uploaderName: props.v.uploaderName,
+                    uploaderUrl: props.v.uploaderUrl,
+                    uploaderAvatar: props.v.uploaderAvatar,
+                    views: props.v.views,
+                    uploaded: props.v.uploaded,
+                    thumbnail: props.v.thumbnail,
+                    uploaderVerified: props.v.uploaderVerified,
+                  }
+                } as Record<string, RelatedStream>
+                );
+                toast.success(`Added "${props.v.title.length > 20 ? props.v.title.slice(0, 20) + "..." : props.v.title}" to watch later.`)
+              } catch (e) {
+                toast.error("Failed to add to watch later. " + (e as any).message);
+                console.error(e);
+              }
+
+            }}
+            class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+          >
+
+            <div class="flex items-center gap-2">
+              <TbClockPlus
+                class=""
+              />
+              <div class="text-text1">Watch later</div>
             </div>
           </DropdownMenu.Item>
           <Show when={props.progress === undefined}>
@@ -116,6 +160,80 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
               </div>
             </DropdownMenu.Item>
           </Show>
+            <DropdownMenu.Item
+              class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              onPointerUp={(e) => {
+                e.stopPropagation();
+              }}
+              onSelect={() => {
+              }}
+            >
+              <div class="flex items-center gap-2">
+                <FaSolidShare />
+                <div class="text-text1">Share</div>
+              </div>
+            </DropdownMenu.Item>
+          <DropdownMenu.Group class="mt-2">
+            <DropdownMenu.GroupLabel class="flex items-center gap-2">
+              <img
+                src={props.v.uploaderAvatar ?? ""}
+                class="w-6 h-6 rounded-full"
+              />
+              <span class="text-text2 max-w-xs truncate">{props.v.uploaderName}</span>
+            </DropdownMenu.GroupLabel>
+            <DropdownMenu.Item
+              class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border- hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              onPointerUp={(e) => {
+                e.stopPropagation();
+              }}
+              onSelect={() => {
+                const id = props.v.uploaderUrl.split("/channel/")[1];
+                const isSubscribed = sync.store.subscriptions[id];
+                if (isSubscribed) {
+                  sync.setStore("subscriptions", id, undefined!);
+                  toast.success(`Unsubscribed from ${props.v.uploaderName}.`);
+                } else {
+                  sync.setStore("subscriptions", id, { subscribedAt: Date.now() });
+                  toast.success(`Subscribed to ${props.v.uploaderName}.`);
+                }
+              }}
+            >
+              <div class="flex items-center gap-2">
+                <Show when={sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
+                  <FaSolidHeartCircleMinus />
+                </Show>
+                <Show when={!sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
+                  <FaSolidHeartCirclePlus />
+                </Show>
+                <div class="text-text1">
+                  {sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]] ? "Unsubscribe" : "Subscribe"}
+                </div>
+
+              </div>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              onPointerUp={(e) => {
+                e.stopPropagation();
+              }}
+              onSelect={() => { }}
+            >
+              <div class="flex items-center gap-2">
+                <FaSolidBan />
+                <div class="text-text1">Block</div>
+              </div>
+            </DropdownMenu.Item>
+          </DropdownMenu.Group>
+
           <DropdownMenu.Item
             class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded  hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
             onSelect={() => setModalOpen(true)}
@@ -137,7 +255,7 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
         {JSON.stringify(props.v, null, 2)}
       </pre>
     </Modal>
-    <PlaylistModal isOpen={playlistModalOpen()} setIsOpen={setPlaylistModalOpen} />
+    <PlaylistModal isOpen={playlistModalOpen()} setIsOpen={setPlaylistModalOpen} v={props.v} />
   </>
   )
 }
@@ -149,43 +267,107 @@ const PlaylistModal = (props: {
   const createPlaylist = () => {
     const name = prompt("Playlist name");
     if (!name) return;
-    const id = `conduit-${createUniqueId()}`;
+    const id = `conduit-${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}`;
+    const playlist: ConduitPlaylist = {
+      name,
+      relatedStreams: [],
+      videos: 0,
+      uploader: "You",
+      description: "",
+      bannerUrl: "",
+      uploaderAvatar: "",
+      uploaderUrl: "",
+      thumbnailUrl: "",
+      nextpage: "",
+    }
     sync.setStore("playlists", {
-      [id]: {
-        name,
-        videos: [props.v],
-      },
+      [id]: playlist,
     });
   }
+  const [list, setList] = createSignal({ value: "", label: "", disabled: false });
   return (
     <Modal
       isOpen={props.isOpen}
       setIsOpen={props.setIsOpen}
       title="Add to playlist"
     >
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-4">
         <Switch>
-          <Match when={Object.keys(useSyncStore().store.playlists).length === 0}>
+          <Match when={Object.keys(sync.store.playlists).length === 0}>
             <div class="flex items-center gap-2">
               <div class="text-text1">You don't have any playlists yet.</div>
             </div>
           </Match>
-          <Match when={Object.keys(useSyncStore().store.playlists).length > 0}>
+          <Match when={Object.keys(sync.store.playlists).length > 0}>
             <div class="text-text1">Select a playlist to add this video to:</div>
-            <For each={Object.entries(useSyncStore().store.playlists)}>
-              {([id, playlist]) => (
-                <div class="flex items-center gap-2">
-                  <div class="text-text1">{playlist.name}</div>
-                </div>
-              )}
-            </For>
+            <div class=" w-full flex justify-center items-center mb-2">
+              <Select
+                options={Object.entries(sync.store.playlists).map(([id, playlist]) => ({
+                  value: id,
+                  label: playlist.name,
+                  disabled: playlist.relatedStreams?.some((v) => v.url === props.v.url),
+                }))}
+                value={list()}
+                onChange={setList}
+                placeholder="Select a playlist..."
+              />
+            </div>
           </Match>
         </Switch>
       </div>
-      <div class="flex items-center gap-2">
-        <Button label="Create a playlist" onClick={() => createPlaylist()} />
+      <div class="flex items-center justify-center gap-4 my-2">
+        <Button
+          appearance="subtle"
+          label="Create a playlist" onClick={() => createPlaylist()} />
+        <Button
+          onClick={() => {
+            console.log(props.v, list(), sync.store.playlists[list().value]?.relatedStreams)
+            try {
+              const playlist = sync.store.playlists[list().value]
+              const order = playlist?.relatedStreams.length || 0;
+              sync.setStore("playlists", list().value, "relatedStreams", [...playlist.relatedStreams, {
+                url: props.v.url,
+                title: props.v.title,
+                type: props.v.type,
+                duration: props.v.duration,
+                thumbnail: props.v.thumbnail,
+                uploaderName: props.v.uploaderName,
+                uploaderUrl: props.v.uploaderUrl,
+                uploaderAvatar: props.v.uploaderAvatar,
+                views: props.v.views,
+                uploaded: props.v.uploaded,
+                uploaderVerified: props.v.uploaderVerified,
+                shortDescription: "",
+                uploadedDate: props.v.uploadedDate,
+                isShort: props.v.isShort,
+                order,
+                timeAdded: Date.now(),
+              }])
+              toast.success(`Added "${props.v.title.length > 20 ? props.v.title.slice(0, 20) + "..." : props.v.title}" to playlist "${playlist.name}".`)
+              props.setIsOpen(false);
+            } catch (e) {
+              toast.error("Failed to add to playlist. " + (e as any).message);
+              console.error(e);
+            }
+          }}
+          label="Add"
+          isDisabled={!list().value}
+          appearance="primary"
+        />
       </div>
 
     </Modal>
   )
+}
+
+function extractVideoProps<T extends RelatedStream, U extends keyof T>(
+  v: T
+): Pick<T, U> {
+  let result: Pick<T, U> = {} as Pick<T, U>;
+  for (let key in v) {
+    if (result.hasOwnProperty(key)) {
+      (result as any)[key] = v[key];
+    }
+  }
+  return result;
 }

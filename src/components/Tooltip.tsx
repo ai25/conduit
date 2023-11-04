@@ -1,5 +1,5 @@
 
-import type { JSX } from "solid-js";
+import { createEffect, createSignal, JSX } from "solid-js";
 import { Tooltip as KobalteTooltip } from "@kobalte/core";
 
 export type TooltipPlacement = "top" | "bottom" | "left" | "right" | "top-end" | "left-end" | "right-end" | "bottom-end" | "top-start" | "left-start" | "right-start" | "bottom-start";
@@ -35,23 +35,43 @@ export function Tooltip(props: TooltipProps) {
         return "tooltip animate-out fade-out slide-out-to-bottom-2 data-[expanded]:animate-in data-[expanded]:fade-in data-[expanded]:slide-in-from-bottom-4";
     }
   };
+  const [isOpen, setIsOpen] = createSignal(props.open ?? false);
+  createEffect(() => {
+    setOpen(props.open ?? false);
+  });
+
+  let timerId: NodeJS.Timeout | null = null;
+  const setOpen = (value: boolean) => {
+    if (props.disabled) return;
+    if (timerId) clearTimeout(timerId);
+    if (value === false) return setIsOpen(false)
+    timerId = setTimeout(() => {
+      setIsOpen(value);
+    }, props.openDelay ?? 0);
+  };
+
+
 
   return (
     <KobalteTooltip.Root
       placement={props.placement}
       gutter={props.gutter ?? 8}
-      open={props.open}
+      open={isOpen()}
       onOpenChange={props.onOpenChange}
       openDelay={props.openDelay ?? 0}
     >
       <KobalteTooltip.Trigger as={props.as ?? "button"}
         onFocus={props.onFocus}
+        onFocusIn={()=>setOpen(true)}
+        onFocusOut={()=>setOpen(false)}
+        onMouseEnter={()=>setOpen(true)}
+        onMouseLeave={()=>setOpen(false)}
         disabled={props.disabled} class={props.class} onClick={props.onClick} >
         {props.triggerSlot}
       </KobalteTooltip.Trigger>
       <KobalteTooltip.Portal>
         <KobalteTooltip.Content
-          class={`${animation()} z-10 rounded-sm bg-black/90 px-2 py-0.5 text-sm font-medium font-sans text-white`}
+          class={`${animation()} z-[99999999] rounded-sm bg-black/90 px-2 py-0.5 text-sm font-medium font-sans text-white`}
         >
           {props.contentSlot}
         </KobalteTooltip.Content>

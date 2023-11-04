@@ -41,7 +41,7 @@ import { MediaPlayerElement } from "vidstack/elements";
 import { VideoLayout } from "./player/layouts/VideoLayout";
 import { usePreferences } from "~/stores/preferencesStore";
 import { createQuery } from "@tanstack/solid-query";
-import { generateStoryboard, getVideoId, yieldToMain } from "~/utils/helpers";
+import { generateStoryboard, getVideoId, isMobile, yieldToMain } from "~/utils/helpers";
 import { ActionHandlers, initMediaSession, MediaMetadataProps, updateProgress } from "~/utils/player-helpers";
 import api from "~/utils/api";
 
@@ -534,6 +534,11 @@ export default function Player(props: {
         startLevel: 13,
         backBufferLength: 300,
         maxBufferLength: 400,
+        debug: true,
+        appendErrorMaxRetry: 10,
+        levelLoadingMaxRetry: 10,
+        manifestLoadingMaxRetry: 10,
+
       };
     }
   };
@@ -988,9 +993,7 @@ export default function Player(props: {
         muted={preferences.muted}
         volume={preferences.volume}
         onMouseMove={() => {
-          if (typeof screen.orientation !== undefined) {
-            return
-          }
+          if (isMobile()) return;
           showControls();
         }}
         onMouseLeave={() => {

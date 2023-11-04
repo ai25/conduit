@@ -1,11 +1,9 @@
 
 import { toaster } from "@kobalte/core";
 import { createEffect, createSignal, For, Show } from "solid-js";
-import { videoId } from "~/routes/library/history";
 import { usePreferences } from "~/stores/preferencesStore";
 import Field from "./Field";
 import Modal from "./Modal";
-import ToastComponent from "./Toast";
 import { PipedVideo, RelatedStream } from "~/types";
 import VideoCard from "./VideoCard";
 
@@ -27,6 +25,7 @@ export default function DownloadModal(props: {
   const [qualities, setQualities] = createSignal<Quality[] | null>(null);
   const [preferences] = usePreferences();
   createEffect(async () => {
+    if (!props.isOpen) return;
     const res = await fetch(`${preferences.instance.api_url}/streams/${props.id}`);
     const data = await res.json() as PipedVideo;
     setVideo(data);

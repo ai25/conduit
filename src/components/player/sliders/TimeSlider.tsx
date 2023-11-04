@@ -4,7 +4,7 @@ import { SliderThumb } from "./SliderThumb";
 
 export function TimeSlider(props: TimeSliderProps) {
   return (
-    <media-time-slider class="group relative mx-[7.5px] inline-flex h-10 w-full cursor-pointer touch-none select-none items-center outline-none">
+    <media-time-slider class="group relative mx-[7.5px] inline-flex h-1 mb-2 py-2 w-full cursor-pointer touch-none select-none items-center outline-none">
       <SliderChapters />
       <SliderThumb />
       <SliderPreview thumbnails={props.thumbnails}>

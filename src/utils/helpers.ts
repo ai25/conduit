@@ -155,3 +155,7 @@ export async function exponentialBackoff<T>(
     }
   }
 }
+
+export function isMobile() {
+  return navigator.maxTouchPoints > 1 && typeof screen.orientation !== undefined;
+}

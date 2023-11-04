@@ -171,6 +171,15 @@ export interface Playlist {
   videos: number;
   relatedStreams: RelatedStream[];
 }
+export interface ConduitPlaylist extends Playlist {
+  relatedStreams: (RelatedStream & {
+    order: number;
+    timeAdded: number;
+  })[];
+
+
+}
+
 export interface RelatedStream {
   url: string;
   type: string;

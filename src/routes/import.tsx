@@ -36,7 +36,7 @@ export default function Import() {
           const url = item.getAttribute("xmlUrl");
           const id = url?.slice(-24);
           if (id) {
-            setSubscriptions({[id]: {subscribedAt: Date.now()}});
+            setSubscriptions((subs)=>({...subs, [id]: {subscribedAt: Date.now()}}));
           }
         });
       }
@@ -45,7 +45,7 @@ export default function Import() {
         console.log("LibreTube");
         const json = JSON.parse(text);
         json.localSubscriptions.forEach((item: any) => {
-          setSubscriptions({[item.channelId]: {subscribedAt: Date.now()}});
+          setSubscriptions((subs)=>({...subs, [item.channelId]: {subscribedAt: Date.now()}}));
         });
       }
       // NewPipe
@@ -57,7 +57,7 @@ export default function Import() {
           .forEach((item: any) => {
             const url = item.url;
             const id = url.slice(-24);
-            setSubscriptions({[id]: {subscribedAt: Date.now()}});
+            setSubscriptions((subs)=>({...subs, [id]: {subscribedAt: Date.now()}}));
           });
       }
       // Invidious JSON
@@ -73,7 +73,7 @@ export default function Import() {
         console.log("FreeTube DB");
         const json = JSON.parse(text);
         json.subscriptions.forEach((item: any) => {
-          setSubscriptions({[item.id]: {subscribedAt: Date.now()}});
+          setSubscriptions((subs) => ({...subs, [item.id]: {subscribedAt: Date.now()}}));
         });
       }
       //FreeTube JSON
@@ -81,7 +81,7 @@ export default function Import() {
         console.log("FreeTube JSON");
         const json = JSON.parse(text);
         json.subscriptions.forEach((item: any) => {
-          setSubscriptions({[item.id]: {subscribedAt: Date.now()}});
+          setSubscriptions((subs) => ({...subs, [item.id]: {subscribedAt: Date.now()}}));
         });
       }
       // Google Takeout JSON
@@ -90,7 +90,7 @@ export default function Import() {
         const json = JSON.parse(text);
         json.forEach((item: any) => {
           const id = item.snippet.resourceId.channelId;
-          setSubscriptions({[id]: {subscribedAt: Date.now()}});
+          setSubscriptions((subs) => ({...subs, [id]: {subscribedAt: Date.now()}}));
         });
       }
 
@@ -105,7 +105,7 @@ export default function Import() {
           const line = lines[i];
           const id = line.slice(0, line.indexOf(","));
           if (id.length === 24)
-            setSubscriptions({[id]: {subscribedAt: Date.now()}});
+            setSubscriptions((subs) => ({...subs, [id]: {subscribedAt: Date.now()}}));
         }
       }
     });
