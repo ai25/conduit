@@ -1,5 +1,6 @@
 import { createEffect, createSignal } from "solid-js";
 import { isServer } from "solid-js/web";
+import { toast } from "~/components/Toast";
 import { useSyncStore } from "~/stores/syncStore";
 
 export default function Debug() {
@@ -49,6 +50,18 @@ export default function Debug() {
   const isUnlimitedStorageEnabled = async () => {
     if (isServer) return false;
     return await navigator.storage.persisted();
+  }
+
+  const enableUnlimitedStorage = async () => {
+    if (isServer) return false;
+    await navigator.storage.persist().then((granted) => {
+      if (granted) {
+        toast.success("Unlimited storage enabled");
+        setUnlimitedStorageEnabled(true);
+      } else {
+        toast.error("Unlimited storage not enabled");
+      }
+    });
   }
 
 
@@ -112,6 +125,7 @@ export default function Debug() {
           <div class="flex flex-row justify-between">
             <div class="font-bold">Unlimited Storage Enabled</div>
             <div>{unlimitedStorageEnabled() ? "Enabled" : "Not enabled"}</div>
+            <span class="cursor-pointer underline text-primary" onClick={enableUnlimitedStorage}>Enable</span>
           </div>
         </div>
       </div>
