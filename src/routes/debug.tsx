@@ -2,7 +2,7 @@ import { createEffect, createSignal } from "solid-js";
 import { isServer } from "solid-js/web";
 import { toast } from "~/components/Toast";
 import { useSyncStore } from "~/stores/syncStore";
-import { SharedService } from "~/utils/SharedService";
+import { createSharedServicePort, SharedService } from "~/utils/SharedService";
 
 export default function Debug() {
   const sync = useSyncStore();
@@ -44,23 +44,23 @@ export default function Debug() {
     if (isServer) return false;
     return typeof navigator.locks !== "undefined";
   }
-  const isUnlimitedStorageSupported = () => {
+  const isPersistentStorageSupported = () => {
     if (isServer) return false;
     return typeof navigator.storage.persist !== "undefined";
   }
-  const isUnlimitedStorageEnabled = async () => {
+  const isPersistentStorageEnabled = async () => {
     if (isServer) return false;
     return await navigator.storage.persisted();
   }
 
-  const enableUnlimitedStorage = async () => {
+  const enablePersistentStorage = async () => {
     if (isServer) return false;
     await navigator.storage.persist().then((granted) => {
       if (granted) {
-        toast.success("Unlimited storage enabled");
-        setUnlimitedStorageEnabled(true);
+        toast.success("Persistent storage enabled");
+        setPersistentStorageEnabled(true);
       } else {
-        toast.error("Unlimited storage not enabled");
+        toast.error("Persistent storage not enabled");
       }
     });
   }
@@ -108,12 +108,53 @@ export default function Debug() {
     );
 
   }
-  // const isSharedServiceWorking = async () => {
-  //   if (isServer) return false;
-  //   const sharedService = new SharedService("test");
-  //     sharedService.activate((e) => {
-  //       console.log("shared service", e);
-  //     }
+  const isSharedServiceWorking = async () => {
+    if (isServer) return false;
+    const workerScript = `
+    self.onmessage = async () => {
+        self.postMessage(true);
+    }
+    `;
+    const worker = new Worker(URL.createObjectURL(new Blob([workerScript])));
+
+    const sharedService = new SharedService("test", () => {
+      return createSharedServicePort({
+        read: async () => {
+          console.log("Calling read");
+          return new Promise((resolve, reject) => {
+
+            const messageHandler = (event: MessageEvent) => {
+              resolve(event.data);
+              worker?.removeEventListener("message", messageHandler);
+            };
+
+            const errorHandler = (error: Event) => {
+              if (error instanceof ErrorEvent) {
+                reject(error);
+              }
+              worker?.removeEventListener("error", errorHandler);
+            };
+            worker.onerror = errorHandler;
+            worker.onmessage = messageHandler;
+
+            worker.postMessage("");
+          });
+        }
+      });
+    });
+
+    try {
+    await sharedService.activate(async () => {
+      const res = await sharedService?.proxy["read"]();
+      console.log("res", res);
+      return res;
+    });
+    return true;
+    } catch (e) {
+      console.error("Error connecting to shared service", e);
+      return false;
+    }
+  }
 
 
 
@@ -123,28 +164,30 @@ export default function Debug() {
   const [opfsSupported, setOPFSSupported] = createSignal(false);
   const [webRTCSupported, setWebRTCSupported] = createSignal(false);
   const [serviceWorkerEnabled, setServiceWorkerEnabled] = createSignal(false);
-  const [unlimitedStorageEnabled, setUnlimitedStorageEnabled] = createSignal(false);
+  const [persistentStorageEnabled, setPersistentStorageEnabled] = createSignal(false);
   const [webWorkerSupported, setWebWorkerSupported] = createSignal(false);
   const [locksSupported, setLocksSupported] = createSignal(false);
-  const [unlimitedStorageSupported, setUnlimitedStorageSupported] = createSignal(false);
+  const [persistentStorageSupported, setPersistentStorageSupported] = createSignal(false);
   const [serviceWorkerSupported, setServiceWorkerSupported] = createSignal(false);
   const [createSyncAccessHandleEnabled, setCreateSyncAccessHandleEnabled] = createSignal(false);
   const [messageChannelSupported, setMessageChannelSupported] = createSignal(false);
   const [broadcastChannelSupported, setBroadcastChannelSupported] = createSignal(false);
+  const [sharedServiceWorking, setSharedServiceWorking] = createSignal(false);
 
 
   createEffect(async () => {
     setOPFSSupported(await isOPFSSupported());
     setWebRTCSupported(await isWebRTCSupported());
     setServiceWorkerEnabled(await isServiceWorkerEnabled());
-    setUnlimitedStorageEnabled(await isUnlimitedStorageEnabled());
+    setPersistentStorageEnabled(await isPersistentStorageEnabled());
     setWebWorkerSupported(isWebWorkerSupported());
     setLocksSupported(isLocksSupported());
-    setUnlimitedStorageSupported(isUnlimitedStorageSupported());
+    setPersistentStorageSupported(isPersistentStorageSupported());
     setServiceWorkerSupported(isServiceWorkerSupported());
     setCreateSyncAccessHandleEnabled(await isCreateSyncAccessHandleEnabled());
     setMessageChannelSupported(isMessageChannelSupported());
     setBroadcastChannelSupported(isBroadcastChannelSupported());
+    setSharedServiceWorking(await isSharedServiceWorking());
 
   });
 
@@ -180,13 +223,13 @@ export default function Debug() {
             <div>{locksSupported() ? "Supported" : "Not supported"}</div>
           </div>
           <div class="flex flex-row justify-between">
-            <div class="font-bold">Unlimited Storage</div>
-            <div>{unlimitedStorageSupported() ? "Supported" : "Not supported"}</div>
+            <div class="font-bold">Persistent Storage</div>
+            <div>{persistentStorageSupported() ? "Supported" : "Not supported"}</div>
           </div>
           <div class="flex flex-row justify-between">
-            <div class="font-bold">Unlimited Storage Enabled</div>
-            <div>{unlimitedStorageEnabled() ? "Enabled" : "Not enabled"}</div>
-            <span class="cursor-pointer underline text-primary" onClick={enableUnlimitedStorage}>Enable</span>
+            <div class="font-bold">Persistent Storage Enabled</div>
+            <div>{persistentStorageEnabled() ? "Enabled" : "Not enabled"}</div>
+            <span class="cursor-pointer underline text-primary" onClick={enablePersistentStorage}>Enable</span>
           </div>
           <div class="flex flex-row justify-between">
             <div class="font-bold">Create Sync Access Handle</div>
@@ -199,6 +242,10 @@ export default function Debug() {
           <div class="flex flex-row justify-between">
             <div class="font-bold">Broadcast Channel</div>
             <div>{broadcastChannelSupported() ? "Supported" : "Not supported"}</div>
+          </div>
+          <div class="flex flex-row justify-between">
+            <div class="font-bold">Shared Service</div>
+            <div>{sharedServiceWorking() ? "Working" : "Not working"}</div>
           </div>
         </div>
       </div>
