@@ -58,7 +58,7 @@ export default class OpfsPersistence extends ObservableV2<{
       });
 
     ydoc.on("update", (update, origin) => {
-      this._storeUpdate(update, this._getSessionId());
+      this._storeUpdate(update, origin);
     });
     ydoc.on("destroy", () => {
       this.destroy();
@@ -76,9 +76,9 @@ export default class OpfsPersistence extends ObservableV2<{
   
 
   private _storeUpdate = async (update: any, origin: any) => {
-    this.log("Received update from Y.Doc...");
     const sessionId = this._getSessionId();
-    if (origin !== sessionId && !this._destroyed) {
+    this.log("Received update from Y.Doc...", update, origin, sessionId);
+    if (origin !== this && !this._destroyed) {
       if (this._timerId) {
         clearTimeout(this._timerId);
       }
@@ -99,9 +99,20 @@ export default class OpfsPersistence extends ObservableV2<{
         origin,
         this
       );
+      const prev = await this._sharedService?.proxy["read"]();
+      console.log("prev", prev);
+      const { updates }: { updates: Uint8Array[] } = prev;
+      const combined = Y.mergeUpdates(updates);
+      const vector = Y.encodeStateVectorFromUpdate(combined);
+      const diff = Y.diffUpdate(update, vector);
+      console.log("diff", diff);
+      console.log(combined.byteLength, update.byteLength);
+      const diffSizeMB = diff.byteLength / 1024;
+      const updateSizeMB = update.byteLength / 1024;
+      console.log(`diff size: ${diffSizeMB.toFixed(2)} KB, updates size: ${updateSizeMB.toFixed(2)} KB`);
 
       // console.log("write", update.length, diff.length);
-      this._sharedService?.proxy["write"](update);
+      this._sharedService?.proxy["write"](diff);
 
       if (++this._updateCount >= 10) {
         if (this._storeTimeoutId !== null) {
