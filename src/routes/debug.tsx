@@ -2,6 +2,7 @@ import { createEffect, createSignal } from "solid-js";
 import { isServer } from "solid-js/web";
 import { toast } from "~/components/Toast";
 import { useSyncStore } from "~/stores/syncStore";
+import { SharedService } from "~/utils/SharedService";
 
 export default function Debug() {
   const sync = useSyncStore();
@@ -64,6 +65,60 @@ export default function Debug() {
     });
   }
 
+  const isMessageChannelSupported = () => {
+    if (isServer) return false;
+    return typeof MessageChannel !== "undefined";
+  }
+
+  const isBroadcastChannelSupported = () => {
+    if (isServer) return false;
+    return typeof BroadcastChannel !== "undefined";
+  }
+
+  const isCreateSyncAccessHandleEnabled = async () => {
+    if (isServer) return false;
+    const workerScript = `
+    self.onmessage = async () => {
+    console.log("worker");
+    try {
+    console.log("trying to get directory");
+    const handle = await navigator.storage.getDirectory();
+    const file = await handle.getFileHandle("test.txt", { create: true });
+    console.log("got file");
+    const accessHandle = await file.createSyncAccessHandle();
+    console.log("got access handle");
+    accessHandle.write(new TextEncoder().encode("test"));
+    accessHandle.flush();
+    accessHandle.close();
+    console.log("wrote to file");
+    self.postMessage(true);
+    } catch (e) {
+      console.error("Error while creating sync access handle", e);
+      self.postMessage(false);
+    }
+    }
+    `;
+    const worker = new Worker(URL.createObjectURL(new Blob([workerScript])));
+    return new Promise<boolean>((resolve) => {
+      worker.onmessage = (e) => {
+        resolve(e.data);
+      };
+      worker.postMessage("");
+    }
+    );
+
+  }
+  // const isSharedServiceWorking = async () => {
+  //   if (isServer) return false;
+  //   const sharedService = new SharedService("test");
+  //     sharedService.activate((e) => {
+  //       console.log("shared service", e);
+  //     }
+
+
+
+
+
 
   const [opfsSupported, setOPFSSupported] = createSignal(false);
   const [webRTCSupported, setWebRTCSupported] = createSignal(false);
@@ -73,6 +128,9 @@ export default function Debug() {
   const [locksSupported, setLocksSupported] = createSignal(false);
   const [unlimitedStorageSupported, setUnlimitedStorageSupported] = createSignal(false);
   const [serviceWorkerSupported, setServiceWorkerSupported] = createSignal(false);
+  const [createSyncAccessHandleEnabled, setCreateSyncAccessHandleEnabled] = createSignal(false);
+  const [messageChannelSupported, setMessageChannelSupported] = createSignal(false);
+  const [broadcastChannelSupported, setBroadcastChannelSupported] = createSignal(false);
 
 
   createEffect(async () => {
@@ -84,6 +142,9 @@ export default function Debug() {
     setLocksSupported(isLocksSupported());
     setUnlimitedStorageSupported(isUnlimitedStorageSupported());
     setServiceWorkerSupported(isServiceWorkerSupported());
+    setCreateSyncAccessHandleEnabled(await isCreateSyncAccessHandleEnabled());
+    setMessageChannelSupported(isMessageChannelSupported());
+    setBroadcastChannelSupported(isBroadcastChannelSupported());
 
   });
 
@@ -126,6 +187,18 @@ export default function Debug() {
             <div class="font-bold">Unlimited Storage Enabled</div>
             <div>{unlimitedStorageEnabled() ? "Enabled" : "Not enabled"}</div>
             <span class="cursor-pointer underline text-primary" onClick={enableUnlimitedStorage}>Enable</span>
+          </div>
+          <div class="flex flex-row justify-between">
+            <div class="font-bold">Create Sync Access Handle</div>
+            <div>{createSyncAccessHandleEnabled() ? "Enabled" : "Not enabled"}</div>
+          </div>
+          <div class="flex flex-row justify-between">
+            <div class="font-bold">Message Channel</div>
+            <div>{messageChannelSupported() ? "Supported" : "Not supported"}</div>
+          </div>
+          <div class="flex flex-row justify-between">
+            <div class="font-bold">Broadcast Channel</div>
+            <div>{broadcastChannelSupported() ? "Supported" : "Not supported"}</div>
           </div>
         </div>
       </div>
