@@ -227,6 +227,7 @@ export default class OpfsPersistence extends ObservableV2<{
         }
       });
     });
+    console.log("this._sharedService", this._sharedService);
 
     await this._sharedService.activate(async () => {
       console.log("Destroyed?", this._destroyed, "synced?", this.synced);
@@ -262,7 +263,8 @@ export default class OpfsPersistence extends ObservableV2<{
       this.synced = true;
 
       console.timeEnd("OPFS");
-    });
+    })
+
   }
 
   async destroy() {

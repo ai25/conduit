@@ -42,6 +42,7 @@ export class SharedService extends EventTarget {
     this.#portProviderFunc = portProviderFunc;
 
     this.#clientId = this.#getClientId();
+    console.log("SharedService clientId", this.#clientId);
 
     this.#providerPort = this.#providerChange();
     this.#clientChannel.addEventListener(
@@ -64,7 +65,8 @@ export class SharedService extends EventTarget {
     this.proxy = this.#createProxy();
   }
 
-  async activate(callback: () => void) {
+  async activate(callback: () => void): Promise<void>
+{
     console.log("SharedService activate called");
 
     if (this.#onDeactivate) {
@@ -93,11 +95,13 @@ export class SharedService extends EventTarget {
               "An error occurred within the lock-acquired section:",
               innerError
             );
+            throw innerError;
           }
         }
       );
     } catch (error) {
       console.error("Error in lock acquisition or execution:", error);
+      throw error;
     } finally {
       console.log("SharedService lock released");
       this.cleanupResources();

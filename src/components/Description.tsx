@@ -232,7 +232,7 @@ const Description = (props: {
                   </div>
                 </div>
 
-                <SubscribeButton id={getVideoId(videoQuery.data)!} />
+                <SubscribeButton id={(()=>videoQuery.data?.uploaderUrl?.split("/channel/")[1])()??""} />
               </div>
             </div>
             <div class="flex items-center justify-evenly rounded p-2 bg-bg2">
@@ -316,9 +316,14 @@ const Description = (props: {
                 return substr.slice(0, substr.length - 3);
               })()} • ${numeral(videoQuery.data!.views).format("0,0")} views`}
               class="flex items-center gap-1 my-1 text-sm truncate max-w-full">
-              <p class="">{timeAgo()}</p>•
+              <p class="">{(() => {
+                const substr = date()
+                  .toString()
+                  .split(":")[0];
+                return substr.slice(0, substr.length - 3);
+              })()}</p>•
               <p class="">
-                {numeral(videoQuery.data!.views).format("0a").toUpperCase()} views
+                {numeral(videoQuery.data!.views).format("0.00a").toUpperCase()} views
               </p>
               <div class="flex flex-col w-32 ml-auto ">
                 <div class="flex items-center justify-between ">

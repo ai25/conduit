@@ -534,7 +534,6 @@ export default function Player(props: {
         startLevel: 13,
         backBufferLength: 300,
         maxBufferLength: 400,
-        debug: true,
         appendErrorMaxRetry: 10,
         levelLoadingMaxRetry: 10,
         manifestLoadingMaxRetry: 10,

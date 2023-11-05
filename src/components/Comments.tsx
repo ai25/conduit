@@ -26,6 +26,13 @@ export default function Comments(props: { videoId: string; uploader: string }) {
       );
     }
   };
+  const [playerHeight, setPlayerHeight] = createSignal(0);
+  createEffect(() => {
+    const player = document.querySelector("media-player");
+    if (player) {
+      setPlayerHeight(player.clientHeight + 50);
+    }
+  });
 
   const query = createInfiniteQuery(
     () => ["comments", props.videoId, preferences.instance.api_url],
@@ -69,8 +76,8 @@ export default function Comments(props: { videoId: string; uploader: string }) {
           {commentsOpen() && (
             <Bottomsheet
               variant="snap"
-              defaultSnapPoint={({ maxHeight }) => maxHeight / 2}
-              snapPoints={({ maxHeight }) => [maxHeight - 40, maxHeight / 2]}
+              defaultSnapPoint={({ maxHeight }) => maxHeight - playerHeight() ?? 300}
+              snapPoints={({ maxHeight }) => [maxHeight - 40, maxHeight - playerHeight() ?? 300]}
               onClose={() => {
                 console.log("close");
                 setCommentsOpen(false);

@@ -70,7 +70,7 @@ export default function Button(props: {
       </Show>
       <Show when={props.isLoading}>
         <LoadingDots
-          class="absolute mx-auto my-auto"
+          class="absolute h-full w-full top-0.5 left-0 flex items-center justify-center"
         />
       </Show>
 

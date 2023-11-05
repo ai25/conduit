@@ -24,6 +24,8 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
       open={dropdownOpen()}
       onOpenChange={setDropdownOpen}
       gutter={0}
+      modal={true}
+      hideWhenDetached={true}
     >
       <DropdownMenu.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
         <BsThreeDotsVertical
@@ -32,7 +34,10 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
         />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content class="bg-bg1 border border-bg2 shadow p-2 rounded-md z-50
+        <DropdownMenu.Content
+          onTouchEnd={(e) => {e.preventDefault(); e.stopPropagation();}}
+      
+          class="bg-bg1 border border-bg2 shadow p-2 rounded-md z-50
                 -translate-y-4
                 animate-in
                 fade-in
@@ -111,6 +116,10 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
                 e.stopPropagation();
               }}
               as="button"
+              onTouchEnd={(e) => {
+                e.preventDefault()
+                e.stopPropagation();
+              }}
               onSelect={() => {
                 if (!props.v) return;
                 const item = {
@@ -145,7 +154,8 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
               onClick={(e) => {
                 e.stopPropagation();
               }}
-              onPointerUp={(e) => {
+              onTouchEnd={(e) => {
+                e.preventDefault()
                 e.stopPropagation();
               }}
               onSelect={() => {

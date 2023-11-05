@@ -9,7 +9,7 @@ import {
 } from "solid-js";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { WebrtcProvider } from "y-webrtc";
-import { Playlist, Preferences, RelatedStream } from "~/types";
+import { ConduitPlaylist, Playlist, Preferences, RelatedStream } from "~/types";
 import * as Y from "yjs";
 import { createStore } from "solid-js/store";
 import createYjsStore from "~/lib/createYjsStore";
@@ -29,7 +29,7 @@ export type HistoryItem = RelatedStream & {
 };
 
 export interface Store extends DocTypeDescription {
-  playlists: Record<string, Playlist>;
+  playlists: Record<string, ConduitPlaylist>;
   history: Record<string, HistoryItem>;
   subscriptions: Record<string, { subscribedAt: number }>;
   preferences: Preferences;
@@ -152,13 +152,15 @@ export const SyncedStoreProvider = (props: { children: any }) => {
     //   });
     opfsProvider = new OpfsPersistence(room().id!, doc, true);
     setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTING);
-    opfsProvider.sync();
-    await opfsProvider.whenSynced()
-    opfsProvider.on("error", (e) => {
+    try {
+      opfsProvider.sync();
+      await opfsProvider.whenSynced()
+      setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTED);
+    }
+    catch (e) {
       setAppState("sync", "providers", "opfs", ProviderStatus.DISCONNECTED);
       toast.error("Error syncing with OPFS");
-    });
-    setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTED);
+    };
 
     onCleanup(() => {
       idbProvider?.destroy();
