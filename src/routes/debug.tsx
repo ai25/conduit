@@ -143,17 +143,19 @@ export default function Debug() {
       });
     });
 
+    return new Promise<boolean>(async (resolve) => {
     try {
     await sharedService.activate(async () => {
       const res = await sharedService?.proxy["read"]();
       console.log("res", res);
-      return res;
+      resolve(res === true);
     });
-    return true;
     } catch (e) {
       console.error("Error connecting to shared service", e);
-      return false;
+      resolve(false);
     }
+    });
+
   }
 
 
