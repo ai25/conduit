@@ -78,6 +78,13 @@ export class SharedService extends EventTarget {
     const lockName = `SharedService-${this.#serviceName}`;
 
     console.log(await navigator.locks.query());
+      const lock = (await navigator.locks.query()).held?.find(
+        (lock) => lock.name === lockName
+      );
+    if (lock) {
+      console.log("SharedService lock already held");
+      callback();
+    }
 
     try {
       await navigator.locks.request(

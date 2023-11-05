@@ -66,14 +66,14 @@ export default class OpfsPersistence extends ObservableV2<{
   }
 
   private _getSessionId = (): string => {
-  let sessionId = sessionStorage.getItem("sessionId");
-  if (!sessionId) {
-    sessionId = Math.random().toString(36).substring(2, 15);
-    sessionStorage.setItem("sessionId", sessionId);
-  }
-  return sessionId;
-};
-  
+    let sessionId = sessionStorage.getItem("sessionId");
+    if (!sessionId) {
+      sessionId = Math.random().toString(36).substring(2, 15);
+      sessionStorage.setItem("sessionId", sessionId);
+    }
+    return sessionId;
+  };
+
 
   private _storeUpdate = async (update: any, origin: any) => {
     const sessionId = this._getSessionId();
