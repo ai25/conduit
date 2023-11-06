@@ -58,7 +58,6 @@ export function Tooltip(props: TooltipProps) {
       gutter={props.gutter ?? 8}
       open={isOpen()}
       onOpenChange={props.onOpenChange}
-      openDelay={props.openDelay ?? 0}
     >
       <KobalteTooltip.Trigger as={props.as ?? "button"}
         onFocus={props.onFocus}
@@ -71,7 +70,7 @@ export function Tooltip(props: TooltipProps) {
       </KobalteTooltip.Trigger>
       <KobalteTooltip.Portal>
         <KobalteTooltip.Content
-          class={`${animation()} z-[99999999] rounded-sm bg-black/90 px-2 py-0.5 text-sm font-medium font-sans text-white`}
+          class={`${animation()} z-[99999999] break-words max-w-xs rounded-sm bg-black/90 px-2 py-0.5 text-sm font-medium font-sans text-white`}
         >
           {props.contentSlot}
         </KobalteTooltip.Content>

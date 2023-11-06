@@ -377,11 +377,9 @@ export default function Watch() {
         class="flex lg:flex-row flex-col gap-2 w-full"
       >
           <div class="w-full max-w-full">
-            <Suspense fallback="Watch page loading">
               <Description
                 downloaded={videoDownloaded()}
               />
-            </Suspense>
           </div>
         <div
           class={`flex flex-col gap-2 items-center w-full min-w-0 max-w-max`}

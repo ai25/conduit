@@ -169,6 +169,7 @@ export default class OpfsPersistence extends ObservableV2<{
    * Synchronizes the Y.js document with the stored updates from the OPFS.
    */
   async sync() {
+    try {
     this.log("Synchronizing Y.Doc with OPFS...");
     console.time("OPFS: getStoredUpdates");
     // const { updates } = await this.sendMessage({
@@ -264,6 +265,12 @@ export default class OpfsPersistence extends ObservableV2<{
 
       console.timeEnd("OPFS");
     })
+    } catch (e) {
+      console.error(e);
+      this.destroy();
+      throw e;
+    }
+
 
   }
 

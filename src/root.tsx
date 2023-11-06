@@ -299,9 +299,11 @@ const PlayerContainer = () => {
       staleTime: 100 * 60 * 1000,
     }
   );
+  const location = useLocation();
 
   return (
-    <Show when={videoQuery.data} fallback={v() ? <PlayerLoading /> : null}
+    <Show when={videoQuery.data} fallback={location.pathname === "/watch"
+      ? <PlayerLoading /> : null}
     >
       <Player
         onReload={() => videoQuery.refetch()}

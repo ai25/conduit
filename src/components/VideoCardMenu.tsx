@@ -186,6 +186,7 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
                 <div class="text-text1">Share</div>
               </div>
             </DropdownMenu.Item>
+          <Show when={props.v.uploaderName && props.v.uploaderUrl}>
           <DropdownMenu.Group class="mt-2">
             <DropdownMenu.GroupLabel class="flex items-center gap-2">
               <img
@@ -243,6 +244,7 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
               </div>
             </DropdownMenu.Item>
           </DropdownMenu.Group>
+          </Show>
 
           <DropdownMenu.Item
             class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded  hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"

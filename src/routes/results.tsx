@@ -116,7 +116,7 @@ export default function Search() {
     }
   );
 
-  onMount(() => {
+  createEffect(() => {
     document.title = searchParams.search_query+ " - Conduit";
     saveQueryToHistory();
   });
@@ -212,10 +212,14 @@ export default function Search() {
       >
         <div class="flex items-center justify-between my-2">
           <Select
-            options={availableFilters}
-            defaultValue="all"
-            value={selectedFilter()}
-            onChange={(value) => updateFilter(value)}
+            options={availableFilters.map((filter) => ({
+              value: filter,
+              label: filter
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (l) => l.toUpperCase()),
+            }))}
+            value={{ value: selectedFilter(), label: selectedFilter().replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()), disabled: false }}
+            onChange={(value) => updateFilter(value.value)}
           />
           <button onClick={() => setFiltersModalOpen(true)}>
             Advanced Filters
