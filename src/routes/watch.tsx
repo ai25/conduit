@@ -344,6 +344,10 @@ export default function Watch() {
       });
     }, 100);
   });
+  createEffect(() => {
+    setAppState("player", "dismissed", false);
+    setAppState("player", "small", false);
+  })
   return (
     <div
       class="flex"

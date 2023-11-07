@@ -15,6 +15,10 @@ const store = createStore({
     userId: 0,
     users: [] as { id: number; name: string }[],
   },
+  player: {
+    small: false,
+    dismissed: false,
+  }
 });
 const AppStateContext = createContext(store);
 export const AppStateProvider = (props: { children: any }) => {

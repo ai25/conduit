@@ -19,6 +19,7 @@ import {
   onMount,
   useContext,
   untrack,
+  on,
 } from "solid-js";
 import {
   Chapter,
@@ -44,6 +45,8 @@ import { createQuery } from "@tanstack/solid-query";
 import { generateStoryboard, getVideoId, isMobile, yieldToMain } from "~/utils/helpers";
 import { ActionHandlers, initMediaSession, MediaMetadataProps, updateProgress } from "~/utils/player-helpers";
 import api from "~/utils/api";
+import { PiPLayout } from "./player/layouts/PiPLayout";
+import { useAppState } from "~/stores/appStateStore";
 
 export default function Player(props: {
   // video: PipedVideo;
@@ -673,7 +676,7 @@ export default function Player(props: {
           document.documentElement.requestFullscreen();
           screen.orientation.lock("landscape").catch(() => { });
           setSearchParams({ fullscreen: true }, { replace: true });
-              document.body.scroll({ top: 0, left: 0, behavior: "smooth" });
+          document.body.scroll({ top: 0, left: 0, behavior: "smooth" });
         }
         e.preventDefault();
         break;
@@ -973,6 +976,19 @@ export default function Player(props: {
     if (!nextChapter) return;
     mediaPlayer.currentTime = nextChapter.start;
   };
+  const [appState,setAppState] = useAppState();
+
+  createEffect(()=>{
+    if (route.pathname !== '/watch') {
+      setAppState("player", "small",true);
+    } else {
+      setAppState("player",'small', false);
+      // If returning to '/watch', the player should not be dismissed
+      if (appState.player.dismissed) {
+        setAppState("player",'dismissed', false);
+      }
+    }
+  })
 
 
   return (
@@ -982,7 +998,10 @@ export default function Player(props: {
         classList={{
           " z-[99999] aspect-video bg-slate-900 text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4": true,
           "!absolute inset-0 w-screen h-screen": !!searchParams.fullscreen,
-          "sticky sm:relative top-0": !searchParams.fullscreen,
+          "!sticky sm:relative !top-0": !searchParams.fullscreen,
+          "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
+          "!hidden": appState.player.dismissed,
+
         }}
         current-time={currentTime()}
         // onTextTrackChange={handleTextTrackChange}
@@ -992,6 +1011,7 @@ export default function Player(props: {
         playbackRate={preferences.speed}
         muted={preferences.muted}
         volume={preferences.volume}
+
         onMouseMove={() => {
           if (isMobile()) return;
           showControls();
@@ -1148,22 +1168,27 @@ export default function Player(props: {
             </div>
           </div>
         </Show>
-        <VideoLayout
-          thumbnails={generateStoryboard(videoQuery.data?.previewFrames?.[1])}
-          loop={preferences.loop}
-          chapters={vtt()}
+        <Show when={route.pathname === "/watch"}>
+          <VideoLayout
+            thumbnails={generateStoryboard(videoQuery.data?.previewFrames?.[1])}
+            loop={preferences.loop}
+            chapters={vtt()}
 
-          onLoopChange={(value) => {
-            setPreferences("loop", value);
-          }}
-          navigateNext={nextVideo()?.url ? playNext : undefined}
-          navigatePrev={prevVideo()?.url ? () => {
-            navigate(prevVideo()!.url)
-            setPrevVideo(null);
-          }
-            : undefined}
-          playlist={list()}
-        />
+            onLoopChange={(value) => {
+              setPreferences("loop", value);
+            }}
+            navigateNext={nextVideo()?.url ? playNext : undefined}
+            navigatePrev={prevVideo()?.url ? () => {
+              navigate(prevVideo()!.url)
+              setPrevVideo(null);
+            }
+              : undefined}
+            playlist={list()}
+          />
+        </Show>
+        <Show when={route.pathname !== "/watch"}>
+          <PiPLayout />
+          </Show>
       </media-player>
     </Show>
   );

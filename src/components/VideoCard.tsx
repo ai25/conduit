@@ -78,13 +78,14 @@ const VideoCard = (props: {
   return (
     <div
       classList={{
-        " flex w-full mx-1 items-start rounded-xl bg-bg1 p-2": true,
+        "flex w-full mx-1 items-start rounded-xl bg-bg1 p-2": true,
         "flex-row gap-2 min-w-full": props.layout === "list",
         "flex-col max-w-md sm:w-72 ": props.layout === "grid",
       }}
     >
       <div classList={{
-        "max-w-sm": props.layout === "list",
+        "max-w-sm min-w-min": props.layout === "list",
+        "w-full": props.layout === "grid",
 
       }}>
         <Show when={props.v} fallback={<ImageContainerFallback />}>
@@ -105,16 +106,16 @@ const VideoCard = (props: {
       }}>
         <div classList={{
           "flex flex-col flex-1 gap-2 pr-2 h-full": true,
-          "justify-between": props.layout === "list",
+          "justify-s": props.layout === "list",
         }}
         >
           <Show when={props.v}
             fallback={<div class="flex flex-col gap-1"><div aria-hidden="true"
-              class="animate-pulse bg-bg2 w-full rounded h-4 text-transparent">
-              placeholder placeholder placeholder
+              class="animate-pulse bg-bg2 w-full rounded-lg h-4 text-transparent">
+              placeholder placeholder placeholder placeholder pla
             </div>
               <div aria-hidden="true"
-                class="animate-pulse bg-bg2 w-1/2 h-4 rounded " />
+                class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg " />
 
             </div>}
 
@@ -126,7 +127,7 @@ const VideoCard = (props: {
               triggerSlot={
                 <A
                   href={`/watch?v=${id()}${searchParams.fullscreen? `&fullscreen=${searchParams.fullscreen}` : ""}`}
-                  class="text-start two-line-ellipsis min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  class="text-start two-line-ellipsis min-w-0 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {props.v!.title}
                 </A>
@@ -173,11 +174,11 @@ const ImageContainer = (props: {
   return (
     <A
       href={props.url}
-      class="relative flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative flex aspect-video w-full flex-col overflow-hidden rounded min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{
-          "cursor-pointer w-full aspect-video max-w-md break-words": true,
+          "cursor-pointer w-full aspect-video max-w-md break-words min-w-min": true,
           "saturate-[0.35] opacity-75": props.watched,
         }}
         src={props.src}
@@ -232,16 +233,21 @@ const ImageContainer = (props: {
 
 const ImageContainerFallback = () => {
   return (
-    <div class="relative flex aspect-video w-full flex-col rounded overflow-hidden max-w-md">
+    <div class="relative flex aspect-video w-full flex-col rounded-lg overflow-hidden max-w-md">
       <div class="animate-pulse bg-bg2 aspect-video h-full max-w-max w-full">
-        <img class="bg-bg2 animate-pulse aspect-video h-96 max-w-max w-full invisible"
-          src=""
-          width={2560}
-          height={1440}
+        <div class="bg-bg2 animate-pulse aspect-auto h-96 max-w-fit w-full invisible"
+          // src=""
+          // width={2560}
+          // height={1440}
           aria-hidden="true"
-          alt=""
-          loading="lazy"
-        />
+          // alt=""
+          // loading="lazy"
+        > 
+        placeholder placeholder placeholder placeh
+        placeholder placeholder placeholder placeh
+        placeholder placeholder placeholder placeh
+        placeholder placeholder placeholder placeh
+        </div> 
       </div>
     </div>
   );
@@ -317,10 +323,9 @@ const InfoContainerFallback = () => {
   return (
     <div class="flex flex-col gap-2 pr-2 w-full ">
       <div class="flex gap-2 text-text2">
-        <div class="animate-pulse bg-bg2 w-10 h-10 aspect-square rounded-full"></div>
+        <div class="animate-pulse bg-bg2 w-8 h-8 aspect-square rounded-full"></div>
         <div class="flex w-full flex-col gap-2 justify-center">
-          <div class="animate-pulse bg-bg2 w-1/4 h-3 rounded"></div>
-          <div class="animate-pulse bg-bg2 w-1/2 h-3 rounded"></div>
+          <div class="animate-pulse bg-bg2 w-32 h-4 rounded-lg"></div>
         </div>
       </div>
     </div>
