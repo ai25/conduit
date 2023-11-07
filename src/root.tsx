@@ -302,7 +302,7 @@ const PlayerContainer = () => {
   const location = useLocation();
 
   return (
-    <Show when={videoQuery.data} fallback={location.pathname === "/watch"
+    <Show when={videoQuery.data} fallback={ location.pathname === "/watch"
       ? <PlayerLoading /> : null}
     >
       <Player

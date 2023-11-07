@@ -1,7 +1,7 @@
 import type { RelatedStream } from "~/types";
 import numeral from "numeral";
 // import { DBContext } from "~/routes/layout";
-import { A } from "solid-start";
+import { A, useSearchParams } from "solid-start";
 import {
   Match,
   Show,
@@ -73,6 +73,7 @@ const VideoCard = (props: {
   )
 
   const historyItem = () => id() ? sync.store.history[id()!] : undefined;
+  const [searchParams] = useSearchParams()
 
   return (
     <div
@@ -88,7 +89,7 @@ const VideoCard = (props: {
       }}>
         <Show when={props.v} fallback={<ImageContainerFallback />}>
           <ImageContainer
-            id={id()!}
+            url={`/watch?v=${id()}${searchParams.fullscreen? `&fullscreen=${searchParams.fullscreen}` : ""}`}
             src={thumbnailUrl()}
             duration={props.v!.duration}
             watched={!!historyItem()}
@@ -124,7 +125,7 @@ const VideoCard = (props: {
               openDelay={1000}
               triggerSlot={
                 <A
-                  href={props.v!.url}
+                  href={`/watch?v=${id()}${searchParams.fullscreen? `&fullscreen=${searchParams.fullscreen}` : ""}`}
                   class="text-start two-line-ellipsis min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {props.v!.title}
@@ -161,7 +162,7 @@ const VideoCard = (props: {
 export default VideoCard;
 
 const ImageContainer = (props: {
-  id: string;
+  url: string;
   src: string;
   duration: number;
   watched?: boolean;
@@ -171,7 +172,7 @@ const ImageContainer = (props: {
 
   return (
     <A
-      href={`/watch?v=${props.id}`}
+      href={props.url}
       class="relative flex aspect-video w-full flex-col overflow-hidden rounded text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img

@@ -31,6 +31,7 @@ export function FullscreenButton(props: FullscreenButtonProps) {
               document.documentElement.requestFullscreen();
               screen.orientation.lock("landscape").catch(() => { });
               setParams({ fullscreen: true }, { replace: true });
+              document.body.scroll({ top: 0, left: 0, behavior: "smooth" });
             } else {
               document.exitFullscreen();
               screen.orientation.unlock();
