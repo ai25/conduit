@@ -611,6 +611,7 @@ export default function Player(props: {
     selectDefaultQuality();
   });
   const updateProgressParametrized = () => {
+    if (!mediaPlayer || !videoQuery.data) return;
     updateProgress(videoQuery.data!, started(), mediaPlayer.currentTime, sync);
   };
 
@@ -994,6 +995,8 @@ export default function Player(props: {
   return (
     <Show when={videoQuery.data}>
       <media-player
+        playsinline
+        keep-alive
         id="player"
         classList={{
           " z-[99999] aspect-video bg-slate-900 text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4": true,
@@ -1186,9 +1189,7 @@ export default function Player(props: {
             playlist={list()}
           />
         </Show>
-        <Show when={route.pathname !== "/watch"}>
           <PiPLayout />
-          </Show>
       </media-player>
     </Show>
   );

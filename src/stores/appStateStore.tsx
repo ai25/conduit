@@ -18,6 +18,7 @@ const store = createStore({
   player: {
     small: false,
     dismissed: false,
+    lastVideoUrl: "",
   }
 });
 const AppStateContext = createContext(store);

@@ -24,7 +24,7 @@ export const Dropdown = (props: DropdownProps) => {
         <DropdownMenu.Icon>{props.triggerIcon}</DropdownMenu.Icon>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content class="bg-bg2 rounded-md z-[999999]
+        <DropdownMenu.Content class="bg-bg1 border border-bg3/80 rounded-md z-[999999]
           -top-2
           animate-in
           fade-in

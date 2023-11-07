@@ -310,7 +310,7 @@ const Header = () => {
               </Switch>
             </KobaltePopover.Trigger>
             <KobaltePopover.Portal>
-              <KobaltePopover.Content class="bg-bg2 p-2 rounded-md
+              <KobaltePopover.Content class="bg-bg1 border border-bg3/80 p-2 rounded-md
                 animate-in
                 fade-in
                 slide-in-from-top-10
