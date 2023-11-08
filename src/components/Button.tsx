@@ -47,7 +47,7 @@ export default function Button(props: {
       })}
       disabled={props.isDisabled}
       classList={{
-        "relative focus-visible:ring-4 focus-visible:ring-primary/50 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed duration-200 ease-in-out py-1 px-3 text-sm rounded-full border-4  appearance-none transition-colors cursor-pointer select-none focus:outline-none active:translate-y-[2px]": true,
+        "relative focus-visible:ring-4 focus-visible:ring-primary/50 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed duration-300 py-1 px-3 text-sm rounded-full border-4  appearance-none ease-out cursor-pointer select-none focus:outline-none transition active:translate-y-[2px]": true,
         "flex items-center justify-center": props.icon !== undefined && props.label !== undefined,
         "!text-text1 !bg-bg2": props.isSelected === true,
         ...getAppearanceClasses(props.appearance),

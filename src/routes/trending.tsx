@@ -120,7 +120,7 @@ export default function Trending() {
         <Show when={!Array.isArray(query.data)}>
           <ErrorComponent error={query.data} />
         </Show>
-        <div class="flex flex-wrap justify-center gap-8">
+        <div class="flex flex-wrap justify-center">
         <Show when={query.data} keyed>
           {(videos) =>
             videos && (

@@ -243,7 +243,7 @@ export class SharedService extends EventTarget {
 
       throw new Error("Service worker not ready or other error");
     }
-      clientId = await exponentialBackoff(fetchClientId, 5, 1000, 16000);
+      clientId = await exponentialBackoff(fetchClientId, 2, 1000, 16000);
       console.log("Successfully fetched clientId:", clientId);
 
     navigator.serviceWorker.addEventListener("message", (event) => {

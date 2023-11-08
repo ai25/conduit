@@ -5,7 +5,7 @@ import { TbClockPlus } from "solid-icons/tb";
 import { createEffect, createSignal, For, Match, Show, Switch } from "solid-js";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { ConduitPlaylist, Playlist, RelatedStream } from "~/types";
-import { getVideoId } from "~/utils/helpers";
+import { getVideoId, yieldToMain } from "~/utils/helpers";
 import Button from "./Button";
 import Modal from "./Modal";
 import Select from "./Select";
@@ -35,7 +35,7 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
-          onTouchEnd={(e) => {e.preventDefault(); e.stopPropagation();}}
+          onTouchEnd={async(e) => {await yieldToMain();e.preventDefault(); e.stopPropagation();}}
       
           class="bg-bg1 border border-bg2 shadow p-2 rounded-md z-50
                 -translate-y-4
@@ -109,7 +109,8 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
           <Show when={props.progress === undefined}>
             <DropdownMenu.Item
               class="cursor-pointer z-50 w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-              onClick={(e) => {
+              onClick={async(e) => {
+                await yieldToMain();
                 e.stopPropagation();
               }}
               onPointerUp={(e) => {

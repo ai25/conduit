@@ -84,6 +84,7 @@ export const SyncedStoreProvider = (props: { children: any }) => {
 
   createEffect(async () => {
     await initWebrtc();
+    setAppState("sync", "providers", "webrtc", ProviderStatus.DISCONNECTED);
 
     if (!webrtcProvider) return;
     // setAppState("sync", "providers", "webrtc", ProviderStatus.CONNECTED);
@@ -135,8 +136,7 @@ export const SyncedStoreProvider = (props: { children: any }) => {
       setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
       return;
     }
-    setAppState("sync", "providers", "idb", ProviderStatus.CONNECTING);
-    console.time("indexeddb");
+    setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
     // idbProvider = new IndexeddbPersistence(room().id!, doc);
     // idbProvider.whenSynced
     //   .then(() => {
@@ -153,11 +153,12 @@ export const SyncedStoreProvider = (props: { children: any }) => {
     opfsProvider = new OpfsPersistence(room().id!, doc, true);
     setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTING);
     try {
-      opfsProvider.sync();
-      await opfsProvider.whenSynced()
+      await opfsProvider.sync();
+      // await opfsProvider.whenSynced()
       setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTED);
     }
     catch (e) {
+      console.error("Error syncing with OPFSx", e);
       setAppState("sync", "providers", "opfs", ProviderStatus.DISCONNECTED);
       toast.error("Error syncing with OPFS");
     };

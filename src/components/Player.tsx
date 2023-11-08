@@ -1001,7 +1001,7 @@ export default function Player(props: {
         classList={{
           " z-[99999] aspect-video bg-slate-900 text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4": true,
           "!absolute inset-0 w-screen h-screen": !!searchParams.fullscreen,
-          "!sticky sm:relative !top-0": !searchParams.fullscreen,
+          "!sticky sm:!relative !top-0": !searchParams.fullscreen,
           "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
           "!hidden": appState.player.dismissed,
 

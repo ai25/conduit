@@ -120,7 +120,7 @@ export default function Feed() {
           </div>
         </Show>
         <Show when={Object.keys(sync.store.subscriptions).length}>
-          <div class="mx-2 flex flex-wrap justify-center">
+          <div class="mx-2 flex flex-wrap gap-8 justify-center">
             <Show when={!Array.isArray(query.data)}>
               <ErrorComponent error={query.data} />
             </Show>

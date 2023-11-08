@@ -156,6 +156,9 @@ export default function Root() {
     },
   });
   const CachedFeed = lazy(() => import("./routes/feed"));
+  const sync = useSyncStore()
+  createEffect(() => {
+  console.log(sync.store,"sync store")
 
   return (
     <Html lang="en">

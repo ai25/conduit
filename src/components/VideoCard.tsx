@@ -47,9 +47,7 @@ function formatRelativeShort(now: Date, past: Date): string {
 
 const VideoCard = (props: {
   v?: (RelatedStream),
-  layout?: "grid" | "list"
 }) => {
-  props = mergeProps({ layout: "grid" as "grid" }, props);
 
   const sync = useSyncStore();
 
@@ -78,14 +76,11 @@ const VideoCard = (props: {
   return (
     <div
       classList={{
-        "flex w-full mx-1 items-start rounded-xl bg-bg1 p-2": true,
-        "flex-row gap-2 min-w-full": props.layout === "list",
-        "flex-col max-w-md sm:w-72 ": props.layout === "grid",
+        "flex w-full sm:max-w-max mx-1 items-start rounded-xl bg-bg1 p-2 sm:flex-col sm:w-72 flex-row gap-2 sm:gap-0 min-w-full sm:min-w-0": true,
       }}
     >
       <div classList={{
-        "max-w-sm min-w-min": props.layout === "list",
-        "w-full": props.layout === "grid",
+        "max-w-sm max-h-44 aspect-video sm:max-h-full overflow-hidden min-w-min sm:w-full": true
 
       }}>
         <Show when={props.v} fallback={<ImageContainerFallback />}>
@@ -100,13 +95,10 @@ const VideoCard = (props: {
         </Show>
       </div>
       <div classList={{
-        "flex w-full min-w-0 max-w-full justify-between": true,
-        "mt-2 max-h-20": props.layout === "grid",
-        "h-full": props.layout === "list"
+        "flex w-full min-w-0 max-w-full justify-between h-full sm:mt-2 sm:max-h-20": true,
       }}>
         <div classList={{
           "flex flex-col flex-1 gap-2 pr-2 h-full": true,
-          "justify-s": props.layout === "list",
         }}
         >
           <Show when={props.v}
@@ -178,7 +170,7 @@ const ImageContainer = (props: {
     >
       <img
         classList={{
-          "cursor-pointer w-full aspect-video max-w-md break-words min-w-min": true,
+          "cursor-pointer w-full min-w-[10rem] aspect-video max-w-md break-words ": true,
           "saturate-[0.35] opacity-75": props.watched,
         }}
         src={props.src}

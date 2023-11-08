@@ -1,6 +1,7 @@
 
 import { createEffect, createSignal, JSX } from "solid-js";
 import { Tooltip as KobalteTooltip } from "@kobalte/core";
+import { yieldToMain } from "~/utils/helpers";
 
 export type TooltipPlacement = "top" | "bottom" | "left" | "right" | "top-end" | "left-end" | "right-end" | "bottom-end" | "top-start" | "left-start" | "right-start" | "bottom-start";
 
@@ -50,6 +51,8 @@ export function Tooltip(props: TooltipProps) {
     }, props.openDelay ?? 0);
   };
 
+  const [pointerDown, setPointerDown] = createSignal(false);
+
 
 
   return (
@@ -61,10 +64,18 @@ export function Tooltip(props: TooltipProps) {
     >
       <KobalteTooltip.Trigger as={props.as ?? "button"}
         onFocus={props.onFocus}
-        onFocusIn={()=>setOpen(true)}
-        onFocusOut={()=>setOpen(false)}
-        onMouseEnter={()=>setOpen(true)}
-        onMouseLeave={()=>setOpen(false)}
+        onFocusIn={async (e) => {
+          await yieldToMain()
+          if (pointerDown()) return;
+          setOpen(true);
+        }}
+        onFocusOut={() => setOpen(false)}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onPointerDown={() => {
+          setPointerDown(true);
+          setTimeout(() => setPointerDown(false), 500);
+        }}
         disabled={props.disabled} class={props.class} onClick={props.onClick} >
         {props.triggerSlot}
       </KobalteTooltip.Trigger>

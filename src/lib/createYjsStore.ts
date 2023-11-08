@@ -20,7 +20,7 @@ import setLeaf from "./utils/setLeaf";
 type YMapOrArray = Y.Map<any> | Y.Array<any>;
 
 const isPrimitive = (value: any) =>
-  typeof value === "string" || typeof value === "number";
+  typeof value === "string" || typeof value === "number" || typeof value === "boolean" || value === null || value === undefined;
 
 export default function <T extends { [key: string]: any }>(
   ydoc: Y.Doc,
@@ -129,7 +129,7 @@ export default function <T extends { [key: string]: any }>(
       setObserver(ymap, svalue);
       return ymap;
     } else {
-      UNEXPECTED(svalue);
+      UNEXPECTED(svalue,"svalue is not primitive, array or object");
     }
   };
 

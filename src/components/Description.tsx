@@ -191,7 +191,7 @@ const Description = (props: {
               </h1>
             </Async>
           </div>
-          <Async when={videoQuery.data} fallback={<div class="w-full h-12 flex justify-between">
+          <Async when={videoQuery.data} fallback={<div class="w-full h-12 flex sm:justify-start justify-between gap-2">
             <div class="w-44 flex items-center gap-2">
               <div class="w-12 h-12 aspect-square bg-bg2 animate-pulse rounded-full"></div>
               <div class="flex flex-col justify-between py-1 gap-1 h-full w-full ">
@@ -244,9 +244,9 @@ const Description = (props: {
             setDebugInfoOpen={() => setDebugInfoOpen(true)}
           />
         </Async>
-        <Async when={videoQuery.data} fallback={<div class="w-full h-8 flex items-end justify-between ">
-          <div class="w-32 h-4 bg-bg2 animate-pulse rounded"></div>
-          <div class="w-36 h-8 bg-bg2 animate-pulse rounded"></div>
+        <Async when={videoQuery.data} fallback={<div class="w-full h-8 flex flex-wrap gap-2 mb-2 items-end justify-between ">
+          <div class="w-64 h-4 bg-bg2 animate-pulse rounded-lg"></div>
+          <div class="w-full [@media(min-width:400px)]:w-36 h-4 bg-bg2 animate-pulse rounded-lg"></div>
         </div>}>
         <div
           title={`Published ${(() => {
@@ -261,10 +261,12 @@ const Description = (props: {
             const substr = date()
               .toString()
               .split(":")[0];
-            return substr.slice(0, substr.length - 3);
+            const time = date().toString().split(" ")[4];
+            return `${substr.slice(0, substr.length - 3)} ${time.slice(0,time.length - 3)}`;
           })()}</p>•
           <p class="">
-            {numeral(videoQuery.data!.views).format("0.00a").toUpperCase()} views
+            {videoQuery.data!.views > 10000 ? numeral(videoQuery.data!.views).format("0.00a").toUpperCase() :
+                  numeral(videoQuery.data!.views).format("0,0").toUpperCase()} views
           </p>
             </div>
           <div class="flex flex-col w-full [@media(min-width:400px)]:w-36 ">
@@ -273,7 +275,7 @@ const Description = (props: {
                 title={`${numeral(videoQuery.data!.likes).format("0,0")} likes`}
                 class="flex items-center gap-1 ">
                 <TbThumbUpFilled class="w-5 h-5 text-text2" />
-                {numeral(videoQuery.data!.likes).format("0.0a").toUpperCase()}{" "}
+                {videoQuery.data!.likes > 1000 ? numeral(videoQuery.data!.likes).format("0.0a").toUpperCase() : numeral(videoQuery.data!.likes).format("0,0").toUpperCase()}
               </span>
               <span
                 title={`${numeral(videoQuery.data!.dislikes).format(
@@ -281,9 +283,7 @@ const Description = (props: {
                 )} likes`}
                 class="flex items-center gap-1">
                 <TbThumbDownFilled class="h-5 w-5 text-text2 " fill="currentColor" />
-                {numeral(videoQuery.data!.dislikes)
-                  .format("0.0a")
-                  .toUpperCase()}{" "}
+                {videoQuery.data!.dislikes > 1000 ? numeral(videoQuery.data!.dislikes).format("0.0a").toUpperCase() : numeral(videoQuery.data!.dislikes).format("0,0").toUpperCase()}
               </span>
             </div>
             <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
@@ -493,12 +493,12 @@ const ActionsContainer = (props: {
 }
 
 const ActionsContainerFallback = () => (
-  <div class="flex items-center justify-evenly rounded p-2 ">
-    <div class="w-10 h-10 bg-bg2 rounded-full animate-pulse"></div>
-    <div class="w-10 h-10 bg-bg2 rounded-full animate-pulse"></div>
-    <div class="w-10 h-10 bg-bg2 rounded-full animate-pulse"></div>
-    <div class="w-10 h-10 bg-bg2 rounded-full animate-pulse"></div>
-    <div class="w-10 h-10 bg-bg2 rounded-full animate-pulse"></div>
+  <div class="flex items-center bg-bg2 justify-evenly rounded p-2 ">
+    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse"></div>
+    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse"></div>
+    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse"></div>
+    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse"></div>
+    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse"></div>
   </div>
 );
 
