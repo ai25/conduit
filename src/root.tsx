@@ -159,6 +159,7 @@ export default function Root() {
   const sync = useSyncStore()
   createEffect(() => {
   console.log(sync.store,"sync store")
+  })
 
   return (
     <Html lang="en">
