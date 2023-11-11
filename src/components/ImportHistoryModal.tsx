@@ -38,7 +38,6 @@ export default function ImportHistoryModal(props: {
         console.log(json);
         const items = json.map((video: any) => {
           const item = {
-            id: video.titleUrl.split("v=")[1],
             url: video.titleUrl.split("https://www.youtube.com")[1],
             title: video.title,
             uploaderName: video.subtitles[0].name,
@@ -57,6 +56,26 @@ export default function ImportHistoryModal(props: {
           })
         );
       }
+      // LibreTube
+      else if (text.includes("watchPositions")) {
+        console.log("LibreTube");
+        const json = JSON.parse(text);
+        const lt = json.watchHistory.map((video: any) => {
+          return {
+            url: `/watch?v=${video.videoId}`,
+            duration: video.duration,
+            thumbnail: video.thumbnailUrl,
+            title: video.title,
+            uploaderName: video.uploader,
+            uploaderUrl: video.uploaderUrl,
+            uploaded: new Date(video.uploadDate).getTime(),
+            currentTime:
+              json.watchPositions.find((i: any) => i.videoId === video.videoId)
+                ?.position / 1000 ?? 0,
+          };
+        });
+        setItems(lt.sort((a: any, b: any) => b.watchedAt - a.watchedAt));
+      }
 
       // Piped
       else if (text.includes("watchHistory")) {
@@ -64,7 +83,6 @@ export default function ImportHistoryModal(props: {
         console.log(json);
         const items = json.watchHistory.map((video: any) => {
           const item = {
-            id: getVideoId(video),
             duration: video.duration,
             url: video.url,
             title: video.title,
@@ -78,25 +96,6 @@ export default function ImportHistoryModal(props: {
         setItems(items.sort((a: any, b: any) => b.watchedAt - a.watchedAt));
       }
 
-      // LibreTube
-      else if (text.includes("watchPositions")) {
-        const json = JSON.parse(text);
-        const lt = json.watchHistory.map((video: any) => {
-          return {
-            duration: video.duration,
-            thumbnail: video.thumbnailUrl,
-            title: video.title,
-            uploaderName: video.uploader,
-            uploaderUrl: video.uploaderUrl,
-            videoId: video.videoId,
-            watchedAt: parseInt(video.watchedAt),
-            currentTime:
-              json.watchPositions.find((i: any) => i.videoId === video.videoId)
-                ?.position ?? 0,
-          };
-        });
-        setItems(lt.sort((a: any, b: any) => b.watchedAt - a.watchedAt));
-      }
       // FreeTube
       else if (text.startsWith(`{"videoId:`)) {
         text = `[${text.replace(/\n/g, ", ").slice(0, -2)}]`;
