@@ -534,12 +534,19 @@ export default function Player(props: {
       provider.library = async () => await import("hls.js");
       console.log(provider);
       provider.config = {
-        startLevel: 13,
-        backBufferLength: 300,
-        maxBufferLength: 400,
-        appendErrorMaxRetry: 10,
-        levelLoadingMaxRetry: 10,
-        manifestLoadingMaxRetry: 10,
+        // Reduce the quality to prevent frequent buffering
+        maxBufferSize: 30 * 1000 * 1000, // lower buffer size to save memory
+        maxBufferLength: 30, // max buffer length in seconds
+        maxMaxBufferLength: 120, // max maximum buffer length in seconds
+        maxLoadingDelay: 4, // delay to load fragment when buffer is high
+        lowLatencyMode: false, // turn off low latency mode to buffer more
+        testBandwidth: false, // don't reduce start level quality quickly
+        abrBandWidthFactor: 0.75, // be more conservative in upgrading quality
+        abrBandWidthUpFactor: 0.5, // more conservative in upgrading quality
+        abrEwmaDefaultEstimate: 1000000, // default bandwidth estimate
+        startLevel: -1, // auto start level selection
+        capLevelToPlayerSize: true, // restrict to player size to save bandwidth
+        minAutoBitrate: 1000000, // minimum bitrate to start with
 
       };
     }
@@ -977,16 +984,16 @@ export default function Player(props: {
     if (!nextChapter) return;
     mediaPlayer.currentTime = nextChapter.start;
   };
-  const [appState,setAppState] = useAppState();
+  const [appState, setAppState] = useAppState();
 
-  createEffect(()=>{
+  createEffect(() => {
     if (route.pathname !== '/watch') {
-      setAppState("player", "small",true);
+      setAppState("player", "small", true);
     } else {
-      setAppState("player",'small', false);
+      setAppState("player", 'small', false);
       // If returning to '/watch', the player should not be dismissed
       if (appState.player.dismissed) {
-        setAppState("player",'dismissed', false);
+        setAppState("player", 'dismissed', false);
       }
     }
   })
@@ -1189,7 +1196,7 @@ export default function Player(props: {
             playlist={list()}
           />
         </Show>
-          <PiPLayout />
+        <PiPLayout />
       </media-player>
     </Show>
   );
