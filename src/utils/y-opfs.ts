@@ -8,6 +8,19 @@ export type WorkerMessage<A extends "read" | "write" | "trim" | "cleanup"> = {
     content?: Uint8Array; // optional for "read"
   };
 };
+function fnv1aHash(update: Uint8Array): string {
+  const FNV_PRIME = 0x01000193; // 16777619
+  const OFFSET_BASIS = 0x811C9DC5; // 2166136261
+
+  let hash = OFFSET_BASIS;
+  for (const byte of update) {
+    hash ^= byte;
+    hash *= FNV_PRIME;
+    hash >>>= 0; // Use unsigned right shift to ensure we stay within 32 bit range
+  }
+
+  return hash.toString(16); // Return hash as hexadecimal string
+}
 
 export type WorkerResponse<A extends "read" | "write" | "trim" | "cleanup"> =
   A extends "read"
@@ -76,8 +89,7 @@ export default class OpfsPersistence extends ObservableV2<{
 
 
   private _storeUpdate = async (update: any, origin: any) => {
-    const sessionId = this._getSessionId();
-    this.log("Received update from Y.Doc...", update, origin, sessionId);
+    this.log("Received update from Y.Doc...", update, origin);
     if (origin !== this && !this._destroyed) {
       if (this._timerId) {
         clearTimeout(this._timerId);
@@ -92,27 +104,20 @@ export default class OpfsPersistence extends ObservableV2<{
         }, 1000);
         return;
       }
+      const updateHash = fnv1aHash(update);
+      const {updates} = await this._sharedService?.proxy["read"]();
+      console.log("updates", updates);
+
 
       this.log(
         "Received a local Y.Doc update or an update from another provider.",
         update,
         origin,
-        this
+        this,
+        this._updateCount
       );
-      const prev = await this._sharedService?.proxy["read"]();
-      console.log("prev", prev);
-      const { updates }: { updates: Uint8Array[] } = prev;
-      const combined = Y.mergeUpdates(updates);
-      const vector = Y.encodeStateVectorFromUpdate(combined);
-      const diff = Y.diffUpdate(update, vector);
-      console.log("diff", diff);
-      console.log(combined.byteLength, update.byteLength);
-      const diffSizeMB = diff.byteLength / 1024;
-      const updateSizeMB = update.byteLength / 1024;
-      console.log(`diff size: ${diffSizeMB.toFixed(2)} KB, updates size: ${updateSizeMB.toFixed(2)} KB`);
 
-      // console.log("write", update.length, diff.length);
-      this._sharedService?.proxy["write"](diff);
+      this._sharedService?.proxy["write"](update);
 
       if (++this._updateCount >= 10) {
         if (this._storeTimeoutId !== null) {
@@ -169,112 +174,116 @@ export default class OpfsPersistence extends ObservableV2<{
    * Synchronizes the Y.js document with the stored updates from the OPFS.
    */
   async sync(): Promise<void> {
-    try {
-    this.log("Synchronizing Y.Doc with OPFS...");
-    console.time("OPFS: getStoredUpdates");
-    // const { updates } = await this.sendMessage({
-    //   action: "read",
-    //   payload: { roomName: this.room },
-    // });
-    this._sharedService = new SharedService(this.room, () => {
-      return createSharedServicePort({
-        read: async () => {
-          console.log("Calling read");
-          return new Promise((resolve, reject) => {
-            if (!this.worker) {
-              reject("Worker not initialized.");
-              return;
+    return new Promise(async (resolve, reject) => {
+      try {
+        this.log("Synchronizing Y.Doc with OPFS...");
+        console.time("OPFS: getStoredUpdates");
+        // const { updates } = await this.sendMessage({
+        //   action: "read",
+        //   payload: { roomName: this.room },
+        // });
+        this._sharedService = new SharedService(this.room, () => {
+          return createSharedServicePort({
+            read: async () => {
+              console.log("Calling read");
+              return new Promise((resolve, reject) => {
+                if (!this.worker) {
+                  reject("Worker not initialized.");
+                  return;
+                }
+
+                const messageHandler = (event: MessageEvent) => {
+                  resolve(event.data);
+                  this.worker?.removeEventListener("message", messageHandler);
+                };
+
+                const errorHandler = (error: Event) => {
+                  if (error instanceof ErrorEvent) {
+                    reject(error);
+                  }
+                  this.worker?.removeEventListener("error", errorHandler);
+                };
+                this.worker.onerror = errorHandler;
+                this.worker.onmessage = messageHandler;
+
+                this.worker.postMessage({
+                  action: "read",
+                  payload: { roomName: this.room },
+                });
+              });
+            },
+            write: async (content: Uint8Array) => {
+              console.log("Calling write");
+              return this.sendMessage({
+                action: "write",
+                payload: { roomName: this.room, content },
+              });
+            },
+            trim: (content: Uint8Array) => {
+              console.log("Calling trim");
+              return this.sendMessage({
+                action: "trim",
+                payload: { roomName: this.room, content },
+              });
+            },
+            cleanup: () => {
+              return this.sendMessage({
+                action: "cleanup",
+                payload: { roomName: this.room },
+              })
             }
-
-            const messageHandler = (event: MessageEvent) => {
-              resolve(event.data);
-              this.worker?.removeEventListener("message", messageHandler);
-            };
-
-            const errorHandler = (error: Event) => {
-              if (error instanceof ErrorEvent) {
-                reject(error);
-              }
-              this.worker?.removeEventListener("error", errorHandler);
-            };
-            this.worker.onerror = errorHandler;
-            this.worker.onmessage = messageHandler;
-
-            this.worker.postMessage({
-              action: "read",
-              payload: { roomName: this.room },
-            });
           });
-        },
-        write: async (content: Uint8Array) => {
-          console.log("Calling write");
-          return this.sendMessage({
-            action: "write",
-            payload: { roomName: this.room, content },
-          });
-        },
-        trim: (content: Uint8Array) => {
-          console.log("Calling trim");
-          return this.sendMessage({
-            action: "trim",
-            payload: { roomName: this.room, content },
-          });
-        },
-        cleanup: () => {
-          return this.sendMessage({
-            action: "cleanup",
-            payload: { roomName: this.room },
-          })
-        }
-      });
+        });
+        console.log("this._sharedService", this._sharedService);
+
+        await this._sharedService.activate(async () => {
+          console.log("Destroyed?", this._destroyed, "synced?", this.synced);
+          if (this._destroyed || this.synced || this.activateCalled) {
+            return;
+          }
+          this.activateCalled = true;
+
+          const res = await this._sharedService?.proxy["read"]();
+          console.log("res", res);
+          const { updates }: { updates: Uint8Array[] } = res;
+
+          console.timeEnd("OPFS: getStoredUpdates");
+          this.log("Received updates from OPFS.", updates.length);
+          this._updateCount = updates.length;
+
+          // Apply each stored update to the Y.js document.
+          Y.transact(
+            this.ydoc,
+            () => {
+              updates.forEach((update) => {
+                // this.log("Applying stored update to Y.Doc...");
+                Y.applyUpdate(this.ydoc, update, this);
+              });
+            },
+            this,
+            false
+          );
+          if (this._destroyed) {
+            return this;
+          }
+          this.emit("synced", []);
+          this.synced = true;
+
+          console.timeEnd("OPFS");
+          resolve();
+        })
+      } catch (e) {
+        console.error("Error syncing", e);
+        this.destroy();
+        reject(e);
+      }
     });
-    console.log("this._sharedService", this._sharedService);
 
-    await this._sharedService.activate(async () => {
-      console.log("Destroyed?", this._destroyed, "synced?", this.synced);
-      if (this._destroyed || this.synced || this.activateCalled) {
-        return;
-      }
-      this.activateCalled = true;
-
-      const res = await this._sharedService?.proxy["read"]();
-      console.log("res", res);
-      const { updates }: { updates: Uint8Array[] } = res;
-
-      console.timeEnd("OPFS: getStoredUpdates");
-      this.log("Received updates from OPFS.", updates.length);
-      this._updateCount = updates.length;
-
-      // Apply each stored update to the Y.js document.
-      Y.transact(
-        this.ydoc,
-        () => {
-          updates.forEach((update) => {
-            // this.log("Applying stored update to Y.Doc...");
-            Y.applyUpdate(this.ydoc, update, this._getSessionId());
-          });
-        },
-        this,
-        false
-      );
-      if (this._destroyed) {
-        return this;
-      }
-      this.emit("synced", []);
-      this.synced = true;
-
-      console.timeEnd("OPFS");
-    })
-    } catch (e) {
-      console.error("Error syncing", e);
-      this.destroy();
-      throw e;
-    }
 
 
   }
 
-  async destroy() {
+  destroy() {
     this.ydoc.off("update", this._storeUpdate);
     this.ydoc.off("destroy", this.destroy);
     this._destroyed = true;

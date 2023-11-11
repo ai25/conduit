@@ -7,6 +7,7 @@ import {
   onMount,
   useContext,
   untrack,
+  JSX,
 } from "solid-js";
 import { useNavigate, useSearchParams } from "solid-start";
 import { QueryClient, createQuery } from "@tanstack/solid-query";
@@ -286,8 +287,11 @@ const SearchInput = () => {
         </button>
       </Show>
       <Show when={suggestions().length > 0 && showSuggestions()}>
+        
+        <Portal>
         <ul
-          class="absolute w-screen left-0 sm:w-full top-full mt-0.5 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out "
+
+          class={`absolute w-screen left-0 right-0 sm:w-max sm:min-w-[30rem] sm:left-[calc(70vw-18rem)] top-10 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
           aria-multiselectable="false"
           aria-live="polite"
           aria-label="Suggestions"
@@ -390,9 +394,87 @@ const SearchInput = () => {
             ))}
           </For>
         </ul>
+        </Portal>
       </Show>
     </div>
   );
 };
 
 export default SearchInput;
+
+type FocusTrapProps = {
+  active: boolean;
+  children: JSX.Element;
+};
+
+export function FocusTrap(props: FocusTrapProps) {
+  let focusTrapContainer: HTMLDivElement | undefined;
+
+  const [isActive, setIsActive] = createSignal(props.active);
+
+  const focusableElementsString =
+    'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [contenteditable], [tabindex]:not([tabindex^="-"])';
+
+  const setFocusTrap = () => {
+    if (focusTrapContainer) {
+      let focusableElements = Array.from(
+        focusTrapContainer.querySelectorAll(focusableElementsString)
+      ) as HTMLElement[];
+      if (focusableElements.length === 0) {
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      console.log(firstElement, lastElement);
+
+      const handleFocus = (event: KeyboardEvent) => {
+        if (event.key !== 'Tab' || !isActive()) {
+          return;
+        }
+
+        const currentFocusIndex = focusableElements.indexOf(document.activeElement as HTMLElement);
+        if (event.shiftKey) {
+          // Move to the last element if the first element is focused
+          if (currentFocusIndex === 0 || currentFocusIndex === -1) {
+            event.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          // Move to the first element if the last element is focused
+          if (currentFocusIndex === focusableElements.length - 1) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }
+      };
+
+      focusTrapContainer.addEventListener('keydown', handleFocus);
+
+      // Cleanup event listener on component unmount
+      onCleanup(() => {
+        focusTrapContainer?.removeEventListener('keydown', handleFocus);
+      });
+
+      // Initially focus the first focusable element
+      firstElement.focus();
+    }
+  };
+
+  onMount(() => {
+    setIsActive(props.active);
+    if (isActive()) {
+      setFocusTrap();
+    }
+  });
+
+  return (
+    <div
+      class="focus-trap-container" // Add TailwindCSS classes as needed
+      ref={focusTrapContainer}
+    >
+      {props.children}
+    </div>
+  );
+}
+

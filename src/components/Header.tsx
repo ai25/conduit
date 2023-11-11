@@ -193,7 +193,7 @@ const Header = () => {
   });
 
   return (
-    <nav class="fixed top-0 bg-bg2 w-full z-[99999] -mx-2 h-10 flex items-center justify-between">
+    <nav class="fixed top-0 left-0 bg-bg2 w-full z-[99999] h-10 px-2 flex items-center justify-between">
       <button
         class="sr-only focus:not-sr-only absolute top-0 left-0"
         onClick={() => {

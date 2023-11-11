@@ -18,9 +18,11 @@ import Queue from "./utils/Queue";
 import setLeaf from "./utils/setLeaf";
 
 type YMapOrArray = Y.Map<any> | Y.Array<any>;
+type YParent = Y.Doc | Y.Array<any> | Y.Map<any>;
+
 
 const isPrimitive = (value: any) =>
-  typeof value === "string" || typeof value === "number" || typeof value === "boolean" || value === null || value === undefined;
+  typeof value === "string" || typeof value === "number" || typeof value === "boolean" 
 
 export default function <T extends { [key: string]: any }>(
   ydoc: Y.Doc,
@@ -415,11 +417,11 @@ Multiple entry-points are currently not supported in yjsStore.`
 
     while (args.length > 0) {
       const nextArg = (
-        args as (number | string | ((state: any) => boolean))[]
+        args as (number | string | boolean | ((state: any) => boolean))[]
       ).shift()!;
       const currentLayer = tree[tree.length - 1];
 
-      log && LOG(["_setStore", "currentLayer"], currentLayer);
+      LOG(["_setStore", "currentLayer"], currentLayer);
       const nextLayer: TreeNode[] = [];
       //  filter functions inside store
       //  see https://www.solidjs.com/docs/latest/api#updating-stores
@@ -442,11 +444,25 @@ Multiple entry-points are currently not supported in yjsStore.`
         });
       } else {
         currentLayer.forEach(({ sparent, yparent }) => {
+        const nextSparent = sparent[nextArg as keyof typeof sparent] 
+        let nextYparent = 'get' in yparent ? yparent.get(nextArg) : undefined;
+          if (!nextYparent) {
+            console.log("nextYparent is undefined", yparent, nextArg);
+            yparent = createYjsBranch(sparent);
+            nextYparent = yparent.get(nextArg);
+            console.log("nextYparent is now", nextYparent, yparent);
+          }
+          console.log("nextSparent", nextSparent, nextYparent);
+        if (nextSparent !== undefined && nextYparent) {
           nextLayer.push({
-            sparent: sparent[nextArg],
-            yparent: yparent.get(nextArg),
+            sparent: nextSparent,
+            yparent: nextYparent as YParent,
             key: nextArg.toString(),
           });
+          }else {
+          console.warn('Failed to access sparent or yparent with key:', nextArg, typeof nextSparent);
+          UNEXPECTED();
+        }
         });
       }
       tree.push(nextLayer);
@@ -456,6 +472,7 @@ Multiple entry-points are currently not supported in yjsStore.`
 
     tree[tree.length - 1].forEach(({ sparent, yparent }) => {
       let nextValue = nextValueTemplate;
+      console.log("nextValue", nextValue, yparent, sparent);
 
       if (typeof nextValue === "function") {
         //  TODO: figure out a less hacky way to figure out if it is a produce-function or not

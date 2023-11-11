@@ -24,6 +24,7 @@ export default function Import() {
         if (json.playlists) {
           json.playlists.forEach((playlist: any) => {
             sync.setStore("playlists", playlist.id, playlist);
+            sync.setStore("playlists", playlist.id, "relatedStreams", playlist.relatedStreams);
           });
         }
       }

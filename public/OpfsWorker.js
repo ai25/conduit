@@ -17,75 +17,33 @@ const readWholeFile = async (accessHandle) => {
 };
 
 /**
- * Removes all stored updates from the updates binary file and replaces them with the encoded state.
- * This version attempts to be atomic by reading the entire existing file, combining it with the new state,
- * and writing it back.
- * @param {FileSystemSyncAccessHandle} accessHandle - The access handle to the updates file.
- * @param {Uint8Array} state - The encoded state.
- * @returns {Promise<void>} - A promise that resolves when the updates have been stored.
+ * Overwrites the contents of the file with the received update.
+ * 
+ * @param {FileSystemSyncAccessHandle} accessHandle - The file handle.
+ * @param {Uint8Array} state - The new update to overwrite the file with.
+ * @param {string} roomName - The name of the room, used for logging.
  */
-
-const trimUpdatesFile = async (accessHandle, state, dirName) => {
-  if (!accessHandle) {
-    throw new Error("Handles are not initialized.");
-  }
-
-  let tmpFileHandle;
-  let tmpAccessHandle;
-  let roomHandle;
+const trimUpdatesFile = async (accessHandle, state)  => {
   try {
-    console.log("Getting root directory");
 
-    const root = await navigator.storage.getDirectory();
-    console.log("Getting room directory");
-    roomHandle = await root.getDirectoryHandle(dirName);
+    // Truncate the file to zero length
+    accessHandle.truncate(0);
 
-    // Create or get a temporary file handle
-    console.log("Creating temporary file");
-    tmpFileHandle = await roomHandle.getFileHandle("tmp_file", {
-      create: true,
-    });
-    console.log("Creating temporary file access handle");
-    tmpAccessHandle = await tmpFileHandle.createSyncAccessHandle();
+    // Write the new update to the file
+    accessHandle.write(state, { at: 0 });
 
-    // Write the new state to the temporary file
-    console.log("Writing new state to temporary file");
-    await tmpAccessHandle.write(state, { at: 0, resize: true });
-    console.log("Saving to disk");
-    await tmpAccessHandle.flush();
+    // write the delimiter after the new update
+    const newSize = state.length;
+    accessHandle.write(DELIMITER, { at: newSize });
+
+    // Flush the changes to ensure data is written to disk
+    accessHandle.flush();
+
+    console.log("Updates file has been overwritten with the new update.");
   } catch (error) {
-    throw new Error("Failed to write to the temporary file.");
+    console.error(`Failed to trim updates file`, error);
+    throw error; // Rethrow the error to handle it in the message event listener
   }
-
-  try {
-    console.log("closing access handle");
-    await accessHandle.close();
-    console.log("deleting file");
-    await roomHandle.removeEntry(UPDATES_FILE_NAME);
-
-    await tmpAccessHandle.close();
-    // Rename the temporary file to replace the original file
-    console.log("renaming temporary file");
-    await tmpFileHandle.move(UPDATES_FILE_NAME);
-    accessHandle = null;
-    console.log("success");
-  } catch (error) {
-    //rollback
-    try {
-      console.log("rollback");
-      const newFileHandle = await roomHandle.getFileHandle(UPDATES_FILE_NAME, {
-        create: true,
-      });
-      const newAccessHandle = await newFileHandle.createSyncAccessHandle();
-      newAccessHandle.write(state, { at: 0, resize: true });
-    } catch (error) {
-      console.log("rollback failed");
-      throw new Error(error);
-    }
-    throw new Error(error);
-  }
-
-  console.log("Updates file trimmed.");
 };
 
 /**
@@ -105,10 +63,12 @@ const getStoredUpdates = (accessHandle) => {
   console.log(`Updates file size: ${fileSizeMb.toFixed(2)} MB`);
   const dataBuffer = new ArrayBuffer(size);
   const dataView = new DataView(dataBuffer);
-  accessHandle.read(dataView);
+  accessHandle.read(dataView, { at: 0 });
   const data = new Uint8Array(dataBuffer);
+  console.log(`Read ${data.length} bytes from updates file.`);
   const updates = [];
   let lastDelimiterIndex = -DELIMITER.length;
+  console.log("DELIMITER", lastDelimiterIndex);
   for (let i = 0; i <= data.length - DELIMITER.length; i++) {
     let isDelimiter = true;
     for (let j = 0; j < DELIMITER.length; j++) {
@@ -119,6 +79,13 @@ const getStoredUpdates = (accessHandle) => {
     }
     if (isDelimiter) {
       updates.push(data.slice(lastDelimiterIndex + DELIMITER.length, i));
+      console.log(
+        `Found update of size ${(
+          (i - lastDelimiterIndex - DELIMITER.length) /
+          1024
+        ).toFixed(2)} KB`
+      );
+
       lastDelimiterIndex = i;
     }
   }
