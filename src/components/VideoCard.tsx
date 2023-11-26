@@ -86,7 +86,7 @@ const VideoCard = (props: {
         <Show when={props.v} fallback={<ImageContainerFallback />}>
           <ImageContainer
             url={`/watch?v=${id()}${searchParams.fullscreen? `&fullscreen=${searchParams.fullscreen}` : ""}`}
-            src={thumbnailUrl()}
+            src={props.v!.thumbnail}
             duration={props.v!.duration}
             watched={!!historyItem()}
             watchedAt={watchedAt()}
