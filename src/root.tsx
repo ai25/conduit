@@ -158,7 +158,7 @@ export default function Root() {
   const CachedFeed = lazy(() => import("./routes/feed"));
   const sync = useSyncStore()
   createEffect(() => {
-  console.log(sync.store,"sync store")
+    console.log(sync.store,"sync store")
   })
 
   return (
@@ -172,6 +172,7 @@ export default function Root() {
         />
 
         <Link rel="manifest" href="manifest.webmanifest" />
+        <Link rel="icon" href="favicon.png" />
       </Head>
       <QueryClientProvider client={queryClient}>
         <ThemeContext.Provider value={[theme, setTheme]}>
