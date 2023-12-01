@@ -25,7 +25,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
     name: "Conduit",
     short_name: "Conduit",
     background_color: "#000000",
-    theme_color: "#fa4b4b",
+    theme_color: "rgb(23,23,18)",
     icons: [
       {
         "src": "img/icons/windows11/SmallTile.scale-100.png",

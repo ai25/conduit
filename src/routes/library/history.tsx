@@ -53,13 +53,18 @@ export default function History() {
 
   const sort = (a: HistoryItem, b: HistoryItem) => {
     if (!a.watchedAt || !b.watchedAt) return 0;
-    if (a.watchedAt < b.watchedAt) {
+    else if (isNaN(new Date(a.watchedAt).getTime())) return 0;
+    else if (isNaN(new Date(b.watchedAt).getTime())) return 0;
+    else if (new Date(a.watchedAt).getTime() <= 0) return 0;
+    else if (new Date(b.watchedAt).getTime() <= 0) return 0;
+    else if (a.watchedAt < b.watchedAt) {
       return 1;
     }
-    if (a.watchedAt > b.watchedAt) {
+    else if (a.watchedAt > b.watchedAt) {
       return -1;
     }
-    return 0;
+    else
+      return 0;
   };
   const [history, setHistory] = createSignal<HistoryItem[]>([]);
   createEffect(() => {
@@ -230,7 +235,7 @@ function debounce<T, U extends any[]>(
 ): (this: T, ...args: U) => void {
   let timeout: NodeJS.Timeout | null = null;
 
-  return function (this: T, ...args: U): void {
+  return function(this: T, ...args: U): void {
     const context = this;
 
     const later = () => {
