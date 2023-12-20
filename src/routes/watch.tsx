@@ -363,7 +363,7 @@ export default function Watch() {
           "w-full": theater() || !!searchParams.fullscreen,
         }}
       >
-          {/* <Switch>
+        {/* <Switch>
             <Match when={videoQuery.isLoading && !video.value}>
               <PlayerLoading />
             </Match>
@@ -371,20 +371,20 @@ export default function Watch() {
               <PlayerError error={videoQuery.error as Error} />
             </Match>
             <Match when={videoQuery.data}> */}
-              <Show when={searchParams.fullscreen}>
-                <div class="h-[calc(100vh-2rem)]" />
-              </Show>
-            {/* </Match>
+        <Show when={searchParams.fullscreen}>
+          <div class="h-[calc(100vh-2rem)]" />
+        </Show>
+        {/* </Match>
           </Switch> */}
       </div>
       <div
-        class="flex lg:flex-row flex-col gap-2 w-full"
+        class="flex md:flex-row flex-col gap-2 w-full"
       >
-          <div class="w-full max-w-full">
-              <Description
-                downloaded={videoDownloaded()}
-              />
-          </div>
+        <div class="w-full max-w-full">
+          <Description
+            downloaded={videoDownloaded()}
+          />
+        </div>
         <div
           class={`flex flex-col gap-2 items-center w-full min-w-0 max-w-max`}
         >

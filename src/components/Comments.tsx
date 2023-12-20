@@ -66,7 +66,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
   return (
     <>
       <Switch>
-        <Match when={!isServer && navigator.maxTouchPoints > 0}>
+        <Match when={!isServer && navigator.maxTouchPoints > 0 && window.innerWidth < 600}>
           <button
             class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mt-2"
             onClick={() => setCommentsOpen(true)}
@@ -112,8 +112,8 @@ export default function Comments(props: { videoId: string; uploader: string }) {
             </Bottomsheet>
           )}
         </Match>
-        <Match when={!isServer && typeof screen.orientation !== "undefined"}>
-          <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto max-h-96">
+        <Match when={!isServer && (typeof screen.orientation !== "undefined" || window.innerWidth < 600)}>
+          <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto ">
             <Suspense fallback={<p>Loading...</p>}>
               <div id="sb-content" class="flex flex-col gap-1 relative  ">
                 <Show when={query.data}>

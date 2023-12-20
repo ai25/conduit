@@ -175,9 +175,9 @@ const Description = (props: {
         }}
       />
       <Async when={videoQuery.data} fallback={<div class="w-full h-96 bg-bg1 animate-pulse"></div>}>
-      <div class="max-w-screen-sm max-h-[80vh] overflow-auto">
-        <JSONViewer data={videoQuery.data} folded={false} />
-      </div>
+        <div class="max-w-screen-sm max-h-[80vh] overflow-auto">
+          <JSONViewer data={videoQuery.data} folded={false} />
+        </div>
       </Async>
     </Modal>
     <DownloadModal id={getVideoId(videoQuery.data)!} isOpen={downloadModalOpen()} setIsOpen={setDownloadModalOpen} />
@@ -197,42 +197,42 @@ const Description = (props: {
               <div class="flex flex-col justify-between py-1 gap-1 h-full w-full ">
                 <div class="w-full h-4  bg-bg2 animate-pulse rounded"></div>
                 <div class="w-3/4 h-4 bg-bg2 animate-pulse rounded"></div>
-                </div>
+              </div>
             </div>
             <div class="w-32 h-10  bg-bg2 animate-pulse rounded-full"></div>
           </div>}>
-          <div class="my-1 flex justify-between items-center gap-4 sm:justify-start ">
-            <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
-              <A class="link" href={`${videoQuery.data!.uploaderUrl}`}>
-                <img
-                  src={videoQuery.data!.uploaderAvatar}
-                  width={42}
-                  height={42}
-                  alt={videoQuery.data!.uploader}
-                  class="rounded-full"
-                />
-              </A>
-              <div class="flex flex-col items-start justify-start">
-                <A
-                  href={`${videoQuery.data!.uploaderUrl}`}
-                  class="link flex w-fit items-center gap-2">
-                  {videoQuery.data!.uploader}{" "}
-                  {videoQuery.data!.uploaderVerified && <Checkmark />}
+            <div class="my-1 flex justify-between items-center gap-4 sm:justify-start ">
+              <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
+                <A class="link" href={`${videoQuery.data!.uploaderUrl}`}>
+                  <img
+                    src={videoQuery.data!.uploaderAvatar}
+                    width={42}
+                    height={42}
+                    alt={videoQuery.data!.uploader}
+                    class="rounded-full"
+                  />
                 </A>
-                <div
-                  title={`${videoQuery.data!.uploaderSubscriberCount
-                    } subscribers`}
-                  class="flex w-full items-center text-start text-xs text-text2 sm:text-sm">
-                  {numeral(videoQuery.data!.uploaderSubscriberCount)
-                    .format("0a")
-                    .toUpperCase()}{" "}
-                  subscribers
+                <div class="flex flex-col items-start justify-start">
+                  <A
+                    href={`${videoQuery.data!.uploaderUrl}`}
+                    class="link flex w-fit items-center gap-2">
+                    {videoQuery.data!.uploader}{" "}
+                    {videoQuery.data!.uploaderVerified && <Checkmark />}
+                  </A>
+                  <div
+                    title={`${videoQuery.data!.uploaderSubscriberCount
+                      } subscribers`}
+                    class="flex w-full items-center text-start text-xs text-text2 sm:text-sm">
+                    {numeral(videoQuery.data!.uploaderSubscriberCount)
+                      .format("0a")
+                      .toUpperCase()}{" "}
+                    subscribers
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <SubscribeButton id={(() => videoQuery.data?.uploaderUrl?.split("/channel/")[1])() ?? ""} />
-          </div>
+              <SubscribeButton id={(() => videoQuery.data?.uploaderUrl?.split("/channel/")[1])() ?? ""} />
+            </div>
           </Async>
         </div>
         <Async when={videoQuery.data} fallback={<ActionsContainerFallback />}>
@@ -248,60 +248,60 @@ const Description = (props: {
           <div class="w-64 h-4 bg-bg2 animate-pulse rounded-lg"></div>
           <div class="w-full [@media(min-width:400px)]:w-36 h-4 bg-bg2 animate-pulse rounded-lg"></div>
         </div>}>
-        <div
-          title={`Published ${(() => {
-            const substr = date()
-              .toString()
-              .split(":")[0];
-            return substr.slice(0, substr.length - 3);
-          })()} • ${numeral(videoQuery.data!.views).format("0,0")} views`}
-          class="flex flex-wrap items-center justify-between gap-1 my-1 text-sm truncate max-w-full">
+          <div
+            title={`Published ${(() => {
+              const substr = date()
+                .toString()
+                .split(":")[0];
+              return substr.slice(0, substr.length - 3);
+            })()} • ${numeral(videoQuery.data!.views).format("0,0")} views`}
+            class="flex flex-wrap items-center justify-between gap-1 my-1 text-sm truncate max-w-full">
             <div class="flex items-center gap-1">
-          <p class="">{(() => {
-            const substr = date()
-              .toString()
-              .split(":")[0];
-            const time = date().toString().split(" ")[4];
-            return `${substr.slice(0, substr.length - 3)} ${time.slice(0,time.length - 3)}`;
-          })()}</p>•
-          <p class="">
-            {videoQuery.data!.views > 10000 ? numeral(videoQuery.data!.views).format("0.00a").toUpperCase() :
+              <p class="">{(() => {
+                const substr = date()
+                  .toString()
+                  .split(":")[0];
+                const time = date().toString().split(" ")[4];
+                return `${substr.slice(0, substr.length - 3)} ${time.slice(0, time.length - 3)}`;
+              })()}</p>•
+              <p class="">
+                {videoQuery.data!.views > 10000 ? numeral(videoQuery.data!.views).format("0.00a").toUpperCase() :
                   numeral(videoQuery.data!.views).format("0,0").toUpperCase()} views
-          </p>
+              </p>
             </div>
-          <div class="flex flex-col w-full [@media(min-width:400px)]:w-36 ">
-            <div class="flex items-center justify-between">
-              <span
-                title={`${numeral(videoQuery.data!.likes).format("0,0")} likes`}
-                class="flex items-center gap-1 ">
-                <TbThumbUpFilled class="w-5 h-5 text-text2" />
-                {videoQuery.data!.likes > 1000 ? numeral(videoQuery.data!.likes).format("0.0a").toUpperCase() : numeral(videoQuery.data!.likes).format("0,0").toUpperCase()}
-              </span>
-              <span
-                title={`${numeral(videoQuery.data!.dislikes).format(
-                  "0,0"
-                )} likes`}
-                class="flex items-center gap-1">
-                <TbThumbDownFilled class="h-5 w-5 text-text2 " fill="currentColor" />
-                {videoQuery.data!.dislikes > 1000 ? numeral(videoQuery.data!.dislikes).format("0.0a").toUpperCase() : numeral(videoQuery.data!.dislikes).format("0,0").toUpperCase()}
-              </span>
-            </div>
-            <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
-              <div
-                class="h-full bg-bg3 rounded-r"
-                style={{
-                  width: `${(videoQuery.data!.dislikes /
-                    (videoQuery.data!.likes + videoQuery.data!.dislikes)) *
-                    100
-                    }%`,
-                }}></div>
+            <div class="flex flex-col w-full [@media(min-width:400px)]:w-36 ">
+              <div class="flex items-center justify-between">
+                <span
+                  title={`${numeral(videoQuery.data!.likes).format("0,0")} likes`}
+                  class="flex items-center gap-1 ">
+                  <TbThumbUpFilled class="w-5 h-5 text-text2" />
+                  {videoQuery.data!.likes > 1000 ? numeral(videoQuery.data!.likes).format("0.0a").toUpperCase() : numeral(videoQuery.data!.likes).format("0,0").toUpperCase()}
+                </span>
+                <span
+                  title={`${numeral(videoQuery.data!.dislikes).format(
+                    "0,0"
+                  )} likes`}
+                  class="flex items-center gap-1">
+                  <TbThumbDownFilled class="h-5 w-5 text-text2 " fill="currentColor" />
+                  {videoQuery.data!.dislikes > 1000 ? numeral(videoQuery.data!.dislikes).format("0.0a").toUpperCase() : numeral(videoQuery.data!.dislikes).format("0,0").toUpperCase()}
+                </span>
+              </div>
+              <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
+                <div
+                  class="h-full bg-bg3 rounded-r"
+                  style={{
+                    width: `${(videoQuery.data!.dislikes /
+                      (videoQuery.data!.likes + videoQuery.data!.dislikes)) *
+                      100
+                      }%`,
+                  }}></div>
+              </div>
             </div>
           </div>
-        </div>
         </Async>
       </div>
-        <Async when={videoQuery.data} fallback={<div class="mt-1 rounded-lg w-full h-24 bg-bg2 animate-pulse"></div>}>
-      <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
+      <Async when={videoQuery.data} fallback={<div class="mt-1 rounded-lg w-full h-24 bg-bg2 animate-pulse"></div>}>
+        <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
           <div
             tabIndex={0}
             id="description"
@@ -310,44 +310,44 @@ const Description = (props: {
               }`}
             innerHTML={sanitizedDescription()!}
           />
-        <div classList={{ hidden: expanded() }} class="w-full h-0 relative">
-          <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
+          <div classList={{ hidden: expanded() }} class="w-full h-0 relative">
+            <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
+          </div>
+          <button
+            aria-controls="description"
+            onClick={() => {
+              setExpanded(!expanded());
+            }}
+            class="text-center text-sm text-accent1 hover:underline ">
+            Show {expanded() ? "less" : "more"}
+          </button>
         </div>
-        <button
-          aria-controls="description"
-          onClick={() => {
-            setExpanded(!expanded());
-          }}
-          class="text-center text-sm text-accent1 hover:underline ">
-          Show {expanded() ? "less" : "more"}
-        </button>
-      </div>
-        </Async>
-      <Async when={videoQuery.data} fallback={<><Show when={!isServer &&isMobile()}>
-      <div class="w-full h-24 bg-bg2 animate-pulse"></div>
+      </Async>
+      <Async when={videoQuery.data} fallback={<><Show when={!isServer && isMobile()}>
+        <div class="w-full h-24 bg-bg2 animate-pulse"></div>
       </Show>
-      <Show when={!isServer && !isMobile()}>
+        <Show when={!isServer && !isMobile()}>
           <div class="w-full flex flex-col gap-2 mt-2">
-        <For each={[0, 1, 2,3,4]}>
-          {() => (
-            <div class="w-full h-full flex gap-1 ">
-            <div class="w-8 h-8 rounded-full bg-bg2 animate-pulse"></div>
+            <For each={[0, 1, 2, 3, 4]}>
+              {() => (
+                <div class="w-full h-full flex gap-1 ">
+                  <div class="w-8 h-8 rounded-full bg-bg2 animate-pulse"></div>
                   <div class="flex flex-col gap-1 w-full h-full min-h-0">
-                  <div class="w-1/3 h-3 bg-bg2 rounded animate-pulse"/>
-                  <div class="w-full h-3 bg-bg2 rounded animate-pulse"/>
-                  <div class="w-1/2 h-3 bg-bg2 rounded animate-pulse"/>
+                    <div class="w-1/3 h-3 bg-bg2 rounded animate-pulse" />
+                    <div class="w-full h-3 bg-bg2 rounded animate-pulse" />
+                    <div class="w-1/2 h-3 bg-bg2 rounded animate-pulse" />
                   </div>
 
                 </div>
-          )}
-        </For>
-        </div>
-      </Show></>}>
+              )}
+            </For>
+          </div>
+        </Show></>}>
 
-      <Comments
-        videoId={getVideoId(videoQuery.data)!}
-        uploader={videoQuery.data!.uploader}
-      />
+        <Comments
+          videoId={getVideoId(videoQuery.data)!}
+          uploader={videoQuery.data!.uploader}
+        />
       </Async>
     </div>
   </>
@@ -502,12 +502,12 @@ const ActionsContainerFallback = () => (
   </div>
 );
 
-const Async = (props: { when:any,fallback: JSX.Element, error?: (error: Error, retry: () => void) => JSX.Element, children: JSX.Element }) => {
+const Async = (props: { when: any, fallback: JSX.Element, error?: (error: Error, retry: () => void) => JSX.Element, children: JSX.Element }) => {
   return <Suspense fallback={props.fallback}>
-      <Show when={props.when} fallback={props.fallback}>
-    <ErrorBoundary fallback={props.error}>
+    <Show when={props.when} fallback={props.fallback}>
+      <ErrorBoundary fallback={props.error}>
         {props.children}
-    </ErrorBoundary>
-      </Show>
+      </ErrorBoundary>
+    </Show>
   </Suspense>
 }

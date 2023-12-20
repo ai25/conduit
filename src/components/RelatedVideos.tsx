@@ -43,7 +43,7 @@ export default function RelatedVideos() {
         fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}
       >
         <Show when={videoQuery.data!.relatedStreams}>
-          <div class="w-full max-w-max">
+          <div class="w-full max-w-max ">
             <For each={videoQuery.data!.relatedStreams}>
               {(stream) => {
                 return (
