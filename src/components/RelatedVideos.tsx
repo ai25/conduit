@@ -36,14 +36,13 @@ export default function RelatedVideos() {
   );
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense
+      fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}>
       <Show
         when={videoQuery.data}
-        keyed
-        fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}
-      >
+        fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}>
         <Show when={videoQuery.data!.relatedStreams}>
-          <div class="w-full max-w-max ">
+          <div class="w-full max-w-max md:max-w-min">
             <For each={videoQuery.data!.relatedStreams}>
               {(stream) => {
                 return (

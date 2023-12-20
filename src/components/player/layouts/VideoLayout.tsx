@@ -56,7 +56,10 @@ export function VideoLayout(props: VideoLayoutProps) {
           <MuteButton tooltipPlacement="top" />
           <VolumeSlider />
           <TimeGroup />
-          <ChapterTitle />
+          <ChapterTitle
+            hasChapters={props.chapters ? true : false}
+            title={props.title}
+          />
           <LoopButton
             tooltipPlacement="top"
             loop={props.loop}
@@ -79,4 +82,5 @@ export interface VideoLayoutProps {
   navigatePrev?: () => void;
   navigateNext?: () => void;
   playlist?: RelatedStream[];
+  title?: string;
 }

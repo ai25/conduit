@@ -1183,6 +1183,7 @@ export default function Player(props: {
             thumbnails={generateStoryboard(videoQuery.data?.previewFrames?.[1])}
             loop={preferences.loop}
             chapters={vtt()}
+            title={videoQuery.data?.title ?? ""}
 
             onLoopChange={(value) => {
               setPreferences("loop", value);

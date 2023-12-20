@@ -6,22 +6,16 @@ import {
 } from "solid-start";
 import Player from "./Player";
 import {
-  For,
-  Match,
   Show,
-  Switch,
-  createEffect,
   createRenderEffect,
   createSignal,
-  on,
-  useContext,
   Suspense,
 } from "solid-js";
-import { PlayerContext } from "~/root";
-import VideoCard from "./VideoCard";
 import { usePreferences } from "~/stores/preferencesStore";
 import { PipedVideo } from "~/types";
 import { isServer } from "solid-js/web";
+import {useAppState} from "~/stores/appStateStore";
+import { useSearchParams } from "solid-start";
 
 export default function PlayerContainer(props: {
   video: PipedVideo | undefined;
@@ -31,20 +25,6 @@ export default function PlayerContainer(props: {
 }) {
   const route = useLocation();
   const [preferences] = usePreferences();
-  const [theatre, setTheatre] = createSignal(true);
-
-  createRenderEffect(() => {
-    const event = useServerContext();
-    const cookie = () => {
-      return parseCookie(
-        isServer ? event?.request.headers.get("cookie") ?? "" : document.cookie
-      );
-    };
-    const theater = cookie().theater ?? "false";
-    console.log("theater", theater);
-    console.log(props.video);
-    setTheatre(theater === "true");
-  });
   const Loading = () =>
     route.pathname === "/watch" ? <PlayerLoading /> : <></>;
   const Error = (props: any) =>
@@ -56,12 +36,7 @@ export default function PlayerContainer(props: {
 
   return (
     <div
-      class="flex md:relative md:top-0"
       classList={{
-        "fixed md:fixed bottom-0": route.pathname !== "/watch",
-        // "lg:max-w-[calc(100%-20.8rem)]": !theatre(),
-
-        // "max-h-[calc(100vh-4rem)]": preferences.theatreMode,
       }}
     >
       <Suspense fallback={<Loading />}>
@@ -109,9 +84,9 @@ export default function PlayerContainer(props: {
   );
 }
 
-export const Spinner = (props:{class?:string}) => (
+export const Spinner = (props: { class?: string }) => (
   <svg
-    classList={{"h-24 w-24 text-white duration-300 animate-spin":true, [props.class!]:!!props.class}}
+    classList={{ "h-24 w-24 text-white duration-300 animate-spin": true, [props.class!]: !!props.class }}
     fill="none"
     viewBox="0 0 120 120"
     aria-hidden="true"
@@ -141,8 +116,17 @@ export const Spinner = (props:{class?:string}) => (
 );
 
 export const PlayerLoading = () => {
+  const [searchParams] = useSearchParams();
+  const [appState] = useAppState();
   return (
-    <div class="pointer-events-none aspect-video bg-black flex h-fit w-full max-w-full items-center justify-center">
+    <div classList={{
+      "pointer-events-none aspect-video bg-black flex h-fit w-full max-w-full items-center justify-center": true,
+      "!absolute inset-0 w-screen h-screen z-[9999999]": !!searchParams.fullscreen,
+      "!sticky sm:!relative !top-0": !searchParams.fullscreen,
+      "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
+      "!hidden": appState.player.dismissed,
+
+    }}>
       <Spinner />
     </div>
   );
