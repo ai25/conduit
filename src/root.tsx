@@ -32,7 +32,7 @@ import {
   useLocation,
 } from "solid-start";
 import "./root.css";
-import { Portal, isServer } from "solid-js/web";
+import { Portal } from "solid-js/web";
 import { SetStoreFunction, createStore, unwrap } from "solid-js/store";
 import { PipedInstance, PipedVideo, Preferences } from "./types";
 import { IDBPDatabase, openDB } from "idb";
@@ -46,7 +46,7 @@ import BottomNav from "./components/BottomNav";
 import { TiHome } from "solid-icons/ti";
 import { AiOutlineFire, AiOutlineMenu } from "solid-icons/ai";
 import { Toast } from "@kobalte/core";
-import { createQuery, QueryClient, QueryClientProvider } from "@tanstack/solid-query";
+import { createQuery, isServer, QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { getStorageValue } from "./utils/storage";
 import { PreferencesProvider, usePreferences } from "./stores/preferencesStore";
 import Watch from "./routes/watch";
@@ -61,7 +61,7 @@ import { useSearchParams } from "solid-start";
 import Player from "./components/Player";
 import { QueueProvider } from "./stores/queueStore";
 import api from "./utils/api";
-import { PlayerLoading } from "./components/PlayerContainer";
+// import { PlayerLoading } from "./components/PlayerContainer";
 const ReloadPrompt = lazy(() => import("./components/ReloadPrompt"));
 
 const [theme, setTheme] = createSignal("");
@@ -97,32 +97,6 @@ export const PlayerContext = createContext<
   ]
 >(video);
 
-type CacheItem = {
-  component: JSX.Element;
-  data: any;
-};
-
-class RouteCacheStore {
-  private cache: Map<string, CacheItem> = new Map();
-
-  set(key: string, component: JSX.Element, data: any): void {
-    this.cache.set(key, { component, data });
-  }
-
-  get(key: string): CacheItem | null {
-    return this.cache.get(key) ?? null;
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  remove(key: string): void {
-    this.cache.delete(key);
-  }
-}
-
-export const routeCacheStore = new RouteCacheStore();
 
 export default function Root() {
   console.time("feed root");
@@ -155,10 +129,10 @@ export default function Root() {
       },
     },
   });
-  const CachedFeed = lazy(() => import("./routes/feed"));
+
   const sync = useSyncStore()
   createEffect(() => {
-    console.log(sync.store,"sync store")
+    console.log(sync.store, "sync store")
   })
 
   return (
@@ -172,7 +146,6 @@ export default function Root() {
         />
 
         <Link rel="manifest" href="manifest.webmanifest" />
-        <Link rel="icon" href="favicon.png" />
       </Head>
       <QueryClientProvider client={queryClient}>
         <ThemeContext.Provider value={[theme, setTheme]}>
@@ -194,9 +167,7 @@ export default function Root() {
                             </Suspense>
 
                             <div aria-hidden="true" class="h-10" />
-                            <Suspense fallback={<PlayerLoading />}>
-                              <PlayerContainer />
-                            </Suspense>
+                            <PlayerContainer />
                             <Suspense>
                               <ErrorBoundary>
                                 <Show when={appState.loading}>
@@ -215,13 +186,13 @@ export default function Root() {
                                   <Routes>
                                     <FileRoutes />
                                   </Routes>
-                                  <Suspense fallback={<div>Loading...</div>}>
-                                    <ErrorBoundary>
-                                      <Show when={!isServer}>
+                                  <Show when={!isServer}>
+                                    <Suspense fallback={<div>Loading...</div>}>
+                                      <ErrorBoundary>
                                         <ReloadPrompt />
-                                      </Show>
-                                    </ErrorBoundary>
-                                  </Suspense>
+                                      </ErrorBoundary>
+                                    </Suspense>
+                                  </Show>
                                 </main>
                                 <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
                                   <BottomNav
@@ -307,8 +278,7 @@ const PlayerContainer = () => {
   const location = useLocation();
 
   return (
-    <Show when={videoQuery.data} fallback={ location.pathname === "/watch"
-      ? <PlayerLoading /> : null}
+    <Show when={videoQuery.data}
     >
       <Player
         onReload={() => videoQuery.refetch()}

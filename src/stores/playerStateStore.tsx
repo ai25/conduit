@@ -8,7 +8,7 @@ import {
   useContext,
 } from "solid-js";
 import { createStore } from "solid-js/store";
-import { MediaPlayerElement, MediaState } from "vidstack";
+import { MediaState, MediaPlayer } from "vidstack";
 
 const PlayerStateContext = createContext<
   Readonly<MediaState> | Partial<MediaState>
@@ -18,7 +18,7 @@ export const PlayerStateProvider = (props: { children: any }) => {
   const [playerState, setPlayerState] = createStore<
     Readonly<MediaState> | Partial<MediaState>
   >({});
-  const [player, setPlayer] = createSignal<MediaPlayerElement | null>();
+  const [player, setPlayer] = createSignal<MediaPlayer | null>();
 
   createEffect(() => {
     if (!player()) {
@@ -29,13 +29,10 @@ export const PlayerStateProvider = (props: { children: any }) => {
 
   createEffect(() => {
     if (!player()) return;
-    player()!.onAttach(() => {
       unsubscribe = player()!.subscribe(({ paused }) => {
         console.log("playerStateStore.tsx:39", paused);
         setPlayerState({ paused });
       });
-      unsubscribe?.();
-    });
   });
 
   onCleanup(() => {

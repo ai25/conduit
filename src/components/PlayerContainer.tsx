@@ -39,7 +39,9 @@ export default function PlayerContainer(props: {
       classList={{
       }}
     >
-      <Suspense fallback={<Loading />}>
+      <Suspense 
+        fallback={<Loading />}
+      >
         <Show when={props.loading}>
           <Loading />
         </Show>
@@ -121,7 +123,7 @@ export const PlayerLoading = () => {
   return (
     <div classList={{
       "pointer-events-none aspect-video bg-black flex h-fit w-full max-w-full items-center justify-center": true,
-      "!absolute inset-0 w-screen h-screen z-[9999999]": !!searchParams.fullscreen,
+      "!absolute inset-0 w-screen h-screen": !!searchParams.fullscreen,
       "!sticky sm:!relative !top-0": !searchParams.fullscreen,
       "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
       "!hidden": appState.player.dismissed,
