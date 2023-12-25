@@ -1,3 +1,4 @@
+import { isServer } from "solid-js/web";
 import { PipedVideo, PreviewFrame, RelatedStream } from "~/types";
 
 export async function fetchJson(
@@ -157,5 +158,6 @@ export async function exponentialBackoff<T>(
 }
 
 export function isMobile() {
+  if (isServer) return false;
   return navigator.maxTouchPoints > 1 && typeof screen.orientation !== undefined;
 }

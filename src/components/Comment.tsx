@@ -1,3 +1,4 @@
+// TODO: Pinned, verified, hearted
 import { A } from "@solidjs/router";
 import { createInfiniteQuery } from "@tanstack/solid-query";
 import { FaSolidThumbsUp } from "solid-icons/fa";
@@ -60,69 +61,36 @@ export default function Comment(props: Props) {
     }
   };
 
-  const query = createInfiniteQuery(
-    () => [
+  const query = createInfiniteQuery(() => ({
+    queryKey: [
       "commentsReplies",
       props.videoId,
       preferences.instance.api_url,
       props.comment.commentId,
     ],
-    fetchComments,
-    {
-      get enabled() {
-        return preferences.instance?.api_url &&
-          props.videoId &&
-          props.comment.repliesPage &&
-          showingReplies()
-          ? true
-          : false;
-      },
-      getNextPageParam: (lastPage) => {
-        return lastPage.nextpage;
-      },
-    }
+    queryFn: fetchComments,
+    enabled: preferences.instance?.api_url &&
+      props.videoId &&
+      props.comment.repliesPage &&
+      showingReplies()
+      ? true
+      : false,
+    getNextPageParam: (lastPage) => {
+      return lastPage.nextpage;
+    },
+  })
   );
   async function hideReplies() {
     setShowingReplies(false);
   }
 
   const [sanitizedText, setSanitizedText] = createSignal("");
-  createEffect(async() => {
+  createEffect(async () => {
     setSanitizedText(await sanitizeText(props.comment.commentText));
   });
 
   return (
     <>
-      {/* <div class="comment flex mt-1.5">
-        <img
-            src={props.comment.thumbnail}
-            class="rounded-full w-12 h-12"
-            height="48"
-            width="48"
-            loading="lazy"
-            alt="Avatar"
-        />
-
-        <div class="comment-content pl-2">
-            <div class="comment-header">
-                <Show when={props.comment.pinned}>
-                    <svg
-                        class="w-4 h-4"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            fill-rule="evenodd"
-                            clip-rule="evenodd"
-                            d="M12.0001 2.00001C6.47715 2.00001 2.00006 6.4771 2.00006 12C2.00006 17.5229 6.47715 22 12.0001 22C17.5229 22 22 17.5229 22 12C22 6.4771 17.5229 2.00001 12.0001 2.00001ZM12.0001 4.00001C16.4182 4.00001 20.0001 7.58191 20.0001 12C20.0001 16.4181 16.4182 20 12.0001 20C7.58199 20 4.00006 16.4181 4.00006 12C4.00006 7.58191 7.58199 4.00001 12.0001 4.00001ZM11.9999 7.00001C11.4477 7.00001 10.9999 7.44772 10.9999 8.00001V12.0001L8.99994 12.0001C8.44775 12.0001 7.99994 12.4478 7.99994 13.0001C7.99994 13.5523 8.44775 14.0001 8.99994 14.0001L11.9999 14.0001V18.0001C11.9999 18.5523 12.4477 19.0001 12.9999 19.0001C13.5521 19.0001 13.9999 18.5523 13.9999 18.0001V8.00001C13.9999 7.44772 13.5521 7.00001 11.9999 7.00001Z"
-                        />
-                    </svg>
-
-                    <span
-                        class="ml-1.5"
-                    >Pinned by {props.comment.uploader}</span>
-                </Show> */}
       <div class="flex  gap-2 ">
         <A
           href={`${props.comment.commentorUrl}`}
@@ -140,10 +108,9 @@ export default function Comment(props: Props) {
           <span class="flex gap-2 items-center">
             <A
               href={`${props.comment.commentorUrl}`}
-              class={`text-sm font-bold ${
-                props.comment.commentorUrl === props.uploader &&
+              class={`text-sm font-bold ${props.comment.commentorUrl === props.uploader &&
                 "bg-background rounded-full px-4"
-              }`}
+                }`}
             >
               {props.comment.author}
             </A>
@@ -162,13 +129,12 @@ export default function Comment(props: Props) {
               </svg>
             )}
             <p class="text-xs text-text2">{props.comment.commentedTime}</p>
-            {/* {props.comment.&& <p class="text-sm">edited</p>} */}
           </span>
           <Suspense fallback={<p>Loading...</p>}>
-          <p
-            class="text-xs"
-            innerHTML={sanitizedText()}
-          ></p>
+            <p
+              class="text-xs"
+              innerHTML={sanitizedText()}
+            ></p>
           </Suspense>
           <span class="flex gap-1 items-center text-xs ">
             <FaSolidThumbsUp />
@@ -199,12 +165,6 @@ export default function Comment(props: Props) {
                 Hide replies
               </button>
             </Show>
-            {/* <template v-if="comment.repliesPage && (!loadingReplies || !showingReplies)"> */}
-            {/*    <div click="loadReplies" class="cursor-pointer"> */}
-            {/*        <span class="text-sm text-text2">View {comment.replies.replyCount} replies</span> */}
-            {/*        {/1* <font-awesome-icon class="ml-1.5" icon="level-down-alt" /> *1/} */}
-            {/*    </div> */}
-            {/* </template> */}
           </span>
         </div>
       </div>
@@ -237,36 +197,6 @@ export default function Comment(props: Props) {
           </Suspense>
         </div>
       </Show>
-      {/*
-                <div class="comment-author">
-                    <router-link class="font-bold link" :to="comment.commentorUrl">{{ comment.author }}</router-link>
-                    <font-awesome-icon class="ml-1.5" v-if="comment.verified" icon="check" />
-                </div>
-                <div class="comment-meta text-sm mb-1.5" v-text="comment.commentedTime" />
-            </div>
-            <div class="whitespace-pre-wrap" v-html="purifyHTML(comment.commentText)" />
-            <div class="comment-footer mt-1 flex items-center">
-                <div class="i-fa-solid:thumbs-up" />
-                <span class="ml-1" v-text="numberFormat(comment.likeCount)" />
-                <font-awesome-icon class="ml-1" v-if="comment.hearted" icon="heart" />
-            </div>
-            <template v-if="showingReplies">
-                <div @click="hideReplies" class="cursor-pointer">
-                    <a v-t="'actions.hide_replies'" />
-                    <font-awesome-icon class="ml-1.5" icon="level-up-alt" />
-                </div>
-            </template>
-            <div v-show="showingReplies" v-if="replies" class="replies">
-                <div v-for="reply in replies" :key="reply.commentId" class="w-full">
-                    <CommentItem :comment="reply" :uploader="uploader" :video-id="videoId" />
-                </div>
-                <div v-if="nextpage" @click="loadReplies" class="cursor-pointer">
-                    <a v-t="'actions.load_more_replies'" />
-                    <font-awesome-icon class="ml-1.5" icon="level-down-alt" />
-                </div>
-            </div>
-        </div>
-    </div> */}
     </>
   );
 }

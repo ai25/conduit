@@ -97,23 +97,22 @@ export default function Search() {
   };
 
   const query = createInfiniteQuery(
-    () => ["search", searchParams.search_query, selectedFilter()],
-    fetchSearch,
-    {
-      get enabled() {
-        return preferences.instance?.api_url &&
+    () => ({
+      queryKey:["search", searchParams.search_query, selectedFilter()],
+    queryFn:fetchSearch,
+    enabled: preferences.instance?.api_url &&
           searchParams.search_query &&
           selectedFilter() &&
           !isServer
           ? true
-          : false;
-      },
+          : false,
       getNextPageParam: (lastPage) => {
         return lastPage.nextpage;
       },
       refetchOnMount: false,
       refetchOnReconnect: false,
-    }
+      initialPageParam: "initial",
+    })
   );
 
   createEffect(() => {
@@ -265,7 +264,7 @@ export default function Search() {
             <p class="">
               Did you mean{" "}
               <A
-                href={`/search?q=${
+                href={`/results?search_query=${
                   query.data?.pages[0].suggestion
                 }&filter=${selectedFilter()}`}
                 class="link !text-accent1"

@@ -17,33 +17,23 @@ export default function RelatedVideos() {
   });
 
 
-  const videoQuery = createQuery(
-    () => ["streams", v(), preferences.instance.api_url],
-    () => api.fetchVideo(v(), preferences.instance.api_url),
-    {
-      get enabled() {
-        return preferences.instance?.api_url &&
-          !isServer &&
-          v()
-          ? true
-          : false;
-      },
-      refetchOnReconnect: false,
-      refetchOnMount: false,
-      staleTime: 100 * 60 * 1000,
-      cacheTime: Infinity,
-    }
-  );
 
+  const videoQuery = createQuery(() => ({
+    queryKey: ["streams", v(), preferences.instance.api_url],
+    queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
+    enabled: (v() && preferences.instance.api_url) ? true : false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    cacheTime: Infinity,
+    staleTime: 100 * 60 * 1000,
+    deferStream: true
+  }));
   return (
-    <Suspense
+    <Show
+      when={videoQuery.data}
       fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}>
-      <Show
-        when={videoQuery.data}
-        fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}>
-        <Show when={videoQuery.data!.relatedStreams}>
           <div class="w-full max-w-max md:max-w-min">
-            <For each={videoQuery.data!.relatedStreams}>
+            <For each={videoQuery.data?.relatedStreams}>
               {(stream) => {
                 return (
                   <Switch>
@@ -62,8 +52,6 @@ export default function RelatedVideos() {
               }}
             </For>
           </div>
-        </Show>
-      </Show>
-    </Suspense>
+    </Show>
   );
 }

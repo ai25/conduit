@@ -62,23 +62,17 @@ export default function Player(props: {
     if (!route.query.v) return;
     setV(route.query.v);
   });
-  const videoQuery = createQuery(
-    () => ["streams", v(), preferences.instance.api_url],
-    () => api.fetchVideo(v(), preferences.instance.api_url),
-    {
-      get enabled() {
-        return preferences.instance?.api_url &&
-          !isServer &&
-          v()
-          ? true
-          : false;
-      },
-      refetchOnReconnect: false,
-      refetchOnMount: false,
-      cacheTime: Infinity,
-      staleTime: 100 * 60 * 1000,
-    }
-  );
+
+  const videoQuery = createQuery<any,any,PipedVideo>(() => ({
+    queryKey: ["streams", v(), preferences.instance.api_url],
+    queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
+    enabled: (v() && preferences.instance.api_url) ? true : false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    cacheTime: Infinity,
+    staleTime: 100 * 60 * 1000,
+    deferStream: true
+  }));
 
 
   const [playlist] = usePlaylist();

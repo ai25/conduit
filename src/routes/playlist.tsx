@@ -12,7 +12,7 @@ import VideoCard from "~/components/VideoCard";
 import { Playlist as PlaylistType, RelatedStream } from "~/types";
 import PlaylistItem from "~/components/PlaylistItem";
 import { fetchJson } from "~/utils/helpers";
-import {  useSyncStore } from "~/stores/syncStore";
+import { useSyncStore } from "~/stores/syncStore";
 import { createQuery } from "@tanstack/solid-query";
 import { usePreferences } from "~/stores/preferencesStore";
 
@@ -31,16 +31,12 @@ export default function Playlist() {
     const l = sync.store.playlists[id];
     setList(l);
   });
-  const query = createQuery(
-    () => ["playlist"],
-    async (): Promise<PlaylistType> =>
+  const query = createQuery(() => ({
+    queryKey: ["playlist"],
+    queryFn: async (): Promise<PlaylistType> =>
       (await fetch(preferences.instance.api_url + "/playlists/" + id)).json(),
-    {
-      get enabled() {
-        return preferences.instance.api_url && !isLocal() && id ? true : false;
-      },
-    }
-  );
+    enabled: preferences.instance.api_url && !isLocal() && id ? true : false,
+  }));
 
   createEffect(() => {
     if (!query.data) return;

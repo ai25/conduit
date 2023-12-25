@@ -43,6 +43,7 @@ import SubscribeButton from "./SubscribeButton";
 import { Tooltip } from "./Tooltip";
 import Button from "./Button";
 import { TbThumbDown, TbThumbDownFilled, TbThumbUp, TbThumbUpFilled } from "solid-icons/tb";
+import { toast } from "./Toast";
 
 function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
   const player = document.querySelector("media-player") as MediaPlayerElement;
@@ -108,25 +109,17 @@ const Description = (props: {
     setV(searchParams.v);
   });
 
-  const videoQuery = createQuery(
-    () => ["streams", v(), preferences.instance.api_url],
-    () => api.fetchVideo(v(), preferences.instance.api_url),
-    {
-      get enabled() {
-        return preferences.instance?.api_url &&
-          !isServer &&
-          v()
-          ? true
-          : false;
-      },
-      refetchOnReconnect: false,
-      refetchOnMount: false,
-      staleTime: 100 * 60 * 1000,
-      cacheTime: Infinity,
-      suspense: true,
-    }
-  );
 
+  const videoQuery = createQuery(() => ({
+    queryKey: ["streams", v(), preferences.instance.api_url],
+    queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
+    enabled: (v() && preferences.instance.api_url) ? true : false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    cacheTime: Infinity,
+    staleTime: 100 * 60 * 1000,
+    deferStream: true
+  }));
 
   const [expanded, setExpanded] = createSignal(false);
 
@@ -156,7 +149,9 @@ const Description = (props: {
   );
 
 
-  return (<>
+  return (<Suspense
+    fallback={<div>Loading...</div>}
+  >
     <Modal
       isOpen={debugInfoOpen()}
       setIsOpen={setDebugInfoOpen}
@@ -323,26 +318,26 @@ const Description = (props: {
           </button>
         </div>
       </Async>
-      <Async when={videoQuery.data} fallback={<><Show when={!isServer && isMobile()}>
-        <div class="w-full h-24 bg-bg2 animate-pulse"></div>
-      </Show>
-        <Show when={!isServer && !isMobile()}>
-          <div class="w-full flex flex-col gap-2 mt-2">
-            <For each={[0, 1, 2, 3, 4]}>
-              {() => (
-                <div class="w-full h-full flex gap-1 ">
-                  <div class="w-8 h-8 rounded-full bg-bg2 animate-pulse"></div>
-                  <div class="flex flex-col gap-1 w-full h-full min-h-0">
-                    <div class="w-1/3 h-3 bg-bg2 rounded animate-pulse" />
-                    <div class="w-full h-3 bg-bg2 rounded animate-pulse" />
-                    <div class="w-1/2 h-3 bg-bg2 rounded animate-pulse" />
-                  </div>
-
+      <Async when={videoQuery.data} fallback={<>
+        <Show when={!isServer && isMobile()}>
+          <div class="w-full h-24 bg-bg2 animate-pulse"></div>
+        </Show>
+        <div class="w-full flex flex-col gap-2 mt-2">
+          <For each={[0, 1, 2, 3, 4]}>
+            {() => (
+              <div class="w-full h-full flex gap-1 ">
+                <div class="w-8 h-8 rounded-full bg-bg2 animate-pulse"></div>
+                <div class="flex flex-col gap-1 w-full h-full min-h-0">
+                  <div class="w-1/3 h-3 bg-bg2 rounded animate-pulse" />
+                  <div class="w-full h-3 bg-bg2 rounded animate-pulse" />
+                  <div class="w-1/2 h-3 bg-bg2 rounded animate-pulse" />
                 </div>
-              )}
-            </For>
-          </div>
-        </Show></>}>
+
+              </div>
+            )}
+          </For>
+        </div>
+      </>}>
 
         <Comments
           videoId={getVideoId(videoQuery.data)!}
@@ -350,7 +345,7 @@ const Description = (props: {
         />
       </Async>
     </div>
-  </>
+  </Suspense>
   );
 };
 
@@ -375,7 +370,7 @@ const JSONViewer: any = (props: JSONViewerProps) => {
   const isObject = typeof props.data === "object" && props.data !== null;
 
   return (
-    <div class={`pl-${props.level || 1} flex`}>
+    <div class={`pl-${props.level || 1} flex text-xs font-mono`}>
       {isObject ? (
         <div class="flex gap-2 justify-between">
           <span class="cursor-pointer" onClick={() => setFolded(!folded())}>
@@ -418,7 +413,7 @@ const ActionsContainer = (props: {
 
 }) => {
   return (
-    <div class="flex items-center justify-evenly rounded p-2 bg-bg2">
+    <div class="flex items-center justify-evenly rounded-full p-2 bg-bg2">
       <Switch>
         <Match when={props.downloaded}>
           <Tooltip
@@ -454,6 +449,7 @@ const ActionsContainer = (props: {
           <Button
             icon={<FaSolidShare class="h-6 w-6" />}
             appearance="subtle"
+            onClick={() => { toast.show("Not implemented") }}
           />}
       />
       <Tooltip
@@ -463,6 +459,7 @@ const ActionsContainer = (props: {
           <Button
             icon={<FaSolidBookmark class="h-6 w-6" />}
             appearance="subtle"
+            onClick={() => { toast.show("Not implemented") }}
           />
         }
       />
@@ -493,7 +490,7 @@ const ActionsContainer = (props: {
 }
 
 const ActionsContainerFallback = () => (
-  <div class="flex items-center bg-bg2 justify-evenly rounded p-2 ">
+  <div class="flex items-center bg-bg2 justify-evenly rounded-full p-2 ">
     <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse"></div>
     <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse"></div>
     <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse"></div>
@@ -503,11 +500,64 @@ const ActionsContainerFallback = () => (
 );
 
 const Async = (props: { when: any, fallback: JSX.Element, error?: (error: Error, retry: () => void) => JSX.Element, children: JSX.Element }) => {
-  return <Suspense fallback={props.fallback}>
+  return (
+
     <Show when={props.when} fallback={props.fallback}>
-      <ErrorBoundary fallback={props.error}>
-        {props.children}
-      </ErrorBoundary>
+      {props.children}
     </Show>
-  </Suspense>
+  )
 }
+
+const Skeleton = () => {
+  return (
+    <div>
+      {/* Replicating the structure of Modal's content */}
+      <div class="max-w-screen-sm max-h-[80vh] overflow-auto bg-bg1 animate-pulse"></div>
+
+      {/* Replicating the structure for video title */}
+      <div class="w-full h-6 bg-bg2 rounded animate-pulse"></div>
+
+      {/* Replicating the structure for uploader info */}
+      <div class="w-full h-12 flex sm:justify-start justify-between gap-2">
+        <div class="w-44 flex items-center gap-2">
+          <div class="w-12 h-12 aspect-square bg-bg2 animate-pulse rounded-full"></div>
+          <div class="flex flex-col justify-between py-1 gap-1 h-full w-full ">
+            <div class="w-full h-4 bg-bg2 animate-pulse rounded"></div>
+            <div class="w-3/4 h-4 bg-bg2 animate-pulse rounded"></div>
+          </div>
+        </div>
+        <div class="w-32 h-10 bg-bg2 animate-pulse rounded-full"></div>
+      </div>
+
+      {/* Replicating the structure for ActionsContainer */}
+      <div class="w-full h-8 flex flex-wrap gap-2 mb-2 items-end justify-between ">
+        <div class="w-64 h-4 bg-bg2 animate-pulse rounded-lg"></div>
+        <div class="w-full [@media(min-width:400px)]:w-36 h-4 bg-bg2 animate-pulse rounded-lg"></div>
+      </div>
+
+      {/* Replicating the structure for video publishing info */}
+      <div class="w-full h-8 flex flex-wrap gap-2 mb-2 items-end justify-between ">
+        <div class="w-64 h-4 bg-bg2 animate-pulse rounded-lg"></div>
+        <div class="w-full [@media(min-width:400px)]:w-36 h-4 bg-bg2 animate-pulse rounded-lg"></div>
+      </div>
+
+      {/* Replicating the structure for video description */}
+      <div class="mt-1 rounded-lg w-full h-24 bg-bg2 animate-pulse"></div>
+
+      {/* Replicating the structure for comments section */}
+      <div class="w-full flex flex-col gap-2 mt-2">
+        {[0, 1, 2, 3, 4].map(() => (
+          <div class="w-full h-full flex gap-1 ">
+            <div class="w-8 h-8 rounded-full bg-bg2 animate-pulse"></div>
+            <div class="flex flex-col gap-1 w-full h-full min-h-0">
+              <div class="w-1/3 h-3 bg-bg2 rounded animate-pulse"></div>
+              <div class="w-full h-3 bg-bg2 rounded animate-pulse"></div>
+              <div class="w-1/2 h-3 bg-bg2 rounded animate-pulse"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+

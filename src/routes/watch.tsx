@@ -12,20 +12,11 @@ import {
 import { useLocation, useSearchParams } from "solid-start";
 import { For } from "solid-js";
 import { PlayerContext, useTheater } from "~/root";
-import VideoCard from "~/components/VideoCard";
 import { getHlsManifest, getStreams } from "~/utils/hls";
 import PlaylistItem from "~/components/PlaylistItem";
-import { createVirtualizer, elementScroll } from "@tanstack/solid-virtual";
-import { classNames, fetchJson } from "~/utils/helpers";
 import { usePlaylist } from "~/stores/playlistStore";
 import { useSyncStore } from "~/stores/syncStore";
-import type { Virtualizer, VirtualizerOptions } from "@tanstack/virtual-core";
-import Button from "~/components/Button";
 import { useAppState } from "~/stores/appStateStore";
-import PlayerContainer, {
-  PlayerError,
-  PlayerLoading,
-} from "~/components/PlayerContainer";
 import { createQuery } from "@tanstack/solid-query";
 import { Chapter, PipedVideo, RelatedPlaylist } from "~/types";
 import { usePreferences } from "~/stores/preferencesStore";
@@ -118,9 +109,9 @@ export default function Watch() {
   const sync = useSyncStore();
   const [preferences] = usePreferences();
   const isLocalPlaylist = () => route.query.list?.startsWith("conduit-");
-  const sponsorsQuery = createQuery<SponsorSegment[]>(
-    () => ["sponsors", route.query.v, preferences.instance.api_url],
-    async (): Promise<SponsorSegment[]> => {
+  const sponsorsQuery = createQuery<SponsorSegment[]>(() => ({
+    queryKey: ["sponsors", route.query.v, preferences.instance.api_url],
+    queryFn: async (): Promise<SponsorSegment[]> => {
       const sha256Encrypted = await globalThis.crypto.subtle.digest(
         "SHA-256",
         new TextEncoder().encode(route.query.v)
@@ -160,23 +151,20 @@ export default function Watch() {
       }
       return video.segments;
     },
-    {
-      get enabled() {
-        return preferences.instance?.api_url &&
-          !isServer &&
-          route.query.v
-          ? true
-          : false;
-      },
-      refetchOnReconnect: false,
-      retry: false,
-      suspense: false,
-      useErrorBoundary: false,
-    }
+    enabled: preferences.instance?.api_url &&
+      !isServer &&
+      route.query.v
+      ? true
+      : false,
+    refetchOnReconnect: false,
+    retry: false,
+    suspense: false,
+    useErrorBoundary: false,
+  })
   );
-  const playlistQuery = createQuery(
-    () => ["playlist", route.query.list, preferences.instance.api_url],
-    async () => {
+  const playlistQuery = createQuery(() => ({
+    queryKey: ["playlist", route.query.list, preferences.instance.api_url],
+    queryFn: async () => {
       const res = await fetch(
         `${preferences.instance.api_url}/playlists/${route.query.list}`
       );
@@ -185,16 +173,13 @@ export default function Watch() {
       }
       return await res.json();
     },
-    {
-      get enabled() {
-        return preferences.instance?.api_url &&
-          route.query.list &&
-          !isLocalPlaylist()
-          ? true
-          : false;
-      },
-      refetchOnReconnect: false,
-    }
+    enabled: preferences.instance?.api_url &&
+      route.query.list &&
+      !isLocalPlaylist()
+      ? true
+      : false,
+    refetchOnReconnect: false,
+  })
   );
   createEffect(() => {
     console.log(sync.store, "STORE");
@@ -419,7 +404,6 @@ export default function Watch() {
               </div>
             )}
           </Show>
-          <RelatedVideos />
         </div>
       </div>
     </div>

@@ -34,17 +34,14 @@ export default function Comments(props: { videoId: string; uploader: string }) {
     }
   });
 
-  const query = createInfiniteQuery(
-    () => ["comments", props.videoId, preferences.instance.api_url],
-    fetchComments,
-    {
-      get enabled() {
-        return preferences.instance?.api_url && props.videoId ? true : false;
-      },
-      getNextPageParam: (lastPage) => {
-        return lastPage.nextpage;
-      },
-    }
+  const query = createInfiniteQuery(() => ({
+    queryKey: ["comments", props.videoId, preferences.instance.api_url],
+    queryFn: fetchComments,
+    enabled: (preferences.instance?.api_url && props.videoId) ? true : false,
+    getNextPageParam: (lastPage) => {
+      return lastPage.nextpage;
+    },
+  })
   );
   const [commentsOpen, setCommentsOpen] = createSignal(false);
   const [intersectionRef, setIntersectionRef] = createSignal<

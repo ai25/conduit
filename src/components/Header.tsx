@@ -54,7 +54,7 @@ export enum ProviderStatus {
   CONNECTED = "connected",
 }
 
-const Header = () => {
+export default function Header() {
   const [theme, setTheme] = useContext(ThemeContext);
   const [, setThemeCookie] = useCookie("theme", "monokai");
   const sync = useSyncStore();
@@ -66,26 +66,22 @@ const Header = () => {
     { href: "/import", label: "Import" },
   ];
 
-  const query = createQuery(
-    () => ["instances"],
-    async (): Promise<PipedInstance[]> => {
+  const query = createQuery(() => ({
+    queryKey: ["instances"],
+    queryFn: async (): Promise<PipedInstance[]> => {
       const res = await fetch("https://piped-instances.kavin.rocks/");
       if (!res.ok) {
         throw new Error("Failed to fetch instances");
       }
       return await res.json();
     },
-    {
-      get initialData() {
-        return getStorageValue("instances", [], "json", "localStorage");
-      },
-      select: (data) => {
-        setStorageValue("instances", data, "localStorage");
-        return data as PipedInstance[];
-      },
-      retry: (failureCount) => failureCount < 3,
-    }
-  );
+    initialData: getStorageValue("instances", [], "json", "localStorage"),
+    select: (data) => {
+      setStorageValue("instances", data, "localStorage");
+      return data as PipedInstance[];
+    },
+    retry: (failureCount) => failureCount < 3,
+  }));
 
   const [preferences, setPreferences] = usePreferences();
 
@@ -319,9 +315,8 @@ const Header = () => {
                 ">
                 <KobaltePopover.Arrow />
                 <KobaltePopover.Description
-                  class={`text-sm p-1 text-left flex flex-col gap-2 items-center ${
-                    roomId() ? "text-green-600" : "text-red-600"
-                  }`}
+                  class={`text-sm p-1 text-left flex flex-col gap-2 items-center ${roomId() ? "text-green-600" : "text-red-600"
+                    }`}
                 >
                   <Show when={roomId()}>
                     Connected: {roomId()}
@@ -452,4 +447,3 @@ const Header = () => {
   );
 };
 
-export default Header;

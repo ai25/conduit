@@ -28,7 +28,7 @@ const SearchInput = () => {
 
   const [searchParams] = useSearchParams()
   createEffect(() => {
-    setInputValue(searchParams.search_query || untrack(()=>inputValue()))
+    setInputValue(searchParams.search_query || untrack(() => inputValue()))
   })
 
   const fetchInitialSuggestions = () => {
@@ -39,33 +39,31 @@ const SearchInput = () => {
     );
   };
   const [preferences] = usePreferences();
-  const searchQuery = createQuery(
-    () => ["suggestions"],
-    async (): Promise<string[]> => {
+  const searchQuery = createQuery(() => ({
+    queryKey: ["suggestions"],
+    queryFn: async (): Promise<string[]> => {
       console.log("fetching suggestions", search());
       return await fetch(
         preferences.instance?.api_url + "/suggestions?query=" + search()
       ).then((res) => res.json());
     },
-    {
-      get enabled() {
-        return search().length > 1 &&
-          preferences.instance?.api_url &&
-          showSuggestions()
-          ? true
-          : false;
-      },
-      select: (data) => {
-        console.log(data);
-        if (data && !(data as any).error) {
-          setSuggestions(
-            data.map((item: string) => ({ value: item, isHistory: false }))
-          );
-        } else {
-          setSuggestions([]);
-        }
-      },
-    }
+    enabled: search().length > 1 &&
+      preferences.instance?.api_url &&
+      showSuggestions()
+      ? true
+      : false
+    ,
+    select: (data) => {
+      console.log(data);
+      if (data && !(data as any).error) {
+        setSuggestions(
+          data.map((item: string) => ({ value: item, isHistory: false }))
+        );
+      } else {
+        setSuggestions([]);
+      }
+    },
+  })
   );
   const navigate = useNavigate();
   const [, setAppState] = useAppState();
@@ -287,113 +285,113 @@ const SearchInput = () => {
         </button>
       </Show>
       <Show when={suggestions().length > 0 && showSuggestions()}>
-        
+
         <Portal>
-        <ul
+          <ul
 
-          class={`absolute w-screen left-0 right-0 sm:w-max sm:min-w-[30rem] sm:left-[calc(70vw-18rem)] top-10 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
-          aria-multiselectable="false"
-          aria-live="polite"
-          aria-label="Suggestions"
-          id="search-suggestion-list"
-        >
-          <For each={suggestions()}>
-            {((suggestion, index) => (
-              <li
-                classList={{
-                  "text-sm leading-none text-text1 border-b border-bg2 last:border-none rounded-md flex items-center justify-between h-8 px-2 py-5 relative select-none outline-none cursor-pointer hover:bg-bg2": true,
-                  "bg-bg2 focus-visible:ring-2 ring-primary": activeIndex() === index()
-                }}
+            class={`absolute w-screen left-0 right-0 sm:w-max sm:min-w-[30rem] sm:left-[calc(70vw-18rem)] top-10 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
+            aria-multiselectable="false"
+            aria-live="polite"
+            aria-label="Suggestions"
+            id="search-suggestion-list"
+          >
+            <For each={suggestions()}>
+              {((suggestion, index) => (
+                <li
+                  classList={{
+                    "text-sm leading-none text-text1 border-b border-bg2 last:border-none rounded-md flex items-center justify-between h-8 px-2 py-5 relative select-none outline-none cursor-pointer hover:bg-bg2": true,
+                    "bg-bg2 focus-visible:ring-2 ring-primary": activeIndex() === index()
+                  }}
 
-                id={`search-option-${index()}`}
-                aria-selected={activeIndex() === index()}
-                tabindex={0}
-                onClick={() => {
-                  console.log("click");
-                  setSearch(suggestion.value);
-                  setInputValue(suggestion.value);
-                  handleSearch(suggestion.value);
-                  setSuggestions([]);
-                  setShowSuggestions(false);
-                }}
-                onKeyDown={(e) => {
-                  console.log("keydown");
-                  e.stopPropagation();
-                  if (e.key === "Enter") {
+                  id={`search-option-${index()}`}
+                  aria-selected={activeIndex() === index()}
+                  tabindex={0}
+                  onClick={() => {
+                    console.log("click");
                     setSearch(suggestion.value);
                     setInputValue(suggestion.value);
                     handleSearch(suggestion.value);
                     setSuggestions([]);
                     setShowSuggestions(false);
-                  }
-                }}
-                onFocusIn={() => {
-                  setActiveIndex(index());
-                }}
-                aria-label={suggestion.value}
-              >
-                <span aria-hidden="true">{suggestion.value}</span>
-
-                <div class="ml-2 flex items-center">
-                  <button
-                    id={`search-suggestion-use-${index()}`}
-                    role="none"
-                    class="text-xs text-gray-500 h-8 w-8 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
-                    onClick={(e) => {
-                      e.stopPropagation();
+                  }}
+                  onKeyDown={(e) => {
+                    console.log("keydown");
+                    e.stopPropagation();
+                    if (e.key === "Enter") {
+                      setSearch(suggestion.value);
                       setInputValue(suggestion.value);
-                      inputRef?.focus();
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                      e.stopPropagation();
-                      setInputValue(suggestion.value);
-                      inputRef?.focus();
-                      }
-                    }}
+                      handleSearch(suggestion.value);
+                      setSuggestions([]);
+                      setShowSuggestions(false);
+                    }
+                  }}
+                  onFocusIn={() => {
+                    setActiveIndex(index());
+                  }}
+                  aria-label={suggestion.value}
+                >
+                  <span aria-hidden="true">{suggestion.value}</span>
 
-                    aria-label={`Use suggestion ${suggestion.value} (Enter)`}
-                  >
-                    <TbArrowUpLeft
-                      class="w-5 h-5"
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <Show when={suggestion.isHistory}>
+                  <div class="ml-2 flex items-center">
                     <button
-                      id={`search-suggestion-remove-${index()}`}
+                      id={`search-suggestion-use-${index()}`}
                       role="none"
                       class="text-xs text-gray-500 h-8 w-8 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
                       onClick={(e) => {
-                        console.log("remove");
-                        if (suggestion.isHistory) {
+                        e.stopPropagation();
+                        setInputValue(suggestion.value);
+                        inputRef?.focus();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
                           e.stopPropagation();
-                          removeSuggestion(suggestion.value);
+                          setInputValue(suggestion.value);
                           inputRef?.focus();
                         }
                       }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        if (suggestion.isHistory) {
-                          e.stopPropagation();
-                          removeSuggestion(suggestion.value);
-                          inputRef?.focus();
-                        }
-                      }
-                    }}
-                      aria-label={`Remove suggestion ${suggestion.value} (Ctrl+Delete)`}
+
+                      aria-label={`Use suggestion ${suggestion.value} (Enter)`}
                     >
-                      <TbX
+                      <TbArrowUpLeft
                         class="w-5 h-5"
                         aria-hidden="true"
                       />
                     </button>
-                  </Show>
-                </div>
-              </li>
-            ))}
-          </For>
-        </ul>
+                    <Show when={suggestion.isHistory}>
+                      <button
+                        id={`search-suggestion-remove-${index()}`}
+                        role="none"
+                        class="text-xs text-gray-500 h-8 w-8 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
+                        onClick={(e) => {
+                          console.log("remove");
+                          if (suggestion.isHistory) {
+                            e.stopPropagation();
+                            removeSuggestion(suggestion.value);
+                            inputRef?.focus();
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            if (suggestion.isHistory) {
+                              e.stopPropagation();
+                              removeSuggestion(suggestion.value);
+                              inputRef?.focus();
+                            }
+                          }
+                        }}
+                        aria-label={`Remove suggestion ${suggestion.value} (Ctrl+Delete)`}
+                      >
+                        <TbX
+                          class="w-5 h-5"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    </Show>
+                  </div>
+                </li>
+              ))}
+            </For>
+          </ul>
         </Portal>
       </Show>
     </div>

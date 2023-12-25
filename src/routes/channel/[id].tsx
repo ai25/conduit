@@ -88,18 +88,16 @@ export default function Channel() {
     }
   }
 
-  const query = createInfiniteQuery(
-    () => ["channelData", route.pathname, preferences.instance.api_url],
-    fetchChannelOrNextPage,
-    {
-      getNextPageParam: (lastPage) => lastPage.nextpage,
-      get enabled() {
-        return !!route?.pathname && preferences?.instance?.api_url && !isServer
-          ? true
-          : false;
-      },
-    }
-  );
+  const query = createInfiniteQuery(() => ({
+    queryKey: ["channelData", route.pathname, preferences.instance.api_url],
+    queryFn: fetchChannelOrNextPage,
+    getNextPageParam: (lastPage) => lastPage.nextpage,
+    enabled: (!!route?.pathname && preferences?.instance?.api_url ) ? true : false,
+    initialPageParam: null,
+    deferStream: true,
+    initialData: () => undefined 
+
+  }));
 
   createEffect(() => {
     if (!query.data) return;
@@ -339,17 +337,14 @@ const CollapsibleText = (props: CollapsibleTextProps) => {
 
 const ShortsTab = (props: { tabData: string }) => {
   const [preferences] = usePreferences();
-  const query = createInfiniteQuery(
-    () => ["shortsTab", props.tabData, preferences.instance.api_url],
-    (context) =>
+  const query = createInfiniteQuery(() => ({
+    queryKey: ["shortsTab", props.tabData, preferences.instance.api_url],
+    queryFn: (context) =>
       fetchTabNextPage(preferences.instance.api_url, props.tabData, context),
-    {
-      getNextPageParam: (lastPage) => lastPage.nextpage,
-      get enabled() {
-        return props.tabData && preferences?.instance?.api_url ? true : false;
-      },
-    }
-  );
+    getNextPageParam: (lastPage) => lastPage.nextpage,
+    enabled: props.tabData && preferences?.instance?.api_url ? true : false,
+    initialPageParam: undefined,
+  }));
   const isIntersecting = useIntersectionObserver({
     setTarget: () => intersection(),
     threshold: 0.1,
@@ -410,17 +405,14 @@ const ShortsTab = (props: { tabData: string }) => {
 };
 const LivestreamsTab = (props: { tabData: string }) => {
   const [preferences] = usePreferences();
-  const query = createInfiniteQuery(
-    () => ["livestreamsTab", props.tabData, preferences.instance.api_url],
-    (context) =>
+  const query = createInfiniteQuery(() => ({
+    queryKey: ["livestreamsTab", props.tabData, preferences.instance.api_url],
+    queryFn: (context) =>
       fetchTabNextPage(preferences.instance.api_url, props.tabData, context),
-    {
-      getNextPageParam: (lastPage) => lastPage.nextpage,
-      get enabled() {
-        return props.tabData && preferences?.instance?.api_url ? true : false;
-      },
-    }
-  );
+    getNextPageParam: (lastPage) => lastPage.nextpage,
+    enabled: props.tabData && preferences?.instance?.api_url ? true : false,
+    initialPageParam: undefined,
+  }));
   const isIntersecting = useIntersectionObserver({
     setTarget: () => intersection(),
     threshold: 0.1,
@@ -481,17 +473,14 @@ const LivestreamsTab = (props: { tabData: string }) => {
 };
 const PlaylistsTab = (props: { tabData: string }) => {
   const [preferences] = usePreferences();
-  const query = createInfiniteQuery(
-    () => ["playlistsTab", props.tabData, preferences.instance.api_url],
-    (context) =>
+  const query = createInfiniteQuery(() => ({
+    queryKey: ["playlistsTab", props.tabData, preferences.instance.api_url],
+    queryFn: (context) =>
       fetchTabNextPage(preferences.instance.api_url, props.tabData, context),
-    {
-      getNextPageParam: (lastPage) => lastPage.nextpage,
-      get enabled() {
-        return props.tabData && preferences?.instance?.api_url ? true : false;
-      },
-    }
-  );
+    getNextPageParam: (lastPage) => lastPage.nextpage,
+    enabled: props.tabData && preferences?.instance?.api_url ? true : false,
+    initialPageParam: undefined,
+  }));
   const isIntersecting = useIntersectionObserver({
     setTarget: () => intersection(),
     threshold: 0.1,
@@ -552,17 +541,14 @@ const PlaylistsTab = (props: { tabData: string }) => {
 };
 const ChannelsTab = (props: { tabData: string }) => {
   const [preferences] = usePreferences();
-  const query = createInfiniteQuery(
-    () => ["channelsTab", props.tabData, preferences.instance.api_url],
-    (context) =>
+  const query = createInfiniteQuery(() => ({
+    queryKey: ["channelsTab", props.tabData, preferences.instance.api_url],
+    queryFn: (context) =>
       fetchTabNextPage(preferences.instance.api_url, props.tabData, context),
-    {
-      getNextPageParam: (lastPage) => lastPage.nextpage,
-      get enabled() {
-        return props.tabData && preferences?.instance?.api_url ? true : false;
-      },
-    }
-  );
+    getNextPageParam: (lastPage) => lastPage.nextpage,
+    enabled: props.tabData && preferences?.instance?.api_url ? true : false,
+    initialPageParam: undefined,
+  }));
   const isIntersecting = useIntersectionObserver({
     setTarget: () => intersection(),
     threshold: 0.1,
@@ -607,8 +593,7 @@ const ChannelsTab = (props: { tabData: string }) => {
                 {(item) => (
                   <div class="w-44 mx-1 flex flex-col gap-2 items-start">
                     <A href={item.url} class="group outline-none">
-                      <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-shadow duration-300"
-                      >
+                      <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-shadow duration-300">
                         <img
                           class="w-full rounded-full transition-transform duration-300 group-hover:scale-105 group-focus-visible:scale-105"
                           src={item.thumbnail}

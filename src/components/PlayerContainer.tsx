@@ -10,79 +10,63 @@ import {
   createRenderEffect,
   createSignal,
   Suspense,
+  createEffect,
+  ErrorBoundary,
+  Switch,
+  Match,
 } from "solid-js";
 import { usePreferences } from "~/stores/preferencesStore";
 import { PipedVideo } from "~/types";
 import { isServer } from "solid-js/web";
-import {useAppState} from "~/stores/appStateStore";
+import { useAppState } from "~/stores/appStateStore";
 import { useSearchParams } from "solid-start";
+import { createQuery } from "@tanstack/solid-query";
+import api from "~/utils/api";
 
 export default function PlayerContainer(props: {
-  video: PipedVideo | undefined;
-  error: any;
-  loading: boolean;
-  onReload: () => void;
 }) {
   const route = useLocation();
   const [preferences] = usePreferences();
-  const Loading = () =>
-    route.pathname === "/watch" ? <PlayerLoading /> : <></>;
-  const Error = (props: any) =>
-    route.pathname === "/watch" ? (
-      <PlayerError error={{ name: props.name, message: props.message }} />
-    ) : (
-      <></>
-    );
+
+  const [searchParams] = useSearchParams();
+  console.log(preferences.instance.api_url, "api url");
+  const [v, setV] = createSignal<string | undefined>(undefined);
+  createEffect(() => {
+    console.log(videoQuery,"video query");
+    if (!searchParams.v) return;
+    setV(searchParams.v);
+  });
+  const videoQuery = createQuery(() => ({
+    queryKey: ["streams", v(), preferences.instance.api_url],
+    queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
+    enabled: v() && preferences.instance.api_url ? true : false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    cacheTime: Infinity,
+    staleTime: 100 * 60 * 1000,
+  }));
 
   return (
-    <div
-      classList={{
-      }}
+    <ErrorBoundary
+    fallback={(props) => <>ERROR
+      {JSON.stringify(props, null, 2)}
+    </>}
     >
-      <Suspense 
-        fallback={<Loading />}
+      <Suspense fallback={<PlayerLoading />}
       >
-        <Show when={props.loading}>
-          <Loading />
-        </Show>
-        <Show when={props.error}>
-          <Error message={props.error!.message} name={props.error!.name} />
-        </Show>
-        <Show when={props.video}>
-          <Player video={props.video!} onReload={props.onReload} />
-        </Show>
+        <Switch fallback={<PlayerLoading />}>
+        <Match when={videoQuery.isPending}>
+          <PlayerLoading />
+        </Match>
+        <Match when={videoQuery.isError}>
+          <PlayerError error={videoQuery.error as Error} />
+        </Match>
+        <Match when={videoQuery.data}>
+          <Player onReload={() => videoQuery.refetch()} />
+        </Match>
+        </Switch>
       </Suspense>
-      <div
-        id="column"
-        classList={{
-          "w-0 h-0": theatre(),
-          "w-max min-w-max h-max overflow-y-auto": !theatre(),
-        }}
-      />
-      {/* <div
-        classList={{
-          "hidden lg:flex": !preferences.theatreMode,
-          hidden: preferences.theatreMode,
-        }}
-        class="w-[28rem] relative h-1 self-start justify-start">
-        <div class="absolute top-0 flex w-full justify-start items-center flex-col h-full">
-          <Show
-            when={video.value}
-            keyed
-            fallback={
-              <For each={Array(20).fill(0)}>{() => <VideoCard />}</For>
-            }>
-            {(video) => (
-              <For each={video.relatedStreams}>
-                {(stream) => {
-                  return <VideoCard v={stream} />;
-                }}
-              </For>
-            )}
-          </Show>
-        </div>
-      </div> */}
-    </div>
+    </ErrorBoundary>
   );
 }
 
@@ -120,15 +104,17 @@ export const Spinner = (props: { class?: string }) => (
 export const PlayerLoading = () => {
   const [searchParams] = useSearchParams();
   const [appState] = useAppState();
+  const location = useLocation();
   return (
-    <div classList={{
-      "pointer-events-none aspect-video bg-black flex h-fit w-full max-w-full items-center justify-center": true,
-      "!absolute inset-0 w-screen h-screen": !!searchParams.fullscreen,
-      "!sticky sm:!relative !top-0": !searchParams.fullscreen,
-      "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
-      "!hidden": appState.player.dismissed,
-
-    }}>
+    <div
+      classList={{
+        "pointer-events-none aspect-video bg-black flex h-fit w-full max-w-full items-center justify-center": true,
+        "!absolute inset-0 w-screen h-screen": !!searchParams.fullscreen,
+        "!sticky sm:!relative !top-0": !searchParams.fullscreen,
+        "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
+        "!hidden": location.pathname !== "/watch",
+      }}
+    >
       <Spinner />
     </div>
   );
