@@ -112,6 +112,7 @@ export default function Search() {
       refetchOnMount: false,
       refetchOnReconnect: false,
       initialPageParam: "initial",
+      initialData: () => undefined
     })
   );
 

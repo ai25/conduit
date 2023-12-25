@@ -149,9 +149,7 @@ const Description = (props: {
   );
 
 
-  return (<Suspense
-    fallback={<div>Loading...</div>}
-  >
+  return (<>
     <Modal
       isOpen={debugInfoOpen()}
       setIsOpen={setDebugInfoOpen}
@@ -345,7 +343,7 @@ const Description = (props: {
         />
       </Async>
     </div>
-  </Suspense>
+  </>
   );
 };
 

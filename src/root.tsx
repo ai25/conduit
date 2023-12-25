@@ -131,16 +131,38 @@ export default function Root() {
     <Html lang="en">
       <Head>
         <MetaProvider
-        tags={[{ 
-          id: "meta",
-          name: "meta",
-          props: {
-            content: "meta",
-          },
-          tag: "meta",
-       }]}
+          tags={[
+            {
+              name: "viewport",
+              id: "viewport",
+              tag: "meta",
+              props: {
+                name: "viewport",
+                content:
+                  "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
+              },
+            },
+            {
+              name: "title",
+              id: "title",
+              tag: "meta",
+              props: {
+                name: "title",
+                content: "Conduit",
+              },
+            },
+            {
+              name: "charset",
+              id: "charset",
+              tag: "meta",
+              props: {
+                name: "charset",
+                content: "utf-8",
+              },
+            },
+          ]}
         >
-        <Title>Conduit</Title>
+          <Title>Conduit</Title>
           <Meta charset="utf-8" />
           <Meta
             name="viewport"

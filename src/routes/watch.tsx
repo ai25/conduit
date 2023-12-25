@@ -151,17 +151,15 @@ export default function Watch() {
       }
       return video.segments;
     },
-    enabled: preferences.instance?.api_url &&
-      !isServer &&
-      route.query.v
-      ? true
-      : false,
+    enabled:
+      preferences.instance?.api_url && !isServer && route.query.v
+        ? true
+        : false,
     refetchOnReconnect: false,
     retry: false,
     suspense: false,
     useErrorBoundary: false,
-  })
-  );
+  }));
   const playlistQuery = createQuery(() => ({
     queryKey: ["playlist", route.query.list, preferences.instance.api_url],
     queryFn: async () => {
@@ -173,14 +171,12 @@ export default function Watch() {
       }
       return await res.json();
     },
-    enabled: preferences.instance?.api_url &&
-      route.query.list &&
-      !isLocalPlaylist()
-      ? true
-      : false,
+    enabled:
+      preferences.instance?.api_url && route.query.list && !isLocalPlaylist()
+        ? true
+        : false,
     refetchOnReconnect: false,
-  })
-  );
+  }));
   createEffect(() => {
     console.log(sync.store, "STORE");
     console.log(sponsorsQuery.data, sponsorsQuery.error);
@@ -332,7 +328,7 @@ export default function Watch() {
   createEffect(() => {
     setAppState("player", "dismissed", false);
     setAppState("player", "small", false);
-  })
+  });
   return (
     <div
       class="flex"
@@ -362,13 +358,9 @@ export default function Watch() {
         {/* </Match>
           </Switch> */}
       </div>
-      <div
-        class="flex md:flex-row flex-col gap-2 w-full"
-      >
+      <div class="flex md:flex-row flex-col gap-2 w-full">
         <div class="w-full max-w-full">
-          <Description
-            downloaded={videoDownloaded()}
-          />
+          <Description downloaded={videoDownloaded()} />
         </div>
         <div
           class={`flex flex-col gap-2 items-center w-full min-w-0 max-w-max`}
@@ -404,6 +396,9 @@ export default function Watch() {
               </div>
             )}
           </Show>
+        </div>
+        <div class="relative max-w-min">
+          <RelatedVideos />
         </div>
       </div>
     </div>
