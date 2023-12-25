@@ -199,7 +199,7 @@ export default function History() {
         <Show when={history()}>
           <For each={history()}>
             {(item) => (
-              <div class="flex flex-col max-w-xs w-72 sm:max-w-72">
+              <div class="flex flex-col max-w-full sm:max-w-72">
                 <VideoCard
                   v={{
                     ...item,

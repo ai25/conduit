@@ -52,7 +52,10 @@ import {
 import { PreferencesProvider, usePreferences } from "./stores/preferencesStore";
 import { QueueProvider } from "./stores/queueStore";
 import api from "./utils/api";
-import PlayerContainer, { PlayerLoading } from "./components/PlayerContainer";
+import PlayerContainer, {
+  PlayerLoading,
+  Spinner,
+} from "./components/PlayerContainer";
 // import { PlayerLoading } from "./components/PlayerContainer";
 const ReloadPrompt = clientOnly(() => import("./components/ReloadPrompt"));
 import Header from "./components/Header";
@@ -130,45 +133,12 @@ export default function Root() {
   return (
     <Html lang="en">
       <Head>
-        <MetaProvider
-          tags={[
-            {
-              name: "viewport",
-              id: "viewport",
-              tag: "meta",
-              props: {
-                name: "viewport",
-                content:
-                  "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
-              },
-            },
-            {
-              name: "title",
-              id: "title",
-              tag: "meta",
-              props: {
-                name: "title",
-                content: "Conduit",
-              },
-            },
-            {
-              name: "charset",
-              id: "charset",
-              tag: "meta",
-              props: {
-                name: "charset",
-                content: "utf-8",
-              },
-            },
-          ]}
-        >
           <Title>Conduit</Title>
           <Meta charset="utf-8" />
           <Meta
             name="viewport"
             content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
           />
-        </MetaProvider>
 
         <Link rel="manifest" href="manifest.webmanifest" />
       </Head>
@@ -193,7 +163,7 @@ export default function Root() {
 
                             <div aria-hidden="true" class="h-10" />
                             <PlayerContainer />
-                            <Suspense fallback={<>Content Loading</>}>
+                            <Suspense>
                               <ErrorBoundary>
                                 <Show when={appState.loading}>
                                   <div class="fixed h-1 w-full -mx-2 top-0 z-[9999999]">
