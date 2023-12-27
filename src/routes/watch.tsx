@@ -28,6 +28,8 @@ import Player from "~/components/Player";
 import { toaster } from "@kobalte/core";
 import api from "~/utils/api";
 import RelatedVideos from "~/components/RelatedVideos";
+import Comments from "~/components/Comments";
+import { getVideoId, isMobile } from "~/utils/helpers";
 
 export interface SponsorSegment {
   category: string;
@@ -67,6 +69,23 @@ export default function Watch() {
   const [video, setVideo] = useContext(PlayerContext);
   const route = useLocation();
   const [theater] = useTheater();
+  const [preferences] = usePreferences();
+
+  const [v, setV] = createSignal<string | undefined>(undefined);
+  createEffect(() => {
+    if (!route.query.v) return;
+    setV(route.query.v);
+  });
+  const videoQuery = createQuery<any, any, PipedVideo>(() => ({
+    queryKey: ["streams", v(), preferences.instance.api_url],
+    queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
+    enabled: (v() && preferences.instance.api_url) ? true : false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    cacheTime: Infinity,
+    staleTime: 100 * 60 * 1000,
+    deferStream: true
+  }));
 
   const [playlist, setPlaylist] = usePlaylist();
 
@@ -107,7 +126,6 @@ export default function Watch() {
 
   const [appState, setAppState] = useAppState();
   const sync = useSyncStore();
-  const [preferences] = usePreferences();
   const isLocalPlaylist = () => route.query.list?.startsWith("conduit-");
   const sponsorsQuery = createQuery<SponsorSegment[]>(() => ({
     queryKey: ["sponsors", route.query.v, preferences.instance.api_url],
@@ -167,7 +185,8 @@ export default function Watch() {
         `${preferences.instance.api_url}/playlists/${route.query.list}`
       );
       if (!res.ok) {
-        throw new Error("Failed to fetch playlist");
+        // throw new Error("Failed to fetch playlist");
+        return
       }
       return await res.json();
     },
@@ -358,9 +377,15 @@ export default function Watch() {
         {/* </Match>
           </Switch> */}
       </div>
-      <div class="flex md:flex-row flex-col gap-2 w-full">
+      <div class="flex sm:flex-row flex-col md:gap-2 w-full">
         <div class="w-full max-w-full">
           <Description downloaded={videoDownloaded()} />
+          <Show when={!isMobile() && videoQuery.data} >
+            <Comments
+              videoId={getVideoId(videoQuery.data)!}
+              uploader={videoQuery.data!.uploader}
+            />
+          </Show>
         </div>
         <div
           class={`flex flex-col gap-2 items-center w-full min-w-0 max-w-max`}
@@ -396,10 +421,16 @@ export default function Watch() {
               </div>
             )}
           </Show>
+          <div class="relative max-w-max sm:max-w-min">
+            <RelatedVideos />
+          </div>
         </div>
-        <div class="relative max-w-min">
-          <RelatedVideos />
-        </div>
+        <Show when={isMobile() && videoQuery.data} >
+          <Comments
+            videoId={getVideoId(videoQuery.data)!}
+            uploader={videoQuery.data!.uploader}
+          />
+        </Show>
       </div>
     </div>
   );

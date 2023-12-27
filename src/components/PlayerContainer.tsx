@@ -109,7 +109,7 @@ export const PlayerLoading = () => {
     <div
       classList={{
         "pointer-events-none aspect-video bg-black flex h-fit w-full max-w-full items-center justify-center": true,
-        "!absolute inset-0 w-screen h-screen": !!searchParams.fullscreen,
+        "!absolute inset-0 w-screen h-screen z-[999999]": !!searchParams.fullscreen,
         "!sticky sm:!relative !top-0": !searchParams.fullscreen,
         "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
         "!hidden": location.pathname !== "/watch",

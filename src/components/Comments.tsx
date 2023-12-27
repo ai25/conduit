@@ -1,10 +1,10 @@
 import { createInfiniteQuery } from "@tanstack/solid-query";
-import { createEffect, createSignal, Match, Show, Suspense, Switch } from "solid-js";
+import { createEffect, createSignal, Match, onCleanup, onMount, Show, Suspense, Switch } from "solid-js";
 import { For } from "solid-js";
 import { isServer } from "solid-js/web";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import { usePreferences } from "~/stores/preferencesStore";
-import { fetchJson } from "~/utils/helpers";
+import { fetchJson, isMobile } from "~/utils/helpers";
 import { Bottomsheet } from "./Bottomsheet";
 import Comment, { PipedCommentResponse } from "./Comment";
 
@@ -41,6 +41,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
     getNextPageParam: (lastPage) => {
       return lastPage.nextpage;
     },
+    initialPageParam: "initial",
   })
   );
   const [commentsOpen, setCommentsOpen] = createSignal(false);
@@ -59,11 +60,26 @@ export default function Comments(props: { videoId: string; uploader: string }) {
       }
     }
   });
+  const [windowWidth, setWindowWidth] = createSignal(1000)
+
+  onMount(() => {
+    window.addEventListener("resize", (e) => {
+      setWindowWidth(window.innerWidth)
+      })
+
+      onCleanup(() => {
+        window.removeEventListener("resize", (e) => {
+          setWindowWidth(window.innerWidth)
+          })
+        })
+  })
+
+      
 
   return (
     <>
       <Switch>
-        <Match when={!isServer && navigator.maxTouchPoints > 0 && window.innerWidth < 600}>
+        <Match when={isMobile() && windowWidth() < 600}>
           <button
             class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mt-2"
             onClick={() => setCommentsOpen(true)}
@@ -109,7 +125,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
             </Bottomsheet>
           )}
         </Match>
-        <Match when={!isServer && (typeof screen.orientation !== "undefined" || window.innerWidth < 600)}>
+        <Match when={!isMobile() || windowWidth() > 600}>
           <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto ">
             <Suspense fallback={<p>Loading...</p>}>
               <div id="sb-content" class="flex flex-col gap-1 relative  ">

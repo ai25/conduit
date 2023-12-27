@@ -39,7 +39,7 @@ export default function RelatedVideos() {
                   <Switch>
                     <Match when={stream.type === "stream"}>
                       <VideoCard v={stream}
-                        layout="list"
+                        layout="sm:grid"
                       />
                     </Match>
                     <Match when={stream.type === "playlist"}>

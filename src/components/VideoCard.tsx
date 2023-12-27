@@ -31,9 +31,9 @@ function formatRelativeShort(now: Date, past: Date): string {
   const secondsInAYear = secondsInADay * 365; // ignoring leap years for simplicity
 
   if (diffInSeconds >= secondsInAYear) {
-    return `${Math.floor(diffInSeconds / secondsInAYear)}Y`;
+    return `${Math.floor(diffInSeconds / secondsInAYear)}y`;
   } else if (diffInSeconds >= secondsInAMonth) {
-    return `${Math.floor(diffInSeconds / secondsInAMonth)}M`;
+    return `${Math.floor(diffInSeconds / secondsInAMonth)}mo`;
   } else if (diffInSeconds >= secondsInADay) {
     return `${Math.floor(diffInSeconds / secondsInADay)}d`;
   } else if (diffInSeconds >= secondsInAnHour) {
@@ -47,13 +47,16 @@ function formatRelativeShort(now: Date, past: Date): string {
 
 const VideoCard = (props: {
   v?: (RelatedStream),
+  layout?: "list" | "grid" | "sm:grid"
 }) => {
+  props = mergeProps({ layout: "sm:grid" as "sm:grid" }, props);
 
   const sync = useSyncStore();
+  const [searchParams] = useSearchParams()
 
   const watchedAtDate = () => sync.store.history[getVideoId(props.v)!]?.watchedAt;
-
   const [watchedAt, setWatchedAt] = createSignal<string | undefined>(undefined);
+
   createEffect(() => {
     const [watchedAt] = createTimeAgo(watchedAtDate() ?? new Date(), {
       interval: 1000 * 60,
@@ -64,28 +67,28 @@ const VideoCard = (props: {
 
   const [uploaded] = props.v ? createTimeAgo(props.v.uploaded, { interval: 0 }) : [() => ""];
   const id = () => getVideoId(props.v);
-  const thumbnailUrl = () => generateThumbnailUrl(
-    sync.store!.preferences?.instance?.image_proxy_url ??
-    "https://pipedproxy.kavin.rocks",
-    getVideoId(props.v)!
-  )
-
   const historyItem = () => id() ? sync.store.history[id()!] : undefined;
-  const [searchParams] = useSearchParams()
 
   return (
     <div
       classList={{
-        "flex w-full sm:max-w-max mx-1 items-start rounded-xl bg-bg1 p-2 sm:flex-col sm:w-72 flex-row gap-2 sm:gap-0 min-w-full sm:min-w-0": true,
+        "flex flex-row gap-2 mx-1 items-start rounded-xl bg-bg1 p-2 ": true,
+        "min-w-full": props.layout === "list",
+        "sm:max-w-max  sm:flex-col sm:w-72 sm:gap-0 min-w-full sm:min-w-0": props.layout === "sm:grid",
+        "h-max max-h-max max-w-max flex-col w-full gap-2 sm:w-72": props.layout === "grid",
+
       }}
     >
       <div classList={{
-        "max-w-sm max-h-44 aspect-video sm:max-h-full overflow-hidden min-w-min sm:w-full": true
+        "aspect-video overflow-hidden rounded": true,
+        "max-h-96": props.layout === "list",
+        "max-h-44 min-w-min sm:max-h-full sm:w-full": props.layout === "sm:grid",
 
       }}>
-        <Show when={props.v} fallback={<ImageContainerFallback />}>
+        <Show when={props.v} fallback={<ImageContainerFallback layout={props.layout as any}
+        />}>
           <ImageContainer
-            url={`/watch?v=${id()}${searchParams.fullscreen? `&fullscreen=${searchParams.fullscreen}` : ""}`}
+            url={`/watch?v=${id()}${searchParams.fullscreen ? `&fullscreen=${searchParams.fullscreen}` : ""}`}
             src={props.v!.thumbnail}
             duration={props.v!.duration}
             watched={!!historyItem()}
@@ -95,16 +98,16 @@ const VideoCard = (props: {
         </Show>
       </div>
       <div classList={{
-        "flex w-full min-w-0 max-w-full justify-between h-full sm:mt-2 sm:max-h-20": true,
+        "flex w-full min-w-0 justify-between h-full  sm:mt-2 max-h-20": true,
+        "max-w-[22rem]": props.layout === "grid",
       }}>
         <div classList={{
-          "flex flex-col flex-1 gap-2 pr-2 h-full": true,
+          "flex flex-col min-w-0 gap-2 pr-2 h-full w-full max-w-full": true,
         }}
         >
           <Show when={props.v}
             fallback={<div class="flex flex-col gap-1"><div aria-hidden="true"
-              class="animate-pulse bg-bg2 w-full rounded-lg h-4 text-transparent">
-              placeholder placeholder placeholder placeholder pla
+              class="animate-pulse bg-bg2 w-full rounded-lg h-4 ">
             </div>
               <div aria-hidden="true"
                 class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg " />
@@ -118,7 +121,7 @@ const VideoCard = (props: {
               openDelay={1000}
               triggerSlot={
                 <A
-                  href={`/watch?v=${id()}${searchParams.fullscreen? `&fullscreen=${searchParams.fullscreen}` : ""}`}
+                  href={`/watch?v=${id()}${searchParams.fullscreen ? `&fullscreen=${searchParams.fullscreen}` : ""}`}
                   class="text-start two-line-ellipsis min-w-0 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {props.v!.title}
@@ -137,12 +140,13 @@ const VideoCard = (props: {
               uploaderAvatar={props.v!.uploaderAvatar}
               views={props.v!.views}
               uploaded={uploaded()}
+              uploadedDate={new Date(props.v!.uploaded)}
               live={props.v!.uploaded === -1}
             />
           </Show>
         </div>
 
-        <div class="flex flex-col justify-between">
+        <div class="flex flex-col justify-start min-w-[32px]">
           <Show when={props.v}>
             <VideoCardMenu v={props.v!} progress={historyItem()?.currentTime} />
           </Show>
@@ -166,11 +170,11 @@ const ImageContainer = (props: {
   return (
     <A
       href={props.url}
-      class="relative flex aspect-video w-full flex-col overflow-hidden rounded min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative flex aspect-video w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{
-          "cursor-pointer w-full min-w-[10rem] aspect-video max-w-md break-words ": true,
+          "cursor-pointer w-full sm:min-w-[10rem] aspect-video max-w-md break-words ": true,
           "saturate-[0.35] opacity-75": props.watched,
         }}
         src={props.src}
@@ -223,25 +227,19 @@ const ImageContainer = (props: {
   )
 }
 
-const ImageContainerFallback = () => {
+const ImageContainerFallback = (props: { layout: "list" | "grid" | "sm:grid" }
+) => {
   return (
-    <div class="relative flex aspect-video w-full flex-col rounded-lg overflow-hidden max-w-md">
-      <div class="animate-pulse bg-bg2 aspect-video h-full max-w-max w-full">
-        <div class="bg-bg2 animate-pulse aspect-auto h-96 max-w-fit w-full invisible"
-          // src=""
-          // width={2560}
-          // height={1440}
-          aria-hidden="true"
-          // alt=""
-          // loading="lazy"
-        > 
-        placeholder placeholder placeholder placeh
-        placeholder placeholder placeholder placeh
-        placeholder placeholder placeholder placeh
-        placeholder placeholder placeholder placeh
-        </div> 
+    <div classList={{
+      "relative flex aspect-video w-full min-w-0 flex-col rounded-lg overflow-hidden": true,
+      "max-w-[12rem] sm:max-w-[18rem]": props.layout === "sm:grid",
+      "max-w-[12rem]": props.layout === "list",
+    }}>
+
+      <div class="animate-pulse bg-bg2 aspect-video h-full overflow-hidden max-w-fit w-full">
+        <div class="w-96 h-full" />
       </div>
-    </div>
+    </div >
   );
 }
 
@@ -253,38 +251,37 @@ const InfoContainer = (props: {
   uploaderAvatar: string | null
   views: number;
   uploaded: string;
+  uploadedDate: Date;
   live: boolean;
 
 }) => {
   return (
-    <div class="flex gap-2 text-text2">
+    <div class="flex gap-1 text-text2 max-w-[85%] sm:max-w-full ">
       <Show when={props.uploaderAvatar}>
-        <div class="group mb-1 w-max underline ">
+        <div class="group mb-1 w-max">
           <A
             tabindex={-1}
             aria-hidden="true"
             href={props.uploaderUrl || ""}
-            class="flex max-w-max items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            class="flex max-w-max min-w-min items-center outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <img
               src={props.uploaderAvatar!}
-              width={32}
-              height={32}
-              class="rounded-full"
+              class="rounded-full w-6 h-6 aspect-square min-w-[24px] min-h-[24px]"
               alt=""
             />
           </A>
         </div>
       </Show>
 
-      <div class="flex w-full flex-col text-xs">
+      <div class="flex w-full flex-col text-xs ">
         <A
           href={props.uploaderUrl || ""}
           class="outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <div class="peer w-fit ">{props.uploaderName}</div>
+          <div class="peer w-fit truncate max-w-[10rem]">{props.uploaderName}</div>
         </A>
-        <div class="flex flex-wrap">
+        <div class="flex flex-wrap w-full">
           <Show when={props.views}>
             <div
               class="w-fit"
@@ -300,7 +297,7 @@ const InfoContainer = (props: {
           </Show>
           <Show when={!props.live}>
             <div
-              title={new Date(props.uploaded).toLocaleString()}
+              title={props.uploadedDate.toLocaleString()}
               class=""
             >{props.uploaded}{" "}
             </div>

@@ -1003,7 +1003,7 @@ export default function Player(props: {
           " z-[99999] aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4": true,
           "!absolute inset-0 w-screen h-screen": !!searchParams.fullscreen,
           "!sticky sm:!relative !top-0": !searchParams.fullscreen,
-          "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
+          "!sticky sm:!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
           "!hidden": appState.player.dismissed,
 
         }}
@@ -1147,7 +1147,9 @@ export default function Player(props: {
               </div>
               <div class="flex flex-col">
                 <div class="text-lg text-white w-72">
-                  <VideoCard v={nextVideo()?.info ?? undefined} />
+                  <VideoCard
+                    layout="grid"
+                    v={nextVideo()?.info ?? undefined} />
                 </div>
               </div>
               <div class="flex justify-center gap-2">

@@ -163,8 +163,6 @@ export default function Root() {
 
                             <div aria-hidden="true" class="h-10" />
                             <PlayerContainer />
-                            <Suspense>
-                              <ErrorBoundary>
                                 <Show when={appState.loading}>
                                   <div class="fixed h-1 w-full -mx-2 top-0 z-[9999999]">
                                     <div
@@ -225,8 +223,6 @@ export default function Root() {
                                 </div>
                                 <div class="h-20 md:h-0" />
                                 <RouteAnnouncer />
-                              </ErrorBoundary>
-                            </Suspense>
                           </QueryClientProvider>
                           <Scripts />
                         </Body>

@@ -174,7 +174,7 @@ const Description = (props: {
       </Async>
     </Modal>
     <DownloadModal id={getVideoId(videoQuery.data)!} isOpen={downloadModalOpen()} setIsOpen={setDownloadModalOpen} />
-    <div class="mb-2 bg-bg1 p-4 ">
+    <div class="mb-2 bg-bg1 p-4 @container">
       <div class="flex flex-col gap-2">
         <div class="flex flex-col gap-2 ">
           <div class="flex items-start justify-between h-full">
@@ -239,7 +239,7 @@ const Description = (props: {
         </Async>
         <Async when={videoQuery.data} fallback={<div class="w-full h-8 flex flex-wrap gap-2 mb-2 items-end justify-between ">
           <div class="w-64 h-4 bg-bg2 animate-pulse rounded-lg"></div>
-          <div class="w-full [@media(min-width:400px)]:w-36 h-4 bg-bg2 animate-pulse rounded-lg"></div>
+          <div class="w-full @sm:w-36 h-4 bg-bg2 animate-pulse rounded-lg"></div>
         </div>}>
           <div
             title={`Published ${(() => {
@@ -248,21 +248,21 @@ const Description = (props: {
                 .split(":")[0];
               return substr.slice(0, substr.length - 3);
             })()} • ${numeral(videoQuery.data!.views).format("0,0")} views`}
-            class="flex flex-wrap items-center justify-between gap-1 my-1 text-sm truncate max-w-full">
-            <div class="flex items-center gap-1">
-              <p class="">{(() => {
+            class="flex flex-col @sm:flex-row items-start @sm:items-center justify-between gap-1 my-1 text-sm ">
+            <div class="flex items-center gap-1 @sm:max-w-[16rem] @md:max-w-full">
+              <p class="truncate">{(() => {
                 const substr = date()
                   .toString()
                   .split(":")[0];
                 const time = date().toString().split(" ")[4];
                 return `${substr.slice(0, substr.length - 3)} ${time.slice(0, time.length - 3)}`;
               })()}</p>•
-              <p class="">
+              <p class="truncate">
                 {videoQuery.data!.views > 10000 ? numeral(videoQuery.data!.views).format("0.00a").toUpperCase() :
                   numeral(videoQuery.data!.views).format("0,0").toUpperCase()} views
               </p>
             </div>
-            <div class="flex flex-col w-full [@media(min-width:400px)]:w-36 ">
+            <div class="flex flex-col w-full @sm:w-36 ">
               <div class="flex items-center justify-between">
                 <span
                   title={`${numeral(videoQuery.data!.likes).format("0,0")} likes`}
@@ -315,32 +315,6 @@ const Description = (props: {
             Show {expanded() ? "less" : "more"}
           </button>
         </div>
-      </Async>
-      <Async when={videoQuery.data} fallback={<>
-        <Show when={!isServer && isMobile()}>
-          <div class="w-full h-24 bg-bg2 animate-pulse"></div>
-        </Show>
-        <div class="w-full flex flex-col gap-2 mt-2">
-          <For each={[0, 1, 2, 3, 4]}>
-            {() => (
-              <div class="w-full h-full flex gap-1 ">
-                <div class="w-8 h-8 rounded-full bg-bg2 animate-pulse"></div>
-                <div class="flex flex-col gap-1 w-full h-full min-h-0">
-                  <div class="w-1/3 h-3 bg-bg2 rounded animate-pulse" />
-                  <div class="w-full h-3 bg-bg2 rounded animate-pulse" />
-                  <div class="w-1/2 h-3 bg-bg2 rounded animate-pulse" />
-                </div>
-
-              </div>
-            )}
-          </For>
-        </div>
-      </>}>
-
-        <Comments
-          videoId={getVideoId(videoQuery.data)!}
-          uploader={videoQuery.data!.uploader}
-        />
       </Async>
     </div>
   </>
@@ -506,56 +480,4 @@ const Async = (props: { when: any, fallback: JSX.Element, error?: (error: Error,
   )
 }
 
-const Skeleton = () => {
-  return (
-    <div>
-      {/* Replicating the structure of Modal's content */}
-      <div class="max-w-screen-sm max-h-[80vh] overflow-auto bg-bg1 animate-pulse"></div>
-
-      {/* Replicating the structure for video title */}
-      <div class="w-full h-6 bg-bg2 rounded animate-pulse"></div>
-
-      {/* Replicating the structure for uploader info */}
-      <div class="w-full h-12 flex sm:justify-start justify-between gap-2">
-        <div class="w-44 flex items-center gap-2">
-          <div class="w-12 h-12 aspect-square bg-bg2 animate-pulse rounded-full"></div>
-          <div class="flex flex-col justify-between py-1 gap-1 h-full w-full ">
-            <div class="w-full h-4 bg-bg2 animate-pulse rounded"></div>
-            <div class="w-3/4 h-4 bg-bg2 animate-pulse rounded"></div>
-          </div>
-        </div>
-        <div class="w-32 h-10 bg-bg2 animate-pulse rounded-full"></div>
-      </div>
-
-      {/* Replicating the structure for ActionsContainer */}
-      <div class="w-full h-8 flex flex-wrap gap-2 mb-2 items-end justify-between ">
-        <div class="w-64 h-4 bg-bg2 animate-pulse rounded-lg"></div>
-        <div class="w-full [@media(min-width:400px)]:w-36 h-4 bg-bg2 animate-pulse rounded-lg"></div>
-      </div>
-
-      {/* Replicating the structure for video publishing info */}
-      <div class="w-full h-8 flex flex-wrap gap-2 mb-2 items-end justify-between ">
-        <div class="w-64 h-4 bg-bg2 animate-pulse rounded-lg"></div>
-        <div class="w-full [@media(min-width:400px)]:w-36 h-4 bg-bg2 animate-pulse rounded-lg"></div>
-      </div>
-
-      {/* Replicating the structure for video description */}
-      <div class="mt-1 rounded-lg w-full h-24 bg-bg2 animate-pulse"></div>
-
-      {/* Replicating the structure for comments section */}
-      <div class="w-full flex flex-col gap-2 mt-2">
-        {[0, 1, 2, 3, 4].map(() => (
-          <div class="w-full h-full flex gap-1 ">
-            <div class="w-8 h-8 rounded-full bg-bg2 animate-pulse"></div>
-            <div class="flex flex-col gap-1 w-full h-full min-h-0">
-              <div class="w-1/3 h-3 bg-bg2 rounded animate-pulse"></div>
-              <div class="w-full h-3 bg-bg2 rounded animate-pulse"></div>
-              <div class="w-1/2 h-3 bg-bg2 rounded animate-pulse"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
