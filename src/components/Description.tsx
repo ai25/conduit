@@ -174,7 +174,7 @@ const Description = (props: {
       </Async>
     </Modal>
     <DownloadModal id={getVideoId(videoQuery.data)!} isOpen={downloadModalOpen()} setIsOpen={setDownloadModalOpen} />
-    <div class="mb-2 bg-bg1 p-4 @container">
+    <div class="bg-bg1 p-4 @container">
       <div class="flex flex-col gap-2">
         <div class="flex flex-col gap-2 ">
           <div class="flex items-start justify-between h-full">

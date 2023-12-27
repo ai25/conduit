@@ -1072,7 +1072,7 @@ export default function Player(props: {
       // }}
       >
         <media-provider
-          class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen"
+          class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full"
         // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
         >
           <media-poster

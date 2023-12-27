@@ -8,6 +8,7 @@ import {
   useContext,
   Switch,
   Match,
+  onCleanup,
 } from "solid-js";
 import { useLocation, useSearchParams } from "solid-start";
 import { For } from "solid-js";
@@ -348,6 +349,22 @@ export default function Watch() {
     setAppState("player", "dismissed", false);
     setAppState("player", "small", false);
   });
+
+
+  const [windowWidth, setWindowWidth] = createSignal(1000)
+
+  onMount(() => {
+      setWindowWidth(window.innerWidth)
+    window.addEventListener("resize", (e) => {
+      setWindowWidth(window.innerWidth)
+      })
+
+      onCleanup(() => {
+        window.removeEventListener("resize", (e) => {
+          setWindowWidth(window.innerWidth)
+          })
+        })
+  })
   return (
     <div
       class="flex"
@@ -380,11 +397,14 @@ export default function Watch() {
       <div class="flex sm:flex-row flex-col md:gap-2 w-full">
         <div class="w-full max-w-full">
           <Description downloaded={videoDownloaded()} />
-          <Show when={!isMobile() && videoQuery.data} >
+          <Show when={(windowWidth() > 600 || isMobile()) && videoQuery.data} >
+            <div class="mx-4">
             <Comments
               videoId={getVideoId(videoQuery.data)!}
               uploader={videoQuery.data!.uploader}
+              display={windowWidth() > 600 ? "default" : "bottomsheet"}
             />
+            </div>
           </Show>
         </div>
         <div
@@ -425,10 +445,11 @@ export default function Watch() {
             <RelatedVideos />
           </div>
         </div>
-        <Show when={isMobile() && videoQuery.data} >
+        <Show when={(windowWidth() <= 600 && !isMobile()) && videoQuery.data} >
           <Comments
             videoId={getVideoId(videoQuery.data)!}
             uploader={videoQuery.data!.uploader}
+            display="default"
           />
         </Show>
       </div>

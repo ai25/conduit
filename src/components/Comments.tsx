@@ -8,7 +8,10 @@ import { fetchJson, isMobile } from "~/utils/helpers";
 import { Bottomsheet } from "./Bottomsheet";
 import Comment, { PipedCommentResponse } from "./Comment";
 
-export default function Comments(props: { videoId: string; uploader: string }) {
+export default function Comments(props: {
+  videoId: string; uploader: string;
+  display: "default" | "bottomsheet"
+}) {
   const [preferences] = usePreferences();
   const fetchComments = async ({
     pageParam = "initial",
@@ -60,28 +63,14 @@ export default function Comments(props: { videoId: string; uploader: string }) {
       }
     }
   });
-  const [windowWidth, setWindowWidth] = createSignal(1000)
 
-  onMount(() => {
-    window.addEventListener("resize", (e) => {
-      setWindowWidth(window.innerWidth)
-      })
-
-      onCleanup(() => {
-        window.removeEventListener("resize", (e) => {
-          setWindowWidth(window.innerWidth)
-          })
-        })
-  })
-
-      
 
   return (
     <>
       <Switch>
-        <Match when={isMobile() && windowWidth() < 600}>
+        <Match when={props.display === "bottomsheet"}>
           <button
-            class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mt-2"
+            class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mb-2"
             onClick={() => setCommentsOpen(true)}
           >
             Comments
@@ -125,7 +114,7 @@ export default function Comments(props: { videoId: string; uploader: string }) {
             </Bottomsheet>
           )}
         </Match>
-        <Match when={!isMobile() || windowWidth() > 600}>
+        <Match when={props.display === "default"}>
           <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto ">
             <Suspense fallback={<p>Loading...</p>}>
               <div id="sb-content" class="flex flex-col gap-1 relative  ">

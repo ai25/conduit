@@ -121,7 +121,7 @@ export default function Trending() {
             {(videos) =>
               videos && (
                 <For each={videos}>{(video) => <VideoCard v={video}
-                  layout="list"
+                  layout="sm:grid"
                 />}</For>
               )
             }
