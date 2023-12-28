@@ -79,8 +79,7 @@ export default function Search() {
     if (pageParam === "initial") {
       return await (
         await fetch(
-          `${preferences.instance.api_url}/search?q=${
-            searchParams.search_query
+          `${preferences.instance.api_url}/search?q=${searchParams.search_query
           }&filter=${selectedFilter()}`
         )
       ).json();
@@ -98,14 +97,14 @@ export default function Search() {
 
   const query = createInfiniteQuery(
     () => ({
-      queryKey:["search", searchParams.search_query, selectedFilter()],
-    queryFn:fetchSearch,
-    enabled: preferences.instance?.api_url &&
-          searchParams.search_query &&
-          selectedFilter() &&
-          !isServer
-          ? true
-          : false,
+      queryKey: ["search", searchParams.search_query, selectedFilter()],
+      queryFn: fetchSearch,
+      enabled: preferences.instance?.api_url &&
+        searchParams.search_query &&
+        selectedFilter() &&
+        !isServer
+        ? true
+        : false,
       getNextPageParam: (lastPage) => {
         return lastPage.nextpage;
       },
@@ -117,7 +116,7 @@ export default function Search() {
   );
 
   createEffect(() => {
-    document.title = searchParams.search_query+ " - Conduit";
+    document.title = searchParams.search_query + " - Conduit";
     saveQueryToHistory();
   });
   createEffect(() => {
@@ -246,17 +245,37 @@ export default function Search() {
             setIsOpen={setFiltersModalOpen}
             title="Advanced Filters"
           >
-            <div class="flex flex-col justify-center items-center gap-2 h-full min-w-[20rem] min-h-[10rem]">
+            <div class="flex flex-col justify-center items-center gap-4 h-full min-w-[20rem] min-h-[10rem]">
               <FilterEditor filter={filter()} setFilter={setFilter} />
-              <Button
-                label="Save Filter"
-                onClick={() => {
-                  localStorage.setItem(
-                    "search_filter",
-                    JSON.stringify(filter())
-                  );
-                }}
-              />
+              <div class="flex flex-col gap-2">
+                <div class="flex gap-2">
+                <Button
+                  appearance="link"
+                  label="Save Filter"
+                  onClick={() => {
+                    localStorage.setItem(
+                      "search_filter",
+                      JSON.stringify(filter())
+                    );
+                  }}
+                />
+                  <Button
+                    appearance="subtle"
+                    label="Clear Filter"
+                    onClick={() => {
+                      setFilterErrors([]);
+                      setFilter({ conditions: [], operators: [] });
+                    }}
+                  />
+                </div>
+
+                  <Button
+                    label="Done"
+                    onClick={() => {
+                      setFiltersModalOpen(false);
+                    }}
+                  />
+              </div>
             </div>
           </Modal>
         </ErrorBoundary>
@@ -265,9 +284,8 @@ export default function Search() {
             <p class="">
               Did you mean{" "}
               <A
-                href={`/results?search_query=${
-                  query.data?.pages[0].suggestion
-                }&filter=${selectedFilter()}`}
+                href={`/results?search_query=${query.data?.pages[0].suggestion
+                  }&filter=${selectedFilter()}`}
                 class="link !text-accent1"
               >
                 {query.data?.pages[0].suggestion}

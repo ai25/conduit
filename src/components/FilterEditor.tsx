@@ -6,24 +6,25 @@ import { Transition } from "solid-headless";
 import Select from "./Select";
 import Field from "./Field";
 import { Switch } from "solid-js";
+import Button from "./Button";
 
-type FieldNames =
+type FieldName =
   | keyof RelatedStream
   | keyof RelatedChannel
   | keyof RelatedPlaylist;
 
 type Condition = {
   type:
-    | "INCLUDES"
-    | "IS"
-    | "LESS_THAN"
-    | "GREATER_THAN"
-    | "NOT_INCLUDES"
-    | "IS_NOT"
-    | "IS_BEFORE"
-    | "IS_AFTER"
-    | "IS_BETWEEN";
-  field: FieldNames;
+  | "INCLUDES"
+  | "IS"
+  | "LESS_THAN"
+  | "GREATER_THAN"
+  | "NOT_INCLUDES"
+  | "IS_NOT"
+  | "IS_BEFORE"
+  | "IS_AFTER"
+  | "IS_BETWEEN";
+  field: FieldName;
   value: string;
 };
 
@@ -77,7 +78,7 @@ const RadioGroupItem = (props: {
     </div>
   </RadioGroup.Root>
 );
-const FieldText = (props: { field: FieldNames }) => (
+const FieldText = (props: { field: FieldName }) => (
   <span class="bg-accent1 text-text3 rounded px-2 ">{String(props.field)}</span>
 );
 const ValueText = (props: { value: string }) => (
@@ -90,7 +91,7 @@ const RemoveButton = (props: { onClick: () => void }) => (
 );
 const Filter = (props: {
   operatorText: string;
-  field: FieldNames;
+  field: FieldName;
   value: string;
   removeCondition: () => void;
   addCondition: (condition: Condition) => void;
@@ -139,14 +140,21 @@ const Filter = (props: {
 };
 
 const LogicalOperator = (props: {
-  operator: LogicalOperator;
+  operator: {
+    value: LogicalOperator;
+    label: LogicalOperator;
+    disabled: boolean;
+  };
   updateOperator: (operator: LogicalOperator) => void;
 }) => (
   <Select
-    options={["AND", "OR"]}
+    options={[
+      { value: "AND", label: "AND", disabled: false },
+      { value: "OR", label: "OR", disabled: false },
+    ]}
     onChange={(value) => {
       console.log(value);
-      props.updateOperator(value as LogicalOperator);
+      props.updateOperator(value.value as LogicalOperator);
     }}
     value={props.operator}
   />
@@ -156,21 +164,37 @@ const ConditionEditor = (props: {
   addCondition: (condition: Condition) => void;
 }) => {
   const [currentValue, setCurrentValue] = createSignal("");
-  const [currentField, setCurrentField] = createSignal<FieldNames>("title");
+  const [currentField, setCurrentField] = createSignal<{
+    value: FieldName;
+    label: FieldName;
+    disabled: boolean;
+  }>({ value: "title", label: "title", disabled: false });
   const [currentOperator, setCurrentOperator] =
-    createSignal<Condition["type"]>("INCLUDES");
+    createSignal<{ value: Condition["type"]; label: Condition["type"], disabled: boolean }>({
+      value: "INCLUDES",
+      label: "INCLUDES",
+      disabled: false,
+          });
 
   return (
     <div class="flex gap-2 items-center flex-wrap">
       <Select
         value={currentField()}
-        options={contentItemKeys}
-        onChange={(value) => setCurrentField(value as FieldNames)}
+        options={
+          contentItemKeys.map((key) => ({
+            value: key,
+            label: key,
+            disabled: false,
+          })) as any
+        }
+        onChange={(value) => {
+          setCurrentField(value as any);
+        }}
       />
 
       <Select
         value={currentOperator()}
-        onChange={(e) => setCurrentOperator(e as Condition["type"])}
+        onChange={(e) => setCurrentOperator(e as any)}
         options={[
           "INCLUDES",
           "NOT_INCLUDES",
@@ -181,14 +205,18 @@ const ConditionEditor = (props: {
           "IS_BEFORE",
           "IS_AFTER",
           "IS_BETWEEN",
-        ]}
+        ].map((operator) => ({
+        value: operator,
+        label: operator,
+        disabled: false,
+                }))}
       />
 
       <Switch>
         <Match
           when={
-            currentOperator() === "IS_BEFORE" ||
-            currentOperator() === "IS_AFTER"
+            currentOperator().value === "IS_BEFORE" ||
+            currentOperator().value === "IS_AFTER"
           }
         >
           <input
@@ -198,7 +226,7 @@ const ConditionEditor = (props: {
             onInput={(e) => setCurrentValue(e.currentTarget.value)}
           />
         </Match>
-        <Match when={currentOperator() === "IS_BETWEEN"}>
+        <Match when={currentOperator().value === "IS_BETWEEN"}>
           {(() => {
             setCurrentValue(
               JSON.stringify({
@@ -241,8 +269,8 @@ const ConditionEditor = (props: {
 
         <Match
           when={
-            currentOperator() === "INCLUDES" ||
-            currentOperator() === "NOT_INCLUDES"
+            currentOperator().value === "INCLUDES" ||
+            currentOperator().value === "NOT_INCLUDES"
           }
         >
           <Field
@@ -257,8 +285,8 @@ const ConditionEditor = (props: {
         </Match>
         <Match
           when={
-            currentOperator() === "LESS_THAN" ||
-            currentOperator() === "GREATER_THAN"
+            currentOperator().value === "LESS_THAN" ||
+            currentOperator().value === "GREATER_THAN"
           }
         >
           <Field
@@ -271,27 +299,39 @@ const ConditionEditor = (props: {
           />
         </Match>
         <Match
-          when={currentOperator() === "IS" || currentOperator() === "IS_NOT"}
+          when={currentOperator().value === "IS" || currentOperator().value === "IS_NOT"}
         >
           <Select
-            value={currentValue()}
-            options={["true", "false"]}
-            onChange={(value) => setCurrentValue(value as string)}
+            value={{
+            value: currentValue(),
+            label: currentValue(),
+            disabled: false,
+                        }}
+            options={[{
+              value: "true",
+              label: "true",
+              disabled: false,
+                          }, {
+              value: "false",
+              label: "false",
+              disabled: false,
+                          }]}
+            onChange={(value) => setCurrentValue(value.value)}
           />
         </Match>
       </Switch>
 
-      <button
+      <Button
+        label="Add Condition"
+        appearance="danger"
         onClick={() => {
           props.addCondition({
-            type: currentOperator(),
-            field: currentField(),
+            type: currentOperator().value,
+            field: currentField().value,
             value: currentValue(),
           });
         }}
-      >
-        Add Condition
-      </button>
+      />
     </div>
   );
 };
@@ -399,7 +439,7 @@ const FilterEditor = (props: {
 };
 export const evaluateFilter = (
   filter: Filter,
-  video: Record<FieldNames, string | number>,
+  video: Record<FieldName, string | number>,
   onError: (error: unknown) => void = console.error
 ): boolean => {
   if (filter.conditions.length === 0) return true;
@@ -477,7 +517,7 @@ export const evaluateFilter = (
           result = isNaN(fieldDateBetween.getTime())
             ? false
             : fieldDateBetween.getTime() >= start.getTime() &&
-              fieldDateBetween.getTime() <= end.getTime();
+            fieldDateBetween.getTime() <= end.getTime();
           break;
       }
       conditionResults.push(result);

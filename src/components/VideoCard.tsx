@@ -170,11 +170,11 @@ const ImageContainer = (props: {
   return (
     <A
       href={props.url}
-      class="relative flex aspect-video w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative min-w-[12rem] flex aspect-video w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{
-          "cursor-pointer w-full sm:min-w-[10rem] aspect-video max-w-md break-words ": true,
+          "cursor-pointer w-full aspect-video max-w-md break-words ": true,
           "saturate-[0.35] opacity-75": props.watched,
         }}
         src={props.src}
