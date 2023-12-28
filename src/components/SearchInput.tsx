@@ -182,6 +182,9 @@ const SearchInput = () => {
       // If the input is empty
       fetchInitialSuggestions();
     }
+    document.body.classList.add("overflow-y-hidden");
+    document.body.classList.add("sm:overflow-y-auto");
+
   };
 
 
@@ -195,6 +198,9 @@ const SearchInput = () => {
     setTimeout(() => {
       setSuggestions([]);
       setShowSuggestions(false);
+
+      document.body.classList.remove("overflow-y-hidden");
+      document.body.classList.remove("sm:overflow-y-auto");
     }, 150);
   };
   return (
@@ -233,7 +239,7 @@ const SearchInput = () => {
         aria-controls="suggestion-list"
         id="search-input"
         ref={inputRef}
-        class="w-full max-w-full outline-none bg-bg1 border border-bg2 focus:ring-2 text-text1 text-sm rounded-lg focus:ring-primary focus:border-primary mx-1 py-1 px-2.5"
+        class="w-full border-0 max-w-full peer outline-none bg-bg1 border-bg2 focus:border-2 focus:border-r-0 placeholder-shown:focus:border-r-2 text-text1 text-sm rounded-lg rounded-r-none placeholder-shown:rounded-r-lg transition-transform focus:ring-primary focus:border-primary py-1 px-2.5"
         type="combobox"
         value={inputValue()}
         placeholder="Search... (Ctrl + K)"
@@ -249,10 +255,14 @@ const SearchInput = () => {
           activeIndex() > -1 ? `option-${activeIndex()}` : undefined
         }
       />
-      <Show when={inputValue().length > 0}>
+      <div
+        onTransitionStart={(e) => {
+          console.log("transition start", e.propertyName);
+        }}
+        class="relative peer-placeholder-shown:hidden  flex w-max items-center justify-center gap-1 peer h-[29px] peer-focus:h-[33px] bg-bg1 py-1 px-1 -left-1 border-0 peer-focus:border-2 peer-focus:border-primary peer-focus:border-l-0 rounded-r-lg">
         <button
           id="search-button"
-          class="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-500 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
+          class="text-gray-500 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
           onClick={() => {
             handleSearch(inputValue());
           }
@@ -264,11 +274,9 @@ const SearchInput = () => {
             aria-hidden="true"
           />
         </button>
-      </Show>
-      <Show when={inputValue().length > 0}>
         <button
           id="search-clear-button"
-          class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
+          class="right-2 top-1/2 transform text-gray-500 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
           onClick={() => {
             setInputValue("");
             setSearch("");
@@ -283,13 +291,13 @@ const SearchInput = () => {
             aria-hidden="true"
           />
         </button>
-      </Show>
+      </div>
       <Show when={suggestions().length > 0 && showSuggestions()}>
 
         <Portal>
           <ul
 
-            class={`absolute w-screen left-0 right-0 sm:w-max sm:min-w-[30rem] sm:left-[calc(70vw-18rem)] top-10 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
+            class={`fixed w-screen h-screen sm:h-auto left-0 right-0 sm:w-max sm:min-w-[30rem] sm:left-[calc(70vw-18rem)] top-10 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
             aria-multiselectable="false"
             aria-live="polite"
             aria-label="Suggestions"
