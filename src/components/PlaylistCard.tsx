@@ -136,7 +136,8 @@ const ImageContainerFallback = (props: { layout: "list" | "grid" | "sm:grid" }
 ) => {
   return (
     <div classList={{
-      "relative flex aspect-video w-full min-w-0 flex-col rounded-lg overflow-hidden": true,
+      "relative flex aspect-video min-w-0 flex-col rounded-lg overflow-hidden": true,
+      "w-full": props.layout === "grid",
       "w-[10rem] sm:w-full sm:max-w-[18rem]": props.layout === "sm:grid",
       "w-[10rem]": props.layout === "list",
     }}>
