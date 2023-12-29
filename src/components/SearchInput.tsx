@@ -193,14 +193,16 @@ const SearchInput = () => {
     const focusedElement = document.activeElement;
 
     if (focusedElement && focusedElement.id.startsWith("search-")) {
+      console.log("focused", focusedElement);
       return;
     }
+
+    document.body.classList.remove("overflow-y-hidden");
+    document.body.classList.remove("sm:overflow-y-auto");
     setTimeout(() => {
       setSuggestions([]);
       setShowSuggestions(false);
 
-      document.body.classList.remove("overflow-y-hidden");
-      document.body.classList.remove("sm:overflow-y-auto");
     }, 150);
   };
   return (
@@ -211,7 +213,6 @@ const SearchInput = () => {
 
       <Show when={suggestions().length > 0 && showSuggestions()}>
         <button
-          id="search-back-button"
           class="sm:hidden bg-bg2 p-1 px-2 text-gray-500 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
           onClick={() => {
             setSuggestions([]);

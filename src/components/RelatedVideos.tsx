@@ -6,6 +6,7 @@ import { RelatedPlaylist } from "~/types";
 import api from "~/utils/api";
 import PlaylistCard from "./PlaylistCard";
 import VideoCard from "./VideoCard";
+import { useSyncStore } from "~/stores/syncStore";
 
 export default function RelatedVideos() {
   const [v, setV] = createSignal<string | undefined>(undefined);
@@ -15,6 +16,7 @@ export default function RelatedVideos() {
     if (!searchParams.v) return;
     setV(searchParams.v);
   });
+  const sync = useSyncStore();
 
 
 
@@ -33,7 +35,13 @@ export default function RelatedVideos() {
       when={videoQuery.data}
       fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}>
           <div class="w-full max-w-max md:max-w-min">
-            <For each={videoQuery.data?.relatedStreams}>
+            <For each={videoQuery.data?.relatedStreams
+                  // blocklist
+                  .filter(
+                    (item) =>
+                      !sync.store.blocklist[item?.uploaderUrl?.split("/").pop()!]
+                  )
+        }>
               {(stream) => {
                 return (
                   <Switch>

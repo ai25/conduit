@@ -4,7 +4,7 @@ import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { useSyncStore } from "~/stores/syncStore";
 import { useAppState } from "~/stores/appStateStore";
 
-const SubscribeButton = (props: { id: string; class?: string }) => {
+const SubscribeButton = (props: { id: string; name:string; class?: string }) => {
   const sync = useSyncStore();
   const [appState, setAppState] = useAppState();
   const isSubscribed = () => !!sync.store.subscriptions[props.id];
@@ -12,6 +12,7 @@ const SubscribeButton = (props: { id: string; class?: string }) => {
     if (!isSubscribed()) {
       sync.setStore("subscriptions", props.id, {
         subscribedAt: Date.now(),
+        name: props.name,
       });
     } else {
       sync.setStore(

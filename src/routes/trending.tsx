@@ -120,7 +120,13 @@ export default function Trending() {
           <Show when={query.data} keyed>
             {(videos) =>
               videos && (
-                <For each={videos}>{(video) => <VideoCard v={video}
+                <For each={videos
+                  // blocklist
+                  .filter(
+                    (item) =>
+                      !sync.store.blocklist[item?.uploaderUrl?.split("/").pop()!]
+                  )
+                }>{(video) => <VideoCard v={video}
                   layout="sm:grid"
                 />}</For>
               )

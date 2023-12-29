@@ -66,7 +66,7 @@ const PRECACHE_ROUTES = [
 try {
   precacheAndRoute([
     ...self.__WB_MANIFEST,
-    ...PRECACHE_ROUTES,
+    // ...PRECACHE_ROUTES,
   ]);
 } catch (e) {
   console.error("Error in precacheAndRoute:", e);

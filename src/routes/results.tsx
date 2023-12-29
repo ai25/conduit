@@ -5,14 +5,9 @@ import {
   Show,
   Switch,
   createEffect,
-  createRenderEffect,
   createSignal,
-  onCleanup,
-  onMount,
-  useContext,
   ErrorBoundary,
 } from "solid-js";
-import { set, z } from "zod";
 import { getStorageValue } from "~/utils/storage";
 import {
   ContentItem,
@@ -29,11 +24,7 @@ import numeral from "numeral";
 import Button from "~/components/Button";
 import SubscribeButton from "~/components/SubscribeButton";
 import { Spinner } from "~/components/PlayerContainer";
-import Field from "~/components/Field";
 import Select from "~/components/Select";
-import { FaSolidMinus, FaSolidPlus, FaSolidX } from "solid-icons/fa";
-import { RadioGroup } from "@kobalte/core";
-import { Transition } from "solid-headless";
 import Modal from "~/components/Modal";
 import { useAppState } from "~/stores/appStateStore";
 import FilterEditor, {
@@ -124,11 +115,9 @@ export default function Search() {
       "app state loading",
       query.isLoading,
       query.isFetching,
-      query.isInitialLoading
     );
     setAppState({
       loading:
-        query.isInitialLoading ||
         query.isLoading ||
         query.isFetching ||
         query.isRefetching,
@@ -249,16 +238,16 @@ export default function Search() {
               <FilterEditor filter={filter()} setFilter={setFilter} />
               <div class="flex flex-col gap-2">
                 <div class="flex gap-2">
-                <Button
-                  appearance="link"
-                  label="Save Filter"
-                  onClick={() => {
-                    localStorage.setItem(
-                      "search_filter",
-                      JSON.stringify(filter())
-                    );
-                  }}
-                />
+                  <Button
+                    appearance="link"
+                    label="Save Filter"
+                    onClick={() => {
+                      localStorage.setItem(
+                        "search_filter",
+                        JSON.stringify(filter())
+                      );
+                    }}
+                  />
                   <Button
                     appearance="subtle"
                     label="Clear Filter"
@@ -269,12 +258,12 @@ export default function Search() {
                   />
                 </div>
 
-                  <Button
-                    label="Done"
-                    onClick={() => {
-                      setFiltersModalOpen(false);
-                    }}
-                  />
+                <Button
+                  label="Done"
+                  onClick={() => {
+                    setFiltersModalOpen(false);
+                  }}
+                />
               </div>
             </div>
           </Modal>
@@ -297,7 +286,7 @@ export default function Search() {
 
         <div
           ref={(ref) => setParentRef(ref)}
-          class="flex flex-wrap justify-evenly min-h-screen h-full items-start"
+          class="flex flex-wrap justify-center min-h-screen h-full items-start"
         >
           <Show when={query.data?.pages?.[0]?.items.length === 0}>
             <div class="flex flex-col items-center justify-center w-full h-full">
@@ -316,14 +305,20 @@ export default function Search() {
             }
           >
             <For
-              // remove duplicates
               each={query
                 .data!.pages?.map((page) => page.items)
                 .flat()
+                // remove duplicates
                 .filter(
                   (item, index, self) =>
                     self.findIndex((t) => t?.url === item?.url) === index
-                )}
+                )
+                // blocklist
+                .filter(
+                  (item) =>
+                    !sync.store.blocklist[(item as RelatedStream).uploaderUrl?.split("/").pop()!]
+                )
+              }
             >
               {(item) => (
                 <Show
@@ -388,7 +383,9 @@ export default function Search() {
                                 </p>
                               </Show>
                             </div>
-                            <SubscribeButton id={item.url.split("/").pop()!} />
+                            <SubscribeButton id={item.url.split("/").pop()!}
+                              name={item.name}
+                            />
                           </div>
                         </div>
                       )}

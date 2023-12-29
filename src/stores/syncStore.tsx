@@ -31,9 +31,13 @@ export type HistoryItem = RelatedStream & {
 export interface Store extends DocTypeDescription {
   playlists: Record<string, ConduitPlaylist>;
   history: Record<string, HistoryItem>;
-  subscriptions: Record<string, { subscribedAt: number }>;
+  subscriptions: Record<string, {
+    subscribedAt: number,
+    name: string,
+  }>;
   preferences: Preferences;
   watchLater: Record<string, RelatedStream>;
+  blocklist: Record<string, { name: string }>;
 }
 const [initialStore] = createStore<Store>({
   playlists: {},
@@ -41,6 +45,7 @@ const [initialStore] = createStore<Store>({
   subscriptions: {},
   preferences: {} as Preferences,
   watchLater: {},
+  blocklist: {},
 });
 
 const doc = new Y.Doc({
@@ -53,10 +58,10 @@ export const SyncedStoreProvider = (props: { children: any }) => {
   const [room, setRoom] = createSignal(
     "localStorage" in globalThis
       ? (JSON.parse(localStorage.getItem("room") || "{}") as {
-          id?: string;
-          password?: string;
-          name?: string;
-        })
+        id?: string;
+        password?: string;
+        name?: string;
+      })
       : {}
   );
 

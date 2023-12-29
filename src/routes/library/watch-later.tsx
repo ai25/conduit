@@ -1,0 +1,51 @@
+import { createRenderEffect, For } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  onMount,
+  Show,
+  useContext,
+} from "solid-js";
+import { Title, useLocation } from "solid-start";
+import VideoCard from "~/components/VideoCard";
+import { Playlist as PlaylistType, RelatedStream } from "~/types";
+import PlaylistItem from "~/components/PlaylistItem";
+import { fetchJson } from "~/utils/helpers";
+import { useSyncStore } from "~/stores/syncStore";
+import { createQuery } from "@tanstack/solid-query";
+import { usePreferences } from "~/stores/preferencesStore";
+import EmptyState from "~/components/EmptyState";
+
+export default function WatchLater() {
+  const sync = useSyncStore();
+
+  return (
+    <>
+      <Title>Watch Later</Title>
+      <div class="max-w-5xl mx-auto">
+        <h1 class="text-2xl font-bold mb-4">Watch Later</h1>
+
+        <div class="grid grid-cols-1 gap-4 ">
+          <Show when={Object.keys(sync.store.watchLater).length > 0}>
+            <For each={
+              Object.values(sync.store.watchLater)
+            }>
+              {( video, index) => (
+                <PlaylistItem
+                  active=""
+                  v={video}
+                  index={index() + 1}
+                  list="watchLater"
+                />
+              )}
+            </For>
+          </Show>
+          <Show when={Object.keys(sync.store.watchLater).length === 0}>
+            <EmptyState />
+          </Show>
+        </div>
+      </div>
+    </>
+  );
+}
+

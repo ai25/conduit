@@ -35,8 +35,8 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
-          onTouchEnd={async(e) => {await yieldToMain();e.preventDefault(); e.stopPropagation();}}
-      
+          onTouchEnd={async (e) => { await yieldToMain(); e.preventDefault(); e.stopPropagation(); }}
+
           class="bg-bg1 border border-bg2 shadow p-2 rounded-md z-50
                 -translate-y-4
                 animate-in
@@ -109,7 +109,7 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
           <Show when={props.progress === undefined}>
             <DropdownMenu.Item
               class="cursor-pointer z-50 w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-              onClick={async(e) => {
+              onClick={async (e) => {
                 await yieldToMain();
                 e.stopPropagation();
               }}
@@ -171,80 +171,95 @@ export default function VideoCardMenu(props: { v: RelatedStream, progress: numbe
               </div>
             </DropdownMenu.Item>
           </Show>
-            <DropdownMenu.Item
-              class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-              }}
-              onSelect={() => {
-              }}
-            >
-              <div class="flex items-center gap-2">
-                <FaSolidShare />
-                <div class="text-text1">Share</div>
-              </div>
-            </DropdownMenu.Item>
+          <DropdownMenu.Item
+            class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            onPointerUp={(e) => {
+              e.stopPropagation();
+            }}
+            onSelect={() => {
+            }}
+          >
+            <div class="flex items-center gap-2">
+              <FaSolidShare />
+              <div class="text-text1">Share</div>
+            </div>
+          </DropdownMenu.Item>
           <Show when={props.v.uploaderName && props.v.uploaderUrl}>
-          <DropdownMenu.Group class="mt-2">
-            <DropdownMenu.GroupLabel class="flex items-center gap-2">
-              <img
-                src={props.v.uploaderAvatar ?? ""}
-                class="w-6 h-6 rounded-full"
-              />
-              <span class="text-text2 max-w-xs truncate">{props.v.uploaderName}</span>
-            </DropdownMenu.GroupLabel>
-            <DropdownMenu.Item
-              class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border- hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-              }}
-              onSelect={() => {
-                const id = props.v.uploaderUrl.split("/channel/")[1];
-                const isSubscribed = sync.store.subscriptions[id];
-                if (isSubscribed) {
-                  sync.setStore("subscriptions", id, undefined!);
-                  toast.success(`Unsubscribed from ${props.v.uploaderName}.`);
-                } else {
-                  sync.setStore("subscriptions", id, { subscribedAt: Date.now() });
-                  toast.success(`Subscribed to ${props.v.uploaderName}.`);
-                }
-              }}
-            >
-              <div class="flex items-center gap-2">
-                <Show when={sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
-                  <FaSolidHeartCircleMinus />
-                </Show>
-                <Show when={!sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
-                  <FaSolidHeartCirclePlus />
-                </Show>
-                <div class="text-text1">
-                  {sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]] ? "Unsubscribe" : "Subscribe"}
-                </div>
+            <DropdownMenu.Group class="mt-2">
+              <DropdownMenu.GroupLabel class="flex items-center gap-2">
+                <img
+                  src={props.v.uploaderAvatar ?? ""}
+                  class="w-6 h-6 rounded-full"
+                />
+                <span class="text-text2 max-w-xs truncate">{props.v.uploaderName}</span>
+              </DropdownMenu.GroupLabel>
+              <DropdownMenu.Item
+                class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border- hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                }}
+                onSelect={() => {
+                  const id = props.v.uploaderUrl.split("/channel/")[1];
+                  const isSubscribed = sync.store.subscriptions[id];
+                  if (isSubscribed) {
+                    sync.setStore("subscriptions", id, undefined!);
+                    toast.success(`Unsubscribed from ${props.v.uploaderName}.`);
+                  } else {
+                    sync.setStore("subscriptions", id, { subscribedAt: Date.now() });
+                    toast.success(`Subscribed to ${props.v.uploaderName}.`);
+                  }
+                }}
+              >
+                <div class="flex items-center gap-2">
+                  <Show when={sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
+                    <FaSolidHeartCircleMinus />
+                  </Show>
+                  <Show when={!sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
+                    <FaSolidHeartCirclePlus />
+                  </Show>
+                  <div class="text-text1">
+                    {sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]] ? "Unsubscribe" : "Subscribe"}
+                  </div>
 
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-              }}
-              onSelect={() => { }}
-            >
-              <div class="flex items-center gap-2">
-                <FaSolidBan />
-                <div class="text-text1">Block</div>
-              </div>
-            </DropdownMenu.Item>
-          </DropdownMenu.Group>
+                </div>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                }}
+                onSelect={() => {
+                  let id = props.v.uploaderUrl.split("/channel/")[1];
+
+                  if (!id) {
+                    toast.error("Failed to block channel. No channel ID found.");
+                    return;
+                  }
+                  try {
+                    sync.setStore("blocklist", props.v.uploaderUrl.split("/channel/")[1], { name: props.v.uploaderName });
+                    toast.success(`Blocked ${props.v.uploaderName}.`);
+                  } catch (e) {
+                    toast.error("Failed to block channel. " + (e as any).message);
+                    console.error(e);
+                  }
+
+                }}
+              >
+                <div class="flex items-center gap-2">
+                  <FaSolidBan />
+                  <div class="text-text1">Block</div>
+                </div>
+              </DropdownMenu.Item>
+            </DropdownMenu.Group>
           </Show>
 
           <DropdownMenu.Item

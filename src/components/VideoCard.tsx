@@ -20,6 +20,7 @@ import { createTimeAgo } from "@solid-primitives/date";
 import VideoCardMenu from "./VideoCardMenu"
 import { FaSolidEye } from "solid-icons/fa";
 import { Tooltip } from "./Tooltip";
+import Link from "./Link";
 
 function formatRelativeShort(now: Date, past: Date): string {
   const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
@@ -98,11 +99,13 @@ const VideoCard = (props: {
         </Show>
       </div>
       <div classList={{
-        "flex w-full min-w-0 justify-between h-full  sm:mt-2 max-h-20": true,
+        "flex w-full min-w-0 max-w-full justify-between h-full  sm:mt-2 max-h-20": true,
         "max-w-[22rem]": props.layout === "grid",
       }}>
         <div classList={{
-          "flex flex-col min-w-0 gap-2 pr-2 h-full w-full max-w-full": true,
+          "flex flex-col min-w-0 gap-2 pr-2 h-full w-full": true,
+          "max-w-[10rem] [@media(min-width:380px)]:max-w-[11rem] [@media(min-width:400px)]:max-w-full": props.layout === "sm:grid" || props.layout === "list",
+          "max-w-full": props.layout === "grid",
         }}
         >
           <Show when={props.v}
@@ -120,12 +123,12 @@ const VideoCard = (props: {
               placement="top"
               openDelay={1000}
               triggerSlot={
-                <A
-                  href={`/watch?v=${id()}${searchParams.fullscreen ? `&fullscreen=${searchParams.fullscreen}` : ""}`}
-                  class="text-start two-line-ellipsis min-w-0 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                <Link
+                  href={`/watch?v=${id()}`}
+                  class="rounded text-start two-line-ellipsis min-w-0 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {props.v!.title}
-                </A>
+                </Link>
               }
               contentSlot={props.v!.title}
             />
@@ -168,9 +171,9 @@ const ImageContainer = (props: {
 }) => {
 
   return (
-    <A
+    <Link
       href={props.url}
-      class="relative min-w-[12rem] flex aspect-video w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative w-[10rem] flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{
@@ -223,7 +226,7 @@ const ImageContainer = (props: {
           ></div>
         </div>
       </Show>
-    </A>
+    </Link>
   )
 }
 
@@ -232,8 +235,8 @@ const ImageContainerFallback = (props: { layout: "list" | "grid" | "sm:grid" }
   return (
     <div classList={{
       "relative flex aspect-video w-full min-w-0 flex-col rounded-lg overflow-hidden": true,
-      "max-w-[12rem] sm:max-w-[18rem]": props.layout === "sm:grid",
-      "max-w-[12rem]": props.layout === "list",
+      "w-[10rem] sm:w-full sm:max-w-[18rem]": props.layout === "sm:grid",
+      "w-[10rem]": props.layout === "list",
     }}>
 
       <div class="animate-pulse bg-bg2 aspect-video h-full overflow-hidden max-w-fit w-full">
@@ -256,12 +259,12 @@ const InfoContainer = (props: {
 
 }) => {
   return (
-    <div class="flex gap-1 text-text2 max-w-[85%] sm:max-w-full ">
+    <div class="flex gap-1 text-text2 w-full sm:max-w-full ">
       <Show when={props.uploaderAvatar}>
         <div class="group mb-1 w-max">
-          <A
-            tabindex={-1}
-            aria-hidden="true"
+          <Link
+            // tabindex={-1}
+            // aria-hidden="true"
             href={props.uploaderUrl || ""}
             class="flex max-w-max min-w-min items-center outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
@@ -270,17 +273,17 @@ const InfoContainer = (props: {
               class="rounded-full w-6 h-6 aspect-square min-w-[24px] min-h-[24px]"
               alt=""
             />
-          </A>
+          </Link>
         </div>
       </Show>
 
       <div class="flex w-full flex-col text-xs ">
-        <A
+        <Link
           href={props.uploaderUrl || ""}
           class="outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <div class="peer w-fit truncate max-w-[10rem]">{props.uploaderName}</div>
-        </A>
+        </Link>
         <div class="flex flex-wrap w-full">
           <Show when={props.views}>
             <div

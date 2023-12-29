@@ -119,7 +119,11 @@ const newComponent = (
             <ErrorComponent error={query.data} />
           </Show>
           <Show when={query.data && query.data.length > 0}>
-            <For each={query.data?.slice(0, limit())}>
+            <For each={query.data?.filter(
+                    (item) =>
+                      !sync.store.blocklist[item?.uploaderUrl?.split("/").pop()!]
+                  )
+                .slice(0, limit())}>
               {(video) => <VideoCard v={video} />}
             </For>
           </Show>

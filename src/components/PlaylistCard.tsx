@@ -1,22 +1,12 @@
 import type { RelatedPlaylist, } from "~/types";
-import {useSearchParams } from "solid-start";
 import {
   Match,
   Show,
   Switch,
-  createEffect,
-  createRenderEffect,
   createSignal,
-  useContext,
-  createMemo,
-  For,
 } from "solid-js";
 import { useSyncStore, HistoryItem } from "~/stores/syncStore";
-import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
 import { mergeProps } from "solid-js";
-import { createTimeAgo } from "@solid-primitives/date";
-import VideoCardMenu from "./VideoCardMenu"
-import { FaSolidEye } from "solid-icons/fa";
 import { Tooltip } from "./Tooltip";
 import { A } from "@solidjs/router";
 
@@ -25,11 +15,6 @@ const PlaylistCard = (props: {
   layout?: "list" | "grid" | "sm:grid"
 }) => {
   props = mergeProps({ layout: "sm:grid" as "sm:grid" }, props);
-
-  const [searchParams] = useSearchParams()
-
-
-  const id = () => getVideoId(props.item);
 
   return (
     <div
@@ -61,7 +46,9 @@ const PlaylistCard = (props: {
         "max-w-[22rem]": props.layout === "grid",
       }}>
         <div classList={{
-          "flex flex-col min-w-0 gap-2 pr-2 h-full w-full max-w-full": true,
+          "flex flex-col min-w-0 gap-2 pr-2 h-full w-full": true,
+          "max-w-[10rem] [@media(min-width:380px)]:max-w-[11rem] [@media(min-width:400px)]:max-w-full": props.layout === "sm:grid" || props.layout === "list",
+          "max-w-full": props.layout === "grid",
         }}
         >
           <Show when={props.item}
@@ -81,7 +68,7 @@ const PlaylistCard = (props: {
               triggerSlot={
                 <A
                   href={props.item!.url}
-                  class="text-start two-line-ellipsis min-w-0 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  class="rounded text-start two-line-ellipsis min-w-0 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {props.item!.name}
                 </A>
@@ -121,7 +108,7 @@ const ImageContainer = (props: {
   return (
     <A
       href={props.url}
-      class="relative flex aspect-video w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative w-[10rem] flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{
@@ -150,8 +137,8 @@ const ImageContainerFallback = (props: { layout: "list" | "grid" | "sm:grid" }
   return (
     <div classList={{
       "relative flex aspect-video w-full min-w-0 flex-col rounded-lg overflow-hidden": true,
-      "max-w-[12rem] sm:max-w-[18rem]": props.layout === "sm:grid",
-      "max-w-[12rem]": props.layout === "list",
+      "w-[10rem] sm:w-full sm:max-w-[18rem]": props.layout === "sm:grid",
+      "w-[10rem]": props.layout === "list",
     }}>
 
       <div class="animate-pulse bg-bg2 aspect-video h-full overflow-hidden max-w-fit w-full">
@@ -169,15 +156,24 @@ const InfoContainer = (props: {
 
 }) => {
   return (
-    <div class="flex gap-1 text-text2 max-w-[85%] sm:max-w-full ">
+    <div class="flex gap-1 text-text2 w-full max-w-full ">
 
       <div class="flex w-full flex-col text-xs ">
-        <A
-          href={props.uploaderUrl || ""}
-          class="outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <div class="peer w-fit truncate max-w-[10rem]">{props.uploaderName}</div>
-        </A>
+
+        <Switch>
+
+          <Match when={props.uploaderName && props.uploaderUrl}>
+            <A
+              href={props.uploaderUrl || ""}
+              class="rounded outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <div class="peer w-fit truncate max-w-[10rem]">{props.uploaderName}</div>
+            </A>
+          </Match>
+          <Match when={props.uploaderName && !props.uploaderUrl}>
+            <div class="peer w-fit truncate max-w-[10rem]">{props.uploaderName}</div>
+          </Match>
+        </Switch>
       </div>
     </div>
   )
@@ -232,8 +228,8 @@ function PlaylistMenu(props: { v: RelatedPlaylist }) {
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
-          onTouchEnd={async(e) => {await yieldToMain();e.preventDefault(); e.stopPropagation();}}
-      
+          onTouchEnd={async (e) => { await yieldToMain(); e.preventDefault(); e.stopPropagation(); }}
+
           class="bg-bg1 border border-bg2 shadow p-2 rounded-md z-50
                 -translate-y-4
                 animate-in
@@ -242,76 +238,76 @@ function PlaylistMenu(props: { v: RelatedPlaylist }) {
                 duration-200
                 ">
           <DropdownMenu.Arrow />
-            <DropdownMenu.Item
-              class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-              }}
-              onSelect={() => {
-              }}
-            >
-              <div class="flex items-center gap-2">
-                <FaSolidShare />
-                <div class="text-text1">Share</div>
-              </div>
-            </DropdownMenu.Item>
+          <DropdownMenu.Item
+            class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            onPointerUp={(e) => {
+              e.stopPropagation();
+            }}
+            onSelect={() => {
+            }}
+          >
+            <div class="flex items-center gap-2">
+              <FaSolidShare />
+              <div class="text-text1">Share</div>
+            </div>
+          </DropdownMenu.Item>
           <Show when={props.v.uploaderName && props.v.uploaderUrl}>
-          <DropdownMenu.Group class="mt-2">
-            <DropdownMenu.GroupLabel class="flex items-center gap-2">
-              <span class="text-text2 max-w-xs truncate">{props.v.uploaderName}</span>
-            </DropdownMenu.GroupLabel>
-            <DropdownMenu.Item
-              class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border- hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-              }}
-              onSelect={() => {
-                const id = props.v.uploaderUrl.split("/channel/")[1];
-                const isSubscribed = sync.store.subscriptions[id];
-                if (isSubscribed) {
-                  sync.setStore("subscriptions", id, undefined!);
-                  toast.success(`Unsubscribed from ${props.v.uploaderName}.`);
-                } else {
-                  sync.setStore("subscriptions", id, { subscribedAt: Date.now() });
-                  toast.success(`Subscribed to ${props.v.uploaderName}.`);
-                }
-              }}
-            >
-              <div class="flex items-center gap-2">
-                <Show when={sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
-                  <FaSolidHeartCircleMinus />
-                </Show>
-                <Show when={!sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
-                  <FaSolidHeartCirclePlus />
-                </Show>
-                <div class="text-text1">
-                  {sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]] ? "Unsubscribe" : "Subscribe"}
-                </div>
+            <DropdownMenu.Group class="mt-2">
+              <DropdownMenu.GroupLabel class="flex items-center gap-2">
+                <span class="text-text2 max-w-xs truncate">{props.v.uploaderName}</span>
+              </DropdownMenu.GroupLabel>
+              <DropdownMenu.Item
+                class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border- hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                }}
+                onSelect={() => {
+                  const id = props.v.uploaderUrl.split("/channel/")[1];
+                  const isSubscribed = sync.store.subscriptions[id];
+                  if (isSubscribed) {
+                    sync.setStore("subscriptions", id, undefined!);
+                    toast.success(`Unsubscribed from ${props.v.uploaderName}.`);
+                  } else {
+                    sync.setStore("subscriptions", id, { subscribedAt: Date.now() });
+                    toast.success(`Subscribed to ${props.v.uploaderName}.`);
+                  }
+                }}
+              >
+                <div class="flex items-center gap-2">
+                  <Show when={sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
+                    <FaSolidHeartCircleMinus />
+                  </Show>
+                  <Show when={!sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]]}>
+                    <FaSolidHeartCirclePlus />
+                  </Show>
+                  <div class="text-text1">
+                    {sync.store.subscriptions[props.v.uploaderUrl.split("/channel/")[1]] ? "Unsubscribe" : "Subscribe"}
+                  </div>
 
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-              }}
-              onSelect={() => { }}
-            >
-              <div class="flex items-center gap-2">
-                <FaSolidBan />
-                <div class="text-text1">Block</div>
-              </div>
-            </DropdownMenu.Item>
-          </DropdownMenu.Group>
+                </div>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                }}
+                onSelect={() => { }}
+              >
+                <div class="flex items-center gap-2">
+                  <FaSolidBan />
+                  <div class="text-text1">Block</div>
+                </div>
+              </DropdownMenu.Item>
+            </DropdownMenu.Group>
           </Show>
 
           <DropdownMenu.Item

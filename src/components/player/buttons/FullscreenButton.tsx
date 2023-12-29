@@ -9,8 +9,11 @@ export function FullscreenButton(props: FullscreenButtonProps) {
   const [params, setParams] = useSearchParams();
   createEffect(() => {
     document.onfullscreenchange = () => {
-      if (document.fullscreenElement) setParams({ fullscreen: true });
-      else setParams({ fullscreen: undefined });
+      if (document.fullscreenElement) {
+        setParams({ fullscreen: true }, { replace: true })
+        screen.orientation.lock("landscape").catch(() => { });
+      }
+      else setParams({ fullscreen: undefined }, { replace: true })
     }
   });
   const isFullscreen = () => (!!params.fullscreen)
