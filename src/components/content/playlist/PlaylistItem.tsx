@@ -1,4 +1,3 @@
-import { A } from "@solidjs/router";
 import numeral from "numeral";
 import {
   createEffect,
@@ -9,11 +8,11 @@ import {
   useContext,
 } from "solid-js";
 import { RelatedStream } from "~/types";
-import Modal from "./Modal";
 import {  useSyncStore } from "~/stores/syncStore";
 import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
 import { usePreferences } from "~/stores/preferencesStore";
 import { createTimeAgo } from "@solid-primitives/date";
+import Link from "~/components/Link";
 
 const PlaylistItem = (props: {
   v: RelatedStream;
@@ -56,9 +55,9 @@ const PlaylistItem = (props: {
   const [timeAgo] = createTimeAgo(props.v.uploaded, {interval: 1000 * 60 })
 
   return (
-    <A
-      draggable="false"
-      data-long-press-delay="500"
+    <Link
+      // draggable="false"
+      // data-long-press-delay="500"
       ref={card}
       href={`${props.v.url}&list=${props.list}&index=${props.index}`}
       // style={{ "background-image": `url(${props.v.thumbnail})` }}
@@ -83,10 +82,7 @@ const PlaylistItem = (props: {
         <div class="shadow-xl my-auto w-0 min-w-[6rem] @[20rem]:min-w-[7rem] @[35rem]:min-w-[9rem] @[50rem]:min-w-[11rem]max-w-[6rem] @[20rem]:max-w-[7rem] @[35rem]:max-w-[9rem] @[50rem]:max-w-[11rem] aspect-video max-h-full rounded-lg ">
           <img
             class="object-cover w-full h-full max-w-full max-h-full rounded-lg "
-            src={generateThumbnailUrl(
-              preferences.instance.image_proxy_url,
-              getVideoId(props.v)
-            )}
+            src={props.v.thumbnail}
           />
           {!!progress() && (
             <div class="relative h-0 w-full">
@@ -115,12 +111,12 @@ const PlaylistItem = (props: {
             {props.v.title}{" "}
           </div>
           <div class="truncate text-xs text-text2">
-            <A
+            <Link
               href={props.v.uploaderUrl}
               class="inline-block mr-1 link !text-text2"
             >
               {props.v.uploaderName} •
-            </A>
+            </Link>
             <div class="inline-block mr-1">
               {numeral(props.v.views).format("0a").toUpperCase()} views •
             </div>
@@ -152,7 +148,7 @@ const PlaylistItem = (props: {
         {/*   <DropdownItem as="button" label="Add to queue" /> */}
         {/* </Dropdown> */}
       </div>
-    </A>
+    </Link>
   );
 };
 

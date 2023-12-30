@@ -167,24 +167,24 @@ const Description = (props: {
           navigator.clipboard.writeText(JSON.stringify(videoQuery.data, null, 2));
         }}
       />
-      <Async when={videoQuery.data} fallback={<div class="w-full h-96 bg-bg1 animate-pulse"></div>}>
+      <Show when={videoQuery.data} fallback={<div class="w-full h-96 bg-bg1 animate-pulse"></div>}>
         <div class="max-w-screen-sm max-h-[80vh] overflow-auto">
           <JSONViewer data={videoQuery.data} folded={false} />
         </div>
-      </Async>
+      </Show>
     </Modal>
     <DownloadModal id={getVideoId(videoQuery.data)!} isOpen={downloadModalOpen()} setIsOpen={setDownloadModalOpen} />
     <div class="bg-bg1 p-4 @container">
       <div class="flex flex-col gap-2">
         <div class="flex flex-col gap-2 ">
           <div class="flex items-start justify-between h-full">
-            <Async when={videoQuery.data} fallback={<div class="w-full h-6 bg-bg2 rounded animate-pulse"></div>}>
+            <Show when={videoQuery.data} fallback={<div class="w-full h-6 bg-bg2 rounded animate-pulse"></div>}>
               <h1 class="text-lg leading-tight font-bold sm:text-xl ">
                 {videoQuery.data!.title}
               </h1>
-            </Async>
+            </Show>
           </div>
-          <Async when={videoQuery.data} fallback={<div class="w-full h-12 flex sm:justify-start justify-between gap-2">
+          <Show when={videoQuery.data} fallback={<div class="w-full h-12 flex sm:justify-start justify-between gap-2">
             <div class="w-44 flex items-center gap-2">
               <div class="w-12 h-12 aspect-square bg-bg2 animate-pulse rounded-full"></div>
               <div class="flex flex-col justify-between py-1 gap-1 h-full w-full ">
@@ -224,11 +224,13 @@ const Description = (props: {
                 </div>
               </div>
 
-              <SubscribeButton id={(() => videoQuery.data?.uploaderUrl?.split("/channel/")[1])() ?? ""} />
+              <SubscribeButton
+                name={videoQuery.data!.uploader}
+                id={(() => videoQuery.data?.uploaderUrl?.split("/channel/")[1])() ?? ""} />
             </div>
-          </Async>
+          </Show>
         </div>
-        <Async when={videoQuery.data} fallback={<ActionsContainerFallback />}>
+        <Show when={videoQuery.data} fallback={<ActionsContainerFallback />}>
           <ActionsContainer
             downloaded={props.downloaded}
             deleteVideo={() => deleteVideo(getVideoId(videoQuery.data)!)}
@@ -236,8 +238,8 @@ const Description = (props: {
             refetch={videoQuery.refetch}
             setDebugInfoOpen={() => setDebugInfoOpen(true)}
           />
-        </Async>
-        <Async when={videoQuery.data} fallback={<div class="w-full h-8 flex flex-wrap gap-2 mb-2 items-end justify-between ">
+        </Show>
+        <Show when={videoQuery.data} fallback={<div class="w-full h-8 flex flex-wrap gap-2 mb-2 items-end justify-between ">
           <div class="w-64 h-4 bg-bg2 animate-pulse rounded-lg"></div>
           <div class="w-full @sm:w-36 h-4 bg-bg2 animate-pulse rounded-lg"></div>
         </div>}>
@@ -291,9 +293,9 @@ const Description = (props: {
               </div>
             </div>
           </div>
-        </Async>
+        </Show>
       </div>
-      <Async when={videoQuery.data} fallback={<div class="mt-1 rounded-lg w-full h-24 bg-bg2 animate-pulse"></div>}>
+      <Show when={videoQuery.data} fallback={<div class="mt-1 rounded-lg w-full h-24 bg-bg2 animate-pulse"></div>}>
         <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
           <div
             tabIndex={0}
@@ -315,7 +317,7 @@ const Description = (props: {
             Show {expanded() ? "less" : "more"}
           </button>
         </div>
-      </Async>
+      </Show>
     </div>
   </>
   );
@@ -471,13 +473,5 @@ const ActionsContainerFallback = () => (
   </div>
 );
 
-const Async = (props: { when: any, fallback: JSX.Element, error?: (error: Error, retry: () => void) => JSX.Element, children: JSX.Element }) => {
-  return (
-
-    <Show when={props.when} fallback={props.fallback}>
-      {props.children}
-    </Show>
-  )
-}
 
 

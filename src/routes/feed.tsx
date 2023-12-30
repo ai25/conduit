@@ -23,9 +23,9 @@ import { usePreferences } from "~/stores/preferencesStore";
 import { Tooltip } from "@kobalte/core";
 import { FaSolidArrowsRotate } from "solid-icons/fa";
 import { lazy } from "solid-js";
-import VideoCard from "~/components/VideoCard";
 import { memo } from "solid-js/web";
 import Button from "~/components/Button";
+import VideoCard from "~/components/content/stream/VideoCard";
 
 export default function Feed() {
   const [limit, setLimit] = createSignal(10);
@@ -76,7 +76,7 @@ const [appState, setAppState] = useAppState();
 createEffect(() => {
   console.log(sync.store.subscriptions, Object.keys(sync.store.subscriptions), "feed");
   setAppState({
-    loading: query.isInitialLoading || query.isRefetching || query.isFetching,
+    loading: query.isRefetching || query.isFetching,
   });
 });
 createEffect(() => {

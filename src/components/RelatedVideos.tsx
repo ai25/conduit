@@ -4,9 +4,9 @@ import { useSearchParams } from "solid-start";
 import { usePreferences } from "~/stores/preferencesStore";
 import { RelatedPlaylist } from "~/types";
 import api from "~/utils/api";
-import PlaylistCard from "./PlaylistCard";
-import VideoCard from "./VideoCard";
 import { useSyncStore } from "~/stores/syncStore";
+import VideoCard from "./content/stream/VideoCard";
+import PlaylistCard from "./content/playlist/PlaylistCard";
 
 export default function RelatedVideos() {
   const [v, setV] = createSignal<string | undefined>(undefined);

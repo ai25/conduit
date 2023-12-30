@@ -1,4 +1,3 @@
-import VideoCard from "~/components/VideoCard";
 
 import {
   For,
@@ -28,7 +27,6 @@ import { Spinner } from "~/components/PlayerContainer";
 import { assertType, fetchJson } from "~/utils/helpers";
 import { A } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";
-import PlaylistCard from "~/components/PlaylistCard";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import { useAppState } from "~/stores/appStateStore";
 import SubscribeButton from "~/components/SubscribeButton";
@@ -42,6 +40,8 @@ import EmptyState from "~/components/EmptyState";
 import { Collapsible, Tabs } from "@kobalte/core";
 import { Transition, TransitionGroup } from "solid-transition-group";
 import { FaSolidCheck } from "solid-icons/fa";
+import PlaylistCard from "~/components/content/playlist/PlaylistCard";
+import VideoCard from "~/components/content/stream/VideoCard";
 // Fetching logic for tabs
 async function fetchTabNextPage(
   instance: string,
@@ -178,7 +178,9 @@ export default function Channel() {
           </Show>
           <Show when={query.data?.pages?.[0]?.id}>
             <div class="ml-auto">
-              <SubscribeButton id={query.data?.pages[0].id!} />
+              <SubscribeButton 
+                name={query.data?.pages[0].name!} 
+                id={query.data?.pages[0].id!} />
             </div>
           </Show>
         </div>
@@ -609,13 +611,6 @@ const ChannelsTab = (props: { tabData: string }) => {
                         </Show>
                       </div>
                     </A>
-
-                    {/* <template v-if="props.item.videos >= 0">
-                        <br v-if="props.item.uploaderName" />
-                        <strong v-text="`${props.item.videos} ${$t('video.videos')}`" />
-                      </template> */}
-
-                    <br />
                   </div>
                 )}
               </For>

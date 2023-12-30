@@ -7,14 +7,13 @@ import {
   useContext,
 } from "solid-js";
 import { Title, useLocation } from "solid-start";
-import VideoCard from "~/components/VideoCard";
 import { Playlist as PlaylistType, RelatedStream } from "~/types";
-import PlaylistItem from "~/components/PlaylistItem";
 import { fetchJson } from "~/utils/helpers";
 import { useSyncStore } from "~/stores/syncStore";
 import { createQuery } from "@tanstack/solid-query";
 import { usePreferences } from "~/stores/preferencesStore";
 import EmptyState from "~/components/EmptyState";
+import PlaylistItem from "~/components/content/playlist/PlaylistItem";
 
 export default function WatchLater() {
   const sync = useSyncStore();

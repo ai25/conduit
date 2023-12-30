@@ -8,13 +8,12 @@ import {
   useContext,
 } from "solid-js";
 import { Title, useLocation } from "solid-start";
-import VideoCard from "~/components/VideoCard";
 import { Playlist as PlaylistType, RelatedStream } from "~/types";
-import PlaylistItem from "~/components/PlaylistItem";
 import { fetchJson } from "~/utils/helpers";
 import { useSyncStore } from "~/stores/syncStore";
 import { createQuery } from "@tanstack/solid-query";
 import { usePreferences } from "~/stores/preferencesStore";
+import PlaylistItem from "~/components/content/playlist/PlaylistItem";
 
 export default function Playlist() {
   const [list, setList] = createSignal<PlaylistType>();
@@ -71,7 +70,6 @@ export default function Playlist() {
                     )}
                   </For>
                 </Show>
-                {/* <For each={Array(20).fill(0)}>{() => <PlaylistCard />}</For> */}
               </div>
             </div>
           );

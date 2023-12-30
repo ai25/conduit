@@ -5,7 +5,7 @@ import { usePreferences } from "~/stores/preferencesStore";
 import Field from "./Field";
 import Modal from "./Modal";
 import { PipedVideo, RelatedStream } from "~/types";
-import VideoCard from "./VideoCard";
+import VideoCard from "./content/stream/VideoCard";
 
 type Quality = {
   quality: string;

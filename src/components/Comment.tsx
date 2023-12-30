@@ -1,5 +1,4 @@
 // TODO: Pinned, verified, hearted
-import { A } from "@solidjs/router";
 import { createInfiniteQuery } from "@tanstack/solid-query";
 import { FaSolidThumbsUp } from "solid-icons/fa";
 import { Show, createSignal, useContext, Suspense, For, createEffect } from "solid-js";
@@ -7,6 +6,7 @@ import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncStore } from "~/stores/syncStore";
 import { fetchJson } from "~/utils/helpers";
 import { sanitizeText } from "./Description";
+import Link from "./Link";
 export interface PipedCommentResponse {
   comments: PipedComment[];
   disabled: boolean;
@@ -78,6 +78,7 @@ export default function Comment(props: Props) {
     getNextPageParam: (lastPage) => {
       return lastPage.nextpage;
     },
+    initialPageParam: "initial"
   })
   );
   async function hideReplies() {
@@ -92,7 +93,7 @@ export default function Comment(props: Props) {
   return (
     <>
       <div class="flex  gap-2 ">
-        <A
+        <Link
           href={`${props.comment.commentorUrl}`}
           class="w-1/12 rounded-full justify-center flex h-fit"
         >
@@ -103,17 +104,17 @@ export default function Comment(props: Props) {
             alt=""
             class="rounded-full w-full h-full"
           />
-        </A>
+        </Link>
         <div class="flex flex-col  w-11/12">
           <span class="flex gap-2 items-center">
-            <A
+            <Link
               href={`${props.comment.commentorUrl}`}
               class={`text-sm font-bold ${props.comment.commentorUrl === props.uploader &&
                 "bg-background rounded-full px-4"
                 }`}
             >
               {props.comment.author}
-            </A>
+            </Link>
             {props.comment.verified && (
               <svg
                 class="w-4 h-4"

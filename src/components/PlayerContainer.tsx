@@ -4,7 +4,7 @@ import {
   useNavigate,
   useServerContext,
 } from "solid-start";
-import Player from "./Player";
+import Player from "./player/Player";
 import {
   Show,
   createRenderEffect,

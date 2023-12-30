@@ -7,7 +7,6 @@ import {
   useContext,
   batch,
 } from "solid-js";
-import VideoCard from "~/components/VideoCard";
 import { RelatedStream } from "~/types";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { BsInfoCircleFill, BsXCircle } from "solid-icons/bs";
@@ -20,7 +19,8 @@ import ImportHistoryModal from "~/components/ImportHistoryModal";
 import uFuzzy from "@leeoniya/ufuzzy";
 import Modal from "~/components/Modal";
 import Field from "~/components/Field";
-import { getVideoId } from "~/utils/helpers";
+import { debounce, getVideoId } from "~/utils/helpers";
+import VideoCard from "~/components/content/stream/VideoCard";
 
 
 export default function History() {
@@ -219,34 +219,3 @@ export default function History() {
   );
 }
 
-/**
- * Debounce a function call.
- *
- * @template T - The type of the `this` context for the function.
- * @template U - The tuple type representing the argument types of the function.
- *
- * @param {(...args: U) => void} func - The function to debounce.
- * @param {number} wait - The number of milliseconds to delay the function call.
- * @returns {(...args: U) => void} - The debounced function.
- */
-function debounce<T, U extends any[]>(
-  func: (this: T, ...args: U) => void,
-  wait: number
-): (this: T, ...args: U) => void {
-  let timeout: NodeJS.Timeout | null = null;
-
-  return function(this: T, ...args: U): void {
-    const context = this;
-
-    const later = () => {
-      timeout = null;
-      func.apply(context, args);
-    };
-
-    if (timeout !== null) {
-      clearTimeout(timeout);
-    }
-
-    timeout = setTimeout(later, wait);
-  };
-}

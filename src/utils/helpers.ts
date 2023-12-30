@@ -161,3 +161,60 @@ export function isMobile() {
   if (isServer) return false;
   return navigator.maxTouchPoints > 1 && typeof screen.orientation !== undefined;
 }
+
+export function formatRelativeShort(now: Date, past: Date): string {
+  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+  const secondsInAMinute = 60;
+  const secondsInAnHour = secondsInAMinute * 60;
+  const secondsInADay = secondsInAnHour * 24;
+  const secondsInAMonth = secondsInADay * 30; // rough average
+  const secondsInAYear = secondsInADay * 365; // ignoring leap years for simplicity
+
+  if (diffInSeconds >= secondsInAYear) {
+    return `${Math.floor(diffInSeconds / secondsInAYear)}y`;
+  } else if (diffInSeconds >= secondsInAMonth) {
+    return `${Math.floor(diffInSeconds / secondsInAMonth)}mo`;
+  } else if (diffInSeconds >= secondsInADay) {
+    return `${Math.floor(diffInSeconds / secondsInADay)}d`;
+  } else if (diffInSeconds >= secondsInAnHour) {
+    return `${Math.floor(diffInSeconds / secondsInAnHour)}h`;
+  } else if (diffInSeconds >= secondsInAMinute) {
+    return `${Math.floor(diffInSeconds / secondsInAMinute)}m`;
+  } else {
+    return `now`;
+  }
+}
+
+
+/**
+ * Debounce a function call.
+ *
+ * @template T - The type of the `this` context for the function.
+ * @template U - The tuple type representing the argument types of the function.
+ *
+ * @param {(...args: U) => void} func - The function to debounce.
+ * @param {number} wait - The number of milliseconds to delay the function call.
+ * @returns {(...args: U) => void} - The debounced function.
+ */
+export function debounce<T, U extends any[]>(
+  func: (this: T, ...args: U) => void,
+  wait: number
+): (this: T, ...args: U) => void {
+  let timeout: NodeJS.Timeout | null = null;
+
+  return function(this: T, ...args: U): void {
+    const context = this;
+
+    const later = () => {
+      timeout = null;
+      func.apply(context, args);
+    };
+
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(later, wait);
+  };
+}

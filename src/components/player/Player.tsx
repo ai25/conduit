@@ -31,22 +31,21 @@ import {
 import { chaptersVtt } from "~/lib/chapters";
 import { useIsRouting, useLocation, useNavigate, useSearchParams } from "solid-start";
 import { ttml2srt } from "~/lib/ttml";
-import PlayerSkin from "./PlayerSkin";
-import VideoCard from "./VideoCard";
 import { useQueue, VideoQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { Suspense } from "solid-js";
 import { isServer } from "solid-js/web";
 import { MediaPlayerElement } from "vidstack/elements";
-import { VideoLayout } from "./player/layouts/VideoLayout";
+import { VideoLayout } from "../player/layouts/VideoLayout";
 import { usePreferences } from "~/stores/preferencesStore";
 import { createQuery } from "@tanstack/solid-query";
 import { generateStoryboard, getVideoId, isMobile, yieldToMain } from "~/utils/helpers";
 import { ActionHandlers, initMediaSession, MediaMetadataProps, updateProgress } from "~/utils/player-helpers";
 import api from "~/utils/api";
-import { PiPLayout } from "./player/layouts/PiPLayout";
+import { PiPLayout } from "../player/layouts/PiPLayout";
 import { useAppState } from "~/stores/appStateStore";
+import VideoCard from "../content/stream/VideoCard";
 
 export default function Player(props: {
   // video: PipedVideo;

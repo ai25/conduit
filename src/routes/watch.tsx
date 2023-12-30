@@ -14,7 +14,6 @@ import { useLocation, useSearchParams } from "solid-start";
 import { For } from "solid-js";
 import { PlayerContext, useTheater } from "~/root";
 import { getHlsManifest, getStreams } from "~/utils/hls";
-import PlaylistItem from "~/components/PlaylistItem";
 import { usePlaylist } from "~/stores/playlistStore";
 import { useSyncStore } from "~/stores/syncStore";
 import { useAppState } from "~/stores/appStateStore";
@@ -24,13 +23,11 @@ import { usePreferences } from "~/stores/preferencesStore";
 import { Suspense } from "solid-js";
 import numeral from "numeral";
 import { isServer } from "solid-js/web";
-import PlaylistCard from "~/components/PlaylistCard";
-import Player from "~/components/Player";
-import { toaster } from "@kobalte/core";
 import api from "~/utils/api";
 import RelatedVideos from "~/components/RelatedVideos";
 import Comments from "~/components/Comments";
 import { getVideoId, isMobile } from "~/utils/helpers";
+import PlaylistItem from "~/components/content/playlist/PlaylistItem";
 
 export interface SponsorSegment {
   category: string;

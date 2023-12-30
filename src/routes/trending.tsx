@@ -11,7 +11,6 @@ import { Match, Show, Suspense, createEffect } from "solid-js";
 import { For, Switch, createSignal } from "solid-js";
 import { Title, createRouteData, useRouteData } from "solid-start";
 import { ErrorComponent } from "~/components/Error";
-import VideoCard from "~/components/VideoCard";
 import { useAppState } from "~/stores/appStateStore";
 import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncStore } from "~/stores/syncStore";
@@ -19,6 +18,7 @@ import Select from "~/components/Select";
 import type { TrendingStream } from "~/types";
 import { TRENDING_REGIONS } from "~/config/constants";
 import { Select as KobalteSelect } from "@kobalte/core";
+import VideoCard from "~/components/content/stream/VideoCard";
 
 export default function Trending() {
   const sync = useSyncStore();

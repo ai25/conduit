@@ -1,6 +1,6 @@
 import { Transition } from "solid-headless";
 import { For, JSX } from "solid-js";
-import { A } from "solid-start";
+import Link from "./Link";
 
 export default function BottomNav(props: {
   items: {
@@ -13,7 +13,7 @@ export default function BottomNav(props: {
     <nav class="flex gap-2 px-2 py-2 justify-evenly">
       <For each={props.items}>
         {(item) => (
-          <A
+          <Link
             activeClass="text-primary"
             inactiveClass="text-text2"
             href={item.href}
@@ -21,7 +21,7 @@ export default function BottomNav(props: {
           >
             <div class="w-6 h-6">{item.icon}</div>
             <span class="mt-1 text-xs font-semibold ">{item.label}</span>
-          </A>
+          </Link>
         )}
       </For>
     </nav>

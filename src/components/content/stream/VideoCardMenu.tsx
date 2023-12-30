@@ -6,10 +6,10 @@ import { createEffect, createSignal, For, Match, Show, Switch } from "solid-js";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
 import { ConduitPlaylist, Playlist, RelatedStream } from "~/types";
 import { getVideoId, yieldToMain } from "~/utils/helpers";
-import Button from "./Button";
-import Modal from "./Modal";
-import Select from "./Select";
-import { toast } from "./Toast";
+import Button from "~/components/Button";
+import Modal from "~/components/Modal"
+import Select from "~/components/Select"
+import { toast } from "~/components/Toast"
 
 export default function VideoCardMenu(props: { v: RelatedStream, progress: number | undefined }) {
 
@@ -388,14 +388,3 @@ const PlaylistModal = (props: {
   )
 }
 
-function extractVideoProps<T extends RelatedStream, U extends keyof T>(
-  v: T
-): Pick<T, U> {
-  let result: Pick<T, U> = {} as Pick<T, U>;
-  for (let key in v) {
-    if (result.hasOwnProperty(key)) {
-      (result as any)[key] = v[key];
-    }
-  }
-  return result;
-}

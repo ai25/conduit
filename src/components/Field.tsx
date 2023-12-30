@@ -3,8 +3,8 @@ import { TextField } from "@kobalte/core";
 import { z } from "zod";
 export default function Field(props: {
   name?: string;
-  type: JSX.HTMLAttributes<HTMLInputElement>["itemType"];
-  value: string;
+  type?: JSX.HTMLAttributes<HTMLInputElement>["itemType"];
+  value?: string;
   onInput: (value: string) => void;
   class?: string;
   placeholder?: string;

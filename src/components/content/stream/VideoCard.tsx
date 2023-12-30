@@ -1,7 +1,7 @@
 import type { RelatedStream } from "~/types";
 import numeral from "numeral";
 // import { DBContext } from "~/routes/layout";
-import { A, useSearchParams } from "solid-start";
+import { useSearchParams } from "solid-start";
 import {
   Match,
   Show,
@@ -14,37 +14,14 @@ import {
   For,
 } from "solid-js";
 import { useSyncStore, HistoryItem } from "~/stores/syncStore";
-import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
+import { formatRelativeShort, generateThumbnailUrl, getVideoId } from "~/utils/helpers";
 import { mergeProps } from "solid-js";
 import { createTimeAgo } from "@solid-primitives/date";
 import VideoCardMenu from "./VideoCardMenu"
 import { FaSolidEye } from "solid-icons/fa";
-import { Tooltip } from "./Tooltip";
-import Link from "./Link";
+import { Tooltip } from "~/components/Tooltip"
+import Link from "~/components/Link"
 
-function formatRelativeShort(now: Date, past: Date): string {
-  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
-
-  const secondsInAMinute = 60;
-  const secondsInAnHour = secondsInAMinute * 60;
-  const secondsInADay = secondsInAnHour * 24;
-  const secondsInAMonth = secondsInADay * 30; // rough average
-  const secondsInAYear = secondsInADay * 365; // ignoring leap years for simplicity
-
-  if (diffInSeconds >= secondsInAYear) {
-    return `${Math.floor(diffInSeconds / secondsInAYear)}y`;
-  } else if (diffInSeconds >= secondsInAMonth) {
-    return `${Math.floor(diffInSeconds / secondsInAMonth)}mo`;
-  } else if (diffInSeconds >= secondsInADay) {
-    return `${Math.floor(diffInSeconds / secondsInADay)}d`;
-  } else if (diffInSeconds >= secondsInAnHour) {
-    return `${Math.floor(diffInSeconds / secondsInAnHour)}h`;
-  } else if (diffInSeconds >= secondsInAMinute) {
-    return `${Math.floor(diffInSeconds / secondsInAMinute)}m`;
-  } else {
-    return `now`;
-  }
-}
 
 const VideoCard = (props: {
   v?: (RelatedStream),

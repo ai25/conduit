@@ -13,38 +13,11 @@ import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
 import { usePreferences } from "~/stores/preferencesStore";
 import { useAppState } from "~/stores/appStateStore";
 import EmptyState from "~/components/EmptyState";
-import PlaylistCard from "~/components/PlaylistCard";
+import PlaylistCard from "~/components/content/playlist/PlaylistCard";
 
 export default function Playlists() {
   const sync = useSyncStore();
   const [preferences] = usePreferences();
-  createEffect(() => {
-    if (!preferences.instance) return;
-    // const l: Record<string, Playlist> = {
-    //   [playlist.id]: {
-    //     bannerUrl: generateThumbnailUrl(
-    //       preferences.instance.image_proxy_url,
-    //       getVideoId(playlist.videos[0].thumbnail)
-    //     ),
-    //     description: "",
-    //     name: playlist.name,
-    //     nextpage: "",
-    //     relatedStreams: playlist.videos,
-    //     thumbnailUrl: playlist.thumbnail,
-    //     uploader: "You",
-    //     uploaderUrl: "",
-    //     uploaderAvatar: "",
-    //     videos: playlist.videos.length,
-    //   } as unknown as Playlist,
-    // };
-    // console.log(l);
-    // setTimeout(() => {
-    //   sync.setStore("playlists", l);
-    // }, 0);
-  });
-  createRenderEffect(() => {
-    console.log(sync.store.playlists);
-  });
   const [appState] = useAppState();
 
   return (
@@ -66,10 +39,7 @@ export default function Playlists() {
                 ...playlist,
                 url: `/playlist?list=${id}`,
                 playlistType: "playlist",
-                thumbnail: generateThumbnailUrl(
-                  preferences.instance.image_proxy_url,
-                  getVideoId(playlist.relatedStreams[0])
-                ),
+                thumbnail: playlist.thumbnailUrl,
                 type: "playlist",
                 uploaderName: playlist.uploader,
                 uploaderVerified: false,

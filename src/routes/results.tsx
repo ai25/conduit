@@ -1,5 +1,3 @@
-import { useLocation, useNavigate } from "solid-start";
-import VideoCard from "~/components/VideoCard";
 import {
   For,
   Show,
@@ -16,7 +14,6 @@ import {
   RelatedStream,
 } from "~/types";
 import { Match } from "solid-js";
-import PlaylistCard from "~/components/PlaylistCard";
 import { A, useSearchParams } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";
 import { assertType, fetchJson } from "~/utils/helpers";
@@ -38,6 +35,9 @@ import EmptyState from "~/components/EmptyState";
 import { usePreferences } from "~/stores/preferencesStore";
 import { Suspense } from "solid-js";
 import { isServer } from "solid-js/web";
+import VideoCard from "~/components/content/stream/VideoCard";
+import PlaylistCard from "~/components/content/playlist/PlaylistCard";
+import ChannelCard from "~/components/content/channel/ChannelCard";
 export interface SearchQuery {
   items: ContentItem[];
   nextpage: string;
@@ -46,7 +46,6 @@ export interface SearchQuery {
 }
 
 export default function Search() {
-  const [results, setResults] = createSignal<SearchQuery>();
   const availableFilters = [
     "all",
     "videos",
@@ -64,6 +63,7 @@ export default function Search() {
   const sync = useSyncStore();
   const [appState, setAppState] = useAppState();
   const [preferences] = usePreferences();
+
   const fetchSearch = async ({
     pageParam = "initial",
   }): Promise<SearchQuery> => {
@@ -110,6 +110,7 @@ export default function Search() {
     document.title = searchParams.search_query + " - Conduit";
     saveQueryToHistory();
   });
+
   createEffect(() => {
     console.log(
       "app state loading",
@@ -146,10 +147,10 @@ export default function Search() {
       }
     }, 1000);
   });
+
   function updateFilter(value: string) {
     setSelectedFilter(value);
     setSearchParams({ filter: value });
-    // fetchResults()
   }
 
   function saveQueryToHistory() {
@@ -341,53 +342,7 @@ export default function Search() {
                       keyed
                     >
                       {(item) => (
-                        <div class="mx-4 my-2 flex flex-col gap-2 items-start w-full lg:w-72 max-h-20 lg:max-h-full max-w-md">
-                          <div class="flex items-center gap-2 w-full lg:flex-col lg:items-start">
-                            <A href={item.url} class="group outline-none">
-                              <div class="relative w-20 overflow-hidden rounded-full group-hover:ring-2 group-focus-visible:ring-2  ring-accent1 transition-all duration-200">
-                                <img
-                                  class="w-full rounded-full group-hover:scale-105 group-focus-visible:scale-105"
-                                  src={item.thumbnail}
-                                  loading="lazy"
-                                />
-                              </div>
-                            </A>
-                            <div class="flex flex-col justify-center gap-1 min-w-0 w-full h-20 max-h-20 text-text2 text-xs self-end">
-                              <div class="flex items-center gap-1">
-                                <A class="link text-sm" href={item.url}>
-                                  <div class="flex gap-1">
-                                    <span>{item.name}</span>
-                                    <Show when={item.verified}>
-                                      <Checkmark />
-                                    </Show>
-                                  </div>
-                                </A>
-                                <Show when={item.videos >= 0}>
-                                  <p>&#183; {item.videos} videos</p>
-                                </Show>
-                              </div>
-                              <Show when={item.description}>
-                                <p class="two-line-ellipsis ">
-                                  {item.description}
-                                </p>
-                              </Show>
-                              <Show
-                                when={item.subscribers >= 0}
-                                fallback={<p></p>}
-                              >
-                                <p>
-                                  {numeral(item.subscribers)
-                                    .format("0a")
-                                    .toUpperCase()}{" "}
-                                  subscribers
-                                </p>
-                              </Show>
-                            </div>
-                            <SubscribeButton id={item.url.split("/").pop()!}
-                              name={item.name}
-                            />
-                          </div>
-                        </div>
+                      <ChannelCard item={item} />
                       )}
                     </Match>
                     <Match

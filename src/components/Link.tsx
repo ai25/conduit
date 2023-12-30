@@ -6,8 +6,8 @@ export default function Link(props: LinkProps) {
   const [searchParams] = useSearchParams();
   const [href, setHref] = createSignal(props.href);
   createEffect(() => {
-  const fullscreen = searchParams.fullscreen === "true";
-  const hrefUrl = new URL(`${window.location.origin}${props.href}`);
+    const fullscreen = searchParams.fullscreen === "true";
+    const hrefUrl = new URL(`${window.location.origin}${props.href}`);
     if (fullscreen) {
       hrefUrl.searchParams.set("fullscreen", "true");
     } else {
@@ -21,7 +21,11 @@ export default function Link(props: LinkProps) {
 
   return (
     <A href={href()}
-      class={props.class} style={props.style}>
+      class={props.class} 
+      style={props.style}
+      activeClass={props.activeClass}
+      inactiveClass={props.inactiveClass}
+    >
       {props.children}
     </A>
   )
@@ -32,6 +36,8 @@ interface LinkProps {
   class?: string;
   style?: any;
   children?: any;
+  activeClass?: string;
+  inactiveClass?: string;
 }
 
 

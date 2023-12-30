@@ -1,5 +1,5 @@
 import { createEffect, createSignal, For } from "solid-js";
-import VideoCard from "~/components/VideoCard";
+import VideoCard from "~/components/content/stream/VideoCard";
 import { usePreferences } from "~/stores/preferencesStore";
 import { PipedVideo } from "~/types";
 import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
@@ -35,10 +35,7 @@ export default function Downloads() {
                 ...video,
                 url: `/watch?v=${getVideoId(video)}`,
                 type: "stream",
-                thumbnail: generateThumbnailUrl(
-                  preferences.instance.image_proxy_url,
-                  getVideoId(video)
-                ),
+                thumbnail: video.thumbnailUrl,
                 uploaderName: video.uploader,
                 uploadedDate: video.uploadDate,
                 shortDescription: "",
