@@ -6,6 +6,7 @@ import {
   onMount,
   useContext,
   batch,
+  untrack,
 } from "solid-js";
 import { RelatedStream } from "~/types";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
@@ -52,28 +53,34 @@ export default function History() {
   });
 
   const sort = (a: HistoryItem, b: HistoryItem) => {
-    if (!a.watchedAt || !b.watchedAt) return 0;
-    else if (isNaN(new Date(a.watchedAt).getTime())) return 0;
-    else if (isNaN(new Date(b.watchedAt).getTime())) return 0;
-    else if (new Date(a.watchedAt).getTime() <= 0) return 0;
-    else if (new Date(b.watchedAt).getTime() <= 0) return 0;
-    else if (a.watchedAt < b.watchedAt) {
-      return 1;
-    }
-    else if (a.watchedAt > b.watchedAt) {
-      return -1;
-    }
-    else
-      return 0;
-  };
+  const getTime = (date: number) => new Date(date).getTime();
+
+  if (!a.watchedAt) return 1; 
+  if (!b.watchedAt) return -1;
+
+  const aTime = getTime(a.watchedAt);
+  const bTime = getTime(b.watchedAt);
+
+  // Check for invalid dates
+  if (isNaN(aTime)) return 1;
+  if (isNaN(bTime)) return -1;
+
+  // Check for dates before epoch time
+  if (aTime <= 0) return 1; 
+  if (bTime <= 0) return -1;
+
+  return bTime - aTime;
+};
+
   const [history, setHistory] = createSignal<HistoryItem[]>([]);
-  createEffect(() => {
-    if (sync.store.history) {
-      setHistory(
-        Object.values(sync.store.history).sort(sort).slice(0, limit())
-      );
-    }
-  });
+  // createEffect(() => {
+  //   if (sync.store.history) {
+  //     setHistory(
+  //       Object.values(sync.store.history).sort(sort).slice(0, limit())
+  //     );
+  //     console.log(untrack(history), sync.store.history, "HISTORY");
+  //   }
+  // });
   const [importModalOpen, setImportModalOpen] = createSignal(false);
   const [search, setSearch] = createSignal("");
 
@@ -97,14 +104,21 @@ export default function History() {
       const [idxs, info, sort] = uf.search(strings, search(), false);
       const history = Object.values(sync.store.history);
       const results = idxs?.map((idx) => history[idx])?.slice(0, limit()) ?? [];
+      console.log(results, "History",untrack(search),"searcy")
       setHistory(results);
     } else {
       if (!sync.store.history) return;
-      setHistory(
-        Object.values(sync.store.history).sort(sort).slice(0, limit())
-      );
+      let x = 
+        Object.values(sync.store.history)
+          .sort(sort)
+          // .find((item) => item.uploaderName.toLowerCase().includes("jaiden")) 
+      setHistory(x);
+      console.log(untrack(history).length, "HISTORy");
     }
   });
+  createEffect(() => {
+    console.log(history(), "history");
+    })
 
   const exportHistory = () => {
     const history = Object.values(sync.store.history);
@@ -199,14 +213,12 @@ export default function History() {
         <Show when={history()}>
           <For each={history()}>
             {(item) => (
-              <div class="flex flex-col max-w-full sm:max-w-72">
                 <VideoCard
                   v={{
                     ...item,
                     url: `/watch?v=${getVideoId(item)}`,
                   }}
                 />
-              </div>
             )}
           </For>
           <div

@@ -236,6 +236,16 @@ const InfoContainer = (props: {
   live: boolean;
 
 }) => {
+  const uploaderUrl = () => {
+    let url = ""
+    if (props.uploaderUrl.startsWith("UC")) {
+      url = `/channel/${props.uploaderUrl}`
+    } else if (props.uploaderUrl.startsWith("/")) {
+      url = props.uploaderUrl
+    }
+    return url
+  }
+
   return (
     <div class="flex gap-1 text-text2 w-full sm:max-w-full ">
       <Show when={props.uploaderAvatar}>
@@ -243,7 +253,7 @@ const InfoContainer = (props: {
           <Link
             // tabindex={-1}
             // aria-hidden="true"
-            href={props.uploaderUrl || ""}
+            href={uploaderUrl()}
             class="flex max-w-max min-w-min items-center outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <img
@@ -257,7 +267,7 @@ const InfoContainer = (props: {
 
       <div class="flex w-full flex-col text-xs ">
         <Link
-          href={props.uploaderUrl || ""}
+          href={uploaderUrl()}
           class="outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <div class="peer w-fit truncate max-w-[10rem]">{props.uploaderName}</div>
