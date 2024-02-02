@@ -73,14 +73,6 @@ export default function History() {
 };
 
   const [history, setHistory] = createSignal<HistoryItem[]>([]);
-  // createEffect(() => {
-  //   if (sync.store.history) {
-  //     setHistory(
-  //       Object.values(sync.store.history).sort(sort).slice(0, limit())
-  //     );
-  //     console.log(untrack(history), sync.store.history, "HISTORY");
-  //   }
-  // });
   const [importModalOpen, setImportModalOpen] = createSignal(false);
   const [search, setSearch] = createSignal("");
 
@@ -104,21 +96,14 @@ export default function History() {
       const [idxs, info, sort] = uf.search(strings, search(), false);
       const history = Object.values(sync.store.history);
       const results = idxs?.map((idx) => history[idx])?.slice(0, limit()) ?? [];
-      console.log(results, "History",untrack(search),"searcy")
       setHistory(results);
     } else {
       if (!sync.store.history) return;
-      let x = 
-        Object.values(sync.store.history)
-          .sort(sort)
-          // .find((item) => item.uploaderName.toLowerCase().includes("jaiden")) 
-      setHistory(x);
-      console.log(untrack(history).length, "HISTORy");
+      setHistory(
+        Object.values(sync.store.history).sort(sort).slice(0, limit())
+      );
     }
   });
-  createEffect(() => {
-    console.log(history(), "history");
-    })
 
   const exportHistory = () => {
     const history = Object.values(sync.store.history);
