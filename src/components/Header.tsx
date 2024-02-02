@@ -361,7 +361,7 @@ export default function Header() {
               }
             }}
             options={(query.data as PipedInstance[]).map((i) => ({
-              label: i.name,
+              label: `${i.name} - ${i.uptime_24h.toFixed(0)}%`,
               value: i.api_url,
             }))}
             triggerIcon={

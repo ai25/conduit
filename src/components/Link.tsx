@@ -1,10 +1,13 @@
 import { createEffect, createSignal } from "solid-js";
 import { A, useSearchParams } from "solid-start";
+import { useAppState } from "~/stores/appStateStore";
 
 export default function Link(props: LinkProps) {
 
   const [searchParams] = useSearchParams();
   const [href, setHref] = createSignal(props.href);
+  const [appState, setAppState] = useAppState();
+
   createEffect(() => {
     const fullscreen = searchParams.fullscreen === "true";
     try {
@@ -25,7 +28,19 @@ export default function Link(props: LinkProps) {
 
 
   return (
-    <A href={href()}
+    <A
+      onClick={(e) => {
+        // hack to get around the touch events propagating down
+        if (appState.touchInProgress) {
+          e.preventDefault();
+          e.stopPropagation();
+          setTimeout(() => {
+            setAppState("touchInProgress", false);
+          }, 100);
+        }
+      }
+      }
+      href={href()}
       class={props.class}
       style={props.style}
       activeClass={props.activeClass}

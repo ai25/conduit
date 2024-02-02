@@ -128,6 +128,10 @@ export interface PipedInstance {
   cache: boolean;
   s3_enabled: boolean;
   image_proxy_url: string;
+  registration_disabled: boolean
+  uptime_24h: number
+  uptime_7d: number
+  uptime_30d: number
 }
 
 export interface PipedChannelResponse {

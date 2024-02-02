@@ -146,6 +146,7 @@ const ImageContainer = (props: {
   watchedAt?: string | undefined;
   currentTime?: number;
 }) => {
+  const [src, setSrc] = createSignal(props.src);
 
   return (
     <Link
@@ -157,7 +158,10 @@ const ImageContainer = (props: {
           "cursor-pointer w-full aspect-video max-w-md break-words ": true,
           "saturate-[0.35] opacity-75": props.watched,
         }}
-        src={props.src}
+        src={src()}
+        onError={() => {
+        setSrc("/img/error.png")
+        }}
         width={2560}
         height={1440}
         alt=""

@@ -4,6 +4,7 @@ import { ProviderStatus } from "~/components/Header";
 
 const store = createStore({
   loading: false,
+  touchInProgress: false,
   sync: {
     providers: {
       idb: "disconnected" as ProviderStatus,

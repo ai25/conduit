@@ -91,7 +91,9 @@ export default function Comments(props: {
                   <Show when={query.data}>
                     <For each={query.data!.pages}>
                       {(page) => (
-                        <For each={page.comments}>
+                        <For each={page.comments
+                          .filter((c) => c.commentText)
+                        }>
                           {(comment) => (
                             <Comment
                               videoId={props.videoId}
@@ -121,7 +123,9 @@ export default function Comments(props: {
                 <Show when={query.data}>
                   <For each={query.data!.pages}>
                     {(page) => (
-                      <For each={page.comments}>
+                      <For each={page.comments
+                          .filter((c) => c.commentText)
+                      }>
                         {(comment) => (
                           <Comment
                             videoId={props.videoId}
