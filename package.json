@@ -54,7 +54,7 @@
     "solid-start-vercel": "^0.2.32",
     "solid-transition-group": "^0.2.3",
     "undici": "^5.28.2",
-    "vidstack": "^1.9.8",
+    "vidstack": "^1.10.3",
     "vite-plugin-pwa": "^0.16.7",
     "y-indexeddb": "^9.0.11",
     "y-protocols": "^1.0.6",

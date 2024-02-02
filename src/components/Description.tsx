@@ -1,3 +1,4 @@
+
 import numeral from "numeral";
 import type { PipedVideo } from "../types";
 import {
@@ -7,9 +8,6 @@ import {
   Switch,
   createEffect,
   createSignal,
-  useContext,
-  JSX,
-  ErrorBoundary,
 } from "solid-js";
 import { A, useSearchParams } from "solid-start";
 import { usePreferences } from "~/stores/preferencesStore";
@@ -26,13 +24,8 @@ import {
   FaSolidThumbsUp,
   FaSolidTrashCan,
 } from "solid-icons/fa";
-import "solid-bottomsheet/styles.css";
-import { SolidBottomsheet } from "solid-bottomsheet";
 import Modal from "./Modal";
 import { createQuery } from "@tanstack/solid-query";
-import Comments from "./Comments";
-import { Bottomsheet } from "./Bottomsheet";
-import { Suspense } from "solid-js";
 import { MediaPlayerElement } from "vidstack/elements";
 import { createDate, createTimeAgo } from "@solid-primitives/date";
 import DownloadModal from "./DownloadModal";

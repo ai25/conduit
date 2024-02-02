@@ -46,6 +46,7 @@ import api from "~/utils/api";
 import { PiPLayout } from "../player/layouts/PiPLayout";
 import { useAppState } from "~/stores/appStateStore";
 import VideoCard from "../content/stream/VideoCard";
+import Button from "../Button";
 
 export default function Player(props: {
   // video: PipedVideo;
@@ -202,6 +203,7 @@ export default function Player(props: {
       artist: videoQuery.data?.uploader || '',
       thumbnailUrl: videoQuery.data?.thumbnailUrl || '',
     };
+    console.dir(mediaPlayer, "media player");
 
     const actionHandlers: ActionHandlers = {
       play: () => mediaPlayer.play(),
@@ -321,6 +323,45 @@ export default function Player(props: {
     info: RelatedStream;
   } | null>(null);
 
+  function pickNextVideo(relatedStreams: RelatedStream[], blacklist: string[] = []) {
+    let firstUnwatched: RelatedStream | null = null;
+    let firstOwnUploader: RelatedStream | null = null;
+
+    for (const stream of relatedStreams) {
+        let id = getVideoId(stream);
+        if (!id || blacklist.includes(id)) continue; // Skip if no ID or blacklisted
+        let watched = sync.store.history[id]
+        // Priority 1: uploader matches and not watched
+        if (stream.uploaderUrl === videoQuery.data!.uploaderUrl && !watched) {
+            return stream;
+        }
+
+        // Track the first unwatched stream for priority 2
+        if (!watched && firstUnwatched === null) {
+            firstUnwatched = stream;
+        }
+
+        // Track the first stream with the same uploader for priority 3
+        if (stream.uploaderUrl === videoQuery.data!.uploaderUrl && firstOwnUploader === null) {
+            firstOwnUploader = stream;
+        }
+    }
+
+    // Priority 2: return the first unwatched stream if found
+    if (firstUnwatched) {
+        return firstUnwatched;
+    }
+
+    // Priority 3: return the first stream with the same uploader if found
+    if (firstOwnUploader) {
+        return firstOwnUploader;
+    }
+
+    // Priority 4: return the first stream in the array
+    return relatedStreams[0];
+}
+
+
   createEffect(() => {
     const nextVideo = videoQuery.data?.relatedStreams?.[0];
     if (!nextVideo) return;
@@ -329,7 +370,9 @@ export default function Player(props: {
     console.log("adding ", nextVideo);
     if (!queue.peekNext()) {
       console.log("adding next video to queue", nextVideo);
-      queue.add(nextVideo);
+      const blacklist = queue.uniqueIds
+      let next = pickNextVideo(videoQuery.data.relatedStreams, blacklist);
+      queue.add(next)
       console.log("queue 3", queue);
     }
     if (playlist()) {
@@ -355,7 +398,7 @@ export default function Player(props: {
 
     // setSearchParams({ "v": getVideoId(nextVideo()!.info) });
     const url = new URL(window.location.origin + nextVideo()!.url);
-    url.searchParams.set("fullscreen", searchParams.fullscreen)
+    if (searchParams.fullscreen) { url.searchParams.set("fullscreen", searchParams.fullscreen )}
     navigate(url.pathname + url.search.toString());
     setNextVideo(null);
   };
@@ -519,6 +562,10 @@ export default function Player(props: {
     setShowEndScreen(false);
   }
 
+  onCleanup(() => {
+    dismiss();
+  })
+
 
   const onProviderChange = async (event: MediaProviderChangeEvent) => {
     console.log(event, "provider change");
@@ -528,19 +575,24 @@ export default function Player(props: {
       console.log(provider);
       provider.config = {
         // Reduce the quality to prevent frequent buffering
-        maxBufferSize: 30 * 1000 * 1000, // lower buffer size to save memory
+        maxBufferSize: 60 * 1000 * 1000, // lower buffer size to save memory
         maxBufferLength: 30, // max buffer length in seconds
         maxMaxBufferLength: 120, // max maximum buffer length in seconds
-        maxLoadingDelay: 4, // delay to load fragment when buffer is high
         lowLatencyMode: false, // turn off low latency mode to buffer more
         testBandwidth: false, // don't reduce start level quality quickly
-        abrBandWidthFactor: 0.75, // be more conservative in upgrading quality
-        abrBandWidthUpFactor: 0.5, // more conservative in upgrading quality
         abrEwmaDefaultEstimate: 1000000, // default bandwidth estimate
         startLevel: -1, // auto start level selection
-        capLevelToPlayerSize: true, // restrict to player size to save bandwidth
+        // capLevelToPlayerSize: true, // restrict to player size to save bandwidth
         minAutoBitrate: 1000000, // minimum bitrate to start with
-
+        // more aggressive ABR to quickly get to the best quality:
+        abrEwmaFastLive: 3.0,
+        abrEwmaSlowLive: 9.0,
+        abrEwmaFastVoD: 3.0,
+        abrEwmaSlowVoD: 9.0,
+        abrBandWidthFactor: 0.8,
+        abrBandWidthUpFactor: 0.9,
+        maxStarvationDelay: 5,
+        maxLoadingDelay: 15,
       };
     }
   };
@@ -1139,36 +1191,34 @@ export default function Player(props: {
           </div>
         </Show>
         <Show when={showEndScreen() && nextVideo()}>
-          <div class="absolute z-50 scale-50 sm:scale-75 md:scale-100 top-0 right-0 w-full h-full pointer-events-auto">
+          <div class="absolute z-50 top-0 right-0 w-full h-full pointer-events-auto">
             <div class="flex flex-col items-center justify-center w-full h-full gap-3">
               <div class="text-2xl font-bold text-white">
                 Playing next in {counter()} seconds
               </div>
               <div class="flex flex-col">
-                <div class="text-lg text-white w-72">
+                <div class="text-lg scale-75 sm:scale-100 text-white w-96 h-full my-2">
                   <VideoCard
-                    layout="grid"
+                    layout="sm:grid"
                     v={nextVideo()?.info ?? undefined} />
                 </div>
               </div>
               <div class="flex justify-center gap-2">
-                <button
-                  class="px-4 py-2 text-lg text-black bg-white rounded-md"
+                <Button
                   onClick={() => {
                     dismiss();
                     playNext();
                   }}
-                >
-                  Play now (Shift + N)
-                </button>
-                <button
-                  class="px-4 py-2 text-lg text-white bg-black rounded-md"
+                  label="Play now (Shift + N)"
+                />
+                <Button
+                  appearance="subtle"
+                  class="bg-bg1"
                   onClick={() => {
                     dismiss();
                   }}
-                >
-                  Dismiss (Esc)
-                </button>
+                  label="Dismiss (Esc)"
+                />
               </div>
             </div>
           </div>

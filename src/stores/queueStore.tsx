@@ -17,7 +17,7 @@ class Node {
 }
 
 export class VideoQueue implements Iterable<RelatedStream> {
-    private head = createSignal<Node | null>(null);
+  private head = createSignal<Node | null>(null);
   private tail = createSignal<Node | null>(null);
   private current = createSignal<Node | null>(null);
   private _length = createSignal<number>(0);
@@ -26,7 +26,11 @@ export class VideoQueue implements Iterable<RelatedStream> {
   public get currentVideo() {
     return this.current[0]()?.value;
   }
-  
+
+  public get uniqueIds() {
+    return Array.from(this.videoIdSet);
+  }
+
   constructor(videos: RelatedStream[] = []) {
     videos.forEach((video) => this.add(video));
   }
@@ -37,7 +41,7 @@ export class VideoQueue implements Iterable<RelatedStream> {
       next: (): IteratorResult<RelatedStream> => {
         if (current) {
           const value = current;
-          current = this.head[0]()?.next?.value 
+          current = this.head[0]()?.next?.value
           return { value, done: false };
         } else {
           return { value: undefined!, done: true };
@@ -45,7 +49,7 @@ export class VideoQueue implements Iterable<RelatedStream> {
       }
     };
   }
-  
+
   add(video: RelatedStream) {
     const id = getVideoId(video);
     console.log("adding", id);
@@ -54,16 +58,19 @@ export class VideoQueue implements Iterable<RelatedStream> {
     const newNode = new Node(video);
     const tail = this.tail[0]();
     if (tail) {
+      console.log("tail", tail)
       tail.next = newNode;
       newNode.prev = tail;
       this.tail[1](newNode);
     } else {
+      console.log("no tail", tail)
       this.head[1](newNode);
       this.tail[1](newNode);
       if (!this.current[0]()) this.current[1](newNode);
     }
     this.videoIdSet.add(id);
     this._length[1](this._length[0]() + 1);
+    return newNode.value
   }
 
   list(): RelatedStream[] {
@@ -76,7 +83,7 @@ export class VideoQueue implements Iterable<RelatedStream> {
     return list;
   }
 
-  
+
   enqueueNext(video: RelatedStream) {
     const id = getVideoId(video);
     if (!id) return;
