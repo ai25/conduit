@@ -1,12 +1,10 @@
-
 import { For } from "solid-js";
-import { A } from "solid-start";
 import Button from "~/components/Button";
+import Link from "~/components/Link";
 import { toast } from "~/components/Toast";
 import { useSyncStore } from "~/stores/syncStore";
 
 export default function Subscriptions() {
-
   const sync = useSyncStore();
 
   return (
@@ -20,9 +18,9 @@ export default function Subscriptions() {
             return (
               <div class="flex flex-row items-center justify-between odd:bg-bg2 p-2 rounded-lg w-full">
                 <div class="flex flex-row items-center">
-                  <A
-                    href={`/channel/${key}`}
-                    class="text-base link">{value.name ?? key}</A>
+                  <Link href={`/channel/${key}`} class="text-base link">
+                    {value.name ?? key}
+                  </Link>
                 </div>
                 <Button
                   label="Unsubscribe"
@@ -32,10 +30,12 @@ export default function Subscriptions() {
                       sync.setStore("subscriptions", key, undefined!);
                       toast.success(`Unsubscribed from ${value.name ?? key}`);
                     } catch (e) {
-                      toast.error(`Could not unsubscribe from ${value.name ?? key}`);
-                    }}
-                  }
-                  />
+                      toast.error(
+                        `Could not unsubscribe from ${value.name ?? key}`
+                      );
+                    }
+                  }}
+                />
               </div>
             );
           }}

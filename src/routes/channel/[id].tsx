@@ -1,4 +1,3 @@
-
 import {
   For,
   Match,
@@ -12,7 +11,6 @@ import {
   createMemo,
   Suspense,
 } from "solid-js";
-import { ErrorMessage, useLocation } from "solid-start";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import {
   ContentItem,
@@ -25,7 +23,7 @@ import {
 import Button from "~/components/Button";
 import { Spinner } from "~/components/PlayerContainer";
 import { assertType, fetchJson } from "~/utils/helpers";
-import { A } from "@solidjs/router";
+import { A, useLocation } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import { useAppState } from "~/stores/appStateStore";
@@ -92,11 +90,10 @@ export default function Channel() {
     queryKey: ["channelData", route.pathname, preferences.instance.api_url],
     queryFn: fetchChannelOrNextPage,
     getNextPageParam: (lastPage) => lastPage.nextpage,
-    enabled: (!!route?.pathname && preferences?.instance?.api_url ) ? true : false,
+    enabled: !!route?.pathname && preferences?.instance?.api_url ? true : false,
     initialPageParam: null,
     deferStream: true,
-    initialData: () => undefined 
-
+    initialData: () => undefined,
   }));
 
   createEffect(() => {
@@ -178,9 +175,10 @@ export default function Channel() {
           </Show>
           <Show when={query.data?.pages?.[0]?.id}>
             <div class="ml-auto">
-              <SubscribeButton 
-                name={query.data?.pages[0].name!} 
-                id={query.data?.pages[0].id!} />
+              <SubscribeButton
+                name={query.data?.pages[0].name!}
+                id={query.data?.pages[0].id!}
+              />
             </div>
           </Show>
         </div>
@@ -232,9 +230,7 @@ export default function Channel() {
           >
             <Tabs.Content value="videos">
               <div class="flex flex-wrap justify-center">
-                <Show when={query.error}>
-                  <ErrorMessage error={query.error} />
-                </Show>
+                <Show when={query.error}>{JSON.stringify(query.error)}</Show>
                 <Suspense fallback={<Spinner />}>
                   <Show when={query.data}>
                     <Switch fallback={<Spinner />}>

@@ -6,7 +6,6 @@ import {
   Show,
   useContext,
 } from "solid-js";
-import { A } from "solid-start";
 import { Playlist } from "~/types";
 import { useSyncStore } from "~/stores/syncStore";
 import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";

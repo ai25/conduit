@@ -1,0 +1,2 @@
+import{createSignal as f,createEffect as n,onCleanup as u}from"solid-js";function g({setTarget:r,root:s=null,rootMargin:c="0px",threshold:i=0}){const[o,a]=f(!1);let e;return n(()=>{e=new IntersectionObserver(([t])=>{a(t.isIntersecting)},{root:s,rootMargin:c,threshold:i}),u(()=>{e&&e.disconnect()})}),n(()=>{const t=r();t&&e&&e.observe(t)}),o}export{g as u};
+//# sourceMappingURL=useIntersectionObserver.mjs.map

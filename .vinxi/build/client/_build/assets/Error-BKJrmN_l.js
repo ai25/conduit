@@ -1,0 +1,2 @@
+import{r as s,K as n,w as t,e as c,y as m}from"./routing-BmD2xUmi.js";import{f as x}from"./index-BnPmuIsI.js";var f=m('<div class="flex items-center justify-center flex-col gap-2 p-4"><!$><!/><pre class="max-h-96 overflow-auto">');const g=l=>(()=>{var e=s(f),o=e.firstChild,[r,a]=n(o.nextSibling),i=r.nextSibling;return t(e,c(x,{fill:"currentColor",class:"text-4xl text-red-600"}),r,a),t(i,()=>JSON.stringify(l.error,void 0,2)),e})();export{g as E};
+//# sourceMappingURL=Error-BKJrmN_l.js.map

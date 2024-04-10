@@ -1,0 +1,496 @@
+{
+  "_Description.mjs": {
+    "file": "Description.mjs",
+    "name": "Description",
+    "imports": [
+      "_Toast.mjs",
+      "_index5.mjs",
+      "_Link.mjs",
+      "_index4.mjs",
+      "_routing.mjs"
+    ]
+  },
+  "_EmptyState.mjs": {
+    "file": "EmptyState.mjs",
+    "name": "EmptyState",
+    "imports": [
+      "_index5.mjs"
+    ]
+  },
+  "_Error.mjs": {
+    "file": "Error.mjs",
+    "name": "Error",
+    "imports": [
+      "_index5.mjs"
+    ]
+  },
+  "_Field.mjs": {
+    "file": "Field.mjs",
+    "name": "Field",
+    "imports": [
+      "_Toast.mjs"
+    ]
+  },
+  "_Link.mjs": {
+    "file": "Link.mjs",
+    "name": "Link",
+    "imports": [
+      "_routing.mjs",
+      "_components.mjs"
+    ]
+  },
+  "_PlaylistCard.mjs": {
+    "file": "PlaylistCard.mjs",
+    "name": "PlaylistCard",
+    "imports": [
+      "_Toast.mjs",
+      "_index4.mjs",
+      "_index5.mjs",
+      "_Link.mjs"
+    ]
+  },
+  "_PlaylistItem.mjs": {
+    "file": "PlaylistItem.mjs",
+    "name": "PlaylistItem",
+    "imports": [
+      "_Toast.mjs",
+      "_Link.mjs"
+    ]
+  },
+  "_Toast.mjs": {
+    "file": "Toast.mjs",
+    "name": "Toast",
+    "imports": [
+      "_index5.mjs",
+      "_Link.mjs",
+      "_index4.mjs",
+      "_routing.mjs"
+    ],
+    "css": [
+      "assets/Toast-BAk2NIUs.css"
+    ]
+  },
+  "_components.mjs": {
+    "file": "components.mjs",
+    "name": "components",
+    "imports": [
+      "_routing.mjs"
+    ]
+  },
+  "_index2.mjs": {
+    "file": "index2.mjs",
+    "name": "index"
+  },
+  "_index3.mjs": {
+    "file": "index3.mjs",
+    "name": "index"
+  },
+  "_index4.mjs": {
+    "file": "index4.mjs",
+    "name": "index",
+    "imports": [
+      "_index2.mjs"
+    ]
+  },
+  "_index5.mjs": {
+    "file": "index5.mjs",
+    "name": "index",
+    "imports": [
+      "_index2.mjs"
+    ]
+  },
+  "_routing.mjs": {
+    "file": "routing.mjs",
+    "name": "routing"
+  },
+  "_server-fns.mjs": {
+    "file": "server-fns.mjs",
+    "name": "server-fns",
+    "dynamicImports": [
+      "src/routes/[...404].tsx?pick=default&pick=$css",
+      "src/routes/[...404].tsx?pick=default&pick=$css",
+      "src/routes/clientId.ts?pick=GET",
+      "src/routes/clientId.ts?pick=GET",
+      "src/routes/debug.tsx?pick=default&pick=$css",
+      "src/routes/debug.tsx?pick=default&pick=$css",
+      "src/routes/feed.tsx?pick=default&pick=$css",
+      "src/routes/feed.tsx?pick=default&pick=$css",
+      "src/routes/import.tsx?pick=default&pick=$css",
+      "src/routes/import.tsx?pick=default&pick=$css",
+      "src/routes/index.tsx?pick=default&pick=$css",
+      "src/routes/index.tsx?pick=default&pick=$css",
+      "src/routes/playlist.tsx?pick=default&pick=$css",
+      "src/routes/playlist.tsx?pick=default&pick=$css",
+      "src/routes/results.tsx?pick=default&pick=$css",
+      "src/routes/results.tsx?pick=default&pick=$css",
+      "src/routes/trending.tsx?pick=default&pick=$css",
+      "src/routes/trending.tsx?pick=default&pick=$css",
+      "src/routes/watch.tsx?pick=default&pick=$css",
+      "src/routes/watch.tsx?pick=default&pick=$css",
+      "src/routes/channel/[id].tsx?pick=default&pick=$css",
+      "src/routes/channel/[id].tsx?pick=default&pick=$css",
+      "src/routes/library/(library).tsx?pick=default&pick=$css",
+      "src/routes/library/(library).tsx?pick=default&pick=$css",
+      "src/routes/library/blocklist.tsx?pick=default&pick=$css",
+      "src/routes/library/blocklist.tsx?pick=default&pick=$css",
+      "src/routes/library/downloads.tsx?pick=default&pick=$css",
+      "src/routes/library/downloads.tsx?pick=default&pick=$css",
+      "src/routes/library/history.tsx?pick=default&pick=$css",
+      "src/routes/library/history.tsx?pick=default&pick=$css",
+      "src/routes/library/playlists.tsx?pick=default&pick=$css",
+      "src/routes/library/playlists.tsx?pick=default&pick=$css",
+      "src/routes/library/subscriptions.tsx?pick=default&pick=$css",
+      "src/routes/library/subscriptions.tsx?pick=default&pick=$css",
+      "src/routes/library/watch-later.tsx?pick=default&pick=$css",
+      "src/routes/library/watch-later.tsx?pick=default&pick=$css",
+      "src/routes/preferences/(preferences).tsx?pick=default&pick=$css",
+      "src/routes/preferences/(preferences).tsx?pick=default&pick=$css",
+      "src/app.tsx"
+    ]
+  },
+  "_useIntersectionObserver.mjs": {
+    "file": "useIntersectionObserver.mjs",
+    "name": "useIntersectionObserver"
+  },
+  "node_modules/.pnpm/workbox-window@7.0.0/node_modules/workbox-window/build/workbox-window.prod.es5.mjs": {
+    "file": "workbox-window.prod.es5.mjs",
+    "name": "workbox-window.prod.es5",
+    "src": "node_modules/.pnpm/workbox-window@7.0.0/node_modules/workbox-window/build/workbox-window.prod.es5.mjs",
+    "isDynamicEntry": true
+  },
+  "src/app.tsx": {
+    "file": "app.mjs",
+    "name": "app",
+    "src": "src/app.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_server-fns.mjs",
+      "_Toast.mjs",
+      "_Link.mjs",
+      "_index2.mjs",
+      "_index3.mjs",
+      "_index4.mjs",
+      "_routing.mjs",
+      "_index5.mjs",
+      "_Field.mjs",
+      "_components.mjs"
+    ],
+    "dynamicImports": [
+      "src/components/ReloadPrompt.tsx"
+    ],
+    "css": [
+      "assets/app-BNZmilKw.css"
+    ]
+  },
+  "src/components/ReloadPrompt.tsx": {
+    "file": "ReloadPrompt.mjs",
+    "name": "ReloadPrompt",
+    "src": "src/components/ReloadPrompt.tsx",
+    "isDynamicEntry": true,
+    "dynamicImports": [
+      "node_modules/.pnpm/workbox-window@7.0.0/node_modules/workbox-window/build/workbox-window.prod.es5.mjs"
+    ],
+    "css": [
+      "assets/ReloadPrompt-BxYeSCT1.css"
+    ]
+  },
+  "src/routes/[...404].tsx?pick=default&pick=$css": {
+    "file": "_...404_.mjs",
+    "name": "_...404_",
+    "src": "src/routes/[...404].tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Link.mjs",
+      "_routing.mjs",
+      "_components.mjs"
+    ]
+  },
+  "src/routes/channel/[id].tsx?pick=default&pick=$css": {
+    "file": "_id_.mjs",
+    "name": "_id_",
+    "src": "src/routes/channel/[id].tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_Description.mjs",
+      "_useIntersectionObserver.mjs",
+      "_Link.mjs",
+      "_EmptyState.mjs",
+      "_PlaylistCard.mjs",
+      "_routing.mjs",
+      "_components.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_index4.mjs"
+    ]
+  },
+  "src/routes/clientId.ts?pick=GET": {
+    "file": "clientId.mjs",
+    "name": "clientId",
+    "src": "src/routes/clientId.ts?pick=GET",
+    "isDynamicEntry": true
+  },
+  "src/routes/debug.tsx?pick=default&pick=$css": {
+    "file": "debug.mjs",
+    "name": "debug",
+    "src": "src/routes/debug.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_Link.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_index4.mjs",
+      "_routing.mjs",
+      "_components.mjs"
+    ]
+  },
+  "src/routes/feed.tsx?pick=default&pick=$css": {
+    "file": "feed.mjs",
+    "name": "feed",
+    "src": "src/routes/feed.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_Error.mjs",
+      "_useIntersectionObserver.mjs",
+      "_EmptyState.mjs",
+      "_Link.mjs",
+      "_index5.mjs",
+      "_index3.mjs",
+      "_index4.mjs",
+      "_index2.mjs",
+      "_routing.mjs",
+      "_components.mjs"
+    ]
+  },
+  "src/routes/import.tsx?pick=default&pick=$css": {
+    "file": "import.mjs",
+    "name": "import",
+    "src": "src/routes/import.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_Link.mjs",
+      "_routing.mjs",
+      "_components.mjs",
+      "_index4.mjs"
+    ]
+  },
+  "src/routes/index.tsx?pick=default&pick=$css": {
+    "file": "index.mjs",
+    "name": "index",
+    "src": "src/routes/index.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_components.mjs",
+      "_routing.mjs"
+    ]
+  },
+  "src/routes/library/(library).tsx?pick=default&pick=$css": {
+    "file": "(library).mjs",
+    "name": "(library)",
+    "src": "src/routes/library/(library).tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index5.mjs",
+      "_Link.mjs",
+      "_index2.mjs",
+      "_routing.mjs",
+      "_components.mjs"
+    ]
+  },
+  "src/routes/library/blocklist.tsx?pick=default&pick=$css": {
+    "file": "blocklist.mjs",
+    "name": "blocklist",
+    "src": "src/routes/library/blocklist.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_Link.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_index4.mjs",
+      "_routing.mjs",
+      "_components.mjs"
+    ]
+  },
+  "src/routes/library/downloads.tsx?pick=default&pick=$css": {
+    "file": "downloads.mjs",
+    "name": "downloads",
+    "src": "src/routes/library/downloads.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_Link.mjs",
+      "_routing.mjs",
+      "_components.mjs",
+      "_index4.mjs"
+    ]
+  },
+  "src/routes/library/history.tsx?pick=default&pick=$css": {
+    "file": "history.mjs",
+    "name": "history",
+    "src": "src/routes/library/history.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_useIntersectionObserver.mjs",
+      "_Link.mjs",
+      "_Field.mjs",
+      "_index3.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_index4.mjs",
+      "_routing.mjs",
+      "_components.mjs"
+    ]
+  },
+  "src/routes/library/playlists.tsx?pick=default&pick=$css": {
+    "file": "playlists.mjs",
+    "name": "playlists",
+    "src": "src/routes/library/playlists.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_Link.mjs",
+      "_EmptyState.mjs",
+      "_PlaylistCard.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_index4.mjs",
+      "_routing.mjs",
+      "_components.mjs"
+    ]
+  },
+  "src/routes/library/subscriptions.tsx?pick=default&pick=$css": {
+    "file": "subscriptions.mjs",
+    "name": "subscriptions",
+    "src": "src/routes/library/subscriptions.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_Link.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_index4.mjs",
+      "_routing.mjs",
+      "_components.mjs"
+    ]
+  },
+  "src/routes/library/watch-later.tsx?pick=default&pick=$css": {
+    "file": "watch-later.mjs",
+    "name": "watch-later",
+    "src": "src/routes/library/watch-later.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_EmptyState.mjs",
+      "_PlaylistItem.mjs",
+      "_index3.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_Link.mjs",
+      "_routing.mjs",
+      "_components.mjs",
+      "_index4.mjs"
+    ]
+  },
+  "src/routes/playlist.tsx?pick=default&pick=$css": {
+    "file": "playlist.mjs",
+    "name": "playlist",
+    "src": "src/routes/playlist.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_PlaylistItem.mjs",
+      "_index3.mjs",
+      "_routing.mjs",
+      "_index5.mjs",
+      "_index2.mjs",
+      "_Link.mjs",
+      "_components.mjs",
+      "_index4.mjs"
+    ]
+  },
+  "src/routes/preferences/(preferences).tsx?pick=default&pick=$css": {
+    "file": "(preferences).mjs",
+    "name": "(preferences)",
+    "src": "src/routes/preferences/(preferences).tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index4.mjs",
+      "_routing.mjs",
+      "_index2.mjs"
+    ]
+  },
+  "src/routes/results.tsx?pick=default&pick=$css": {
+    "file": "results.mjs",
+    "name": "results",
+    "src": "src/routes/results.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Toast.mjs",
+      "_Link.mjs",
+      "_index5.mjs",
+      "_Field.mjs",
+      "_useIntersectionObserver.mjs",
+      "_EmptyState.mjs",
+      "_PlaylistCard.mjs",
+      "_Description.mjs",
+      "_routing.mjs",
+      "_components.mjs",
+      "_index4.mjs",
+      "_index2.mjs"
+    ]
+  },
+  "src/routes/trending.tsx?pick=default&pick=$css": {
+    "file": "trending.mjs",
+    "name": "trending",
+    "src": "src/routes/trending.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index5.mjs",
+      "_Error.mjs",
+      "_Link.mjs",
+      "_Toast.mjs",
+      "_index3.mjs",
+      "_index2.mjs",
+      "_routing.mjs",
+      "_components.mjs",
+      "_index4.mjs"
+    ]
+  },
+  "src/routes/watch.tsx?pick=default&pick=$css": {
+    "file": "watch.mjs",
+    "name": "watch",
+    "src": "src/routes/watch.tsx?pick=default&pick=$css",
+    "isDynamicEntry": true,
+    "imports": [
+      "_Description.mjs",
+      "_Toast.mjs",
+      "_Link.mjs",
+      "_PlaylistCard.mjs",
+      "_routing.mjs",
+      "_useIntersectionObserver.mjs",
+      "_index5.mjs",
+      "_PlaylistItem.mjs",
+      "_index4.mjs",
+      "_index2.mjs",
+      "_components.mjs"
+    ]
+  },
+  "virtual:#vinxi/handler/server-fns": {
+    "file": "entry.mjs",
+    "name": "entry",
+    "src": "virtual:#vinxi/handler/server-fns",
+    "isEntry": true,
+    "imports": [
+      "_server-fns.mjs"
+    ]
+  }
+}

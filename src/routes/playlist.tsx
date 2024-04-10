@@ -7,13 +7,14 @@ import {
   Show,
   useContext,
 } from "solid-js";
-import { Title, useLocation } from "solid-start";
 import { Playlist as PlaylistType, RelatedStream } from "~/types";
 import { fetchJson } from "~/utils/helpers";
 import { useSyncStore } from "~/stores/syncStore";
 import { createQuery } from "@tanstack/solid-query";
 import { usePreferences } from "~/stores/preferencesStore";
 import PlaylistItem from "~/components/content/playlist/PlaylistItem";
+import { useLocation } from "@solidjs/router";
+import { Title } from "@solidjs/meta";
 
 export default function Playlist() {
   const [list, setList] = createSignal<PlaylistType>();
@@ -53,13 +54,16 @@ export default function Playlist() {
 
               <div class="grid grid-cols-1 gap-4 ">
                 <Show when={l.relatedStreams.length > 0}>
-                  <For each={l.relatedStreams
-                  // blocklist
-                  .filter(
-                    (item) =>
-                      !sync.store.blocklist[item?.uploaderUrl?.split("/").pop()!]
-                  )
-                  }>
+                  <For
+                    each={l.relatedStreams
+                      // blocklist
+                      .filter(
+                        (item) =>
+                          !sync.store.blocklist[
+                            item?.uploaderUrl?.split("/").pop()!
+                          ]
+                      )}
+                  >
                     {(video, index) => (
                       <PlaylistItem
                         active=""

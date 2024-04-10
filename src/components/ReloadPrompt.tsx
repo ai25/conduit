@@ -30,7 +30,7 @@ const ReloadPrompt: Component = () => {
           }, 20000 /* 20s for testing purposes */);
       } else {
         // eslint-disable-next-line no-console
-        console.dir(r)
+        console.dir(r);
       }
     },
     onRegisterError(error) {
@@ -77,24 +77,3 @@ const ReloadPrompt: Component = () => {
 };
 
 export default ReloadPrompt;
-
-import { Link } from "solid-start"; // if missing, just use html <link> tag
-import { pwaInfo } from 'virtual:pwa-info';
-
-export function VitePwaManifest() {
-  if (pwaInfo) {
-    const { webManifest } = pwaInfo;
-    if (webManifest) {
-      const { href, useCredentials } = webManifest
-      return (
-        <>
-          { useCredentials
-            ? <Link rel="manifest" href={href} crossorigin="use-credentials" />
-            : <Link rel="manifest" href={href} />
-          }
-        </>
-      )
-    }
-  }
-  return null;
-}

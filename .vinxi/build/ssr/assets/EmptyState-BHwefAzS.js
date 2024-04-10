@@ -1,0 +1,2 @@
+import{ssr as r,ssrHydrationKey as s,escape as e,createComponent as o}from"solid-js/web";import{w as a}from"./index-BPtxG8PX.js";var l=["<div",' class="flex items-center justify-center flex-col gap-2 p-4"><!--$-->','<!--/--><p class="text-text2">',"</p><!--$-->","<!--/--></div>"];function c(t){return r(l,s(),e(o(a,{fill:"currentColor",class:"text-4xl text-text2"})),e(t.message)??"Nothing to see here...",e(t.children))}export{c as E};
+//# sourceMappingURL=EmptyState-BHwefAzS.js.map

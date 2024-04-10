@@ -1,0 +1,2 @@
+import{ssr as o,ssrHydrationKey as t,escape as r,createComponent as s}from"solid-js/web";import{f as a}from"./index5.mjs";var l=["<div",' class="flex items-center justify-center flex-col gap-2 p-4"><!--$-->','<!--/--><pre class="max-h-96 overflow-auto">',"</pre></div>"];const n=e=>o(l,t(),r(s(a,{fill:"currentColor",class:"text-4xl text-red-600"})),r(JSON.stringify(e.error,void 0,2)));export{n as E};
+//# sourceMappingURL=Error.mjs.map

@@ -10,10 +10,9 @@ import {
   onMount,
   onCleanup,
 } from "solid-js";
-import { ThemeContext } from "~/root";
+import { ThemeContext } from "~/app";
 import { useCookie } from "~/utils/hooks";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
-import { useLocation, useNavigate } from "solid-start";
 import { Dropdown } from "./Dropdown";
 import Search from "./SearchInput";
 import Modal from "./Modal";
@@ -114,7 +113,6 @@ export default function Header() {
     "Zelda",
   ];
   const [appState] = useAppState();
-  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = createSignal(false);
   const [name, setName] = createSignal(
     randomNames[Math.floor(Math.random() * randomNames.length)]
@@ -166,7 +164,7 @@ export default function Header() {
     currentInstanceIndex = currentInstanceIndex > -1 ? currentInstanceIndex : 0;
     const nextInstanceIndex = (currentInstanceIndex + 1) % instances.length;
     setPreferences("instance", instances[nextInstanceIndex]);
-    toast.show(`You are now connected to ${instances[nextInstanceIndex].name}`)
+    toast.show(`You are now connected to ${instances[nextInstanceIndex].name}`);
   };
 
   onMount(() => {
@@ -215,10 +213,7 @@ export default function Header() {
         <ul class="hidden md:inline">
           <For each={links}>
             {(link) => (
-              <Link
-                href={link.href}
-                class="text-sm p-1 text-left transition "
-              >
+              <Link href={link.href} class="text-sm p-1 text-left transition ">
                 {link.label}
               </Link>
             )}
@@ -275,17 +270,20 @@ export default function Header() {
               </Switch>
             </KobaltePopover.Trigger>
             <KobaltePopover.Portal>
-              <KobaltePopover.Content class="bg-bg1 border border-bg3/80 p-2 rounded-md
+              <KobaltePopover.Content
+                class="bg-bg1 border border-bg3/80 p-2 rounded-md
                 animate-in
                 fade-in
                 slide-in-from-top-10
                 duration-200
                 z-[99999]
-                ">
+                "
+              >
                 <KobaltePopover.Arrow />
                 <KobaltePopover.Description
-                  class={`text-sm p-1 text-left flex flex-col gap-2 items-center ${roomId() ? "text-green-600" : "text-red-600"
-                    }`}
+                  class={`text-sm p-1 text-left flex flex-col gap-2 items-center ${
+                    roomId() ? "text-green-600" : "text-red-600"
+                  }`}
                 >
                   <Show when={roomId()}>
                     Connected: {roomId()}
@@ -298,7 +296,8 @@ export default function Header() {
                           {(user) => (
                             <div class="flex items-center gap-2">
                               ID: {user.id}
-                              Name: {user.name} {user.name === name() && "(You)"}
+                              Name: {user.name}{" "}
+                              {user.name === name() && "(You)"}
                             </div>
                           )}
                         </For>
@@ -414,5 +413,4 @@ export default function Header() {
       </Modal>
     </nav>
   );
-};
-
+}

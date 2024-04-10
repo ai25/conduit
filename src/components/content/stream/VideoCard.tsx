@@ -1,7 +1,6 @@
 import type { RelatedStream } from "~/types";
 import numeral from "numeral";
 // import { DBContext } from "~/routes/layout";
-import { useSearchParams } from "solid-start";
 import {
   Match,
   Show,
@@ -14,25 +13,30 @@ import {
   For,
 } from "solid-js";
 import { useSyncStore, HistoryItem } from "~/stores/syncStore";
-import { formatRelativeShort, generateThumbnailUrl, getVideoId } from "~/utils/helpers";
+import {
+  formatRelativeShort,
+  generateThumbnailUrl,
+  getVideoId,
+} from "~/utils/helpers";
 import { mergeProps } from "solid-js";
 import { createTimeAgo } from "@solid-primitives/date";
-import VideoCardMenu from "./VideoCardMenu"
+import VideoCardMenu from "./VideoCardMenu";
 import { FaSolidEye } from "solid-icons/fa";
-import { Tooltip } from "~/components/Tooltip"
-import Link from "~/components/Link"
-
+import { Tooltip } from "~/components/Tooltip";
+import Link from "~/components/Link";
+import { useSearchParams } from "@solidjs/router";
 
 const VideoCard = (props: {
-  v?: (RelatedStream),
-  layout?: "list" | "grid" | "sm:grid"
+  v?: RelatedStream;
+  layout?: "list" | "grid" | "sm:grid";
 }) => {
   props = mergeProps({ layout: "sm:grid" as "sm:grid" }, props);
 
   const sync = useSyncStore();
-  const [searchParams] = useSearchParams()
+  const [searchParams] = useSearchParams();
 
-  const watchedAtDate = () => sync.store.history[getVideoId(props.v)!]?.watchedAt;
+  const watchedAtDate = () =>
+    sync.store.history[getVideoId(props.v)!]?.watchedAt;
   const [watchedAt, setWatchedAt] = createSignal<string | undefined>(undefined);
 
   createEffect(() => {
@@ -43,28 +47,35 @@ const VideoCard = (props: {
     setWatchedAt(watchedAt());
   });
 
-  const [uploaded] = props.v ? createTimeAgo(props.v.uploaded, { interval: 0 }) : [() => ""];
+  const [uploaded] = props.v
+    ? createTimeAgo(props.v.uploaded, { interval: 0 })
+    : [() => ""];
   const id = () => getVideoId(props.v);
-  const historyItem = () => id() ? sync.store.history[id()!] : undefined;
+  const historyItem = () => (id() ? sync.store.history[id()!] : undefined);
 
   return (
     <div
       classList={{
         "flex flex-row gap-2 mx-1 items-start rounded-xl bg-bg1 p-2 ": true,
         "min-w-full": props.layout === "list",
-        "sm:max-w-max  sm:flex-col sm:w-72 sm:gap-0 min-w-full sm:min-w-0": props.layout === "sm:grid",
-        "h-max max-h-max max-w-max flex-col w-full gap-2 sm:w-72": props.layout === "grid",
-
+        "sm:max-w-max  sm:flex-col sm:w-72 sm:gap-0 min-w-full sm:min-w-0":
+          props.layout === "sm:grid",
+        "h-max max-h-max max-w-max flex-col w-full gap-2 sm:w-72":
+          props.layout === "grid",
       }}
     >
-      <div classList={{
-        "aspect-video overflow-hidden rounded": true,
-        "max-h-96": props.layout === "list",
-        "max-h-44 min-w-min sm:max-h-full sm:w-full": props.layout === "sm:grid",
-
-      }}>
-        <Show when={props.v} fallback={<ImageContainerFallback layout={props.layout as any}
-        />}>
+      <div
+        classList={{
+          "aspect-video overflow-hidden rounded": true,
+          "max-h-96": props.layout === "list",
+          "max-h-44 min-w-min sm:max-h-full sm:w-full":
+            props.layout === "sm:grid",
+        }}
+      >
+        <Show
+          when={props.v}
+          fallback={<ImageContainerFallback layout={props.layout as any} />}
+        >
           <ImageContainer
             url={`/watch?v=${id()}${searchParams.fullscreen ? `&fullscreen=${searchParams.fullscreen}` : ""}`}
             src={props.v!.thumbnail}
@@ -75,25 +86,35 @@ const VideoCard = (props: {
           />
         </Show>
       </div>
-      <div classList={{
-        "flex w-full min-w-0 max-w-full justify-between h-full  sm:mt-2 max-h-20": true,
-        "max-w-[22rem]": props.layout === "grid",
-      }}>
-        <div classList={{
-          "flex flex-col min-w-0 gap-2 pr-2 h-full w-full": true,
-          "max-w-[10rem] [@media(min-width:380px)]:max-w-[11rem] [@media(min-width:400px)]:max-w-full": props.layout === "sm:grid" || props.layout === "list",
-          "max-w-full": props.layout === "grid",
+      <div
+        classList={{
+          "flex w-full min-w-0 max-w-full justify-between h-full  sm:mt-2 max-h-20":
+            true,
+          "max-w-[22rem]": props.layout === "grid",
         }}
+      >
+        <div
+          classList={{
+            "flex flex-col min-w-0 gap-2 pr-2 h-full w-full": true,
+            "max-w-[10rem] [@media(min-width:380px)]:max-w-[11rem] [@media(min-width:400px)]:max-w-full":
+              props.layout === "sm:grid" || props.layout === "list",
+            "max-w-full": props.layout === "grid",
+          }}
         >
-          <Show when={props.v}
-            fallback={<div class="flex flex-col gap-1"><div aria-hidden="true"
-              class="animate-pulse bg-bg2 w-full rounded-lg h-4 ">
-            </div>
-              <div aria-hidden="true"
-                class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg " />
-
-            </div>}
-
+          <Show
+            when={props.v}
+            fallback={
+              <div class="flex flex-col gap-1">
+                <div
+                  aria-hidden="true"
+                  class="animate-pulse bg-bg2 w-full rounded-lg h-4 "
+                 />
+                <div
+                  aria-hidden="true"
+                  class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg "
+                />
+              </div>
+            }
           >
             <Tooltip
               as="div"
@@ -160,7 +181,7 @@ const ImageContainer = (props: {
         }}
         src={src()}
         onError={() => {
-        setSrc("/img/error.png")
+          setSrc("/img/error.png");
         }}
         width={2560}
         height={1440}
@@ -169,20 +190,14 @@ const ImageContainer = (props: {
       />
       <Switch>
         <Match when={props.watched && props.watchedAt}>
-          <div
-            class="relative h-0 w-0 ">
+          <div class="relative h-0 w-0 ">
             <div class="absolute flex items-center left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
               <FaSolidEye title="Watched" class="inline-block h-3 w-3 mr-1" />
               {props.watchedAt}
             </div>
           </div>
         </Match>
-        <Match
-          when={
-            props.watched &&
-            !props.watchedAt
-          }
-        >
+        <Match when={props.watched && !props.watchedAt}>
           <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
             Watched
           </div>
@@ -200,55 +215,58 @@ const ImageContainer = (props: {
         <div class="relative h-0 w-full">
           <div
             style={{
-              width: `clamp(0%, ${(props.currentTime! / props.duration) * 100
-                }%, 100%`,
+              width: `clamp(0%, ${
+                (props.currentTime! / props.duration) * 100
+              }%, 100%`,
             }}
             class="absolute bottom-0 h-1 bg-highlight"
-          ></div>
+           />
         </div>
       </Show>
     </Link>
-  )
-}
+  );
+};
 
-const ImageContainerFallback = (props: { layout: "list" | "grid" | "sm:grid" }
-) => {
+const ImageContainerFallback = (props: {
+  layout: "list" | "grid" | "sm:grid";
+}) => {
   return (
-    <div classList={{
-      "relative flex aspect-video min-w-0 flex-col rounded-lg overflow-hidden": true,
-      "w-full": props.layout === "grid",
-      "w-[10rem] sm:w-full sm:max-w-[18rem]": props.layout === "sm:grid",
-      "w-[10rem]": props.layout === "list",
-    }}>
-
+    <div
+      classList={{
+        "relative flex aspect-video min-w-0 flex-col rounded-lg overflow-hidden":
+          true,
+        "w-full": props.layout === "grid",
+        "w-[10rem] sm:w-full sm:max-w-[18rem]": props.layout === "sm:grid",
+        "w-[10rem]": props.layout === "list",
+      }}
+    >
       <div class="animate-pulse bg-bg2 aspect-video h-full overflow-hidden max-w-fit w-full">
         <div class="w-96 h-full" />
       </div>
-    </div >
+    </div>
   );
-}
+};
 
 const InfoContainer = (props: {
   url: string;
   title: string;
   uploaderName: string;
   uploaderUrl: string;
-  uploaderAvatar: string | null
+  uploaderAvatar: string | null;
   views: number;
   uploaded: string;
   uploadedDate: Date;
   live: boolean;
-
 }) => {
   const uploaderUrl = () => {
-    let url = ""
+    let url = "";
     if (props.uploaderUrl.startsWith("UC")) {
-      url = `/channel/${props.uploaderUrl}`
+      url = `/channel/${props.uploaderUrl}`;
     } else if (props.uploaderUrl.startsWith("/")) {
-      url = props.uploaderUrl
+      url = props.uploaderUrl;
     }
-    return url
-  }
+    return url;
+  };
 
   return (
     <div class="flex gap-1 text-text2 w-full sm:max-w-full ">
@@ -274,7 +292,9 @@ const InfoContainer = (props: {
           href={uploaderUrl()}
           class="outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <div class="peer w-fit truncate max-w-[10rem]">{props.uploaderName}</div>
+          <div class="peer w-fit truncate max-w-[10rem]">
+            {props.uploaderName}
+          </div>
         </Link>
         <div class="flex flex-wrap w-full">
           <Show when={props.views}>
@@ -291,27 +311,25 @@ const InfoContainer = (props: {
             <div class="mx-1">•</div>
           </Show>
           <Show when={!props.live}>
-            <div
-              title={props.uploadedDate.toLocaleString()}
-              class=""
-            >{props.uploaded}{" "}
+            <div title={props.uploadedDate.toLocaleString()} class="">
+              {props.uploaded}{" "}
             </div>
           </Show>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const InfoContainerFallback = () => {
   return (
     <div class="flex flex-col gap-2 pr-2 w-full ">
       <div class="flex gap-2 text-text2">
-        <div class="animate-pulse bg-bg2 w-8 h-8 aspect-square rounded-full"></div>
+        <div class="animate-pulse bg-bg2 w-8 h-8 aspect-square rounded-full" />
         <div class="flex w-full flex-col gap-2 justify-center">
-          <div class="animate-pulse bg-bg2 w-32 h-4 rounded-lg"></div>
+          <div class="animate-pulse bg-bg2 w-32 h-4 rounded-lg" />
         </div>
       </div>
     </div>
   );
-}
+};

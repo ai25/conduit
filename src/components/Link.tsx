@@ -1,9 +1,8 @@
+import { A, useSearchParams } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
-import { A, useSearchParams } from "solid-start";
 import { useAppState } from "~/stores/appStateStore";
 
 export default function Link(props: LinkProps) {
-
   const [searchParams] = useSearchParams();
   const [href, setHref] = createSignal(props.href);
   const [appState, setAppState] = useAppState();
@@ -23,9 +22,7 @@ export default function Link(props: LinkProps) {
     } catch (e) {
       console.error(e, props.href);
     }
-
-  })
-
+  });
 
   return (
     <A
@@ -38,8 +35,7 @@ export default function Link(props: LinkProps) {
             setAppState("touchInProgress", false);
           }, 100);
         }
-      }
-      }
+      }}
       href={href()}
       class={props.class}
       style={props.style}
@@ -48,8 +44,7 @@ export default function Link(props: LinkProps) {
     >
       {props.children}
     </A>
-  )
-
+  );
 }
 interface LinkProps {
   href: string;
@@ -59,5 +54,3 @@ interface LinkProps {
   activeClass?: string;
   inactiveClass?: string;
 }
-
-

@@ -1,3 +1,4 @@
+// TODO: Integrate offline playback
 import Description from "~/components/Description";
 import {
   Show,
@@ -10,9 +11,7 @@ import {
   Match,
   onCleanup,
 } from "solid-js";
-import { useLocation, useSearchParams } from "solid-start";
 import { For } from "solid-js";
-import { PlayerContext, useTheater } from "~/root";
 import { getHlsManifest, getStreams } from "~/utils/hls";
 import { usePlaylist } from "~/stores/playlistStore";
 import { useSyncStore } from "~/stores/syncStore";
@@ -28,6 +27,9 @@ import RelatedVideos from "~/components/RelatedVideos";
 import Comments from "~/components/Comments";
 import { getVideoId, isMobile } from "~/utils/helpers";
 import PlaylistItem from "~/components/content/playlist/PlaylistItem";
+import { useLocation, useSearchParams } from "@solidjs/router";
+import { QueryBoundary } from "~/components/QueryBoundary";
+import { useVideoContext } from "~/stores/VideoContext";
 
 export interface SponsorSegment {
   category: string;
@@ -64,9 +66,7 @@ export async function fetchWithTimeout(
 export default function Watch() {
   console.log(new Date().toISOString().split("T")[1], "rendering watch page");
 
-  const [video, setVideo] = useContext(PlayerContext);
   const route = useLocation();
-  const [theater] = useTheater();
   const [preferences] = usePreferences();
 
   const [v, setV] = createSignal<string | undefined>(undefined);
@@ -74,16 +74,16 @@ export default function Watch() {
     if (!route.query.v) return;
     setV(route.query.v);
   });
-  const videoQuery = createQuery<any, any, PipedVideo>(() => ({
-    queryKey: ["streams", v(), preferences.instance.api_url],
-    queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
-    enabled: (v() && preferences.instance.api_url) ? true : false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
-    cacheTime: Infinity,
-    staleTime: 100 * 60 * 1000,
-    deferStream: true
-  }));
+  const video = useVideoContext();
+  // const videoQuery = createQuery<any, any, PipedVideo>(() => ({
+  //   queryKey: ["streams", v(), preferences.instance.api_url],
+  //   queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
+  //   enabled: v() && preferences.instance.api_url ? true : false,
+  //   refetchOnReconnect: false,
+  //   refetchOnMount: false,
+  //   cacheTime: Infinity,
+  //   staleTime: 100 * 60 * 1000,
+  // }));
 
   const [playlist, setPlaylist] = usePlaylist();
 
@@ -102,13 +102,13 @@ export default function Watch() {
         console.log("video downloaded");
         const manifest = await getHlsManifest(route.query.v);
         console.log("manifest", manifest);
-        setVideo({
-          value: {
-            ...downloaded,
-            hls: manifest,
-          },
-        });
-        console.log(video.value, "previewFrames");
+        // setVideo({
+        //   value: {
+        //     ...downloaded,
+        //     hls: manifest,
+        //   },
+        // });
+        // console.log(video.value, "previewFrames");
         return;
       } else {
         console.log("video not downloaded");
@@ -184,7 +184,7 @@ export default function Watch() {
       );
       if (!res.ok) {
         // throw new Error("Failed to fetch playlist");
-        return
+        return;
       }
       return await res.json();
     },
@@ -194,10 +194,12 @@ export default function Watch() {
         : false,
     refetchOnReconnect: false,
   }));
-  createEffect(() => {
-    console.log(sync.store, "STORE");
-    console.log(sponsorsQuery.data, sponsorsQuery.error);
-  });
+  // createEffect(() => {
+  //   console.log(sync.store, "STORE");
+  //   console.log(sponsorsQuery.data, sponsorsQuery.error);
+  //   console.log(videoQuery, "video query");
+  //   videoQuery.refetch();
+  // });
 
   createEffect(() => {
     if (playlistQuery.isSuccess) {
@@ -294,8 +296,8 @@ export default function Watch() {
   // });
   //
   createEffect(() => {
-    if (!video.value) return;
-    document.title = `${video.value?.title} - Conduit`;
+    if (!video.data) return;
+    document.title = `${video.data.title} - Conduit`;
   });
 
   const [playlistScrollContainer, setPlaylistScrollContainer] = createSignal<
@@ -347,34 +349,33 @@ export default function Watch() {
     setAppState("player", "small", false);
   });
 
-
-  const [windowWidth, setWindowWidth] = createSignal(1000)
+  const [windowWidth, setWindowWidth] = createSignal(1000);
 
   onMount(() => {
-      setWindowWidth(window.innerWidth)
+    setWindowWidth(window.innerWidth);
     window.addEventListener("resize", (e) => {
-      setWindowWidth(window.innerWidth)
-      })
+      setWindowWidth(window.innerWidth);
+    });
 
-      onCleanup(() => {
-        window.removeEventListener("resize", (e) => {
-          setWindowWidth(window.innerWidth)
-          })
-        })
-  })
+    onCleanup(() => {
+      window.removeEventListener("resize", (e) => {
+        setWindowWidth(window.innerWidth);
+      });
+    });
+  });
   return (
     <div
       class="flex"
       classList={{
-        "flex-col": theater() || !!searchParams.fullscreen,
-        "flex-col lg:flex-row": !theater() && !searchParams.fullscreen,
+        "flex-col": !!searchParams.fullscreen,
+        "flex-col lg:flex-row": !searchParams.fullscreen,
       }}
     >
       <div
         class="flex flex-col"
         classList={{
-          "flex-grow": !theater() && !searchParams.fullscreen,
-          "w-full": theater() || !!searchParams.fullscreen,
+          "flex-grow": !searchParams.fullscreen,
+          "w-full": !!searchParams.fullscreen,
         }}
       >
         {/* <Switch>
@@ -394,13 +395,15 @@ export default function Watch() {
       <div class="flex sm:flex-row flex-col md:gap-2 w-full">
         <div class="w-full max-w-full">
           <Description downloaded={videoDownloaded()} />
-          <Show when={(windowWidth() > 600 || isMobile()) && videoQuery.data} >
+          <Show when={(windowWidth() > 600 || isMobile()) && video.data}>
             <div class="mx-4">
-            <Comments
-              videoId={getVideoId(videoQuery.data)!}
-              uploader={videoQuery.data!.uploader}
-              display={windowWidth() > 600 ? "default" : "bottomsheet"}
-            />
+              <Suspense>
+                <Comments
+                  videoId={getVideoId(video.data)!}
+                  uploader={video.data!.uploader}
+                  display={windowWidth() > 600 ? "default" : "bottomsheet"}
+                />
+              </Suspense>
             </div>
           </Show>
         </div>
@@ -439,15 +442,19 @@ export default function Watch() {
             )}
           </Show>
           <div class="relative max-w-max sm:max-w-min">
-            <RelatedVideos />
+            <Suspense>
+              <RelatedVideos />
+            </Suspense>
           </div>
         </div>
-        <Show when={(windowWidth() <= 600 && !isMobile()) && videoQuery.data} >
-          <Comments
-            videoId={getVideoId(videoQuery.data)!}
-            uploader={videoQuery.data!.uploader}
-            display="default"
-          />
+        <Show when={windowWidth() <= 600 && !isMobile() && video.data}>
+          <Suspense>
+            <Comments
+              videoId={getVideoId(video.data)!}
+              uploader={video.data!.uploader}
+              display="default"
+            />
+          </Suspense>
         </Show>
       </div>
     </div>

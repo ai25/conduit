@@ -8,6 +8,7 @@ import "vidstack/icons";
 
 import {
   HLSErrorEvent,
+  HLSProvider,
   MediaProviderChangeEvent,
   isHLSProvider,
 } from "vidstack";
@@ -20,6 +21,7 @@ import {
   useContext,
   untrack,
   on,
+  For,
 } from "solid-js";
 import {
   Chapter,
@@ -29,7 +31,6 @@ import {
   Subtitle,
 } from "~/types";
 import { chaptersVtt } from "~/lib/chapters";
-import { useIsRouting, useLocation, useNavigate, useSearchParams } from "solid-start";
 import { ttml2srt } from "~/lib/ttml";
 import { useQueue, VideoQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
@@ -40,78 +41,86 @@ import { MediaPlayerElement } from "vidstack/elements";
 import { VideoLayout } from "../player/layouts/VideoLayout";
 import { usePreferences } from "~/stores/preferencesStore";
 import { createQuery } from "@tanstack/solid-query";
-import { generateStoryboard, getVideoId, isMobile, yieldToMain } from "~/utils/helpers";
-import { ActionHandlers, initMediaSession, MediaMetadataProps, updateProgress } from "~/utils/player-helpers";
+import {
+  generateStoryboard,
+  getVideoId,
+  isMobile,
+  yieldToMain,
+} from "~/utils/helpers";
+import {
+  ActionHandlers,
+  initMediaSession,
+  MediaMetadataProps,
+  updateProgress,
+} from "~/utils/player-helpers";
 import api from "~/utils/api";
 import { PiPLayout } from "../player/layouts/PiPLayout";
 import { useAppState } from "~/stores/appStateStore";
 import VideoCard from "../content/stream/VideoCard";
 import Button from "../Button";
+import { createStore } from "solid-js/store";
+import {
+  useIsRouting,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "@solidjs/router";
 
 export default function Player(props: {
   // video: PipedVideo;
   onReload?: () => void;
 }) {
-  console.log("player render");
   const route = useLocation();
   let mediaPlayer!: MediaPlayerElement;
   const sync = useSyncStore();
   const [preferences, setPreferences] = usePreferences();
-  const [v, setV] = createSignal<string | undefined>(undefined);
+  const [currentVideoId, setCurrentVideoId] = createSignal<string | undefined>(
+    undefined
+  );
+
   createEffect(() => {
     if (!route.query.v) return;
-    setV(route.query.v);
+    setCurrentVideoId(route.query.v);
   });
 
-  const videoQuery = createQuery<any,any,PipedVideo>(() => ({
-    queryKey: ["streams", v(), preferences.instance.api_url],
-    queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
-    enabled: (v() && preferences.instance.api_url) ? true : false,
+  const videoQuery = createQuery<any, any, PipedVideo>(() => ({
+    queryKey: ["streams", currentVideoId(), preferences.instance.api_url],
+    queryFn: () =>
+      api.fetchVideo(currentVideoId(), preferences.instance.api_url),
+    enabled: currentVideoId() && preferences.instance.api_url ? true : false,
     refetchOnReconnect: false,
     refetchOnMount: false,
     cacheTime: Infinity,
     staleTime: 100 * 60 * 1000,
-    deferStream: true
+    deferStream: true,
   }));
-
 
   const [playlist] = usePlaylist();
   const queue = useQueue();
 
-  createEffect(async () => {
-    if (v()) {
-      if (!queue.has(v()!)) {
-        const awaitLoad = async () => {
-          if (videoQuery.isLoading) {
-            await new Promise<void>((resolve) => {
-              setTimeout(() => {
-                resolve();
-              }, 100);
-            });
-
-            await awaitLoad();
-          }
-        };
-        await awaitLoad();
-        queue.add({
-          url: `/watch?v=${v()}`,
-          title: videoQuery.data!.title,
-          thumbnail: videoQuery.data!.thumbnailUrl,
-          duration: videoQuery.data!.duration,
-          uploaderName: videoQuery.data!.uploader,
-          uploaderAvatar: videoQuery.data!.uploaderAvatar,
-          uploaderUrl: videoQuery.data!.uploaderUrl,
-          isShort: false,
-          shortDescription: "",
-          type: "video",
-          uploaded: new Date(videoQuery.data!.uploadDate).getTime(),
-          views: videoQuery.data!.views,
-          uploadedDate: videoQuery.data!.uploadDate,
-          uploaderVerified: videoQuery.data!.uploaderVerified,
-        });
-      }
-      queue.setCurrentVideo(v()!);
+  createEffect(() => {
+    if (!currentVideoId()) return;
+    if (videoQuery.isLoading) return;
+    if (!videoQuery.data) return;
+    if (!queue.has(currentVideoId()!)) {
+      queue.add({
+        url: `/watch?v=${currentVideoId()}`,
+        title: videoQuery.data.title,
+        thumbnail: videoQuery.data.thumbnailUrl,
+        duration: videoQuery.data.duration,
+        uploaderName: videoQuery.data.uploader,
+        uploaderAvatar: videoQuery.data.uploaderAvatar,
+        uploaderUrl: videoQuery.data.uploaderUrl,
+        isShort: false,
+        shortDescription: "",
+        type: "video",
+        uploaded: new Date(videoQuery.data.uploadDate).getTime(),
+        views: videoQuery.data.views,
+        uploadedDate: videoQuery.data.uploadDate,
+        uploaderVerified: videoQuery.data.uploaderVerified,
+      });
     }
+    queue.setCurrentVideo(currentVideoId()!);
   });
 
   // const queueStore = useQueue();
@@ -137,7 +146,6 @@ export default function Player(props: {
         uploaderVerified: videoQuery.data.uploaderVerified,
       });
       console.log(queue, "queue 1", queue.list(), queue.isEmpty());
-
     }
   });
 
@@ -158,7 +166,9 @@ export default function Player(props: {
     }[]
   >([]);
 
-
+  const [captionsStore, setCaptionsStore] = createStore<Record<string, any>>(
+    {}
+  );
   const fetchSubtitles = async (subtitles: Subtitle[]) => {
     console.time("fetching subtitles");
     const newTracks = await Promise.all(
@@ -171,47 +181,60 @@ export default function Player(props: {
             kind: "subtitles",
             src: subtitle.url,
             srcLang: subtitle.code,
-            label: `${subtitle.name} - ${subtitle.autoGenerated ? "Auto" : ""}`,
+            label: `${subtitle.name}${subtitle.autoGenerated ? " - Auto" : ""}`,
             dataType: subtitle.mimeType,
           };
         // const { srtUrl, srtText } = await ttml2srt(subtitle.url);
         // remove empty subtitles
         // if (srtText.trim() === "") return null;
-        return {
+
+        const sub = {
           id: `track-${subtitle.code}`,
           key: subtitle.url,
           kind: "subtitles",
           src: "",
           srcLang: subtitle.code,
-          label: `${subtitle.name} - ${subtitle.autoGenerated ? "Auto" : ""}`,
+          label: `${subtitle.name}${subtitle.autoGenerated ? " - Auto" : ""}`,
           dataType: "srt",
           metadata: {
             url: subtitle.url,
           },
         };
+        setCaptionsStore(sub.id, sub);
+        return sub;
       })
     );
     console.timeEnd("fetching subtitles");
     setTracks(newTracks.filter((track) => track !== null) as any);
+
+    console.log(newTracks, subtitles, "new tracks");
   };
 
   const init = async () => {
     if (!videoQuery.data) throw new Error("No video");
     console.time("init");
     const videoMetadata: MediaMetadataProps = {
-      title: videoQuery.data?.title || '',
-      artist: videoQuery.data?.uploader || '',
-      thumbnailUrl: videoQuery.data?.thumbnailUrl || '',
+      title: videoQuery.data?.title || "",
+      artist: videoQuery.data?.uploader || "",
+      thumbnailUrl: videoQuery.data?.thumbnailUrl || "",
     };
     console.dir(mediaPlayer, "media player");
 
     const actionHandlers: ActionHandlers = {
       play: () => mediaPlayer.play(),
       pause: () => mediaPlayer.pause(),
-      seekbackward: () => { mediaPlayer.currentTime -= 10; },
-      seekforward: () => { mediaPlayer.currentTime += 10; },
-      previoustrack: () => { mediaPlayer.currentTime -= 10; },
-      nexttrack: () => { mediaPlayer.currentTime += 10; },
+      seekbackward: () => {
+        mediaPlayer.currentTime -= 10;
+      },
+      seekforward: () => {
+        mediaPlayer.currentTime += 10;
+      },
+      previoustrack: () => {
+        mediaPlayer.currentTime -= 10;
+      },
+      nexttrack: () => {
+        mediaPlayer.currentTime += 10;
+      },
       stop: () => console.log("stop"),
     };
 
@@ -249,7 +272,6 @@ export default function Player(props: {
     }
     console.timeEnd("chapters vtt");
   };
-
 
   const [currentTime, setCurrentTime] = createSignal(0);
   const time = route.query.t;
@@ -323,44 +345,50 @@ export default function Player(props: {
     info: RelatedStream;
   } | null>(null);
 
-  function pickNextVideo(relatedStreams: RelatedStream[], blacklist: string[] = []) {
+  function pickNextVideo(
+    relatedStreams: RelatedStream[],
+    blacklist: string[] = []
+  ) {
     let firstUnwatched: RelatedStream | null = null;
     let firstOwnUploader: RelatedStream | null = null;
+    if (!videoQuery.data) return null;
 
     for (const stream of relatedStreams) {
-        let id = getVideoId(stream);
-        if (!id || blacklist.includes(id)) continue; // Skip if no ID or blacklisted
-        let watched = sync.store.history[id]
-        // Priority 1: uploader matches and not watched
-        if (stream.uploaderUrl === videoQuery.data!.uploaderUrl && !watched) {
-            return stream;
-        }
+      let id = getVideoId(stream);
+      if (!id || blacklist.includes(id)) continue; // Skip if no ID or blacklisted
+      let watched = sync.store.history[id];
+      // Priority 1: uploader matches and not watched
+      if (stream.uploaderUrl === videoQuery.data.uploaderUrl && !watched) {
+        return stream;
+      }
 
-        // Track the first unwatched stream for priority 2
-        if (!watched && firstUnwatched === null) {
-            firstUnwatched = stream;
-        }
+      // Track the first unwatched stream for priority 2
+      if (!watched && firstUnwatched === null) {
+        firstUnwatched = stream;
+      }
 
-        // Track the first stream with the same uploader for priority 3
-        if (stream.uploaderUrl === videoQuery.data!.uploaderUrl && firstOwnUploader === null) {
-            firstOwnUploader = stream;
-        }
+      // Track the first stream with the same uploader for priority 3
+      if (
+        stream.uploaderUrl === videoQuery.data.uploaderUrl &&
+        firstOwnUploader === null
+      ) {
+        firstOwnUploader = stream;
+      }
     }
 
     // Priority 2: return the first unwatched stream if found
     if (firstUnwatched) {
-        return firstUnwatched;
+      return firstUnwatched;
     }
 
     // Priority 3: return the first stream with the same uploader if found
     if (firstOwnUploader) {
-        return firstOwnUploader;
+      return firstOwnUploader;
     }
 
     // Priority 4: return the first stream in the array
     return relatedStreams[0];
-}
-
+  }
 
   createEffect(() => {
     const nextVideo = videoQuery.data?.relatedStreams?.[0];
@@ -370,9 +398,9 @@ export default function Player(props: {
     console.log("adding ", nextVideo);
     if (!queue.peekNext()) {
       console.log("adding next video to queue", nextVideo);
-      const blacklist = queue.uniqueIds
+      const blacklist = queue.uniqueIds;
       let next = pickNextVideo(videoQuery.data.relatedStreams, blacklist);
-      queue.add(next)
+      queue.add(next);
       console.log("queue 3", queue);
     }
     if (playlist()) {
@@ -389,7 +417,6 @@ export default function Player(props: {
     handleSetPrevVideo();
   });
 
-
   const [searchParams, setSearchParams] = useSearchParams();
 
   const playNext = () => {
@@ -398,7 +425,9 @@ export default function Player(props: {
 
     // setSearchParams({ "v": getVideoId(nextVideo()!.info) });
     const url = new URL(window.location.origin + nextVideo()!.url);
-    if (searchParams.fullscreen) { url.searchParams.set("fullscreen", searchParams.fullscreen )}
+    if (searchParams.fullscreen) {
+      url.searchParams.set("fullscreen", searchParams.fullscreen);
+    }
     navigate(url.pathname + url.search.toString());
     setNextVideo(null);
   };
@@ -417,15 +446,17 @@ export default function Player(props: {
     params.delete("t");
     if (playlist()) {
       const local = "videos" in playlist()!;
-      const listId = params.get("list")
-        ?? (playlist() as unknown as { id: string })!.id;
+      const listId =
+        params.get("list") ?? (playlist() as unknown as { id: string })!.id;
       let index; // index starts from 1
       if (params.get("index")) {
         index = parseInt(params.get("index")!);
       } else if (local) {
         index = (playlist() as unknown as {
           videos: RelatedStream[];
-        })!.videos!.findIndex((v) => getVideoId(v) === getVideoId(videoQuery.data));
+        })!.videos!.findIndex(
+          (v) => getVideoId(v) === getVideoId(videoQuery.data)
+        );
         if (index !== -1) index++;
       } else {
         index = playlist()!.relatedStreams!.findIndex(
@@ -442,7 +473,7 @@ export default function Player(props: {
         params.set("list", listId);
         params.set("index", (index + 1).toString());
         url.search = params.toString();
-        setNextVideo({ url: (url.pathname + url.search.toString()), info: next });
+        setNextVideo({ url: url.pathname + url.search.toString(), info: next });
       } else if (
         index <
         (playlist() as unknown as { videos: RelatedStream[] })!.videos?.length
@@ -456,20 +487,19 @@ export default function Player(props: {
         params.set("list", listId);
         params.set("index", (index + 1).toString());
         url.search = params.toString();
-        setNextVideo({ url: (url.pathname + url.search.toString()), info: next });
+        setNextVideo({ url: url.pathname + url.search.toString(), info: next });
       }
       return;
     }
-    const next = queue.peekNext()
+    const next = queue.peekNext();
     console.log(next, "next", queue);
     if (!next) return;
     const id = getVideoId(next);
     if (!id) return;
     params.set("v", id);
     url.search = params.toString();
-    console.log((url.pathname + url.search.toString()), "next video");
-    setNextVideo({ url: (url.pathname + url.search.toString()), info: next });
-
+    console.log(url.pathname + url.search.toString(), "next video");
+    setNextVideo({ url: url.pathname + url.search.toString(), info: next });
   }
 
   const handleSetPrevVideo = () => {
@@ -493,7 +523,10 @@ export default function Player(props: {
             params.set("v", id);
             params.set("index", (index - 1).toString());
             url.search = params.toString();
-            setPrevVideo({ url: (url.pathname + url.search.toString()), info: prev });
+            setPrevVideo({
+              url: url.pathname + url.search.toString(),
+              info: prev,
+            });
           } else {
             const prev = playlist()!.relatedStreams![index - 2];
             const id = getVideoId(prev);
@@ -501,7 +534,10 @@ export default function Player(props: {
             params.set("v", id);
             params.set("index", (index - 1).toString());
             url.search = params.toString();
-            setPrevVideo({ url: (url.pathname + url.search.toString()), info: prev });
+            setPrevVideo({
+              url: url.pathname + url.search.toString(),
+              info: prev,
+            });
           }
         }
       }
@@ -513,10 +549,8 @@ export default function Player(props: {
     if (!id) return;
     params.set("v", id);
     url.search = params.toString();
-    setPrevVideo({ url: (url.pathname + url.search.toString()), info: prev });
+    setPrevVideo({ url: url.pathname + url.search.toString(), info: prev });
   };
-
-
 
   const handleEnded = () => {
     console.log("ended");
@@ -564,8 +598,7 @@ export default function Player(props: {
 
   onCleanup(() => {
     dismiss();
-  })
-
+  });
 
   const onProviderChange = async (event: MediaProviderChangeEvent) => {
     console.log(event, "provider change");
@@ -615,6 +648,7 @@ export default function Player(props: {
   const handleHlsError = (err: HLSErrorEvent) => {
     if (err.detail.fatal) {
       setShowErrorScreen((prev) => ({ ...prev, show: true }));
+      (mediaPlayer.provider as HLSProvider).instance?.recoverMediaError();
       if (errors().length < 10) {
         setErrors((prev) => [
           ...prev,
@@ -664,29 +698,37 @@ export default function Player(props: {
   });
   const updateProgressParametrized = () => {
     if (!mediaPlayer || !videoQuery.data) return;
-    updateProgress(videoQuery.data!, started(), mediaPlayer.currentTime, sync);
+    updateProgress(videoQuery.data, started(), mediaPlayer.currentTime, sync);
   };
 
   onMount(() => {
     document.addEventListener("visibilitychange", updateProgressParametrized);
     document.addEventListener("pagehide", updateProgressParametrized);
     document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("beforeunload", updateProgressParametrized)
-    window.addEventListener("unload", updateProgressParametrized)
-    document.addEventListener('media-enter-fullscreen-request', (event: Event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      console.log('Full screen request intercepted. Element will not go full screen.');
-    }, { capture: true });
+    window.addEventListener("beforeunload", updateProgressParametrized);
+    window.addEventListener("unload", updateProgressParametrized);
+    document.addEventListener(
+      "media-enter-fullscreen-request",
+      (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        console.log(
+          "Full screen request intercepted. Element will not go full screen."
+        );
+      },
+      { capture: true }
+    );
     onCleanup(() => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("visibilitychange", updateProgressParametrized);
+      document.removeEventListener(
+        "visibilitychange",
+        updateProgressParametrized
+      );
       document.removeEventListener("pagehide", updateProgressParametrized);
       document.removeEventListener("media-enter-fullscreen-request", (e) => {
         e.preventDefault();
         e.stopPropagation();
-      }
-      );
+      });
     });
   });
 
@@ -714,20 +756,19 @@ export default function Player(props: {
     }, 3000);
   };
 
-
   const handleKeyDown = (e: KeyboardEvent) => {
     // if an input is focused
     if (document.activeElement?.tagName === "INPUT") return;
     switch (e.key) {
       case "f":
-        console.log(`f key pressed, fullscreen: ${document.fullscreenElement}`)
+        console.log(`f key pressed, fullscreen: ${document.fullscreenElement}`);
         if (document.fullscreenElement) {
           document.exitFullscreen();
           screen.orientation.unlock();
           setSearchParams({ fullscreen: undefined }, { replace: true });
         } else {
           document.documentElement.requestFullscreen();
-          screen.orientation.lock("landscape").catch(() => { });
+          screen.orientation.lock("landscape").catch(() => {});
           setSearchParams({ fullscreen: true }, { replace: true });
           document.body.scroll({ top: 0, left: 0, behavior: "smooth" });
         }
@@ -755,11 +796,11 @@ export default function Player(props: {
         const captions = mediaPlayer!.textTracks
           .toArray()
           .find(
-            (t: any) => ((t.id.startsWith("track-")) && (
-              t.language === "en" ||
-              t.language === "en_US" ||
-              t.language === "en_GB")
-            )
+            (t: any) =>
+              t.id.startsWith("track-") &&
+              (t.language === "en" ||
+                t.language === "en_US" ||
+                t.language === "en_GB")
           );
         if (captions) {
           console.log(captions.id);
@@ -769,7 +810,10 @@ export default function Player(props: {
           console.log(trackUrl, "track url");
           if (trackUrl)
             ttml2srt(trackUrl, null).then(({ srtUrl }: { srtUrl: string }) => {
-              (captions as any).src = srtUrl;
+              // (captions as any).src = srtUrl;
+              console.log(captions.src, srtUrl, "track src");
+              setCaptionsStore(captions.id, { src: srtUrl });
+              console.log(captionsStore, "captions store track");
 
               captions.mode =
                 captions.mode === "showing" ? "hidden" : "showing";
@@ -912,7 +956,6 @@ export default function Player(props: {
         }
         break;
 
-
       // case "return":
       //   self.skipSegment(mediaPlayer!);
       //   break;
@@ -935,7 +978,8 @@ export default function Player(props: {
       if (chapter.title.startsWith("Sponsor")) {
         segments.push({
           ...chapter,
-          end: videoQuery.data.chapters[i + 1]?.start || videoQuery.data.duration,
+          end:
+            videoQuery.data.chapters[i + 1]?.start || videoQuery.data.duration,
           manuallyNavigated: false,
           autoSkipped: false,
         });
@@ -1000,9 +1044,10 @@ export default function Player(props: {
       }
     }
     if (!currentChapter) return;
-    const prevChapter = videoQuery.data.chapters.slice().reverse().find(
-      (c) => c.start < currentChapter!.start - 1
-    );
+    const prevChapter = videoQuery.data.chapters
+      .slice()
+      .reverse()
+      .find((c) => c.start < currentChapter!.start - 1);
     if (!prevChapter) return;
     mediaPlayer.currentTime = prevChapter.start;
   };
@@ -1032,41 +1077,39 @@ export default function Player(props: {
   const [appState, setAppState] = useAppState();
 
   createEffect(() => {
-    if (route.pathname !== '/watch') {
+    if (route.pathname !== "/watch") {
       setAppState("player", "small", true);
     } else {
-      setAppState("player", 'small', false);
+      setAppState("player", "small", false);
       // If returning to '/watch', the player should not be dismissed
       if (appState.player.dismissed) {
-        setAppState("player", 'dismissed', false);
+        setAppState("player", "dismissed", false);
       }
     }
-  })
-
+  });
 
   return (
     <Show when={videoQuery.data}>
       <media-player
-        playsinline
         keep-alive
         id="player"
         classList={{
-          " z-[99999] aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4": true,
-          "!absolute inset-0 w-screen h-screen": !!searchParams.fullscreen && !appState.player.small,
+          " z-[99999] aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
+            true,
+          "!absolute inset-0 w-screen h-screen":
+            !!searchParams.fullscreen && !appState.player.small,
           "!sticky sm:!relative !top-0": !searchParams.fullscreen,
-          "!sticky sm:!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
+          "!sticky sm:!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ":
+            appState.player.small,
           "!hidden": appState.player.dismissed,
-
         }}
         current-time={currentTime()}
-        // onTextTrackChange={handleTextTrackChange}
         // load="eager"
         key-disabled
         tabIndex={-1}
         playbackRate={preferences.speed}
         muted={preferences.muted}
         volume={preferences.volume}
-
         onMouseMove={() => {
           if (isMobile()) return;
           showControls();
@@ -1082,7 +1125,6 @@ export default function Player(props: {
         on:time-update={() => {
           autoSkipHandler();
         }}
-
         on:can-play={onCanPlay}
         on:provider-change={onProviderChange}
         on:hls-error={handleHlsError}
@@ -1103,46 +1145,49 @@ export default function Player(props: {
         on:hls-manifest-loaded={(e: any) => {
           console.log(e.detail, "levels");
         }}
-        autoplay={true}
         ref={mediaPlayer}
         title={videoQuery.data?.title ?? ""}
         poster={videoQuery.data?.thumbnailUrl ?? ""}
-        crossorigin="anonymous"
-      // on:fullscreen-change={(e) => {
-      //   const urlParams = new URLSearchParams(window.location.search);
-      //   if (e.detail) {
-      //     urlParams.set("fullscreen", "true");
-      //   } else {
-      //     urlParams.delete("fullscreen");
-      //   }
-      //   history.replaceState(
-      //     null,
-      //     "",
-      //     window.location.pathname + "?" + urlParams.toString()
-      //   );
-      // }}
+        crossOrigin
+        playsInline
+        autoPlay
+        // on:fullscreen-change={(e) => {
+        //   const urlParams = new URLSearchParams(window.location.search);
+        //   if (e.detail) {
+        //     urlParams.set("fullscreen", "true");
+        //   } else {
+        //     urlParams.delete("fullscreen");
+        //   }
+        //   history.replaceState(
+        //     null,
+        //     "",
+        //     window.location.pathname + "?" + urlParams.toString()
+        //   );
+        // }}
       >
         <media-provider
           class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full"
-        // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
+          // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
         >
           <media-poster
             aria-hidden="true"
             src={videoQuery.data?.thumbnailUrl ?? ""}
             class="absolute inset-0 block h-full w-full rounded-md opacity-0 transition-opacity data-[visible]:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
-          ></media-poster>
-          {tracks().map((track) => {
-            return (
-              <track
-                id={track.id}
-                kind={track.kind as any}
-                src={track.src}
-                srclang={track.srcLang}
-                label={track.label}
-                data-type={track.dataType}
-              />
-            );
-          })}
+          />
+          <For each={Object.values(captionsStore)}>
+            {(track) => {
+              return (
+                <track
+                  id={track.id}
+                  kind={track.kind as any}
+                  src={captionsStore[track.id].src}
+                  srclang={track.srcLang}
+                  label={track.label}
+                  data-type={track.dataType}
+                />
+              );
+            }}
+          </For>
           <Show when={videoQuery.data?.hls}>
             <source src={videoQuery.data?.hls} type="application/x-mpegurl" />
           </Show>
@@ -1200,7 +1245,8 @@ export default function Player(props: {
                 <div class="text-lg scale-75 sm:scale-100 text-white w-96 h-full my-2">
                   <VideoCard
                     layout="sm:grid"
-                    v={nextVideo()?.info ?? undefined} />
+                    v={nextVideo()?.info ?? undefined}
+                  />
                 </div>
               </div>
               <div class="flex justify-center gap-2">
@@ -1223,25 +1269,26 @@ export default function Player(props: {
             </div>
           </div>
         </Show>
-        <Show when={route.pathname === "/watch"}>
-          <VideoLayout
-            thumbnails={generateStoryboard(videoQuery.data?.previewFrames?.[1])}
-            loop={preferences.loop}
-            chapters={vtt()}
-            title={videoQuery.data?.title ?? ""}
-
-            onLoopChange={(value) => {
-              setPreferences("loop", value);
-            }}
-            navigateNext={nextVideo()?.url ? playNext : undefined}
-            navigatePrev={prevVideo()?.url ? () => {
-              navigate(prevVideo()!.url)
-              setPrevVideo(null);
-            }
-              : undefined}
-            playlist={list()}
-          />
-        </Show>
+        <VideoLayout
+          classList={{ hidden: route.pathname !== "/watch" }}
+          thumbnails={generateStoryboard(videoQuery.data?.previewFrames?.[1])}
+          loop={preferences.loop}
+          chapters={vtt()}
+          title={videoQuery.data?.title ?? ""}
+          onLoopChange={(value) => {
+            setPreferences("loop", value);
+          }}
+          navigateNext={nextVideo()?.url ? playNext : undefined}
+          navigatePrev={
+            prevVideo()?.url
+              ? () => {
+                  navigate(prevVideo()!.url);
+                  setPrevVideo(null);
+                }
+              : undefined
+          }
+          playlist={list()}
+        />
         <PiPLayout />
       </media-player>
     </Show>

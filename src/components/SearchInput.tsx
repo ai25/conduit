@@ -9,7 +9,6 @@ import {
   untrack,
   JSX,
 } from "solid-js";
-import { useNavigate, useSearchParams } from "solid-start";
 import { QueryClient, createQuery } from "@tanstack/solid-query";
 import { usePreferences } from "~/stores/preferencesStore";
 import { FaSolidMagnifyingGlass, FaSolidX } from "solid-icons/fa";
@@ -18,6 +17,7 @@ import { isServer, Portal } from "solid-js/web";
 import { useAppState } from "~/stores/appStateStore";
 import { TbArrowLeft, TbArrowUpLeft, TbSearch, TbX } from "solid-icons/tb";
 import { yieldToMain } from "~/utils/helpers";
+import { useNavigate, useSearchParams } from "@solidjs/router";
 
 const SearchInput = () => {
   const [search, setSearch] = createSignal("");
@@ -26,10 +26,10 @@ const SearchInput = () => {
   >([]);
   const [activeIndex, setActiveIndex] = createSignal(-1); // For keyboard navigation
 
-  const [searchParams] = useSearchParams()
+  const [searchParams] = useSearchParams();
   createEffect(() => {
-    setInputValue(searchParams.search_query || untrack(() => inputValue()))
-  })
+    setInputValue(searchParams.search_query || untrack(() => inputValue()));
+  });
 
   const fetchInitialSuggestions = () => {
     const history = JSON.parse(localStorage.getItem("search_history") || "[]");
@@ -47,12 +47,10 @@ const SearchInput = () => {
         preferences.instance?.api_url + "/suggestions?query=" + search()
       ).then((res) => res.json());
     },
-    enabled: search().length > 1 &&
-      preferences.instance?.api_url &&
-      showSuggestions()
-      ? true
-      : false
-    ,
+    enabled:
+      search().length > 1 && preferences.instance?.api_url && showSuggestions()
+        ? true
+        : false,
     select: (data) => {
       console.log(data);
       if (data && !(data as any).error) {
@@ -63,8 +61,7 @@ const SearchInput = () => {
         setSuggestions([]);
       }
     },
-  })
-  );
+  }));
   const navigate = useNavigate();
   const [, setAppState] = useAppState();
   const [inputValue, setInputValue] = createSignal("");
@@ -184,9 +181,7 @@ const SearchInput = () => {
     }
     document.body.classList.add("overflow-y-hidden");
     document.body.classList.add("sm:overflow-y-auto");
-
   };
-
 
   const handleInputBlur = () => {
     console.log("blur", document.activeElement);
@@ -202,15 +197,17 @@ const SearchInput = () => {
     setTimeout(() => {
       setSuggestions([]);
       setShowSuggestions(false);
-
     }, 150);
   };
   return (
-    <div classList={{
-      "relative z-[999999] flex items-center transition-all duration-500 ": true,
-      "-left-10 sm:left-0 w-screen sm:w-auto": suggestions().length > 0 && showSuggestions(),
-    }} >
-
+    <div
+      classList={{
+        "relative z-[999999] flex items-center transition-all duration-500 ":
+          true,
+        "-left-10 sm:left-0 w-screen sm:w-auto":
+          suggestions().length > 0 && showSuggestions(),
+      }}
+    >
       <Show when={suggestions().length > 0 && showSuggestions()}>
         <button
           class="sm:hidden bg-bg2 p-1 px-2 text-gray-500 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
@@ -221,16 +218,11 @@ const SearchInput = () => {
           }}
           aria-label="Back"
         >
-          <TbArrowLeft
-            aria-hidden="true"
-            class="w-6 h-6" />
+          <TbArrowLeft aria-hidden="true" class="w-6 h-6" />
         </button>
       </Show>
 
-      <label
-        for="search-input"
-        class="sr-only"
-      >
+      <label for="search-input" class="sr-only">
         Search
       </label>
       <input
@@ -247,8 +239,8 @@ const SearchInput = () => {
         onInput={handleInputChange}
         onFocus={handleInputFocus}
         onBlur={async () => {
-          await yieldToMain()
-          handleInputBlur()
+          await yieldToMain();
+          handleInputBlur();
         }}
         onKeyDown={handleKeyDown}
         aria-autocomplete="list"
@@ -260,20 +252,17 @@ const SearchInput = () => {
         onTransitionStart={(e) => {
           console.log("transition start", e.propertyName);
         }}
-        class="relative peer-placeholder-shown:hidden  flex w-max items-center justify-center gap-1 peer h-[29px] peer-focus:h-[33px] bg-bg1 py-1 px-1 -left-1 border-0 peer-focus:border-2 peer-focus:border-primary peer-focus:border-l-0 rounded-r-lg">
+        class="relative peer-placeholder-shown:hidden  flex w-max items-center justify-center gap-1 peer h-[29px] peer-focus:h-[33px] bg-bg1 py-1 px-1 -left-1 border-0 peer-focus:border-2 peer-focus:border-primary peer-focus:border-l-0 rounded-r-lg"
+      >
         <button
           id="search-button"
           class="text-gray-500 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
           onClick={() => {
             handleSearch(inputValue());
-          }
-          }
+          }}
           aria-label="Search"
         >
-          <TbSearch
-            class="w-5 h-5"
-            aria-hidden="true"
-          />
+          <TbSearch class="w-5 h-5" aria-hidden="true" />
         </button>
         <button
           id="search-clear-button"
@@ -283,21 +272,15 @@ const SearchInput = () => {
             setSearch("");
             setSuggestions([]);
             inputRef?.focus();
-          }
-          }
+          }}
           aria-label="Clear search"
         >
-          <TbX
-            class="w-5 h-5"
-            aria-hidden="true"
-          />
+          <TbX class="w-5 h-5" aria-hidden="true" />
         </button>
       </div>
       <Show when={suggestions().length > 0 && showSuggestions()}>
-
         <Portal>
           <ul
-
             class={`fixed w-screen h-screen sm:h-auto left-0 right-0 sm:w-max sm:min-w-[30rem] sm:left-[calc(70vw-18rem)] top-10 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
             aria-multiselectable="false"
             aria-live="polite"
@@ -305,13 +288,14 @@ const SearchInput = () => {
             id="search-suggestion-list"
           >
             <For each={suggestions()}>
-              {((suggestion, index) => (
+              {(suggestion, index) => (
                 <li
                   classList={{
-                    "text-sm leading-none text-text1 border-b border-bg2 last:border-none rounded-md flex items-center justify-between h-8 px-2 py-5 relative select-none outline-none cursor-pointer hover:bg-bg2": true,
-                    "bg-bg2 focus-visible:ring-2 ring-primary": activeIndex() === index()
+                    "text-sm leading-none text-text1 border-b border-bg2 last:border-none rounded-md flex items-center justify-between h-8 px-2 py-5 relative select-none outline-none cursor-pointer hover:bg-bg2":
+                      true,
+                    "bg-bg2 focus-visible:ring-2 ring-primary":
+                      activeIndex() === index(),
                   }}
-
                   id={`search-option-${index()}`}
                   aria-selected={activeIndex() === index()}
                   tabindex={0}
@@ -358,13 +342,9 @@ const SearchInput = () => {
                           inputRef?.focus();
                         }
                       }}
-
                       aria-label={`Use suggestion ${suggestion.value} (Enter)`}
                     >
-                      <TbArrowUpLeft
-                        class="w-5 h-5"
-                        aria-hidden="true"
-                      />
+                      <TbArrowUpLeft class="w-5 h-5" aria-hidden="true" />
                     </button>
                     <Show when={suggestion.isHistory}>
                       <button
@@ -390,15 +370,12 @@ const SearchInput = () => {
                         }}
                         aria-label={`Remove suggestion ${suggestion.value} (Ctrl+Delete)`}
                       >
-                        <TbX
-                          class="w-5 h-5"
-                          aria-hidden="true"
-                        />
+                        <TbX class="w-5 h-5" aria-hidden="true" />
                       </button>
                     </Show>
                   </div>
                 </li>
-              ))}
+              )}
             </For>
           </ul>
         </Portal>
@@ -436,11 +413,13 @@ export function FocusTrap(props: FocusTrapProps) {
       console.log(firstElement, lastElement);
 
       const handleFocus = (event: KeyboardEvent) => {
-        if (event.key !== 'Tab' || !isActive()) {
+        if (event.key !== "Tab" || !isActive()) {
           return;
         }
 
-        const currentFocusIndex = focusableElements.indexOf(document.activeElement as HTMLElement);
+        const currentFocusIndex = focusableElements.indexOf(
+          document.activeElement as HTMLElement
+        );
         if (event.shiftKey) {
           // Move to the last element if the first element is focused
           if (currentFocusIndex === 0 || currentFocusIndex === -1) {
@@ -456,11 +435,11 @@ export function FocusTrap(props: FocusTrapProps) {
         }
       };
 
-      focusTrapContainer.addEventListener('keydown', handleFocus);
+      focusTrapContainer.addEventListener("keydown", handleFocus);
 
       // Cleanup event listener on component unmount
       onCleanup(() => {
-        focusTrapContainer?.removeEventListener('keydown', handleFocus);
+        focusTrapContainer?.removeEventListener("keydown", handleFocus);
       });
 
       // Initially focus the first focusable element
@@ -484,4 +463,3 @@ export function FocusTrap(props: FocusTrapProps) {
     </div>
   );
 }
-

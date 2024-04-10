@@ -1,11 +1,10 @@
 import { For } from "solid-js";
-import { A } from "solid-start";
 import Button from "~/components/Button";
+import Link from "~/components/Link";
 import { toast } from "~/components/Toast";
 import { useSyncStore } from "~/stores/syncStore";
 
 export default function Blocklist() {
-
   const sync = useSyncStore();
 
   return (
@@ -19,9 +18,9 @@ export default function Blocklist() {
             return (
               <div class="flex flex-row items-center justify-between odd:bg-bg2 p-2 rounded-lg w-full">
                 <div class="flex flex-row items-center">
-                  <A
-                    href={`/channel/${key}`}
-                    class="text-base link">{value.name}</A>
+                  <Link href={`/channel/${key}`} class="text-base link">
+                    {value.name}
+                  </Link>
                 </div>
                 <Button
                   label="Remove"
@@ -31,10 +30,12 @@ export default function Blocklist() {
                       sync.setStore("blocklist", key, undefined!);
                       toast.success(`Removed ${value.name} from blocklist`);
                     } catch (e) {
-                      toast.error(`Error removing ${value.name} from blocklist`);
-                    }}
-                  }
-                  />
+                      toast.error(
+                        `Error removing ${value.name} from blocklist`
+                      );
+                    }
+                  }}
+                />
               </div>
             );
           }}

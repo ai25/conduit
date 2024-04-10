@@ -1,24 +1,16 @@
 import { createQuery, isServer } from "@tanstack/solid-query";
-import {
-  FaSolidArrowsSpin,
-  FaSolidArrowsUpDown,
-  FaSolidCheck,
-  FaSolidCircleExclamation,
-  FaSolidExclamation,
-  FaSolidSort,
-} from "solid-icons/fa";
+import { FaSolidCheck, FaSolidSort } from "solid-icons/fa";
 import { Match, Show, Suspense, createEffect } from "solid-js";
 import { For, Switch, createSignal } from "solid-js";
-import { Title, createRouteData, useRouteData } from "solid-start";
 import { ErrorComponent } from "~/components/Error";
 import { useAppState } from "~/stores/appStateStore";
 import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncStore } from "~/stores/syncStore";
-import Select from "~/components/Select";
 import type { TrendingStream } from "~/types";
 import { TRENDING_REGIONS } from "~/config/constants";
 import { Select as KobalteSelect } from "@kobalte/core";
 import VideoCard from "~/components/content/stream/VideoCard";
+import { Title } from "@solidjs/meta";
 
 export default function Trending() {
   const sync = useSyncStore();
@@ -35,12 +27,9 @@ export default function Trending() {
       }
       return await res.json();
     },
-    enabled: preferences.instance?.api_url
-      ?
-      true : false,
+    enabled: preferences.instance?.api_url ? true : false,
     placeholderData: Array(40).fill(undefined),
-  })
-  );
+  }));
   const [, setAppState] = useAppState();
   createEffect(() => {
     setAppState(
@@ -98,12 +87,14 @@ export default function Trending() {
             </KobalteSelect.Icon>
           </KobalteSelect.Trigger>
           <KobalteSelect.Portal>
-            <KobalteSelect.Content class="bg-bg2 rounded-md z-50
+            <KobalteSelect.Content
+              class="bg-bg2 rounded-md z-50
                 animate-in
                 fade-in
                 slide-in-from-top-10
                 duration-200
-              ">
+              "
+            >
               <KobalteSelect.Arrow />
               <KobalteSelect.Listbox class="max-h-[40vh] p-2 overflow-y-auto scrollbar" />
             </KobalteSelect.Content>
@@ -120,15 +111,18 @@ export default function Trending() {
           <Show when={query.data} keyed>
             {(videos) =>
               videos && (
-                <For each={videos
-                  // blocklist
-                  .filter(
-                    (item) =>
-                      !sync.store.blocklist[item?.uploaderUrl?.split("/").pop()!]
-                  )
-                }>{(video) => <VideoCard v={video}
-                  layout="sm:grid"
-                />}</For>
+                <For
+                  each={videos
+                    // blocklist
+                    .filter(
+                      (item) =>
+                        !sync.store.blocklist[
+                          item?.uploaderUrl?.split("/").pop()!
+                        ]
+                    )}
+                >
+                  {(video) => <VideoCard v={video} layout="sm:grid" />}
+                </For>
               )
             }
           </Show>

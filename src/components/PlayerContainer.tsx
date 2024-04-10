@@ -1,78 +1,35 @@
-import {
-  parseCookie,
-  useLocation,
-  useNavigate,
-  useServerContext,
-} from "solid-start";
 import Player from "./player/Player";
-import {
-  Show,
-  createRenderEffect,
-  createSignal,
-  Suspense,
-  createEffect,
-  ErrorBoundary,
-  Switch,
-  Match,
-} from "solid-js";
-import { usePreferences } from "~/stores/preferencesStore";
-import { PipedVideo } from "~/types";
-import { isServer } from "solid-js/web";
+import { Suspense, Switch, Match } from "solid-js";
 import { useAppState } from "~/stores/appStateStore";
-import { useSearchParams } from "solid-start";
-import { createQuery } from "@tanstack/solid-query";
-import api from "~/utils/api";
+import { useLocation, useSearchParams } from "@solidjs/router";
+import { useVideoContext } from "~/stores/VideoContext";
 
-export default function PlayerContainer(props: {
-}) {
-  const route = useLocation();
-  const [preferences] = usePreferences();
-
-  const [searchParams] = useSearchParams();
-  console.log(preferences.instance.api_url, "api url");
-  const [v, setV] = createSignal<string | undefined>(undefined);
-  createEffect(() => {
-    console.log(videoQuery,"video query");
-    if (!searchParams.v) return;
-    setV(searchParams.v);
-  });
-  const videoQuery = createQuery(() => ({
-    queryKey: ["streams", v(), preferences.instance.api_url],
-    queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
-    enabled: v() && preferences.instance.api_url ? true : false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
-    cacheTime: Infinity,
-    staleTime: 100 * 60 * 1000,
-  }));
+export default function PlayerContainer() {
+  const video = useVideoContext();
 
   return (
-    <ErrorBoundary
-    fallback={(props) => <>ERROR
-      {JSON.stringify(props, null, 2)}
-    </>}
-    >
-      <Suspense fallback={<PlayerLoading />}
-      >
-        <Switch fallback={<PlayerLoading />}>
-        <Match when={videoQuery.isPending}>
+    <Suspense fallback={<PlayerLoading />}>
+      <Switch fallback={<PlayerLoading />}>
+        <Match when={video.isPending}>
           <PlayerLoading />
         </Match>
-        <Match when={videoQuery.isError}>
-          <PlayerError error={videoQuery.error as Error} />
+        <Match when={video.isError}>
+          <PlayerError error={video.error as Error} />
         </Match>
-        <Match when={videoQuery.data}>
-          <Player onReload={() => videoQuery.refetch()} />
+        <Match when={video.data}>
+          <Player onReload={() => video.refetch()} />
         </Match>
-        </Switch>
-      </Suspense>
-    </ErrorBoundary>
+      </Switch>
+    </Suspense>
   );
 }
 
 export const Spinner = (props: { class?: string }) => (
   <svg
-    classList={{ "h-24 w-24 text-white duration-300 animate-spin": true, [props.class!]: !!props.class }}
+    classList={{
+      "h-24 w-24 text-white duration-300 animate-spin": true,
+      [props.class!]: !!props.class,
+    }}
     fill="none"
     viewBox="0 0 120 120"
     aria-hidden="true"
@@ -108,10 +65,13 @@ export const PlayerLoading = () => {
   return (
     <div
       classList={{
-        "pointer-events-none aspect-video bg-black flex h-fit w-full max-w-full items-center justify-center": true,
-        "!absolute inset-0 w-screen h-screen z-[999999]": !!searchParams.fullscreen,
+        "pointer-events-none aspect-video bg-black flex h-fit w-full max-w-full items-center justify-center":
+          true,
+        "!absolute inset-0 w-screen h-screen z-[999999]":
+          !!searchParams.fullscreen,
         "!sticky sm:!relative !top-0": !searchParams.fullscreen,
-        "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ": appState.player.small,
+        "!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ":
+          appState.player.small,
         "!hidden": location.pathname !== "/watch",
       }}
     >

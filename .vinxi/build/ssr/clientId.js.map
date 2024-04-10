@@ -1,0 +1,1 @@
+{"version":3,"file":"clientId.js","sources":["../../../src/routes/clientId.ts?pick=GET"],"sourcesContent":["export async function GET() {\n  throw new Error(\"Not ServiceWorker Intercepted\");\n}\n"],"names":["GET","Error"],"mappings":"AAAA,eAAsBA,GAAM,CACpB,MAAA,IAAIC,MAAM,+BAA+B,CACjD"}

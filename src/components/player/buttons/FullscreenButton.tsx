@@ -1,22 +1,19 @@
-import { useSearchParams } from "solid-start";
 import { ToggleButton } from "@kobalte/core";
 import { Tooltip, type TooltipPlacement } from "~/components/Tooltip";
 import { createEffect, createSignal, Show } from "solid-js";
-import { isServer } from "solid-js/web";
-import { toast } from "~/components/Toast";
+import { useSearchParams } from "@solidjs/router";
 
 export function FullscreenButton(props: FullscreenButtonProps) {
   const [params, setParams] = useSearchParams();
   createEffect(() => {
     document.onfullscreenchange = () => {
       if (document.fullscreenElement) {
-        setParams({ fullscreen: true }, { replace: true })
-        screen.orientation.lock("landscape").catch(() => { });
-      }
-      else setParams({ fullscreen: undefined }, { replace: true })
-    }
+        setParams({ fullscreen: true }, { replace: true });
+        screen.orientation.lock("landscape").catch(() => {});
+      } else setParams({ fullscreen: undefined }, { replace: true });
+    };
   });
-  const isFullscreen = () => (!!params.fullscreen)
+  const isFullscreen = () => !!params.fullscreen;
   return (
     <Tooltip
       as="div"
@@ -30,9 +27,9 @@ export function FullscreenButton(props: FullscreenButtonProps) {
           class="ring-primary group relative mr-0.5 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md outline-none ring-inset hover:bg-white/20 focus-visible:ring-4 aria-hidden:hidden"
           onChange={(value) => {
             if (value) {
-              console.log(`fullscreen button pressed, entering fullscreen`)
+              console.log(`fullscreen button pressed, entering fullscreen`);
               document.documentElement.requestFullscreen();
-              screen.orientation.lock("landscape").catch(() => { });
+              screen.orientation.lock("landscape").catch(() => {});
               setParams({ fullscreen: true }, { replace: true });
               document.body.scroll({ top: 0, left: 0, behavior: "smooth" });
             } else {
@@ -56,7 +53,6 @@ export function FullscreenButton(props: FullscreenButtonProps) {
               aria-label={"Enter Fullscreen"}
             />
           </Show>
-
         </ToggleButton.Root>
       }
       contentSlot={
@@ -76,5 +72,3 @@ export function FullscreenButton(props: FullscreenButtonProps) {
 export interface FullscreenButtonProps {
   tooltipPlacement: TooltipPlacement;
 }
-
-

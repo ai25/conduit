@@ -14,7 +14,6 @@ import { BsInfoCircleFill, BsXCircle } from "solid-icons/bs";
 import Button from "~/components/Button";
 import { toaster, Toast } from "@kobalte/core";
 import { Portal } from "solid-js/web";
-import { Title } from "solid-start";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import ImportHistoryModal from "~/components/ImportHistoryModal";
 import uFuzzy from "@leeoniya/ufuzzy";
@@ -22,7 +21,7 @@ import Modal from "~/components/Modal";
 import Field from "~/components/Field";
 import { debounce, getVideoId } from "~/utils/helpers";
 import VideoCard from "~/components/content/stream/VideoCard";
-
+import { Title } from "@solidjs/meta";
 
 export default function History() {
   const [limit, setLimit] = createSignal(50);
@@ -53,24 +52,24 @@ export default function History() {
   });
 
   const sort = (a: HistoryItem, b: HistoryItem) => {
-  const getTime = (date: number) => new Date(date).getTime();
+    const getTime = (date: number) => new Date(date).getTime();
 
-  if (!a.watchedAt) return 1; 
-  if (!b.watchedAt) return -1;
+    if (!a.watchedAt) return 1;
+    if (!b.watchedAt) return -1;
 
-  const aTime = getTime(a.watchedAt);
-  const bTime = getTime(b.watchedAt);
+    const aTime = getTime(a.watchedAt);
+    const bTime = getTime(b.watchedAt);
 
-  // Check for invalid dates
-  if (isNaN(aTime)) return 1;
-  if (isNaN(bTime)) return -1;
+    // Check for invalid dates
+    if (isNaN(aTime)) return 1;
+    if (isNaN(bTime)) return -1;
 
-  // Check for dates before epoch time
-  if (aTime <= 0) return 1; 
-  if (bTime <= 0) return -1;
+    // Check for dates before epoch time
+    if (aTime <= 0) return 1;
+    if (bTime <= 0) return -1;
 
-  return bTime - aTime;
-};
+    return bTime - aTime;
+  };
 
   const [history, setHistory] = createSignal<HistoryItem[]>([]);
   const [importModalOpen, setImportModalOpen] = createSignal(false);
@@ -146,7 +145,8 @@ export default function History() {
       <Modal
         title="Delete history?"
         isOpen={deleteModalOpen()}
-        setIsOpen={setDeleteModalOpen}>
+        setIsOpen={setDeleteModalOpen}
+      >
         <div class="flex flex-col items-center justify-center">
           <div class="text-sm text-text1">This operation cannot be undone.</div>
           <div class="flex mt-4 flex-col gap-2 items-center">
@@ -198,12 +198,12 @@ export default function History() {
         <Show when={history()}>
           <For each={history()}>
             {(item) => (
-                <VideoCard
-                  v={{
-                    ...item,
-                    url: `/watch?v=${getVideoId(item)}`,
-                  }}
-                />
+              <VideoCard
+                v={{
+                  ...item,
+                  url: `/watch?v=${getVideoId(item)}`,
+                }}
+              />
             )}
           </For>
           <div
@@ -215,4 +215,3 @@ export default function History() {
     </div>
   );
 }
-

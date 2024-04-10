@@ -36,61 +36,58 @@ export function generateThumbnailUrl(proxyUrl: string, videoId: string) {
   return `${proxyUrl}/vi/${videoId}/mqdefault.jpg?host=i.ytimg.com`;
 }
 
+export const generateStoryboard = (previewFrames: PreviewFrame | undefined) => {
+  if (!previewFrames) return "";
+  let output = "WEBVTT\n\n";
+  let currentTime = 0;
 
-export const generateStoryboard = (
-    previewFrames: PreviewFrame | undefined
-  ) => {
-    if (!previewFrames) return "";
-    let output = "WEBVTT\n\n";
-    let currentTime = 0;
-
-    for (let url of previewFrames.urls) {
-      for (let y = 0; y < previewFrames.framesPerPageY; y++) {
-        for (let x = 0; x < previewFrames.framesPerPageX; x++) {
-          if (
-            currentTime >=
-            previewFrames.totalCount * previewFrames.durationPerFrame
-          ) {
-            break;
-          }
-
-          let startX = x * previewFrames.frameWidth;
-          let startY = y * previewFrames.frameHeight;
-
-          output += `${formatTime(currentTime)} --> ${formatTime(
-            currentTime + previewFrames.durationPerFrame
-          )}\n`;
-          output += `${url}#xywh=${startX},${startY},${previewFrames.frameWidth},${previewFrames.frameHeight}\n\n`;
-
-          currentTime += previewFrames.durationPerFrame;
+  for (let url of previewFrames.urls) {
+    for (let y = 0; y < previewFrames.framesPerPageY; y++) {
+      for (let x = 0; x < previewFrames.framesPerPageX; x++) {
+        if (
+          currentTime >=
+          previewFrames.totalCount * previewFrames.durationPerFrame
+        ) {
+          break;
         }
+
+        let startX = x * previewFrames.frameWidth;
+        let startY = y * previewFrames.frameHeight;
+
+        output += `${formatTime(currentTime)} --> ${formatTime(
+          currentTime + previewFrames.durationPerFrame
+        )}\n`;
+        output += `${url}#xywh=${startX},${startY},${previewFrames.frameWidth},${previewFrames.frameHeight}\n\n`;
+
+        currentTime += previewFrames.durationPerFrame;
       }
     }
-
-    function formatTime(ms: number) {
-      let hours = Math.floor(ms / 3600000);
-      ms -= hours * 3600000;
-      let minutes = Math.floor(ms / 60000);
-      ms -= minutes * 60000;
-      let seconds = Math.floor(ms / 1000);
-      ms -= seconds * 1000;
-
-      return `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${ms
-          .toString()
-          .padStart(3, "0")}`;
-    }
-
-    const blob = new Blob([output], { type: "text/vtt" });
-    return URL.createObjectURL(blob);
-  };
-
-  export function yieldToMain() {
-    return new Promise((resolve) => {
-      setTimeout(resolve, 0);
-    });
   }
+
+  function formatTime(ms: number) {
+    let hours = Math.floor(ms / 3600000);
+    ms -= hours * 3600000;
+    let minutes = Math.floor(ms / 60000);
+    ms -= minutes * 60000;
+    let seconds = Math.floor(ms / 1000);
+    ms -= seconds * 1000;
+
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${ms
+      .toString()
+      .padStart(3, "0")}`;
+  }
+
+  const blob = new Blob([output], { type: "text/vtt" });
+  return URL.createObjectURL(blob);
+};
+
+export function yieldToMain() {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
 
 export function getVideoId(item: any): string | undefined {
   const extractVideoId = (url: string | undefined) => {
@@ -100,10 +97,10 @@ export function getVideoId(item: any): string | undefined {
     } else {
       id = url?.match("vi(?:_webp)?/([a-zA-Z0-9_-]{11})")?.[1];
     }
-    return id
+    return id;
   };
 
-  if (!item) return 
+  if (!item) return;
 
   if (item.videoId) return item.videoId;
   if (item.id) return item.id;
@@ -111,7 +108,7 @@ export function getVideoId(item: any): string | undefined {
   if (item.thumbnailUrl) return extractVideoId(item.thumbnailUrl);
   if (item.thumbnail) return extractVideoId(item.thumbnail);
 
-  return
+  return;
 }
 
 /**
@@ -130,7 +127,7 @@ export async function exponentialBackoff<T>(
   maxDelay: number = 60000
 ): Promise<T> {
   let attempts = 0;
-  
+
   if (minDelay >= maxDelay) {
     throw new Error("minDelay should be less than maxDelay.");
   }
@@ -147,10 +144,7 @@ export async function exponentialBackoff<T>(
         throw new Error("Maximum retries reached.");
       }
 
-      const delay = Math.min(
-        minDelay * Math.pow(2, attempts),
-        maxDelay
-      );
+      const delay = Math.min(minDelay * Math.pow(2, attempts), maxDelay);
 
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
@@ -159,7 +153,9 @@ export async function exponentialBackoff<T>(
 
 export function isMobile() {
   if (isServer) return false;
-  return navigator.maxTouchPoints > 1 && typeof screen.orientation !== undefined;
+  return (
+    navigator.maxTouchPoints > 1 && typeof screen.orientation !== undefined
+  );
 }
 
 export function formatRelativeShort(now: Date, past: Date): string {
@@ -186,7 +182,6 @@ export function formatRelativeShort(now: Date, past: Date): string {
   }
 }
 
-
 /**
  * Debounce a function call.
  *
@@ -203,7 +198,7 @@ export function debounce<T, U extends any[]>(
 ): (this: T, ...args: U) => void {
   let timeout: NodeJS.Timeout | null = null;
 
-  return function(this: T, ...args: U): void {
+  return function (this: T, ...args: U): void {
     const context = this;
 
     const later = () => {
@@ -217,4 +212,17 @@ export function debounce<T, U extends any[]>(
 
     timeout = setTimeout(later, wait);
   };
+}
+
+export function parseCookie(cookie: string) {
+  return cookie
+    .split(";")
+    .map((v) => v.split("="))
+    .reduce(
+      (acc, v) => {
+        acc[decodeURIComponent(v[0].trim())] = decodeURIComponent(v[1].trim());
+        return acc;
+      },
+      {} as Record<string, string>
+    );
 }
