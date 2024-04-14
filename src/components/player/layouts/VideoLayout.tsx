@@ -18,10 +18,16 @@ import { PrevButton } from "../buttons/PrevButton";
 import { ChaptersMenu } from "../menus/ChaptersMenu";
 import { Show, createEffect, createSignal } from "solid-js";
 import { RecommendedVideosMenu } from "../menus/RecommendedVideosMenu";
+import { RelatedStream } from "~/types";
 
 export function VideoLayout(props: VideoLayoutProps) {
   return (
-    <div classList={props.classList}>
+    <div
+      hidden={props.hidden}
+      classList={{
+        hidden: props.hidden,
+      }}
+    >
       <Gestures />
       <Captions />
       <media-controls
@@ -49,7 +55,7 @@ export function VideoLayout(props: VideoLayoutProps) {
             </div>
           </div>
           <div class="flex items-center justify-between">
-            <Show when={props.chapters}>
+            <Show when={props.hasChapters}>
               <ChaptersMenu
                 placement="bottom end"
                 tooltipPlacement="bottom"
@@ -70,7 +76,7 @@ export function VideoLayout(props: VideoLayoutProps) {
           <VolumeSlider />
           <TimeGroup />
           <ChapterTitle
-            hasChapters={props.chapters ? true : false}
+            hasChapters={props.hasChapters ? true : false}
             title={props.title}
           />
           <LoopButton
@@ -91,10 +97,10 @@ export interface VideoLayoutProps {
   thumbnails: string;
   loop: boolean;
   onLoopChange: (loop: boolean) => void;
-  chapters?: string;
+  hasChapters?: boolean;
   navigatePrev?: () => void;
   navigateNext?: () => void;
   playlist?: RelatedStream[];
   title?: string;
-  classList?: Record<string, boolean>;
+  hidden?: boolean;
 }

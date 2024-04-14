@@ -10,15 +10,10 @@ export type MediaMetadataProps = {
   thumbnailUrl: string;
 };
 
-export type ActionHandlers = {
-  [action in MediaSessionAction]?: () => void;
-};
-
 export const initMediaSession = (
   mediaSession: MediaSession | null,
   metadataProps: MediaMetadataProps | null,
-  mediaPlayer: MediaPlayerElement | null,
-  actionHandlers: ActionHandlers
+  mediaPlayer: MediaPlayerElement | null
 ) => {
   if (!mediaSession || !metadataProps || !mediaPlayer) return;
 
@@ -33,6 +28,23 @@ export const initMediaSession = (
       },
     ],
   });
+  const actionHandlers = {
+    play: () => mediaPlayer.play(),
+    pause: () => mediaPlayer.pause(),
+    seekbackward: () => {
+      mediaPlayer.currentTime -= 10;
+    },
+    seekforward: () => {
+      mediaPlayer.currentTime += 10;
+    },
+    previoustrack: () => {
+      mediaPlayer.currentTime -= 10;
+    },
+    nexttrack: () => {
+      mediaPlayer.currentTime += 10;
+    },
+    stop: () => console.log("stop"),
+  };
 
   for (const action in actionHandlers) {
     if (Object.prototype.hasOwnProperty.call(actionHandlers, action)) {
@@ -41,7 +53,11 @@ export const initMediaSession = (
     }
   }
 };
-const buildProgressObject = (id: string, currentTime: number | null, video: PipedVideo) => ({
+const buildProgressObject = (
+  id: string,
+  currentTime: number | null,
+  video: PipedVideo
+) => ({
   title: video.title,
   duration: video.duration,
   thumbnail: video.thumbnailUrl,
@@ -64,7 +80,6 @@ export const updateProgress = async (
   sync: { store: Store; setStore: SetStoreFunction<Store> }
 ) => {
   if (!video || !started) return;
-
 
   const id = getVideoId(video);
   if (!id) return;
@@ -94,4 +109,3 @@ export const updateProgress = async (
 
   console.timeEnd("updating progress");
 };
-

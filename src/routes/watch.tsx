@@ -5,11 +5,8 @@ import {
   createEffect,
   createSignal,
   onMount,
-  untrack,
-  useContext,
-  Switch,
-  Match,
   onCleanup,
+  createMemo,
 } from "solid-js";
 import { For } from "solid-js";
 import { getHlsManifest, getStreams } from "~/utils/hls";
@@ -17,18 +14,16 @@ import { usePlaylist } from "~/stores/playlistStore";
 import { useSyncStore } from "~/stores/syncStore";
 import { useAppState } from "~/stores/appStateStore";
 import { createQuery } from "@tanstack/solid-query";
-import { Chapter, PipedVideo, RelatedPlaylist } from "~/types";
+import { Chapter } from "~/types";
 import { usePreferences } from "~/stores/preferencesStore";
 import { Suspense } from "solid-js";
 import numeral from "numeral";
 import { isServer } from "solid-js/web";
-import api from "~/utils/api";
 import RelatedVideos from "~/components/RelatedVideos";
 import Comments from "~/components/Comments";
 import { getVideoId, isMobile } from "~/utils/helpers";
 import PlaylistItem from "~/components/content/playlist/PlaylistItem";
 import { useLocation, useSearchParams } from "@solidjs/router";
-import { QueryBoundary } from "~/components/QueryBoundary";
 import { useVideoContext } from "~/stores/VideoContext";
 
 export interface SponsorSegment {
@@ -68,40 +63,43 @@ export default function Watch() {
 
   const route = useLocation();
   const [preferences] = usePreferences();
-
-  const [v, setV] = createSignal<string | undefined>(undefined);
-  createEffect(() => {
-    if (!route.query.v) return;
-    setV(route.query.v);
-  });
-  const video = useVideoContext();
-  // const videoQuery = createQuery<any, any, PipedVideo>(() => ({
-  //   queryKey: ["streams", v(), preferences.instance.api_url],
-  //   queryFn: () => api.fetchVideo(v(), preferences.instance.api_url),
-  //   enabled: v() && preferences.instance.api_url ? true : false,
-  //   refetchOnReconnect: false,
-  //   refetchOnMount: false,
-  //   cacheTime: Infinity,
-  //   staleTime: 100 * 60 * 1000,
-  // }));
-
   const [playlist, setPlaylist] = usePlaylist();
-
   const [videoDownloaded, setVideoDownloaded] = createSignal(true);
-  createEffect(async () => {
-    if (!route.query.v) return;
-    console.time("verifyDownloaded");
+  const [_, setAppState] = useAppState();
+  const sync = useSyncStore();
+  const video = useVideoContext();
+
+  const [playlistScrollContainer, setPlaylistScrollContainer] = createSignal<
+    HTMLDivElement | undefined
+  >();
+
+  const [listId, setListId] = createSignal<string | undefined>(undefined);
+  const [searchParams] = useSearchParams();
+
+  const [windowWidth, setWindowWidth] = createSignal(1000);
+
+  onMount(() => {
+    setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", (e) => {
+      setWindowWidth(window.innerWidth);
+    });
+
+    onCleanup(() => {
+      window.removeEventListener("resize", (e) => {
+        setWindowWidth(window.innerWidth);
+      });
+    });
+  });
+
+  async function checkDownloaded() {
     if (!("getDirectory" in navigator.storage)) {
       setVideoDownloaded(false);
       return;
     }
     try {
       const downloaded = await getStreams(route.query.v);
-      console.log("downloaded", downloaded);
       if (downloaded) {
-        console.log("video downloaded");
         const manifest = await getHlsManifest(route.query.v);
-        console.log("manifest", manifest);
         // setVideo({
         //   value: {
         //     ...downloaded,
@@ -111,20 +109,30 @@ export default function Watch() {
         // console.log(video.value, "previewFrames");
         return;
       } else {
-        console.log("video not downloaded");
         setVideoDownloaded(false);
-        console.timeEnd("verifyDownloaded");
       }
     } catch (e) {
-      console.log(e);
       setVideoDownloaded(false);
       return;
     }
+  }
+
+  function init() {
+    setAppState("player", "dismissed", false);
+    setAppState("player", "small", false);
+    checkDownloaded();
+  }
+
+  createEffect(() => {
+    if (!route.query.v) return;
+    init();
   });
 
-  const [appState, setAppState] = useAppState();
-  const sync = useSyncStore();
-  const isLocalPlaylist = () => route.query.list?.startsWith("conduit-");
+  createEffect(() => {
+    if (!video.data) return;
+    document.title = `${video.data.title} - Conduit`;
+  });
+
   const sponsorsQuery = createQuery<SponsorSegment[]>(() => ({
     queryKey: ["sponsors", route.query.v, preferences.instance.api_url],
     queryFn: async (): Promise<SponsorSegment[]> => {
@@ -176,6 +184,11 @@ export default function Watch() {
     suspense: false,
     useErrorBoundary: false,
   }));
+
+  const isLocalPlaylist = createMemo(() =>
+    route.query.list?.startsWith("conduit-")
+  );
+
   const playlistQuery = createQuery(() => ({
     queryKey: ["playlist", route.query.list, preferences.instance.api_url],
     queryFn: async () => {
@@ -194,12 +207,13 @@ export default function Watch() {
         : false,
     refetchOnReconnect: false,
   }));
-  // createEffect(() => {
-  //   console.log(sync.store, "STORE");
-  //   console.log(sponsorsQuery.data, sponsorsQuery.error);
-  //   console.log(videoQuery, "video query");
-  //   videoQuery.refetch();
-  // });
+
+  function setLocalPlaylist() {
+    setListId(route.query.list);
+    if (!listId()) return;
+    const list = sync.store.playlists[listId()!];
+    setPlaylist(list);
+  }
 
   createEffect(() => {
     if (playlistQuery.isSuccess) {
@@ -207,6 +221,21 @@ export default function Watch() {
     } else {
       setPlaylist(undefined);
     }
+  });
+
+  createEffect(() => {
+    if (!route.query.list) {
+      setPlaylist(undefined);
+      return;
+    }
+    if (!isLocalPlaylist()) return;
+    setLocalPlaylist();
+    setTimeout(() => {
+      playlistScrollContainer()?.scrollTo({
+        top: route.query.index ? Number(route.query.index) * 80 : 0,
+        behavior: "smooth",
+      });
+    }, 100);
   });
 
   const mergeChaptersAndSponsors = (
@@ -295,74 +324,7 @@ export default function Watch() {
   //   }
   // });
   //
-  createEffect(() => {
-    if (!video.data) return;
-    document.title = `${video.data.title} - Conduit`;
-  });
 
-  const [playlistScrollContainer, setPlaylistScrollContainer] = createSignal<
-    HTMLDivElement | undefined
-  >();
-
-  const [listId, setListId] = createSignal<string | undefined>(undefined);
-  createEffect(() => {
-    if (!route.query.list) {
-      setPlaylist(undefined);
-      return;
-    }
-  });
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // createEffect(async () => {
-  //   if (!route.query.list) return;
-  //   if (isLocalPlaylist()) return;
-  //   const json = await fetchJson(
-  //     `${instance().api_url}/playlists/${route.query.list}`
-  //   );
-  //   setPlaylist({ ...json, id: route.query.list });
-  //   console.log(json);
-  // });
-
-  createEffect(async () => {
-    if (!route.query.list) {
-      setPlaylist(undefined);
-      console.log("fetching playlist no list id");
-      return;
-    }
-    if (!isLocalPlaylist()) return;
-    console.log("fetching playlist");
-    setListId(route.query.list);
-    console.log("fetching playlistlist id", listId());
-    if (!listId()) return;
-    const list = sync.store.playlists[listId()!];
-    console.log("setting playlist", list);
-    setPlaylist(list);
-    setTimeout(() => {
-      playlistScrollContainer()?.scrollTo({
-        top: route.query.index ? Number(route.query.index) * 80 : 0,
-        behavior: "smooth",
-      });
-    }, 100);
-  });
-  createEffect(() => {
-    setAppState("player", "dismissed", false);
-    setAppState("player", "small", false);
-  });
-
-  const [windowWidth, setWindowWidth] = createSignal(1000);
-
-  onMount(() => {
-    setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", (e) => {
-      setWindowWidth(window.innerWidth);
-    });
-
-    onCleanup(() => {
-      window.removeEventListener("resize", (e) => {
-        setWindowWidth(window.innerWidth);
-      });
-    });
-  });
   return (
     <div
       class="flex"
@@ -378,20 +340,11 @@ export default function Watch() {
           "w-full": !!searchParams.fullscreen,
         }}
       >
-        {/* <Switch>
-            <Match when={videoQuery.isLoading && !video.value}>
-              <PlayerLoading />
-            </Match>
-            <Match when={videoQuery.error}>
-              <PlayerError error={videoQuery.error as Error} />
-            </Match>
-            <Match when={videoQuery.data}> */}
         <Show when={searchParams.fullscreen}>
           <div class="h-[calc(100vh-2rem)]" />
         </Show>
-        {/* </Match>
-          </Switch> */}
       </div>
+
       <div class="flex sm:flex-row flex-col md:gap-2 w-full">
         <div class="w-full max-w-full">
           <Description downloaded={videoDownloaded()} />
@@ -441,12 +394,14 @@ export default function Watch() {
               </div>
             )}
           </Show>
+
           <div class="relative max-w-max sm:max-w-min">
             <Suspense>
               <RelatedVideos />
             </Suspense>
           </div>
         </div>
+
         <Show when={windowWidth() <= 600 && !isMobile() && video.data}>
           <Suspense>
             <Comments

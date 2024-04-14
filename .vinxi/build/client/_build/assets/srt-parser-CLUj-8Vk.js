@@ -1,3 +1,0 @@
-import{V as r,a as e,b as a}from"./prod-xF6WKuRG.js";import"./syncStore-BssUQgBy.js";import"./routing-BmD2xUmi.js";import"./Link-Dg-h0Eyu.js";import"./components-BMGKah2q.js";import"./index-BnPmuIsI.js";import"./index-DPECAXpK.js";import"./index-Cb4tY8hP.js";const o=/,/g,h="-->";class p extends r{parse(t,i){if(t==="")this.a&&(this.j.push(this.a),this.f.onCue?.(this.a),this.a=null),this.c=e.None;else if(this.c===e.Cue)this.a.text+=(this.a.text?`
-`:"")+t;else if(t.includes(h)){const s=this.o(t,i);s&&(this.a=new a(s[0],s[1],s[2].join(" ")),this.a.id=this.l,this.c=e.Cue)}this.l=t}o(t,i){return super.o(t.replace(o,"."),i)}}function C(){return new p}export{p as SRTParser,C as default};
-//# sourceMappingURL=srt-parser-CLUj-8Vk.js.map

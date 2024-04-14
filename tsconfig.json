@@ -11,7 +11,7 @@
 		"allowJs": true,
 		"noEmit": true,
 		"isolatedModules": true,
-    "types": ["vinxi/client", "vite/client", "vidstack/globals", "vite-plugin-pwa/solid"],
+    "types": ["vinxi/client", "vite/client", "vidstack/globals", "vite-plugin-pwa/solid", "node"],
     "baseUrl": "./",
     "paths": {
       "~/*": ["./src/*"]
@@ -19,6 +19,6 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable", "WebWorker"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "build", "dist"]
+  "exclude": ["node_modules", "build", "dist", ".vinxi"]
 
 }

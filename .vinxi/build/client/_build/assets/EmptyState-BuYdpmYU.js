@@ -1,2 +1,0 @@
-import{r as m,K as i,w as t,e as $,y as p}from"./routing-BmD2xUmi.js";import{w as g}from"./index-BnPmuIsI.js";var _=p('<div class="flex items-center justify-center flex-col gap-2 p-4"><!$><!/><p class=text-text2></p><!$><!/>');function u(l){return(()=>{var e=m(_),a=e.firstChild,[r,s]=i(a.nextSibling),n=r.nextSibling,o=n.nextSibling,[x,c]=i(o.nextSibling);return t(e,$(g,{fill:"currentColor",class:"text-4xl text-text2"}),r,s),t(n,()=>l.message??"Nothing to see here..."),t(e,()=>l.children,x,c),e})()}export{u as E};
-//# sourceMappingURL=EmptyState-BuYdpmYU.js.map
