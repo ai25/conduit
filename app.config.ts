@@ -27,6 +27,9 @@ const pwaOptions: Partial<VitePWAOptions> = {
   },
 };
 const config = defineConfig({
+  server: {
+    preset: "vercel",
+  },
   vite: {
     build: {
       target: "esnext",
