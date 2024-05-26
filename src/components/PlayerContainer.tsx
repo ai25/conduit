@@ -17,7 +17,7 @@ export default function PlayerContainer() {
           <PlayerError error={video.error as Error} />
         </Match>
         <Match when={video.data}>
-          <Player onReload={() => video.refetch()} />
+          <Player />
         </Match>
       </Switch>
     </Suspense>

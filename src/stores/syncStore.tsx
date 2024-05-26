@@ -6,7 +6,7 @@ import {
   onCleanup,
   useContext,
 } from "solid-js";
-import { IndexeddbPersistence } from "y-indexeddb";
+// import { IndexeddbPersistence } from "y-indexeddb";
 import { WebrtcProvider } from "y-webrtc";
 import { ConduitPlaylist, Playlist, Preferences, RelatedStream } from "~/types";
 import * as Y from "yjs";
@@ -68,7 +68,7 @@ export const SyncedStoreProvider = (props: { children: any }) => {
   );
 
   let webrtcProvider: WebrtcProvider | null = null;
-  let idbProvider: IndexeddbPersistence | null = null;
+  // let idbProvider: IndexeddbPersistence | null = null;
   let opfsProvider: OpfsPersistence | null = null;
 
   const initWebrtc = async () => {
@@ -170,7 +170,7 @@ export const SyncedStoreProvider = (props: { children: any }) => {
     }
 
     onCleanup(() => {
-      idbProvider?.destroy();
+      // idbProvider?.destroy();
       opfsProvider?.destroy();
     });
   });

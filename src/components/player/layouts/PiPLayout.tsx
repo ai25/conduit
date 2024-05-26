@@ -70,7 +70,9 @@ export function PiPLayout() {
               icon={<TbArrowUpLeft class="text-white w-8 h-8 min-w-max" />}
               onClick={() => {
                 if (!v()) return;
-                navigate(`/watch?v=${v()}`);
+                navigate(
+                  `/watch?v=${v()}${searchParams.fullscreen ? `&fullscreen=${searchParams.fullscreen}` : ""}`
+                );
               }}
             />
           </div>
