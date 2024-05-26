@@ -1,4 +1,3 @@
-import { DocTypeDescription } from "@syncedstore/core/types/doc";
 import {
   createContext,
   createEffect,
@@ -28,13 +27,16 @@ export type HistoryItem = RelatedStream & {
   currentTime: number;
 };
 
-export interface Store extends DocTypeDescription {
+export interface Store {
   playlists: Record<string, ConduitPlaylist>;
   history: Record<string, HistoryItem>;
-  subscriptions: Record<string, {
-    subscribedAt: number,
-    name: string,
-  }>;
+  subscriptions: Record<
+    string,
+    {
+      subscribedAt: number;
+      name: string;
+    }
+  >;
   preferences: Preferences;
   watchLater: Record<string, RelatedStream>;
   blocklist: Record<string, { name: string }>;
@@ -58,10 +60,10 @@ export const SyncedStoreProvider = (props: { children: any }) => {
   const [room, setRoom] = createSignal(
     "localStorage" in globalThis
       ? (JSON.parse(localStorage.getItem("room") || "{}") as {
-        id?: string;
-        password?: string;
-        name?: string;
-      })
+          id?: string;
+          password?: string;
+          name?: string;
+        })
       : {}
   );
 
@@ -161,12 +163,11 @@ export const SyncedStoreProvider = (props: { children: any }) => {
       await opfsProvider.sync();
       // await opfsProvider.whenSynced()
       setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTED);
-    }
-    catch (e) {
+    } catch (e) {
       console.error("Error syncing with OPFSx", e);
       setAppState("sync", "providers", "opfs", ProviderStatus.DISCONNECTED);
       toast.error("Error syncing with OPFS");
-    };
+    }
 
     onCleanup(() => {
       idbProvider?.destroy();
