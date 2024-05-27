@@ -53,7 +53,7 @@
     "solid-transition-group": "^0.2.3",
     "tailwindcss": "^3.3.3",
     "undici": "^5.28.2",
-    "vidstack": "^1.11.21",
+    "vidstack": "^1.11.17",
     "vinxi": "^0.3.10",
     "vite-plugin-pwa": "^0.16.7",
     "y-indexeddb": "^9.0.11",
