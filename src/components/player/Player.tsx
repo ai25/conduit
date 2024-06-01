@@ -607,8 +607,10 @@ export default function Player() {
     if (errorRecoveryAttempts < 3) {
       const hlsInstance = (mediaPlayer.provider as HLSProvider).instance;
       hlsInstance?.startLoad();
+    } else if (errorRecoveryAttempts < 50) {
+      setShowErrorScreen((prev) => ({ ...prev, show: true }));
     } else {
-      setShowErrorScreen({ show: true, dismissed: false });
+      mediaPlayer.destroy();
     }
     errorRecoveryAttempts++;
   };
@@ -638,7 +640,14 @@ export default function Player() {
             err.detail.details === HLS?.ErrorDetails.MANIFEST_PARSING_ERROR
           ) {
             if (video.data?.hls) {
-              hlsInstance?.loadSource(video.data?.hls);
+              // limit to prevent infinite loop
+              if (errorRecoveryAttempts < 15) {
+                console.log("loading source", errorRecoveryAttempts);
+                hlsInstance?.loadSource(video.data?.hls);
+              } else {
+                setShowErrorScreen((prev) => ({ ...prev, show: true }));
+              }
+              errorRecoveryAttempts++;
             }
           } else {
             attemptRecoverFatalError();
