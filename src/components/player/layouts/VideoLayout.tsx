@@ -77,6 +77,7 @@ export function VideoLayout(props: VideoLayoutProps) {
               tooltipPlacement="bottom"
               placement="bottom start"
               videos={props.playlist}
+              currentVideoId={props.currentVideoId}
             />
             <div class="w-24 flex items-center justify-between">
               <PrevButton
@@ -141,4 +142,5 @@ export interface VideoLayoutProps {
   playlist?: RelatedStream[];
   title?: string;
   hidden?: boolean;
+  currentVideoId: string;
 }

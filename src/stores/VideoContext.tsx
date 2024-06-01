@@ -32,6 +32,7 @@ export const VideoContextProvider = (props: { children: any }) => {
     refetchOnMount: false,
     cacheTime: Infinity,
     staleTime: 100 * 60 * 1000,
+    suspense: true,
   }));
 
   return (

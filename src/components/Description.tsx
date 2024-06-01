@@ -48,6 +48,7 @@ import { useVideoContext } from "~/stores/VideoContext";
 function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
   const player = document.querySelector("media-player") as MediaPlayerElement;
   player.currentTime = parseInt(t, 10);
+  player.focus();
 
   const newUrl = new URL(`/watch?v=${videoId}`, window.location.origin);
   const searchParams = new URLSearchParams(extraQueryParams);
@@ -244,7 +245,9 @@ const Description = (props: { downloaded: boolean }) => {
               downloaded={props.downloaded}
               deleteVideo={() => deleteVideo(getVideoId(video.data)!)}
               setDownloadModalOpen={() => setDownloadModalOpen(true)}
-              refetch={video.refetch}
+              refetch={() => {
+                console.dir(window);
+              }}
               setDebugInfoOpen={() => setDebugInfoOpen(true)}
             />
           </Show>

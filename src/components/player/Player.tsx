@@ -51,6 +51,7 @@ import {
   useSearchParams,
 } from "@solidjs/router";
 import { useVideoContext } from "~/stores/VideoContext";
+import { toast } from "../Toast";
 
 export default function Player() {
   const route = useLocation();
@@ -102,51 +103,6 @@ export default function Player() {
     if (!videoId()) return;
     if (video.isLoading) return;
     if (!video.data) return;
-    if (!queue.has(videoId()!)) {
-      queue.add({
-        url: `/watch?v=${videoId()}`,
-        title: video.data.title,
-        thumbnail: video.data.thumbnailUrl,
-        duration: video.data.duration,
-        uploaderName: video.data.uploader,
-        uploaderAvatar: video.data.uploaderAvatar,
-        uploaderUrl: video.data.uploaderUrl,
-        isShort: false,
-        shortDescription: "",
-        type: "video",
-        uploaded: new Date(video.data.uploadDate).getTime(),
-        views: video.data.views,
-        uploadedDate: video.data.uploadDate,
-        uploaderVerified: video.data.uploaderVerified,
-      });
-    }
-    queue.setCurrentVideo(videoId()!);
-  });
-
-  // const queueStore = useQueue();
-  createEffect(() => {
-    if (!video.data) return;
-    console.log(queue.isEmpty(), "queue is empty");
-    if (queue.isEmpty()) {
-      console.log("adding video to queue");
-      queue.add({
-        url: `/watch?v=${getVideoId(video.data)}`,
-        title: video.data.title,
-        thumbnail: video.data.thumbnailUrl,
-        duration: video.data.duration,
-        uploaderName: video.data.uploader,
-        uploaderAvatar: video.data.uploaderAvatar,
-        uploaderUrl: video.data.uploaderUrl,
-        isShort: false,
-        shortDescription: "",
-        type: "video",
-        uploaded: new Date(video.data.uploadDate).getTime(),
-        views: video.data.views,
-        uploadedDate: video.data.uploadDate,
-        uploaderVerified: video.data.uploaderVerified,
-      });
-      console.log(queue, "queue 1", queue.list(), queue.isEmpty());
-    }
   });
 
   const fetchSubtitles = async (subtitles: Subtitle[]) => {
@@ -282,31 +238,21 @@ export default function Player() {
     init();
   };
 
-  const [list, setList] = createSignal<RelatedStream[] | undefined>();
+  const [queueVideos, setQueueVideos] = createSignal<
+    RelatedStream[] | undefined
+  >();
+  const [nextVideo, setNextVideo] = createSignal<RelatedStream | null>();
+  const [prevVideo, setPrevVideo] = createSignal<RelatedStream | null>();
 
-  createEffect(() => {
-    console.log(nextVideo(), prevVideo());
-    if (playlist()) {
-      if (Array.isArray(playlist()!.videos)) {
-        setList((playlist() as any).videos);
-      } else {
-        setList(playlist()!.relatedStreams);
-      }
-    } else {
-      setList(queue.list());
-      console.log(queue, "queue 2 list");
-    }
+  onMount(() => {
+    const cb = () => {
+      setQueueVideos(queue.list());
+      setNextVideo(queue.peekNext());
+      setPrevVideo(queue.peekPrev());
+    };
+    queue.addEventListener("change", cb);
+    onCleanup(() => queue.removeEventListener("change", cb));
   });
-
-  const [nextVideo, setNextVideo] = createSignal<{
-    url: string;
-    info: RelatedStream;
-  } | null>(null);
-
-  const [prevVideo, setPrevVideo] = createSignal<{
-    url: string;
-    info: RelatedStream;
-  } | null>(null);
 
   function pickNextVideo(
     relatedStreams: RelatedStream[],
@@ -317,6 +263,7 @@ export default function Player() {
     if (!video.data) return null;
 
     for (const stream of relatedStreams) {
+      if (stream.type !== "stream") continue;
       let id = getVideoId(stream);
       if (!id || blacklist.includes(id)) continue; // Skip if no ID or blacklisted
       let watched = sync.store.history[id];
@@ -354,175 +301,86 @@ export default function Player() {
   }
 
   createEffect(() => {
-    const nextVideo = video.data?.relatedStreams?.[0];
-    if (!nextVideo) return;
-    if (!mediaPlayer) return;
     if (!video.data) return;
-    console.log("adding ", nextVideo);
-    if (!queue.peekNext()) {
-      console.log("adding next video to queue", nextVideo);
-      const blacklist = queue.uniqueIds;
-      let next = pickNextVideo(video.data.relatedStreams, blacklist);
-      if (next) queue.add(next);
-      console.log("queue 3", queue);
-    }
+    if (!videoId()) return;
     if (playlist()) {
-      if (Array.isArray(playlist()!.videos)) {
-        setList((playlist() as any).videos);
-      } else {
-        setList(playlist()!.relatedStreams);
-      }
+      // Add all playlist videos to the queue
+      queue.initPlaylist(playlist()!.relatedStreams);
     } else {
-      setList(queue.list());
-      console.log(queue, "queue 2 list");
+      if (queue.isEmpty()) {
+        queue.init([
+          {
+            url: `/watch?v=${videoId()}`,
+            title: video.data.title,
+            thumbnail: video.data.thumbnailUrl,
+            duration: video.data.duration,
+            uploaderName: video.data.uploader,
+            uploaderAvatar: video.data.uploaderAvatar,
+            uploaderUrl: video.data.uploaderUrl,
+            isShort: false,
+            shortDescription: "",
+            type: "video",
+            uploaded: new Date(video.data.uploadDate).getTime(),
+            views: video.data.views,
+            uploadedDate: video.data.uploadDate,
+            uploaderVerified: video.data.uploaderVerified,
+          },
+        ]);
+      }
+      // if this is the last video, add another to the queue
+      if (!queue.peekNext()) {
+        const blacklist = queue.uniqueIds;
+        let next = pickNextVideo(video.data.relatedStreams, blacklist);
+        if (next) queue.add(next);
+        setNextVideo(next);
+      }
     }
-    handleSetNextVideo();
-    handleSetPrevVideo();
+    setQueueVideos(queue.list())
+    setPrevVideo(queue.peekPrev())
+    setNextVideo(queue.peekNext())
+    queue.setCurrentVideo(videoId()!);
+
   });
 
   const [searchParams, setSearchParams] = useSearchParams();
 
   const playNext = () => {
-    console.log("playing next", nextVideo());
     if (!nextVideo()) return;
-
-    // setSearchParams({ "v": getVideoId(nextVideo()!.info) });
-    const url = new URL(window.location.origin + nextVideo()!.url);
-    if (searchParams.fullscreen) {
-      url.searchParams.set("fullscreen", searchParams.fullscreen);
+    const params = new URLSearchParams(window.location.search);
+    params.set("v", getVideoId(nextVideo())!);
+    const index = params.get("index");
+    if (index) {
+      params.set("index", `${parseInt(index, 10) + 1}`);
     }
-    navigate(url.pathname + url.search.toString());
-    setNextVideo(null);
+    const url = `${window.location.pathname}?${params.toString()}`;
+    queue.next();
+    navigate(url);
   };
 
-  function handleSetNextVideo() {
-    console.log("setting next queue video");
-    console.log("playlist", playlist());
+  const playPrev = () => {
+    console.log("change prev", queue);
+    if (!prevVideo()) return;
     const params = new URLSearchParams(window.location.search);
-    let url = new URL(window.location.href);
-    const urlParams = new URLSearchParams(url.search);
-    for (let key of urlParams.keys()) {
-      params.set(key, urlParams.get(key)!);
+    params.set("v", getVideoId(prevVideo())!);
+    const index = params.get("index");
+    if (index) {
+      params.set("index", `${parseInt(index, 10) - 1}`);
     }
-    console.log(params, "playing");
-    // exclude timestamp
-    params.delete("t");
-    if (playlist()) {
-      const local = "videos" in playlist()!;
-      const listId =
-        params.get("list") ?? (playlist() as unknown as { id: string })!.id;
-      let index; // index starts from 1
-      if (params.get("index")) {
-        index = parseInt(params.get("index")!);
-      } else if (local) {
-        index = (playlist() as unknown as {
-          videos: RelatedStream[];
-        })!.videos!.findIndex((v) => getVideoId(v) === getVideoId(video.data));
-        if (index !== -1) index++;
-      } else {
-        index = playlist()!.relatedStreams!.findIndex(
-          (v) => getVideoId(v) === getVideoId(video.data)
-        );
-        if (index !== -1) index++;
-      }
-
-      if (index < playlist()!.relatedStreams?.length) {
-        const next = playlist()!.relatedStreams[index]; // index is already +1
-        const id = getVideoId(next);
-        if (!id) return;
-        params.set("v", id);
-        params.set("list", listId);
-        params.set("index", (index + 1).toString());
-        url.search = params.toString();
-        setNextVideo({ url: url.pathname + url.search.toString(), info: next });
-      } else if (
-        index <
-        (playlist() as unknown as { videos: RelatedStream[] })!.videos?.length
-      ) {
-        const next = (playlist() as unknown as {
-          videos: RelatedStream[];
-        })!.videos[index]; // index is already +1
-        const id = getVideoId(next);
-        if (!id) return;
-        params.set("v", id);
-        params.set("list", listId);
-        params.set("index", (index + 1).toString());
-        url.search = params.toString();
-        setNextVideo({ url: url.pathname + url.search.toString(), info: next });
-      }
-      return;
-    }
-    const next = queue.peekNext();
-    console.log(next, "next", queue);
-    if (!next) return;
-    const id = getVideoId(next);
-    if (!id) return;
-    params.set("v", id);
-    url.search = params.toString();
-    console.log(url.pathname + url.search.toString(), "next video");
-    setNextVideo({ url: url.pathname + url.search.toString(), info: next });
-  }
-
-  const handleSetPrevVideo = () => {
-    console.log("setting prev queue video");
-    const params = new URLSearchParams(window.location.search);
-    let url = new URL(window.location.href);
-    const urlParams = new URLSearchParams(url.search);
-    for (let key of urlParams.keys()) {
-      params.set(key, urlParams.get(key)!);
-    }
-    // exclude timestamp
-    params.delete("t");
-    if (params.get("list")) {
-      if (params.get("index")) {
-        const index = parseInt(params.get("index")!);
-        if (index > 1) {
-          if (Array.isArray(playlist()!.videos)) {
-            const prev = (playlist() as any).videos[index - 2];
-            const id = getVideoId(prev);
-            if (!id) return;
-            params.set("v", id);
-            params.set("index", (index - 1).toString());
-            url.search = params.toString();
-            setPrevVideo({
-              url: url.pathname + url.search.toString(),
-              info: prev,
-            });
-          } else {
-            const prev = playlist()!.relatedStreams![index - 2];
-            const id = getVideoId(prev);
-            if (!id) return;
-            params.set("v", id);
-            params.set("index", (index - 1).toString());
-            url.search = params.toString();
-            setPrevVideo({
-              url: url.pathname + url.search.toString(),
-              info: prev,
-            });
-          }
-        }
-      }
-      return;
-    }
-    const prev = queue.peekPrev();
-    if (!prev) return;
-    const id = getVideoId(prev);
-    if (!id) return;
-    params.set("v", id);
-    url.search = params.toString();
-    setPrevVideo({ url: url.pathname + url.search.toString(), info: prev });
+    const url = `${window.location.pathname}?${params.toString()}`;
+    queue.prev();
+    navigate(url);
   };
+
 
   const handleEnded = () => {
     console.log("ended");
     if (!mediaPlayer) return;
     if (!video.data) return;
-    showToast();
+    handleShowEndScreen();
     updateProgress(video.data, started(), mediaPlayer.currentTime, sync);
   };
 
-  function showToast() {
-    console.log("showing toast");
+  function handleShowEndScreen() {
     setCounter(defaultCounter);
     if (counter() < 1) {
       console.log("counter less than 1");
@@ -534,7 +392,7 @@ export default function Player() {
       console.log("counting", counter());
       setCounter((c) => c - 1);
       if (counter() === 0) {
-        dismiss();
+        dismissEndScreen();
         playNext();
       }
     }, 1000);
@@ -546,14 +404,14 @@ export default function Player() {
     });
   }
 
-  function dismiss() {
+  function dismissEndScreen() {
     console.log("dismiss");
     clearInterval(timeoutCounter);
     setShowEndScreen(false);
   }
 
   onCleanup(() => {
-    dismiss();
+    dismissEndScreen();
   });
 
   const onProviderChange = async (event: MediaProviderChangeEvent) => {
@@ -882,7 +740,7 @@ export default function Player() {
         break;
       case "Escape":
         if (showEndScreen() && nextVideo()) {
-          dismiss();
+          dismissEndScreen();
           e.preventDefault();
         } else if (showErrorScreen().show) {
           setShowErrorScreen({ show: false, dismissed: true });
@@ -950,6 +808,7 @@ export default function Player() {
       ) {
         mediaPlayer.currentTime = segment.end;
         segment.autoSkipped = true; // Mark as automatically skipped
+        toast.show(`Skipped segment ${segment.title}`);
         break;
       }
     }
@@ -1055,7 +914,7 @@ export default function Player() {
         // load="eager"
         key-disabled
         tabIndex={-1}
-        playbackRate={preferences.speed}
+        // playbackRate={1.75}
         muted={preferences.muted}
         volume={preferences.volume}
         onMouseMove={() => {
@@ -1091,6 +950,10 @@ export default function Player() {
           showControls();
           updateProgressParametrized();
         }}
+        on:rate-change={(e) => {
+          console.log(e, "dash-playback-rate-changed");
+          setPreferences("speed", e.detail);
+        }}
         on:hls-manifest-loaded={(e: any) => {
           console.log(e.detail, "levels");
         }}
@@ -1100,23 +963,10 @@ export default function Player() {
         crossOrigin
         playsInline
         autoPlay
-        // on:fullscreen-change={(e) => {
-        //   const urlParams = new URLSearchParams(window.location.search);
-        //   if (e.detail) {
-        //     urlParams.set("fullscreen", "true");
-        //   } else {
-        //     urlParams.delete("fullscreen");
-        //   }
-        //   history.replaceState(
-        //     null,
-        //     "",
-        //     window.location.pathname + "?" + urlParams.toString()
-        //   );
-        // }}
+        src={video.data?.hls}
       >
         <media-provider
           class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full"
-          // classList={{"relative min-h-0 max-h-16 pb-0 h-full": preferences.pip}}
         >
           <media-poster
             aria-hidden="true"
@@ -1137,9 +987,6 @@ export default function Player() {
               );
             }}
           </For>
-          <Show when={video.data?.hls}>
-            <source src={video.data?.hls} type="application/x-mpegurl" />
-          </Show>
         </media-provider>
         <Show when={showErrorScreen().show && !showErrorScreen().dismissed}>
           <div
@@ -1175,7 +1022,7 @@ export default function Player() {
             </div>
           </div>
         </Show>
-        <Show when={showEndScreen() && nextVideo()}>
+        <Show when={showEndScreen()}>
           <div class="absolute z-50 top-0 right-0 w-full h-full pointer-events-auto">
             <div class="flex flex-col items-center justify-center w-full h-full gap-3">
               <div class="text-2xl font-bold text-white">
@@ -1183,16 +1030,13 @@ export default function Player() {
               </div>
               <div class="flex flex-col">
                 <div class="text-lg scale-75 sm:scale-100 text-white w-96 h-full my-2">
-                  <VideoCard
-                    layout="sm:grid"
-                    v={nextVideo()?.info ?? undefined}
-                  />
+                  <VideoCard layout="sm:grid" v={nextVideo() ?? undefined} />
                 </div>
               </div>
               <div class="flex justify-center gap-2">
                 <Button
                   onClick={() => {
-                    dismiss();
+                    dismissEndScreen();
                     playNext();
                   }}
                   label="Play now (Shift + N)"
@@ -1201,7 +1045,7 @@ export default function Player() {
                   appearance="subtle"
                   class="bg-bg1"
                   onClick={() => {
-                    dismiss();
+                    dismissEndScreen();
                   }}
                   label="Dismiss (Esc)"
                 />
@@ -1220,16 +1064,10 @@ export default function Player() {
           onLoopChange={(value) => {
             setPreferences("loop", value);
           }}
-          navigateNext={nextVideo()?.url ? playNext : undefined}
-          navigatePrev={
-            prevVideo()?.url
-              ? () => {
-                  navigate(prevVideo()!.url);
-                  setPrevVideo(null);
-                }
-              : undefined
-          }
-          playlist={list()}
+          navigateNext={nextVideo() ? () => playNext() : undefined}
+          navigatePrev={prevVideo() ? () => playPrev() : undefined}
+          playlist={queueVideos()}
+          currentVideoId={getVideoId(video.data)!}
         />
         <PiPLayout />
       </media-player>

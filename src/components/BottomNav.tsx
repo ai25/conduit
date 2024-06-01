@@ -11,14 +11,6 @@ export default function BottomNav(props: {
 }) {
   return (
     <nav class="flex gap-2 px-2 py-2 justify-around">
-      <button
-        onClick={() => {
-          history.back();
-        }}
-        class="flex flex-col items-center justify-center text-sm text-text2"
-      >
-        <div class="w-6 h-6">{<FaSolidChevronLeft class="w-6 h-6" />}</div>
-      </button>
       <For each={props.items}>
         {(item) => (
           <Link

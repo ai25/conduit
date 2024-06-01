@@ -35,11 +35,7 @@ interface Props {
   uploader: string;
 }
 export default function Comment(props: Props) {
-  const [loadingReplies, setLoadingReplies] = createSignal(false);
   const [showingReplies, setShowingReplies] = createSignal(false);
-  const [replies, setReplies] = createSignal([]);
-  const [nextpage, setNextpage] = createSignal(null);
-  const store = useSyncStore();
   const [preferences] = usePreferences();
   const fetchComments = async ({
     pageParam = "initial",
@@ -81,9 +77,6 @@ export default function Comment(props: Props) {
     initialPageParam: "initial"
   })
   );
-  async function hideReplies() {
-    setShowingReplies(false);
-  }
 
   const [sanitizedText, setSanitizedText] = createSignal("");
   createEffect(async () => {
@@ -95,7 +88,7 @@ export default function Comment(props: Props) {
       <div class="flex  gap-2 ">
         <Link
           href={`${props.comment.commentorUrl}`}
-          class="w-1/12 rounded-full justify-center flex h-fit"
+          class="w-1/12 min-w-[48px] max-w-[100px] rounded-full justify-center flex h-fit"
         >
           <img
             width="48"

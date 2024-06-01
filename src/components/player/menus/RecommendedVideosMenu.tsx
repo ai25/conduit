@@ -1,15 +1,18 @@
 import { RelatedStream } from "~/types";
 import { Menu } from "./Menu";
 import { MenuPlacement, TooltipPlacement } from "vidstack";
-import { For } from "solid-js";
+import { For, createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import { useQueue } from "~/stores/queueStore";
 import { getVideoId } from "~/utils/helpers";
 import { useNavigate } from "@solidjs/router";
+import { usePlaylist } from "~/stores/playlistStore";
 
 export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps) => {
   const queue = useQueue();
   const navigate = useNavigate();
-  console.log("RecommendedVideosMenu", props.videos);
+  const [playlist] = usePlaylist();
+  console.log("changedd", props.currentVideoId);
+
   return (
     <Menu
       placement={props.placement}
@@ -26,7 +29,16 @@ export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps) => {
             onClick={() => {
               const params = new URLSearchParams(window.location.search);
               params.set("v", getVideoId(video)!);
+              if (playlist()) {
+                const index = playlist()!.relatedStreams.findIndex(
+                  (v) => getVideoId(v) === getVideoId(video)
+                );
+                if (index) {
+                  params.set("index", `${index + 1}`);
+                }
+              }
               const url = `${window.location.pathname}?${params.toString()}`;
+              queue.setCurrentVideo(getVideoId(video)!);
               navigate(url);
             }}
             role="menuitem"
@@ -35,7 +47,7 @@ export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps) => {
               "text-start max-w-[calc(var(--media-width)-20px)] ring-primary parent left-0 flex w-full cursor-pointer select-none items-center justify-start rounded-sm p-2.5 bg-black/95 outline-none ring-inset  hover:bg-neutral-800/80 focus-visible:bg-neutral-800/80 focus-visible:ring-[3px] aria-hidden:hidden":
                 true,
               "border-l-2 border-primary":
-                getVideoId(queue.currentVideo) === getVideoId(video),
+                props.currentVideoId === getVideoId(video),
             }}
           >
             <img
@@ -58,4 +70,5 @@ export interface RecommendedVideosMenuProps {
   tooltipPlacement: TooltipPlacement;
   videos?: RelatedStream[];
   title?: string;
+  currentVideoId: string;
 }

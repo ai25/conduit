@@ -64,7 +64,7 @@ export default function Watch() {
   const route = useLocation();
   const [preferences] = usePreferences();
   const [playlist, setPlaylist] = usePlaylist();
-  const [videoDownloaded, setVideoDownloaded] = createSignal(true);
+  const [videoDownloaded, setVideoDownloaded] = createSignal(false);
   const [_, setAppState] = useAppState();
   const sync = useSyncStore();
   const video = useVideoContext();
