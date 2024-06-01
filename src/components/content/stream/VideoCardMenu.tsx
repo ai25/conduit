@@ -52,7 +52,7 @@ export default function VideoCardMenu(props: {
         open={dropdownOpen()}
         onOpenChange={setDropdownOpen}
         // gutter={0}
-        // modal={true}
+        modal={false}
         // hideWhenDetached={true}
       >
         <DropdownMenu.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">

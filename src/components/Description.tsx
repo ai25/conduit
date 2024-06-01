@@ -167,7 +167,7 @@ const Description = (props: { downloaded: boolean }) => {
           setIsOpen={setDownloadModalOpen}
         />
       </Suspense>
-      <div class="bg-bg1 p-4 @container">
+      <div class="bg-bg1 w-[clamp(250px,100%,98vw)] mx-auto p-4 @container">
         <div class="flex flex-col gap-2">
           <div class="flex flex-col gap-2 ">
             <div class="flex items-start justify-between h-full">
