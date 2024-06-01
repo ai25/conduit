@@ -19,8 +19,12 @@ import { ChaptersMenu } from "../menus/ChaptersMenu";
 import { Show, createEffect, createSignal } from "solid-js";
 import { RecommendedVideosMenu } from "../menus/RecommendedVideosMenu";
 import { RelatedStream } from "~/types";
+import { FaSolidChevronLeft } from "solid-icons/fa";
+import { Tooltip } from "~/components/Tooltip";
+import { useSearchParams } from "@solidjs/router";
 
 export function VideoLayout(props: VideoLayoutProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   return (
     <div
       hidden={props.hidden}
@@ -35,6 +39,40 @@ export function VideoLayout(props: VideoLayoutProps) {
       >
         <media-controls-group class="flex w-full items-center px-2 my-2 justify-between h-[30px]">
           <div class="flex items-center justify-between">
+            <Show when={searchParams.fullscreen}>
+              <Tooltip
+                onClick={() => {
+                  const fullscreen = searchParams.fullscreen;
+                  const list = searchParams.list;
+                  const index = searchParams.index;
+
+                  window.addEventListener(
+                    "popstate",
+                    () => {
+                      setSearchParams({ fullscreen, list, index });
+                    },
+                    { once: true }
+                  );
+
+                  history.back();
+                }}
+                placement="bottom"
+                openDelay={500}
+                class="ring-primary relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md outline-none ring-inset hover:bg-white/20 focus-visible:ring-4 disabled:text-gray-300 disabled:cursor-not-allowed"
+                triggerSlot={
+                  <media-icon
+                    aria-label="Prev"
+                    class="h-10 w-10"
+                    type="chevron-left"
+                  />
+                }
+                contentSlot={
+                  <>
+                    <span>Back</span>
+                  </>
+                }
+              />
+            </Show>
             <RecommendedVideosMenu
               tooltipPlacement="bottom"
               placement="bottom start"
