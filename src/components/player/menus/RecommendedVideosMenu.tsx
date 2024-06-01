@@ -1,7 +1,7 @@
 import { RelatedStream } from "~/types";
 import { Menu } from "./Menu";
 import { MenuPlacement, TooltipPlacement } from "vidstack";
-import { For, createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import { For } from "solid-js";
 import { useQueue } from "~/stores/queueStore";
 import { getVideoId } from "~/utils/helpers";
 import { useNavigate } from "@solidjs/router";
@@ -11,7 +11,6 @@ export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps) => {
   const queue = useQueue();
   const navigate = useNavigate();
   const [playlist] = usePlaylist();
-  console.log("changedd", props.currentVideoId);
 
   return (
     <Menu
@@ -22,6 +21,8 @@ export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps) => {
       tooltipPlacement={props.tooltipPlacement}
       tooltipSlot={<span>Playlist</span>}
       title={props.title ?? "Queue"}
+      class="w-[clamp(0px,100%,400px)]"
+      
     >
       <For each={props.videos}>
         {(video) => (
@@ -44,7 +45,7 @@ export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps) => {
             role="menuitem"
             tabIndex={-1}
             classList={{
-              "text-start max-w-[calc(var(--media-width)-20px)] ring-primary parent left-0 flex w-full cursor-pointer select-none items-center justify-start rounded-sm p-2.5 bg-black/95 outline-none ring-inset  hover:bg-neutral-800/80 focus-visible:bg-neutral-800/80 focus-visible:ring-[3px] aria-hidden:hidden":
+              "text-start max-w-[calc(var(--media-width)-20px)] ring-primary parent left-0 flex  cursor-pointer select-none items-center justify-start rounded-sm p-2.5 bg-black/95 outline-none ring-inset  hover:bg-neutral-800/80 focus-visible:bg-neutral-800/80 focus-visible:ring-[3px] aria-hidden:hidden":
                 true,
               "border-l-2 border-primary":
                 props.currentVideoId === getVideoId(video),
