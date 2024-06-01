@@ -56,7 +56,8 @@ const VideoCard = (props: {
   return (
     <div
       classList={{
-        "flex flex-row gap-2 mx-1 items-start rounded-xl bg-bg1 p-2 ": true,
+        "flex flex-row gap-2 items-start rounded-xl bg-bg1 p-2 overflow-hidden":
+          true,
         "min-w-full": props.layout === "list",
         "sm:max-w-max  sm:flex-col sm:w-72 sm:gap-0 min-w-full sm:min-w-0":
           props.layout === "sm:grid",
@@ -108,7 +109,7 @@ const VideoCard = (props: {
                 <div
                   aria-hidden="true"
                   class="animate-pulse bg-bg2 w-full rounded-lg h-4 "
-                 />
+                />
                 <div
                   aria-hidden="true"
                   class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg "
@@ -220,7 +221,7 @@ const ImageContainer = (props: {
               }%, 100%`,
             }}
             class="absolute bottom-0 h-1 bg-highlight"
-           />
+          />
         </div>
       </Show>
     </Link>

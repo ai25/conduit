@@ -83,7 +83,7 @@ export default function App() {
                           <SyncedStoreProvider>
                             <VideoContextProvider>
                               <div
-                                class={`${theme()} bg-bg1 min-h-screen font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3 overflow-x-hidden`}
+                                class={`${theme()} bg-bg1 min-h-screen font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3`}
                               >
                                 <Suspense>
                                   <Header />

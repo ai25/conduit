@@ -14,7 +14,7 @@ export default function RelatedVideos() {
       when={video.data}
       fallback={<For each={Array(20).fill(0)}>{() => <VideoCard />}</For>}
     >
-      <div class="w-full max-w-max md:max-w-min">
+      <div class="w-[clamp(250px,100%,95vw)] max-w-max md:max-w-min">
         <For
           each={video.data?.relatedStreams
             // blocklist
