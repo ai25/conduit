@@ -70,7 +70,11 @@ const SearchInput = () => {
   function handleSearch(input: string) {
     // setAppState("loading", true);
     console.log(input);
-    navigate(`/results?search_query=${input}`, { replace: true });
+    const params = new URLSearchParams(window.location.search);
+    params.delete("v");
+    navigate(`/results?search_query=${input}&${params.toString()}`, {
+      replace: true,
+    });
     // setAppState("loading", false);
   }
 
