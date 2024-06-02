@@ -93,6 +93,9 @@ export default function VideoCardMenu(props: {
                 }}
                 onSelect={() => {
                   queue.enqueue(props.v);
+                  toast.success(
+                    `Added "${props.v.title.length > 20 ? props.v.title.slice(0, 20) + "..." : props.v.title}" to the queue.`
+                  );
                 }}
                 class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
               >
@@ -109,6 +112,9 @@ export default function VideoCardMenu(props: {
                 }}
                 onSelect={() => {
                   queue.remove(getVideoId(props.v)!);
+                  toast.success(
+                    `Removed "${props.v.title.length > 20 ? props.v.title.slice(0, 20) + "..." : props.v.title}" from the queue.`
+                  );
                 }}
                 class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
               >
@@ -125,6 +131,9 @@ export default function VideoCardMenu(props: {
                 }}
                 onSelect={() => {
                   queue.enqueueNext(props.v);
+                  toast.success(
+                    `Enqueued "${props.v.title.length > 20 ? props.v.title.slice(0, 20) + "..." : props.v.title}" next.`
+                  );
                 }}
                 class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
               >

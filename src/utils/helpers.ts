@@ -154,7 +154,7 @@ export async function exponentialBackoff<T>(
 export function isMobile() {
   if (isServer) return false;
   return (
-    navigator.maxTouchPoints > 1 && typeof screen.orientation !== undefined
+    navigator.maxTouchPoints > 1 && typeof screen.orientation !== "undefined"
   );
 }
 

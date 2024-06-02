@@ -25,7 +25,7 @@ import { useQueue, VideoQueue } from "~/stores/queueStore";
 import { usePlaylist } from "~/stores/playlistStore";
 import { useSyncStore } from "~/stores/syncStore";
 import { isServer } from "solid-js/web";
-import { MediaPlayerElement } from "vidstack/elements";
+import { MediaPlayerElement, defineCustomElement } from "vidstack/elements";
 import { VideoLayout } from "../player/layouts/VideoLayout";
 import { usePreferences } from "~/stores/preferencesStore";
 import {
@@ -52,6 +52,8 @@ import {
 } from "@solidjs/router";
 import { useVideoContext } from "~/stores/VideoContext";
 import { toast } from "../Toast";
+
+defineCustomElement(MediaPlayerElement);
 
 export default function Player() {
   const route = useLocation();
@@ -932,7 +934,7 @@ export default function Player() {
         // load="eager"
         key-disabled
         tabIndex={-1}
-        // playbackRate={1.75}
+        playbackRate={10.75}
         muted={preferences.muted}
         volume={preferences.volume}
         onMouseMove={() => {
@@ -957,8 +959,10 @@ export default function Player() {
         on:ended={handleEnded}
         on:play={() => {
           mediaPlayer.controls.hide(0);
-          setStarted(true);
           updateProgressParametrized();
+        }}
+        on:playing={() => {
+          setStarted(true);
         }}
         on:seeked={() => {
           updateProgressParametrized();
