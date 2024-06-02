@@ -326,6 +326,26 @@ export default function Player() {
             uploaderVerified: video.data.uploaderVerified,
           },
         ]);
+      } else {
+        if (!queue.has(videoId()!)) {
+          queue.add({
+            url: `/watch?v=${videoId()}`,
+            title: video.data.title,
+            thumbnail: video.data.thumbnailUrl,
+            duration: video.data.duration,
+            uploaderName: video.data.uploader,
+            uploaderAvatar: video.data.uploaderAvatar,
+            uploaderUrl: video.data.uploaderUrl,
+            isShort: false,
+            shortDescription: "",
+            type: "video",
+            uploaded: new Date(video.data.uploadDate).getTime(),
+            views: video.data.views,
+            uploadedDate: video.data.uploadDate,
+            uploaderVerified: video.data.uploaderVerified,
+          });
+          queue.setCurrentVideo(videoId()!);
+        }
       }
       // if this is the last video, add another to the queue
       if (!queue.peekNext()) {
@@ -335,11 +355,10 @@ export default function Player() {
         setNextVideo(next);
       }
     }
-    setQueueVideos(queue.list())
-    setPrevVideo(queue.peekPrev())
-    setNextVideo(queue.peekNext())
+    setQueueVideos(queue.list());
+    setPrevVideo(queue.peekPrev());
+    setNextVideo(queue.peekNext());
     queue.setCurrentVideo(videoId()!);
-
   });
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -370,7 +389,6 @@ export default function Player() {
     queue.prev();
     navigate(url);
   };
-
 
   const handleEnded = () => {
     console.log("ended");
@@ -965,9 +983,7 @@ export default function Player() {
         autoPlay
         src={video.data?.hls}
       >
-        <media-provider
-          class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full"
-        >
+        <media-provider class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full">
           <media-poster
             aria-hidden="true"
             src={video.data?.thumbnailUrl ?? ""}

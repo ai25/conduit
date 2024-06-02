@@ -257,10 +257,6 @@ export class VideoQueue extends EventTarget {
   }
 
   add(video: RelatedStream) {
-    console.log("adding", video.title, this.current);
-    // if (!this.isPlaylist) {
-    //   this.clearUnwatched();
-    // }
     const id = getVideoId(video);
     if (!id || this.videoIdSet.has(id)) return;
     const newNode = new Node(video);
@@ -268,9 +264,7 @@ export class VideoQueue extends EventTarget {
       this.tail.next = newNode;
       newNode.prev = this.tail;
       this.tail = newNode;
-      console.log("has tail", this.current);
     } else {
-      console.log("does not have tail", this.current);
       this.head = this.tail = newNode;
       if (!this.current) this.current = newNode;
     }
@@ -282,7 +276,7 @@ export class VideoQueue extends EventTarget {
 
   clearUnwatched() {
     if (this.isPlaylist) return;
-    let temp = this.current;
+    let temp = this.current?.prev;
     while (temp) {
       const id = getVideoId(temp.value);
       if (
@@ -378,6 +372,9 @@ export class VideoQueue extends EventTarget {
         if (this.current !== temp) {
           this.current = temp;
           this.watchedVideoIds.add(id);
+          if (!this.isPlaylist) {
+            this.clearUnwatched();
+          }
           this.dispatchChangeEvent();
         }
         return true;
