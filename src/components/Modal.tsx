@@ -8,7 +8,6 @@ export default function Modal(props: {
   title: string;
   children: JSX.Element;
 }): JSX.Element {
-
   return (
     <>
       <Dialog.Root modal open={props.isOpen} onOpenChange={props.setIsOpen}>
@@ -30,7 +29,8 @@ export default function Modal(props: {
     z-[999999]
     flex 
     items-center 
-    justify-center">
+    justify-center"
+          >
             <Dialog.Content
               class=" z-50 
     max-w-[calc(100vw-16px)] 
@@ -50,12 +50,14 @@ export default function Modal(props: {
     data-[expanded]:fade-in
     data-[expanded]:duration-300
     data-[expanded]:ease-out
-    ">
+    "
+            >
               <div
                 class="flex 
     items-baseline 
     justify-between 
-    mb-3">
+    mb-3"
+              >
                 <Dialog.Title class="text-xl font-semibold">
                   {props.title}
                 </Dialog.Title>
@@ -63,11 +65,12 @@ export default function Modal(props: {
                   <FaSolidX fill="currentColor" class="w-4 h-4" />
                 </Dialog.CloseButton>
               </div>
-              <Dialog.Description class="text-base 
+              <div
+                class="text-base 
     max-h-[calc(100vh-50px)] overflow-y-auto"
               >
                 {props.children}
-              </Dialog.Description>
+              </div>
             </Dialog.Content>
           </div>
         </Dialog.Portal>

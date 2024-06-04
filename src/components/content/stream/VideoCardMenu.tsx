@@ -33,6 +33,7 @@ import PlaylistModal from "../PlaylistModal";
 import { useAppState } from "~/stores/appStateStore";
 import { useQueue } from "~/stores/queueStore";
 import { AiFillMinusSquare } from "solid-icons/ai";
+import ShareModal from "~/components/ShareModal";
 
 export default function VideoCardMenu(props: {
   v: RelatedStream;
@@ -44,6 +45,7 @@ export default function VideoCardMenu(props: {
   const [playlistModalOpen, setPlaylistModalOpen] = createSignal(false);
   const [appState, setAppState] = useAppState();
   const queue = useQueue();
+  const [shareModalOpen, setShareModalOpen] = createSignal(false);
 
   return (
     <>
@@ -269,7 +271,7 @@ export default function VideoCardMenu(props: {
                 setAppState("touchInProgress", true);
               }}
               onSelect={() => {
-                console.log("share event");
+                setShareModalOpen(true);
               }}
             >
               <div class="flex items-center gap-2">
@@ -398,6 +400,13 @@ export default function VideoCardMenu(props: {
         isOpen={playlistModalOpen()}
         setIsOpen={setPlaylistModalOpen}
         v={props.v}
+      />
+      <ShareModal
+        isOpen={shareModalOpen()}
+        setIsOpen={setShareModalOpen}
+        thumbnail={props.v.thumbnail}
+        id={getVideoId(props.v)!}
+        title={props.v.title}
       />
     </>
   );

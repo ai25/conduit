@@ -44,6 +44,8 @@ import { toast } from "./Toast";
 import { useSearchParams } from "@solidjs/router";
 import Link from "./Link";
 import { useVideoContext } from "~/stores/VideoContext";
+import ShareModal from "./ShareModal";
+import { usePlayerState } from "~/stores/playerStateStore";
 
 function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
   const player = document.querySelector("media-player") as MediaPlayerElement;
@@ -119,17 +121,38 @@ const Description = (props: { downloaded: boolean }) => {
   }
   const [debugInfoOpen, setDebugInfoOpen] = createSignal(false);
   const [date, setDate] = createDate(video.data?.uploadDate ?? new Date());
+
+  const [shareModalOpen, setShareModalOpen] = createSignal(false);
+
   createEffect(() => {
     setDate(video.data?.uploadDate ?? new Date());
   });
-  const [timeAgo] = createTimeAgo(date, { interval: 1000 * 60 });
+
   const [sanitizedDescription, setSanitizedDescription] = createSignal<
     string | undefined
   >(undefined);
-  createEffect(async () => {
+
+  async function handleSetSanitizedDescription() {
+    setSanitizedDescription(await sanitizeText(video.data!.description));
+  }
+  createEffect(() => {
     if (!video.data) return;
-    setSanitizedDescription(await sanitizeText(video.data.description));
+    handleSetSanitizedDescription();
   });
+  const [currentTime, setCurrentTime] = createSignal<number | undefined>(
+    undefined
+  );
+  function handleSetShareModalOpen(open: boolean) {
+    if (open) {
+      const player = document.querySelector("media-player");
+      if (player) {
+        setCurrentTime(player.currentTime);
+      }
+      setShareModalOpen(true);
+    } else {
+      setShareModalOpen(false);
+    }
+  }
 
   return (
     <>
@@ -167,6 +190,16 @@ const Description = (props: { downloaded: boolean }) => {
           setIsOpen={setDownloadModalOpen}
         />
       </Suspense>
+      <Show when={video.data}>
+        <ShareModal
+          isOpen={shareModalOpen()}
+          setIsOpen={handleSetShareModalOpen}
+          thumbnail={video.data!.thumbnailUrl}
+          id={getVideoId(video.data)!}
+          title={video.data!.title}
+          t={currentTime()}
+        />
+      </Show>
       <div class="bg-bg1 w-[clamp(250px,100%,98vw)] mx-auto p-4 @container">
         <div class="flex flex-col gap-2">
           <div class="flex flex-col gap-2 ">
@@ -249,6 +282,7 @@ const Description = (props: { downloaded: boolean }) => {
                 console.dir(window);
               }}
               setDebugInfoOpen={() => setDebugInfoOpen(true)}
+              setShareModalOpen={() => handleSetShareModalOpen(true)}
             />
           </Show>
           <Show
@@ -428,6 +462,7 @@ const ActionsContainer = (props: {
   setDownloadModalOpen: () => void;
   refetch: () => void;
   setDebugInfoOpen: () => void;
+  setShareModalOpen: () => void;
 }) => {
   return (
     <div class="flex items-center justify-evenly rounded-full p-2 bg-bg2">
@@ -466,9 +501,7 @@ const ActionsContainer = (props: {
           <Button
             icon={<FaSolidShare class="h-6 w-6" />}
             appearance="subtle"
-            onClick={() => {
-              toast.show("Not implemented");
-            }}
+            onClick={props.setShareModalOpen}
           />
         }
       />

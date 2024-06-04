@@ -7,6 +7,7 @@ export default function Button(props: {
   class?: string;
   onClick?: (e: any) => void;
   label?: string;
+  title?: string;
   icon?: JSX.Element;
   isSelected?: boolean;
   isLoading?: boolean;
@@ -45,6 +46,7 @@ export default function Button(props: {
   return (
     <KobalteButton.Root
       as={props.as ?? "button"}
+      title={props.title}
       onClick={
         props.onClick ??
         (() => {
