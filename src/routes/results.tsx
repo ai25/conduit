@@ -70,7 +70,8 @@ export default function Search() {
     if (pageParam === "initial") {
       return await (
         await fetch(
-          `${preferences.instance.api_url}/search?q=${searchParams.search_query
+          `${preferences.instance.api_url}/search?q=${
+            searchParams.search_query
           }&filter=${selectedFilter()}`
         )
       ).json();
@@ -86,25 +87,24 @@ export default function Search() {
     }
   };
 
-  const query = createInfiniteQuery(
-    () => ({
-      queryKey: ["search", searchParams.search_query, selectedFilter()],
-      queryFn: fetchSearch,
-      enabled: preferences.instance?.api_url &&
-        searchParams.search_query &&
-        selectedFilter() &&
-        !isServer
+  const query = createInfiniteQuery(() => ({
+    queryKey: ["search", searchParams.search_query, selectedFilter()],
+    queryFn: fetchSearch,
+    enabled:
+      preferences.instance?.api_url &&
+      searchParams.search_query &&
+      selectedFilter() &&
+      !isServer
         ? true
         : false,
-      getNextPageParam: (lastPage) => {
-        return lastPage.nextpage;
-      },
-      refetchOnMount: false,
-      refetchOnReconnect: false,
-      initialPageParam: "initial",
-      initialData: () => undefined
-    })
-  );
+    getNextPageParam: (lastPage) => {
+      return lastPage.nextpage;
+    },
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    initialPageParam: "initial",
+    initialData: () => undefined,
+  }));
 
   createEffect(() => {
     document.title = searchParams.search_query + " - Conduit";
@@ -112,16 +112,9 @@ export default function Search() {
   });
 
   createEffect(() => {
-    console.log(
-      "app state loading",
-      query.isLoading,
-      query.isFetching,
-    );
+    console.log("app state loading", query.isLoading, query.isFetching);
     setAppState({
-      loading:
-        query.isLoading ||
-        query.isFetching ||
-        query.isRefetching,
+      loading: query.isLoading || query.isFetching || query.isRefetching,
     });
   });
 
@@ -167,7 +160,7 @@ export default function Search() {
       searchHistory.splice(index, 1);
     }
     searchHistory.unshift(query);
-    if (searchHistory.length > 10) searchHistory.shift();
+    if (searchHistory.length > 10) searchHistory.pop();
     localStorage.setItem("search_history", JSON.stringify(searchHistory));
   }
 
@@ -207,7 +200,13 @@ export default function Search() {
                 .replace(/_/g, " ")
                 .replace(/\b\w/g, (l) => l.toUpperCase()),
             }))}
-            value={{ value: selectedFilter(), label: selectedFilter().replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()), disabled: false }}
+            value={{
+              value: selectedFilter(),
+              label: selectedFilter()
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (l) => l.toUpperCase()),
+              disabled: false,
+            }}
             onChange={(value) => updateFilter(value.value)}
           />
           <button onClick={() => setFiltersModalOpen(true)}>
@@ -274,8 +273,9 @@ export default function Search() {
             <p class="">
               Did you mean{" "}
               <A
-                href={`/results?search_query=${query.data?.pages[0].suggestion
-                  }&filter=${selectedFilter()}`}
+                href={`/results?search_query=${
+                  query.data?.pages[0].suggestion
+                }&filter=${selectedFilter()}`}
                 class="link !text-accent1"
               >
                 {query.data?.pages[0].suggestion}
@@ -317,9 +317,10 @@ export default function Search() {
                 // blocklist
                 .filter(
                   (item) =>
-                    !sync.store.blocklist[(item as RelatedStream).uploaderUrl?.split("/").pop()!]
-                )
-              }
+                    !sync.store.blocklist[
+                      (item as RelatedStream).uploaderUrl?.split("/").pop()!
+                    ]
+                )}
             >
               {(item) => (
                 <Show
@@ -341,9 +342,7 @@ export default function Search() {
                       when={assertType<RelatedChannel>(item, "type", "channel")}
                       keyed
                     >
-                      {(item) => (
-                      <ChannelCard item={item} />
-                      )}
+                      {(item) => <ChannelCard item={item} />}
                     </Match>
                     <Match
                       when={assertType<RelatedPlaylist>(
