@@ -69,7 +69,8 @@ const SearchInput = () => {
   function handleSearch(input: string) {
     const params = new URLSearchParams(window.location.search);
     params.delete("v");
-    navigate(`/results?search_query=${input}&${params.toString()}`, {
+    params.set("search_query", input);
+    navigate(`/results?${params.toString()}`, {
       replace: true,
     });
     inputRef?.blur();
