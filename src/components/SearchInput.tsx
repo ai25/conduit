@@ -40,7 +40,7 @@ const SearchInput = () => {
   };
   const [preferences] = usePreferences();
   const searchQuery = createQuery(() => ({
-    queryKey: ["suggestions"],
+    queryKey: ["suggestions", preferences.instance?.api_url],
     queryFn: async (): Promise<string[]> => {
       console.log("fetching suggestions", search());
       return await fetch(
@@ -63,19 +63,16 @@ const SearchInput = () => {
     },
   }));
   const navigate = useNavigate();
-  const [, setAppState] = useAppState();
   const [inputValue, setInputValue] = createSignal("");
   const [showSuggestions, setShowSuggestions] = createSignal(false);
 
   function handleSearch(input: string) {
-    // setAppState("loading", true);
-    console.log(input);
     const params = new URLSearchParams(window.location.search);
     params.delete("v");
     navigate(`/results?search_query=${input}&${params.toString()}`, {
       replace: true,
     });
-    // setAppState("loading", false);
+    inputRef?.blur();
   }
 
   const handleInputChange = (e: Event) => {
