@@ -73,7 +73,6 @@ export default function Watch() {
     HTMLDivElement | undefined
   >();
 
-  const [listId, setListId] = createSignal<string | undefined>(undefined);
   const [searchParams] = useSearchParams();
 
   const [windowWidth, setWindowWidth] = createSignal(1000);
@@ -188,6 +187,7 @@ export default function Watch() {
   const isLocalPlaylist = createMemo(() =>
     route.query.list?.startsWith("conduit-")
   );
+  const isWatchLater = createMemo(() => route.query.list === "watchLater");
 
   const playlistQuery = createQuery(() => ({
     queryKey: ["playlist", route.query.list, preferences.instance.api_url],
@@ -202,18 +202,14 @@ export default function Watch() {
       return await res.json();
     },
     enabled:
-      preferences.instance?.api_url && route.query.list && !isLocalPlaylist()
+      preferences.instance?.api_url &&
+      route.query.list &&
+      !isLocalPlaylist() &&
+      !isWatchLater()
         ? true
         : false,
     refetchOnReconnect: false,
   }));
-
-  function setLocalPlaylist() {
-    setListId(route.query.list);
-    if (!listId()) return;
-    const list = sync.store.playlists[listId()!];
-    setPlaylist(list);
-  }
 
   createEffect(() => {
     if (playlistQuery.isSuccess) {
@@ -228,8 +224,23 @@ export default function Watch() {
       setPlaylist(undefined);
       return;
     }
-    if (!isLocalPlaylist()) return;
-    setLocalPlaylist();
+    if (isLocalPlaylist()) {
+      const list = sync.store.playlists[route.query.list];
+      setPlaylist(list);
+    } else if (isWatchLater()) {
+      setPlaylist({
+        name: "Watch Later",
+        thumbnailUrl: "",
+        description: "",
+        uploader: "",
+        bannerUrl: "",
+        nextpage: null,
+        uploaderUrl: "",
+        uploaderAvatar: "",
+        videos: 0,
+        relatedStreams: Object.values(sync.store.watchLater),
+      });
+    }
     setTimeout(() => {
       playlistScrollContainer()?.scrollTo({
         top: route.query.index ? Number(route.query.index) * 80 : 0,

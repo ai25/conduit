@@ -160,7 +160,7 @@ export default function Search() {
       searchHistory.splice(index, 1);
     }
     searchHistory.unshift(query);
-    if (searchHistory.length > 10) searchHistory.pop();
+    if (searchHistory.length > 10) searchHistory.pop(); //TODO: replace with preferences
     localStorage.setItem("search_history", JSON.stringify(searchHistory));
   }
 
