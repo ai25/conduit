@@ -82,7 +82,7 @@ export const PlayerLoading = () => {
 
 export function PlayerError(props: { error: Error }) {
   return (
-    <div class="pointer-events-none flex-col text-center gap-2 col-span-3 aspect-video bg-black  flex h-full w-full items-center justify-center">
+    <div class=" flex-col text-center gap-2 col-span-3 aspect-video bg-black overflow-auto flex h-full w-full items-center justify-center">
       <div class="text-lg sm:text-2xl font-bold text-red-300">
         {props.error.name} :(
       </div>
