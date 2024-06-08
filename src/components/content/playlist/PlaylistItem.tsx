@@ -8,11 +8,12 @@ import {
   useContext,
 } from "solid-js";
 import { RelatedStream } from "~/types";
-import {  useSyncStore } from "~/stores/syncStore";
+import { useSyncStore } from "~/stores/syncStore";
 import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
 import { usePreferences } from "~/stores/preferencesStore";
 import { createTimeAgo } from "@solid-primitives/date";
 import Link from "~/components/Link";
+import VideoCardMenu from "../stream/VideoCardMenu";
 
 const PlaylistItem = (props: {
   v: RelatedStream;
@@ -24,10 +25,8 @@ const PlaylistItem = (props: {
   const sync = useSyncStore();
   const [preferences] = usePreferences();
 
-  createRenderEffect(async () => {
-    const val = sync.store.playlists[props.list]?.relatedStreams?.find(
-      (v) => getVideoId(v) === getVideoId(props.v)
-    ) as any;
+  createRenderEffect(() => {
+    const val = sync.store.history[getVideoId(props.v)!];
     setProgress(val?.currentTime);
   });
   let card: HTMLAnchorElement | undefined = undefined;
@@ -52,7 +51,7 @@ const PlaylistItem = (props: {
     card.removeEventListener("contextmenu", () => {});
   });
   const [isOpen, setIsOpen] = createSignal(false);
-  const [timeAgo] = createTimeAgo(props.v.uploaded, {interval: 1000 * 60 })
+  const [timeAgo] = createTimeAgo(props.v.uploaded, { interval: 1000 * 60 });
 
   return (
     <Link
@@ -68,7 +67,7 @@ const PlaylistItem = (props: {
           "bg-primary/50 ": parseInt(props.active) === props.index,
         }}
         class="absolute inset-0 w-full h-full bg-bg1/50 rounded-lg"
-      ></div>
+      />
       <div class="flex max-w-full w-full @container">
         <div
           classList={{
@@ -93,7 +92,7 @@ const PlaylistItem = (props: {
                   }%, 100%`,
                 }}
                 class="absolute bottom-0 h-1 bg-highlight"
-              ></div>
+              />
             </div>
           )}
           <div class="relative h-0 w-full bg-red-500 align-self-end">
@@ -120,13 +119,12 @@ const PlaylistItem = (props: {
             <div class="inline-block mr-1">
               {numeral(props.v.views).format("0a").toUpperCase()} views •
             </div>
-            <div class="inline-block mr-1">
-              {timeAgo()}
-            </div>
+            <div class="inline-block mr-1">{timeAgo()}</div>
           </div>
         </div>
       </div>
-      <div class="self-center justify-self-end ml-2">
+      <div class="self-center z-10 justify-self-end ml-2">
+        <VideoCardMenu v={props.v} progress={progress()} />
         {/* <Dropdown */}
         {/*   icon={ */}
         {/*     <svg */}
