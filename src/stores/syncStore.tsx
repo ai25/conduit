@@ -8,13 +8,14 @@ import {
 } from "solid-js";
 // import { IndexeddbPersistence } from "y-indexeddb";
 import { WebrtcProvider } from "y-webrtc";
-import { ConduitPlaylist, Playlist, Preferences, RelatedStream } from "~/types";
+import { ConduitPlaylist, RelatedStream } from "~/types";
 import * as Y from "yjs";
 import { createStore } from "solid-js/store";
 import createYjsStore from "~/lib/createYjsStore";
 import { useAppState } from "./appStateStore";
 import OpfsPersistence from "~/utils/y-opfs";
 import { toast } from "~/components/Toast";
+import { DEFAULT_PREFERENCES } from "./preferencesStore";
 
 enum ProviderStatus {
   DISCONNECTED = "disconnected",
@@ -37,7 +38,7 @@ export interface Store {
       name: string;
     }
   >;
-  preferences: Preferences;
+  preferences: typeof DEFAULT_PREFERENCES;
   watchLater: Record<string, RelatedStream>;
   blocklist: Record<string, { name: string }>;
 }
@@ -45,7 +46,7 @@ const [initialStore] = createStore<Store>({
   playlists: {},
   history: {},
   subscriptions: {},
-  preferences: {} as Preferences,
+  preferences: {} as typeof DEFAULT_PREFERENCES,
   watchLater: {},
   blocklist: {},
 });

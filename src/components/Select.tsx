@@ -1,14 +1,13 @@
 import { Select as KobalteSelect } from "@kobalte/core";
 import { FaSolidCaretDown, FaSolidCheck, FaSolidSort } from "solid-icons/fa";
 
-const Select = (props: {
-  onChange: (value: { value: string, label: string, disabled: boolean }) => void;
-  value: { value: string, label: string, disabled: boolean };
-  options: { value: string, label: string, disabled?: boolean }[];
-
-  defaultValue?: string;
+export default function Select<T>(props: {
+  onChange: (value: { value: T; label: string; disabled?: boolean }) => void;
+  value: { value: T; label: string; disabled?: boolean };
+  options: { value: T; label: string; disabled?: boolean }[];
+  defaultValue?: T;
   placeholder?: string;
-}) => {
+}) {
   return (
     <KobalteSelect.Root
       defaultValue={props.value}
@@ -19,7 +18,6 @@ const Select = (props: {
       optionTextValue={"label"}
       optionDisabled={"disabled"}
       gutter={0}
-
       options={props.options}
       itemComponent={(props) => {
         return (
@@ -27,9 +25,9 @@ const Select = (props: {
             class="cursor-pointer w-full border-bg2 last:border-b-0 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg2 focus-visible:ring-4 focus-visible:ring-primary focus-visible:outline-none data-[disabled]:text-gray-600 data-[disabled]:cursor-not-allowed "
             item={props.item}
           >
-            <KobalteSelect.Label
-              class="max-w-xs truncate"
-            >{props.item.rawValue?.label}</KobalteSelect.Label>
+            <KobalteSelect.Label class="max-w-xs truncate">
+              {props.item.rawValue?.label}
+            </KobalteSelect.Label>
             <KobalteSelect.ItemIndicator class="inline-flex absolute left-0">
               <FaSolidCheck
                 fill="currentColor"
@@ -42,8 +40,7 @@ const Select = (props: {
       class="relative"
     >
       <KobalteSelect.Trigger class=" p-1 outline-none bg-bg2 ring-1 ring-bg2 inline-flex items-center justify-between py-2 px-3 focus-visible:ring-2 focus-visible:ring-primary rounded-md">
-        <KobalteSelect.Value<{ value: string, label: string, disabled: boolean }
-        >>
+        <KobalteSelect.Value<typeof props.value>>
           {(state) => state.selectedOption()?.label}
         </KobalteSelect.Value>
         <KobalteSelect.Icon>
@@ -61,6 +58,4 @@ const Select = (props: {
       </KobalteSelect.Portal>
     </KobalteSelect.Root>
   );
-};
-
-export default Select;
+}

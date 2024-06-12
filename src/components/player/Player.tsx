@@ -17,6 +17,7 @@ import {
   onCleanup,
   onMount,
   For,
+  untrack,
 } from "solid-js";
 import { Chapter, PipedVideo, RelatedStream, Subtitle } from "~/types";
 import { chaptersVtt } from "~/lib/chapters";
@@ -100,12 +101,6 @@ export default function Player() {
   const defaultCounter = 5;
   const [counter, setCounter] = createSignal(defaultCounter);
   let timeoutCounter: any;
-
-  createEffect(() => {
-    if (!videoId()) return;
-    if (video.isLoading) return;
-    if (!video.data) return;
-  });
 
   const fetchSubtitles = async (subtitles: Subtitle[]) => {
     console.time("fetching subtitles");

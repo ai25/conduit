@@ -33,6 +33,7 @@ import { MetaProvider } from "@solidjs/meta";
 import { VideoContextProvider } from "./stores/VideoContext";
 import { clientOnly } from "@solidjs/start";
 import { parseCookie } from "./utils/helpers";
+import { BiSolidCog } from "solid-icons/bi";
 const ReloadPrompt = clientOnly(() => import("./components/ReloadPrompt"));
 
 const [theme, setTheme] = createSignal("");
@@ -139,6 +140,11 @@ export default function App() {
                                             class="w-6 h-6 "
                                           />
                                         ),
+                                      },
+                                      {
+                                        href: "/preferences",
+                                        label: "Preferences",
+                                        icon: <BiSolidCog class="w-6 h-6 " />,
                                       },
                                     ]}
                                   />

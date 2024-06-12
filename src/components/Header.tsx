@@ -41,6 +41,8 @@ import { isServer } from "solid-js/web";
 import { createMachine } from "@solid-primitives/state-machine";
 import { toast } from "./Toast";
 import Link from "./Link";
+import { THEME_OPTIONS } from "~/config/constants";
+
 enum SyncState {
   DISCONNECTED = "disconnected",
   OFFLINE = "offline",
@@ -62,8 +64,9 @@ export default function Header() {
     { href: "/feed", label: "Feed" },
     { href: "/trending", label: "Trending" },
     { href: "/library", label: "Library" },
-    { href: "/import", label: "Import" },
+    { href: "/preferences", label: "Preferences" },
   ];
+  const [preferences, setPreferences] = usePreferences();
 
   const query = createQuery(() => ({
     queryKey: ["instances"],
@@ -81,8 +84,6 @@ export default function Header() {
     },
     retry: (failureCount) => failureCount < 3,
   }));
-
-  const [preferences, setPreferences] = usePreferences();
 
   const randomNames = [
     "Alice",
@@ -154,17 +155,22 @@ export default function Header() {
       return SyncState.DISCONNECTED;
     }
   }
+  const instances = () => [
+    ...preferences.customInstances,
+    ...(query.data ?? []),
+  ];
 
   const cycleInstances = () => {
     if (!query.data) return;
-    const instances = query.data;
-    let currentInstanceIndex = instances.findIndex(
+    let currentInstanceIndex = instances().findIndex(
       (instance) => instance.api_url === preferences.instance.api_url
     );
     currentInstanceIndex = currentInstanceIndex > -1 ? currentInstanceIndex : 0;
     const nextInstanceIndex = (currentInstanceIndex + 1) % instances.length;
-    setPreferences("instance", instances[nextInstanceIndex]);
-    toast.show(`You are now connected to ${instances[nextInstanceIndex].name}`);
+    setPreferences("instance", instances()[nextInstanceIndex]);
+    toast.show(
+      `You are now connected to ${instances()[nextInstanceIndex].name}`
+    );
   };
 
   onMount(() => {
@@ -187,7 +193,7 @@ export default function Header() {
   });
 
   return (
-    <nav class="fixed top-0 left-0 bg-bg2 w-full z-[99999] h-10 px-2 flex items-center justify-between">
+    <nav class="fixed top-0 left-0 bg-bg2 w-full z-[999999] h-10 px-2 flex items-center justify-between">
       <button
         class="sr-only focus:not-sr-only absolute top-0 left-0"
         onClick={() => {
@@ -335,12 +341,7 @@ export default function Header() {
               setTheme(value);
               setThemeCookie(value);
             }}
-            options={[
-              { value: "monokai", label: "Monokai" },
-              { value: "dracula", label: "Dracula" },
-              { value: "discord", label: "Discord" },
-              { value: "github", label: "Github" },
-            ]}
+            options={THEME_OPTIONS}
             selectedValue={theme()}
             triggerIcon={
               <FaSolidBrush fill="currentColor" class="h-5 w-5 text-text1" />
@@ -352,15 +353,13 @@ export default function Header() {
             onOpenChange={setInstanceOpen}
             selectedValue={preferences.instance.api_url}
             onChange={(value) => {
-              let instance = (query.data as PipedInstance[]).find(
-                (i) => i.api_url === value
-              );
+              let instance = instances().find((i) => i.api_url === value);
               if (instance) {
                 setPreferences("instance", instance);
               }
             }}
-            options={(query.data as PipedInstance[]).map((i) => ({
-              label: `${i.name} - ${i.uptime_24h.toFixed(0)}%`,
+            options={(instances() as PipedInstance[]).map((i) => ({
+              label: `${i.name} ${i.uptime_24h ? "- " + i.uptime_24h.toFixed(0) + "%" : ""}`,
               value: i.api_url,
             }))}
             triggerIcon={

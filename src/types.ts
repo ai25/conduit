@@ -128,10 +128,10 @@ export interface PipedInstance {
   cache: boolean;
   s3_enabled: boolean;
   image_proxy_url: string;
-  registration_disabled: boolean
-  uptime_24h: number
-  uptime_7d: number
-  uptime_30d: number
+  registration_disabled: boolean;
+  uptime_24h: number;
+  uptime_7d: number;
+  uptime_30d: number;
 }
 
 export interface PipedChannelResponse {
@@ -180,8 +180,6 @@ export interface ConduitPlaylist extends Playlist {
     order: number;
     timeAdded: number;
   })[];
-
-
 }
 
 export interface RelatedStream {
@@ -224,14 +222,3 @@ export interface RelatedPlaylist {
 }
 
 export type ContentItem = RelatedStream | RelatedChannel | RelatedPlaylist;
-
-export interface Preferences {
-  autoplay: boolean;
-  pip: boolean;
-  muted: boolean;
-  volume: number;
-  speed: number;
-  quality: string;
-  theatreMode: boolean;
-  instance?: PipedInstance;
-}

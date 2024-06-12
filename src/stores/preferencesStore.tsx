@@ -1,8 +1,9 @@
 import { createContext, createEffect, on, onMount, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
+import { LANGUAGES, VIDEO_RESOLUTIONS } from "~/config/constants";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 
-const preferences = createStore({
+export const DEFAULT_PREFERENCES = {
   autoplay: false,
   pip: false,
   muted: false,
@@ -24,7 +25,35 @@ const preferences = createStore({
     up_to_date: false,
     image_proxy_url: "https://pipedproxy.kavin.rocks",
   },
-});
+  sync: {
+    enabled: true,
+    history: true,
+    subscriptions: true,
+    playlists: true,
+    watchLater: true,
+    blocklist: true,
+    preferences: false,
+  },
+  content: {
+    displayShorts: true,
+  },
+  history: {
+    saveHistory: true,
+  },
+  playback: {
+    preferedQuality: "Auto",
+    defaultCaptionsEnabled: false,
+    defaultCaptionsLanguage: "en",
+    secondaryCaptionsLanguage: undefined as string | undefined,
+  },
+  customInstances: [] as CustomInstance[],
+};
+interface CustomInstance {
+  name: string;
+  api_url: string;
+  image_proxy_url: string;
+}
+const preferences = createStore(DEFAULT_PREFERENCES);
 const PreferencesContext = createContext(preferences);
 export const PreferencesProvider = (props: { children: any }) => {
   onMount(() => {

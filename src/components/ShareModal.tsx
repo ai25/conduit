@@ -41,7 +41,7 @@ export default function ShareModal(props: {
   });
   return (
     <Modal title="Share" isOpen={props.isOpen} setIsOpen={props.setIsOpen}>
-      <div class="flex flex-col gap-4 justify-center p-4 w-[clamp(200px,100%,80vw)] max-w-[25rem]">
+      <div class="flex flex-col gap-4 mx-auto justify-center p-4 w-[clamp(200px,100%,80vw)] max-w-[25rem]">
         <div class="mx-auto h-44 w-fit">
           <img src={props.thumbnail} class="h-full w-full" />
         </div>
@@ -132,7 +132,7 @@ export default function ShareModal(props: {
               class="flex items-center justify-center outline-none focus-visible:ring-2 ring-primary/80 rounded h-10 w-10"
               onClick={() => {
                 try {
-                  navigator.clipboard.writeText(url());
+                  navigator.clipboard.writeText(url()!);
                   toast.success("Copied link to clipboard!");
                 } catch (e) {
                   toast.error((e as any).message);

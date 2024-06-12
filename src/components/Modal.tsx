@@ -36,7 +36,7 @@ export default function Modal(props: {
     max-w-[calc(100vw-16px)] 
     max-h-[80vh]
               my-auto
-    overflow-hidden
+    overflow-auto
     border 
     border-bg3
     rounded-md 

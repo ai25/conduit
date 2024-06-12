@@ -25,7 +25,7 @@ export default function ImportHistoryModal(props: {
       console.log(text);
       setItems([]);
       // Conduit
-      if (text.includes("conduit")) {
+      if (text.includes("Conduit")) {
         const json = JSON.parse(text);
         console.log(json);
         const history = json.history;
@@ -169,14 +169,15 @@ export default function ImportHistoryModal(props: {
       return 0;
     });
 
-    const importHistory =async()=> new Promise<string>( (resolve) => {
-      batch(() => {
-        newItems.forEach((item) => {
-          sync.setStore("history", item);
+    const importHistory = async () =>
+      new Promise<string>((resolve) => {
+        batch(() => {
+          newItems.forEach((item) => {
+            sync.setStore("history", item);
+          });
         });
+        resolve("done");
       });
-      resolve("done");
-    });
     toast.promise(importHistory, {
       loading: "Importing history",
       success: (data) => {
@@ -184,12 +185,10 @@ export default function ImportHistoryModal(props: {
       },
       error: () => {
         return "Error importing history";
-      }
+      },
     });
-    await importHistory()
+    await importHistory();
   }
-
-
 
   return (
     <Modal

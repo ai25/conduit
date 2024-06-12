@@ -27,7 +27,7 @@
     "workbox-window": "^7.0.0"
   },
   "dependencies": {
-    "@kobalte/core": "^0.11.2",
+    "@kobalte/core": "^0.13.3",
     "@leeoniya/ufuzzy": "^1.0.10",
     "@solid-primitives/date": "^2.0.18",
     "@solid-primitives/keyboard": "^1.2.5",
