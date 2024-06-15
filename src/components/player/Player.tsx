@@ -54,7 +54,6 @@ import {
 import { useVideoContext } from "~/stores/VideoContext";
 import { toast } from "../Toast";
 
-
 export default function Player() {
   const route = useLocation();
   let mediaPlayer!: MediaPlayerElement;
@@ -910,181 +909,177 @@ export default function Player() {
   });
 
   return (
-    <Show when={video.data}>
-      <media-player
-        keep-alive
-        id="player"
-        classList={{
-          " z-[99999] aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
-            true,
-          "!absolute inset-0 w-screen h-screen":
-            !!searchParams.fullscreen && !appState.player.small,
-          "!sticky sm:!relative !top-0": !searchParams.fullscreen,
-          "!sticky sm:!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ":
-            appState.player.small,
-          "!hidden": appState.player.dismissed,
-        }}
-        current-time={currentTime()}
-        // load="eager"
-        key-disabled
-        tabIndex={-1}
-        playbackRate={10.75}
-        muted={preferences.muted}
-        volume={preferences.volume}
-        onMouseMove={() => {
-          if (isMobile()) return;
-          showControls();
-        }}
-        onMouseLeave={() => {
-          mediaPlayer?.controls.hide(0);
-        }}
-        on:volume-change={(e) => {
-          console.log("volume change", e.detail);
-          setPreferences("volume", e.detail.volume);
-          setPreferences("muted", e.detail.muted);
-        }}
-        on:time-update={() => {
-          autoSkipHandler();
-        }}
-        on:can-play={onCanPlay}
-        on:provider-change={onProviderChange}
-        on:hls-error={handleHlsError}
-        on:hls-buffer-appended={handleBufferAppended}
-        on:ended={handleEnded}
-        on:play={() => {
-          mediaPlayer.controls.hide(0);
-          updateProgressParametrized();
-        }}
-        on:playing={() => {
-          setStarted(true);
-        }}
-        on:seeked={() => {
-          updateProgressParametrized();
-          userNavigationHandler();
-        }}
-        on:pause={() => {
-          showControls();
-          updateProgressParametrized();
-        }}
-        on:rate-change={(e) => {
-          console.log(e, "dash-playback-rate-changed");
-          setPreferences("speed", e.detail);
-        }}
-        on:hls-manifest-loaded={(e: any) => {
-          console.log(e.detail, "levels");
-        }}
-        ref={mediaPlayer}
-        title={video.data?.title ?? ""}
-        poster={video.data?.thumbnailUrl ?? ""}
-        crossOrigin
-        playsInline
-        autoPlay
-        src={video.data?.hls}
-      >
-        <media-provider class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full">
-          <media-poster
-            aria-hidden="true"
-            src={video.data?.thumbnailUrl ?? ""}
-            class="absolute inset-0 block h-full w-full rounded-md opacity-0 transition-opacity data-[visible]:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
-          />
-          <For each={Object.values(captionsStore)}>
-            {(track) => {
-              return (
-                <track
-                  id={track.id}
-                  kind={track.kind as any}
-                  src={captionsStore[track.id].src}
-                  srclang={track.srcLang}
-                  label={track.label}
-                  data-type={track.dataType}
-                />
-              );
-            }}
-          </For>
-        </media-provider>
-        <Show when={showErrorScreen().show && !showErrorScreen().dismissed}>
-          <div
-            // classList={{hidden: preferences.pip}}
-            class="absolute z-50 top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50"
-          >
-            <div class="flex flex-col items-center justify-center w-full h-full gap-3">
-              <div class="text-2xl font-bold text-white">
-                {hlsError()?.name} {hlsError()?.details}
-              </div>
-              <div class="flex flex-col">
-                <div class="text-lg text-white">{hlsError()?.message}</div>
-                <div class="text-lg text-white">
-                  Please try switching to a different instance or refresh the
-                  page.
-                </div>
-              </div>
-              <div class="flex justify-center gap-2">
-                <button
-                  class="px-4 py-2 text-lg text-white border border-white rounded-md"
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      setShowErrorScreen({ show: false, dismissed: true });
-                    }
-                  }}
-                  onClick={() => {
-                    setShowErrorScreen({ show: false, dismissed: true });
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </Show>
-        <Show when={showEndScreen()}>
-          <div class="absolute z-50 top-0 right-0 w-full h-full pointer-events-auto">
-            <div class="flex flex-col items-center justify-center w-full h-full gap-3">
-              <div class="text-2xl font-bold text-white">
-                Playing next in {counter()} seconds
-              </div>
-              <div class="flex flex-col">
-                <div class="text-lg scale-75 sm:scale-100 text-white w-96 h-full my-2">
-                  <VideoCard layout="sm:grid" v={nextVideo() ?? undefined} />
-                </div>
-              </div>
-              <div class="flex justify-center gap-2">
-                <Button
-                  onClick={() => {
-                    dismissEndScreen();
-                    playNext();
-                  }}
-                  label="Play now (Shift + N)"
-                />
-                <Button
-                  appearance="subtle"
-                  class="bg-bg1"
-                  onClick={() => {
-                    dismissEndScreen();
-                  }}
-                  label="Dismiss (Esc)"
-                />
-              </div>
-            </div>
-          </div>
-        </Show>
-        <VideoLayout
-          hidden={route.pathname !== "/watch"}
-          thumbnails={generateStoryboard(video.data?.previewFrames?.[1])}
-          loop={preferences.loop}
-          hasChapters={
-            !!(video.data?.chapters && video.data.chapters.length > 0)
-          }
-          title={video.data?.title ?? ""}
-          onLoopChange={(value) => {
-            setPreferences("loop", value);
-          }}
-          navigateNext={nextVideo() ? () => playNext() : undefined}
-          navigatePrev={prevVideo() ? () => playPrev() : undefined}
-          playlist={queueVideos()}
-          currentVideoId={getVideoId(video.data)!}
+    <media-player
+      keep-alive
+      id="player"
+      classList={{
+        " z-[99999] aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
+          true,
+        "!absolute inset-0 w-screen h-screen":
+          !!searchParams.fullscreen && !appState.player.small,
+        "!sticky sm:!relative !top-0": !searchParams.fullscreen,
+        "!sticky sm:!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ":
+          appState.player.small,
+        "!hidden": appState.player.dismissed,
+      }}
+      current-time={currentTime()}
+      // load="eager"
+      key-disabled
+      tabIndex={-1}
+      playbackRate={10.75}
+      muted={preferences.muted}
+      volume={preferences.volume}
+      onMouseMove={() => {
+        if (isMobile()) return;
+        showControls();
+      }}
+      onMouseLeave={() => {
+        mediaPlayer?.controls.hide(0);
+      }}
+      on:volume-change={(e) => {
+        console.log("volume change", e.detail);
+        setPreferences("volume", e.detail.volume);
+        setPreferences("muted", e.detail.muted);
+      }}
+      on:time-update={() => {
+        autoSkipHandler();
+      }}
+      on:can-play={onCanPlay}
+      on:provider-change={onProviderChange}
+      on:hls-error={handleHlsError}
+      on:hls-buffer-appended={handleBufferAppended}
+      on:ended={handleEnded}
+      on:play={() => {
+        mediaPlayer.controls.hide(0);
+        updateProgressParametrized();
+      }}
+      on:playing={() => {
+        setStarted(true);
+      }}
+      on:seeked={() => {
+        updateProgressParametrized();
+        userNavigationHandler();
+      }}
+      on:pause={() => {
+        showControls();
+        updateProgressParametrized();
+      }}
+      on:rate-change={(e) => {
+        console.log(e, "dash-playback-rate-changed");
+        setPreferences("speed", e.detail);
+      }}
+      on:hls-manifest-loaded={(e: any) => {
+        console.log(e.detail, "levels");
+      }}
+      ref={mediaPlayer}
+      title={video.data?.title ?? ""}
+      poster={video.data?.thumbnailUrl ?? ""}
+      crossOrigin
+      playsInline
+      autoPlay={false}
+      src={video.data?.hls}
+    >
+      <media-provider class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full">
+        <media-poster
+          aria-hidden="true"
+          src={video.data?.thumbnailUrl ?? ""}
+          class="absolute inset-0 block h-full w-full rounded-md opacity-0 transition-opacity data-[visible]:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
         />
-        <PiPLayout />
-      </media-player>
-    </Show>
+        <For each={Object.values(captionsStore)}>
+          {(track) => {
+            return (
+              <track
+                id={track.id}
+                kind={track.kind as any}
+                src={captionsStore[track.id].src}
+                srclang={track.srcLang}
+                label={track.label}
+                data-type={track.dataType}
+              />
+            );
+          }}
+        </For>
+      </media-provider>
+      <Show when={showErrorScreen().show && !showErrorScreen().dismissed}>
+        <div
+          // classList={{hidden: preferences.pip}}
+          class="absolute z-50 top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50"
+        >
+          <div class="flex flex-col items-center justify-center w-full h-full gap-3">
+            <div class="text-2xl font-bold text-white">
+              {hlsError()?.name} {hlsError()?.details}
+            </div>
+            <div class="flex flex-col">
+              <div class="text-lg text-white">{hlsError()?.message}</div>
+              <div class="text-lg text-white">
+                Please try switching to a different instance or refresh the
+                page.
+              </div>
+            </div>
+            <div class="flex justify-center gap-2">
+              <button
+                class="px-4 py-2 text-lg text-white border border-white rounded-md"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setShowErrorScreen({ show: false, dismissed: true });
+                  }
+                }}
+                onClick={() => {
+                  setShowErrorScreen({ show: false, dismissed: true });
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </Show>
+      <Show when={showEndScreen()}>
+        <div class="absolute z-50 top-0 right-0 w-full h-full pointer-events-auto">
+          <div class="flex flex-col items-center justify-center w-full h-full gap-3">
+            <div class="text-2xl font-bold text-white">
+              Playing next in {counter()} seconds
+            </div>
+            <div class="flex flex-col">
+              <div class="text-lg scale-75 sm:scale-100 text-white w-96 h-full my-2">
+                <VideoCard layout="sm:grid" v={nextVideo() ?? undefined} />
+              </div>
+            </div>
+            <div class="flex justify-center gap-2">
+              <Button
+                onClick={() => {
+                  dismissEndScreen();
+                  playNext();
+                }}
+                label="Play now (Shift + N)"
+              />
+              <Button
+                appearance="subtle"
+                class="bg-bg1"
+                onClick={() => {
+                  dismissEndScreen();
+                }}
+                label="Dismiss (Esc)"
+              />
+            </div>
+          </div>
+        </div>
+      </Show>
+      <VideoLayout
+        hidden={route.pathname !== "/watch"}
+        thumbnails={generateStoryboard(video.data?.previewFrames?.[1])}
+        loop={preferences.loop}
+        hasChapters={!!(video.data?.chapters && video.data.chapters.length > 0)}
+        title={video.data?.title ?? ""}
+        onLoopChange={(value) => {
+          setPreferences("loop", value);
+        }}
+        navigateNext={nextVideo() ? () => playNext() : undefined}
+        navigatePrev={prevVideo() ? () => playPrev() : undefined}
+        playlist={queueVideos()}
+        currentVideoId={getVideoId(video.data)!}
+      />
+      <PiPLayout />
+    </media-player>
   );
 }
