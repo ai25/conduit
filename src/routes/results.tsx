@@ -38,6 +38,7 @@ import { isServer } from "solid-js/web";
 import VideoCard from "~/components/content/stream/VideoCard";
 import PlaylistCard from "~/components/content/playlist/PlaylistCard";
 import ChannelCard from "~/components/content/channel/ChannelCard";
+import { filterContent } from "~/utils/content-filter";
 export interface SearchQuery {
   items: ContentItem[];
   nextpage: string;
@@ -80,7 +81,7 @@ export default function Search() {
         `${preferences.instance.api_url}/nextpage/search`,
         {
           nextpage: pageParam,
-          q: searchParams.search_query,
+          q: searchParams.search_query!,
           filter: selectedFilter(),
         }
       );
@@ -103,42 +104,22 @@ export default function Search() {
     refetchOnMount: false,
     refetchOnReconnect: false,
     initialPageParam: "initial",
-    initialData: () => undefined,
   }));
 
   createEffect(() => {
     document.title = searchParams.search_query + " - Conduit";
-    saveQueryToHistory();
-  });
-
-  createEffect(() => {
-    console.log("app state loading", query.isLoading, query.isFetching);
-    setAppState({
-      loading: query.isLoading || query.isFetching || query.isRefetching,
-    });
+    if (preferences.history.saveSearchHistory) {
+      saveQueryToHistory();
+    }
   });
 
   const intersecting = useIntersectionObserver({
     setTarget: () => intersectionRef(),
   });
-  let interval: any;
   createEffect(() => {
-    console.log(intersecting(), intersectionRef(), "intersecting");
-    if (intersecting()) {
+    if (intersecting() && query.hasNextPage && !query.isFetching) {
       query.fetchNextPage();
-      return;
     }
-    if (!query.isFetching || !query.hasNextPage) return;
-    clearInterval(interval);
-    interval = setInterval(() => {
-      const parentBottom = parentRef()!.getBoundingClientRect().bottom;
-      const intersectionBottom =
-        intersectionRef()!.getBoundingClientRect().bottom;
-      if (intersectionBottom < parentBottom) {
-        query.fetchNextPage();
-        console.log("fetching next page");
-      }
-    }, 1000);
   });
 
   function updateFilter(value: string) {
@@ -160,7 +141,13 @@ export default function Search() {
       searchHistory.splice(index, 1);
     }
     searchHistory.unshift(query);
-    if (searchHistory.length > 10) searchHistory.pop(); //TODO: replace with preferences
+    const SAFE_MAX = 30000;
+    let limit = preferences.history.maxSearchHistory ?? SAFE_MAX;
+    if (limit === -1) {
+      limit = SAFE_MAX;
+    }
+
+    if (searchHistory.length > limit) searchHistory.pop(); //TODO: replace with preferences
     localStorage.setItem("search_history", JSON.stringify(searchHistory));
   }
 
@@ -306,21 +293,11 @@ export default function Search() {
             }
           >
             <For
-              each={query
-                .data!.pages?.map((page) => page.items)
-                .flat()
-                // remove duplicates
-                .filter(
-                  (item, index, self) =>
-                    self.findIndex((t) => t?.url === item?.url) === index
-                )
-                // blocklist
-                .filter(
-                  (item) =>
-                    !sync.store.blocklist[
-                      (item as RelatedStream).uploaderUrl?.split("/").pop()!
-                    ]
-                )}
+              each={filterContent(
+                query.data!.pages?.map((page) => page.items).flat(),
+                preferences,
+                sync.store.blocklist
+              )}
             >
               {(item) => (
                 <Show
@@ -360,7 +337,7 @@ export default function Search() {
             </For>
           </Show>
 
-          <Show when={appState.loading}>
+          <Show when={query.isFetching}>
             <div class="w-full flex justify-center">
               <Spinner />
             </div>

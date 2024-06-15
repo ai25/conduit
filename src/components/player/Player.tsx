@@ -54,7 +54,6 @@ import {
 import { useVideoContext } from "~/stores/VideoContext";
 import { toast } from "../Toast";
 
-defineCustomElement(MediaPlayerElement);
 
 export default function Player() {
   const route = useLocation();

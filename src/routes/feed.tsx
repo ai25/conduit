@@ -25,6 +25,7 @@ import { memo } from "solid-js/web";
 import Button from "~/components/Button";
 import VideoCard from "~/components/content/stream/VideoCard";
 import { Title } from "@solidjs/meta";
+import { filterContent } from "~/utils/content-filter";
 
 export default function Feed() {
   const [limit, setLimit] = createSignal(10);
@@ -118,14 +119,11 @@ export default function Feed() {
             </Show>
             <Show when={query.data && query.data.length > 0}>
               <For
-                each={query.data
-                  ?.filter(
-                    (item) =>
-                      !sync.store.blocklist[
-                        item?.uploaderUrl?.split("/").pop()!
-                      ]
-                  )
-                  .slice(0, limit())}
+                each={filterContent(
+                  query.data!,
+                  preferences,
+                  sync.store.blocklist
+                ).slice(0, limit())}
               >
                 {(video) => <VideoCard v={video} />}
               </For>

@@ -15,7 +15,7 @@ import createYjsStore from "~/lib/createYjsStore";
 import { useAppState } from "./appStateStore";
 import OpfsPersistence from "~/utils/y-opfs";
 import { toast } from "~/components/Toast";
-import { DEFAULT_PREFERENCES } from "./preferencesStore";
+import { DEFAULT_PREFERENCES, usePreferences } from "./preferencesStore";
 
 enum ProviderStatus {
   DISCONNECTED = "disconnected",
@@ -55,6 +55,7 @@ const doc = new Y.Doc({
   guid: "test",
 });
 const [store, setStore] = createYjsStore<Store>(doc, initialStore, false);
+const [preferences] = usePreferences();
 const SyncContext = createContext({ store, setStore });
 
 export const SyncedStoreProvider = (props: { children: any }) => {
@@ -81,13 +82,15 @@ export const SyncedStoreProvider = (props: { children: any }) => {
       console.log("disconnecting");
       webrtcProvider.disconnect();
     }
-    setAppState("sync", "providers", "webrtc", ProviderStatus.CONNECTING);
-    webrtcProvider = new WebrtcProvider(room().id!, doc, {
-      signaling: ["wss://signaling.fly.dev"],
-      ...(room()!.password && { password: room().password }),
-    });
-    console.log(webrtcProvider, "webrtc provider");
-    webrtcProvider.connect();
+    if (preferences.sync.enabled) {
+      setAppState("sync", "providers", "webrtc", ProviderStatus.CONNECTING);
+      webrtcProvider = new WebrtcProvider(room().id!, doc, {
+        signaling: ["wss://signaling.fly.dev"],
+        ...(room()!.password && { password: room().password }),
+      });
+      console.log(webrtcProvider, "webrtc provider");
+      webrtcProvider.connect();
+    }
   };
 
   createEffect(async () => {
@@ -169,14 +172,10 @@ export const SyncedStoreProvider = (props: { children: any }) => {
       setAppState("sync", "providers", "opfs", ProviderStatus.DISCONNECTED);
       toast.error("Error syncing with OPFS");
     }
-
-    onCleanup(() => {
-      // idbProvider?.destroy();
-      opfsProvider?.destroy();
-    });
   });
   onCleanup(() => {
     webrtcProvider?.disconnect();
+    opfsProvider?.destroy();
   });
 
   return (

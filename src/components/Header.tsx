@@ -9,6 +9,7 @@ import {
   useContext,
   onMount,
   onCleanup,
+  createMemo,
 } from "solid-js";
 import { ThemeContext } from "~/app";
 import { useCookie } from "~/utils/hooks";
@@ -71,18 +72,20 @@ export default function Header() {
   const query = createQuery(() => ({
     queryKey: ["instances"],
     queryFn: async (): Promise<PipedInstance[]> => {
+      console.log("Fetching instances");
       const res = await fetch("https://piped-instances.kavin.rocks/");
+      console.log(res, "instances");
       if (!res.ok) {
         throw new Error("Failed to fetch instances");
       }
       return await res.json();
     },
-    initialData: getStorageValue("instances", [], "json", "localStorage"),
     select: (data) => {
       setStorageValue("instances", data, "localStorage");
       return data as PipedInstance[];
     },
     retry: (failureCount) => failureCount < 3,
+    enabled: !isServer,
   }));
 
   const randomNames = [
@@ -155,10 +158,13 @@ export default function Header() {
       return SyncState.DISCONNECTED;
     }
   }
-  const instances = () => [
-    ...preferences.customInstances,
-    ...(query.data ?? []),
-  ];
+  const instances = createMemo(() => {
+    return [
+      ...preferences.customInstances,
+      ...(query.data ??
+        getStorageValue("instances", [], "json", "localStorage")),
+    ];
+  });
 
   const cycleInstances = () => {
     if (!query.data) return;

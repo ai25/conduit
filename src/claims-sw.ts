@@ -8,7 +8,11 @@ import {
 import { NavigationRoute, registerRoute } from "workbox-routing";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { ExpirationPlugin } from "workbox-expiration";
-import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
+import {
+  CacheFirst,
+  NetworkFirst,
+  StaleWhileRevalidate,
+} from "workbox-strategies";
 
 declare let self: ServiceWorkerGlobalScope;
 
@@ -61,8 +65,8 @@ const PRECACHE_ROUTES = [
   {
     url: "/channel/*",
     revision: Date.now().toString(),
-  }
-]
+  },
+];
 try {
   precacheAndRoute([
     ...self.__WB_MANIFEST,

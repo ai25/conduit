@@ -38,7 +38,9 @@ export const DEFAULT_PREFERENCES = {
     displayShorts: true,
   },
   history: {
-    saveHistory: true,
+    saveWatchHistory: true,
+    saveSearchHistory: true,
+    maxSearchHistory: 10,
   },
   playback: {
     preferedQuality: "Auto",

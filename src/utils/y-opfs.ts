@@ -10,7 +10,7 @@ export type WorkerMessage<A extends "read" | "write" | "trim" | "cleanup"> = {
 };
 function fnv1aHash(update: Uint8Array): string {
   const FNV_PRIME = 0x01000193; // 16777619
-  const OFFSET_BASIS = 0x811C9DC5; // 2166136261
+  const OFFSET_BASIS = 0x811c9dc5; // 2166136261
 
   let hash = OFFSET_BASIS;
   for (const byte of update) {
@@ -24,14 +24,14 @@ function fnv1aHash(update: Uint8Array): string {
 
 export type WorkerResponse<A extends "read" | "write" | "trim" | "cleanup"> =
   A extends "read"
-  ? { updates: Uint8Array[] }
-  : A extends "write"
-  ? { success: boolean }
-  : A extends "trim"
-  ? { success: boolean }
-  : A extends "cleanup"
-  ? { success: boolean }
-  : never;
+    ? { updates: Uint8Array[] }
+    : A extends "write"
+      ? { success: boolean }
+      : A extends "trim"
+        ? { success: boolean }
+        : A extends "cleanup"
+          ? { success: boolean }
+          : never;
 
 export default class OpfsPersistence extends ObservableV2<{
   [key: string]: any;
@@ -56,7 +56,11 @@ export default class OpfsPersistence extends ObservableV2<{
    * @param {string} room - The room or namespace associated with the Y.js document.
    * @param {boolean} debug - Flag to enable logging.
    */
-  constructor(public room: string, public ydoc: Y.Doc, debug: boolean = false) {
+  constructor(
+    public room: string,
+    public ydoc: Y.Doc,
+    debug: boolean = false
+  ) {
     super();
     this.debug = debug;
     this.log("Initializing YOpfsProvider...");
@@ -87,7 +91,6 @@ export default class OpfsPersistence extends ObservableV2<{
     return sessionId;
   };
 
-
   private _storeUpdate = async (update: any, origin: any) => {
     this.log("Received update from Y.Doc...", update, origin);
     if (origin !== this && !this._destroyed) {
@@ -105,9 +108,9 @@ export default class OpfsPersistence extends ObservableV2<{
         return;
       }
       const updateHash = fnv1aHash(update);
-      const {updates} = await this._sharedService?.proxy["read"]();
+      const read = await this._sharedService?.proxy["read"]();
+      const { updates } = read;
       console.log("updates", updates);
-
 
       this.log(
         "Received a local Y.Doc update or an update from another provider.",
@@ -174,7 +177,7 @@ export default class OpfsPersistence extends ObservableV2<{
    * Synchronizes the Y.js document with the stored updates from the OPFS.
    */
   async sync(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       try {
         this.log("Synchronizing Y.Doc with OPFS...");
         console.time("OPFS: getStoredUpdates");
@@ -230,57 +233,59 @@ export default class OpfsPersistence extends ObservableV2<{
               return this.sendMessage({
                 action: "cleanup",
                 payload: { roomName: this.room },
-              })
-            }
+              });
+            },
           });
         });
         console.log("this._sharedService", this._sharedService);
 
-        await this._sharedService.activate(async () => {
-          console.log("Destroyed?", this._destroyed, "synced?", this.synced);
-          if (this._destroyed || this.synced || this.activateCalled) {
-            return;
-          }
-          this.activateCalled = true;
+        this._sharedService
+          .activate(async () => {
+            console.log("Destroyed?", this._destroyed, "synced?", this.synced);
+            if (this._destroyed || this.synced || this.activateCalled) {
+              return;
+            }
+            this.activateCalled = true;
 
-          const res = await this._sharedService?.proxy["read"]();
-          console.log("res", res);
-          const { updates }: { updates: Uint8Array[] } = res;
+            const res = await this._sharedService?.proxy["read"]();
+            console.log("res", res);
+            const { updates }: { updates: Uint8Array[] } = res;
 
-          console.timeEnd("OPFS: getStoredUpdates");
-          this.log("Received updates from OPFS.", updates.length);
-          this._updateCount = updates.length;
+            console.timeEnd("OPFS: getStoredUpdates");
+            this.log("Received updates from OPFS.", updates.length);
+            this._updateCount = updates.length;
 
-          // Apply each stored update to the Y.js document.
-          Y.transact(
-            this.ydoc,
-            () => {
-              updates.forEach((update) => {
-                // this.log("Applying stored update to Y.Doc...");
-                Y.applyUpdate(this.ydoc, update, this);
-              });
-            },
-            this,
-            false
-          );
-          if (this._destroyed) {
-            return this;
-          }
-          this.emit("synced", []);
-          this.synced = true;
+            // Apply each stored update to the Y.js document.
+            Y.transact(
+              this.ydoc,
+              () => {
+                updates.forEach((update) => {
+                  // this.log("Applying stored update to Y.Doc...");
+                  Y.applyUpdate(this.ydoc, update, this);
+                });
+              },
+              this,
+              false
+            );
+            if (this._destroyed) {
+              return this;
+            }
+            this.emit("synced", []);
+            this.synced = true;
 
-          console.timeEnd("OPFS");
-          resolve();
-        })
+            console.timeEnd("OPFS");
+            resolve();
+          })
+          .then(resolve)
+          .catch((e) => {
+            reject(e);
+          });
       } catch (e) {
         console.error("Error syncing", e);
         this.destroy();
         reject(e);
       }
     });
-
-
-
   }
 
   destroy() {

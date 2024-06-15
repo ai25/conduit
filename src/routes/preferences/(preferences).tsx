@@ -17,6 +17,7 @@ import {
   FaSolidGlobe,
   FaSolidLanguage,
   FaSolidList,
+  FaSolidMagnifyingGlass,
   FaSolidPalette,
   FaSolidPencil,
   FaSolidPlay,
@@ -127,85 +128,6 @@ export default function Preferences() {
             />
           </div>
         </div>
-        <div class="ml-10">
-          <div class="flex justify-between items-center">
-            <PreferencesCard
-              icon={<FaSolidClockRotateLeft class="w-5 h-5" />}
-              title="Sync History"
-            />
-            <Toggle
-              label="Sync History"
-              checked={preferences.sync.history}
-              onChange={(v) => setPreferences("sync", "history", v)}
-            />
-          </div>
-        </div>
-        <div class="ml-10">
-          <div class="flex justify-between items-center">
-            <PreferencesCard
-              icon={<FaSolidRss class="w-5 h-5" />}
-              title="Sync Subscriptions"
-            />
-            <Toggle
-              label="Sync Subscriptions"
-              checked={preferences.sync.subscriptions}
-              onChange={(v) => setPreferences("sync", "subscriptions", v)}
-            />
-          </div>
-        </div>
-        <div class="ml-10">
-          <div class="flex justify-between items-center">
-            <PreferencesCard
-              icon={<FaSolidList class="w-5 h-5" />}
-              title="Sync Playlists"
-            />
-            <Toggle
-              label="Sync Playlists"
-              checked={preferences.sync.playlists}
-              onChange={(v) => setPreferences("sync", "playlists", v)}
-            />
-          </div>
-        </div>
-        <div class="ml-10">
-          <div class="flex justify-between items-center">
-            <PreferencesCard
-              icon={<FaSolidClock class="w-5 h-5" />}
-              title="Sync Watch Later"
-            />
-            <Toggle
-              label="Sync Watch Later"
-              checked={preferences.sync.watchLater}
-              onChange={(v) => setPreferences("sync", "watchLater", v)}
-            />
-          </div>
-        </div>
-        <div class="ml-10">
-          <div class="flex justify-between items-center">
-            <PreferencesCard
-              icon={<FaSolidBan class="w-5 h-5" />}
-              title="Sync Blocklist"
-            />
-            <Toggle
-              label="Sync Blocklist"
-              checked={preferences.sync.blocklist}
-              onChange={(v) => setPreferences("sync", "blocklist", v)}
-            />
-          </div>
-        </div>
-        <div class="ml-10">
-          <div class="flex justify-between items-center">
-            <PreferencesCard
-              icon={<TiCog class="w-8 h-8" />}
-              title="Sync Preferences"
-            />
-            <Toggle
-              label="Sync Preferences"
-              checked={preferences.sync.preferences}
-              onChange={(v) => setPreferences("sync", "preferences", v)}
-              disabled
-            />
-          </div>
-        </div>
       </Collapsible>
       <Collapsible
         trigger={
@@ -247,8 +169,42 @@ export default function Preferences() {
             />
             <Toggle
               label="Save watch history"
-              checked={preferences.history.saveHistory}
-              onChange={(v) => setPreferences("history", "saveHistory", v)}
+              checked={preferences.history.saveWatchHistory}
+              onChange={(v) => setPreferences("history", "saveWatchHistory", v)}
+            />
+          </div>
+        </div>
+        <div class="ml-10">
+          <div class="flex justify-between items-center">
+            <PreferencesCard
+              icon={<FaSolidMagnifyingGlass class="w-5 h-5" />}
+              title="Save search history"
+            />
+            <Toggle
+              label="Save search history"
+              checked={preferences.history.saveSearchHistory}
+              onChange={(v) =>
+                setPreferences("history", "saveSearchHistory", v)
+              }
+            />
+          </div>
+        </div>
+        <div class="ml-10">
+          <div class="flex justify-between items-center">
+            <PreferencesCard
+              icon={<FaSolidMagnifyingGlass class="w-5 h-5" />}
+              title="Max search history"
+              description="'-1' for no limit."
+            />
+            <Field
+              class="w-10"
+              type="number"
+              min={-1}
+              max={30000}
+              value={preferences.history.maxSearchHistory?.toString()}
+              onInput={(v) => {
+                setPreferences("history", "maxSearchHistory", parseInt(v));
+              }}
             />
           </div>
         </div>
