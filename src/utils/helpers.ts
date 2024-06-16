@@ -153,10 +153,42 @@ export async function exponentialBackoff<T>(
 
 export function isMobile() {
   if (isServer) return false;
+  if ((navigator as any).userAgentData) {
+    if ((navigator as any).userAgentData.mobile) {
+      return true;
+    } else if ((navigator as any).userAgentData.mobile === false) {
+      return false;
+    }
+  }
   return (
     navigator.maxTouchPoints > 1 && typeof screen.orientation !== "undefined"
   );
 }
+// export function isMobile() {
+//   if (isServer) return false;
+//   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+//
+//   // Regular expressions to match mobile devices
+//   const mobileRegex =
+//     /(android|avantgo|blackberry|bolt|boost|cricket|docomo|fone|hiptop|mini|mobi|palm|phone|pie|tablet|up\.browser|up\.link|webos|wos)/i;
+//
+//   // Check if user agent matches mobile patterns
+//   if (mobileRegex.test(userAgent)) {
+//     return true;
+//   }
+//
+//   // Additional check for iPad which is sometimes considered as a desktop device
+//   if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+//     return true;
+//   }
+//
+//   // Fallback for touch events support
+//   return (
+//     "ontouchstart" in window ||
+//     navigator.maxTouchPoints > 0 ||
+//     navigator.msMaxTouchPoints > 0
+//   );
+// }
 
 export function formatRelativeShort(now: Date, past: Date): string {
   const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);

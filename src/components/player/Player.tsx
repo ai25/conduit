@@ -1,8 +1,12 @@
 import "vidstack/player/styles/base.css";
 import "vidstack/player";
 import "vidstack/player/ui";
+import "vidstack/player/layouts";
 import "vidstack/solid";
 import "vidstack/icons";
+import "vidstack/player/styles/default/theme.css";
+import "vidstack/player/styles/default/layouts/audio.css";
+import "vidstack/player/styles/default/layouts/video.css";
 
 import {
   HLSErrorEvent,
@@ -27,7 +31,6 @@ import { usePlaylist } from "~/stores/playlistStore";
 import { useSyncStore } from "~/stores/syncStore";
 import { isServer } from "solid-js/web";
 import { MediaPlayerElement, defineCustomElement } from "vidstack/elements";
-import { VideoLayout } from "../player/layouts/VideoLayout";
 import { usePreferences } from "~/stores/preferencesStore";
 import {
   exponentialBackoff,
@@ -53,6 +56,12 @@ import {
 } from "@solidjs/router";
 import { useVideoContext } from "~/stores/VideoContext";
 import { toast } from "../Toast";
+import { FullscreenButton } from "./buttons/FullscreenButton";
+import { Tooltip } from "../Tooltip";
+import { RecommendedVideosMenu } from "./menus/RecommendedVideosMenu";
+import { PrevButton } from "./buttons/PrevButton";
+import { NextButton } from "./buttons/NextButton";
+import { FaSolidArrowLeft } from "solid-icons/fa";
 
 export default function Player() {
   const route = useLocation();
@@ -228,7 +237,9 @@ export default function Player() {
     }
   }
 
+  const [canPlay, setCanPlay] = createSignal(false);
   const onCanPlay = () => {
+    setCanPlay(true);
     setHlsError();
     init();
   };
@@ -550,8 +561,28 @@ export default function Player() {
       (event: Event) => {
         event.preventDefault();
         event.stopPropagation();
+        if (!searchParams.fullscreen) {
+          console.log(`fullscreen button pressed, entering fullscreen`);
+          try {
+            document.documentElement.requestFullscreen();
+            screen.orientation.lock("landscape").catch(() => {});
+            setSearchParams({ fullscreen: true }, { replace: true });
+            document.body.scroll({ top: 0, left: 0, behavior: "smooth" });
+          } catch (_) {
+            setSearchParams({ fullscreen: undefined }, { replace: true });
+          }
+        } else {
+          try {
+            document.exitFullscreen();
+            screen.orientation.unlock();
+            setSearchParams({ fullscreen: undefined }, { replace: true });
+          } catch (_) {
+            setSearchParams({ fullscreen: true }, { replace: true });
+          }
+        }
         console.log(
-          "Full screen request intercepted. Element will not go full screen."
+          "Full screen request intercepted. Element will not go full screen.",
+          event
         );
       },
       { capture: true }
@@ -601,15 +632,23 @@ export default function Player() {
     switch (e.key) {
       case "f":
         console.log(`f key pressed, fullscreen: ${document.fullscreenElement}`);
-        if (document.fullscreenElement) {
-          document.exitFullscreen();
-          screen.orientation.unlock();
-          setSearchParams({ fullscreen: undefined }, { replace: true });
+        if (!searchParams.fullscreen) {
+          try {
+            document.documentElement.requestFullscreen();
+            screen.orientation.lock("landscape").catch(() => {});
+            setSearchParams({ fullscreen: true }, { replace: true });
+            document.body.scroll({ top: 0, left: 0, behavior: "smooth" });
+          } catch (_) {
+            setSearchParams({ fullscreen: undefined }, { replace: true });
+          }
         } else {
-          document.documentElement.requestFullscreen();
-          screen.orientation.lock("landscape").catch(() => {});
-          setSearchParams({ fullscreen: true }, { replace: true });
-          document.body.scroll({ top: 0, left: 0, behavior: "smooth" });
+          try {
+            document.exitFullscreen();
+            screen.orientation.unlock();
+            setSearchParams({ fullscreen: undefined }, { replace: true });
+          } catch (_) {
+            setSearchParams({ fullscreen: true }, { replace: true });
+          }
         }
         e.preventDefault();
         break;
@@ -908,6 +947,35 @@ export default function Player() {
     }
   });
 
+  const [isMobilePlayer, setIsMobilePlayer] = createSignal(false);
+
+  onMount(() => {
+    const handleSetMobilePlayer = () => {
+      const width = mediaPlayer.clientWidth;
+      const height = mediaPlayer.clientHeight;
+      if (height > 380 && width > 590) {
+        setIsMobilePlayer(false);
+      } else {
+        setIsMobilePlayer(true);
+      }
+    };
+    handleSetMobilePlayer();
+    const handleFullscreenChange = () => {
+      handleSetMobilePlayer();
+      if (document.fullscreenElement) {
+        setSearchParams({ fullscreen: true }, { replace: true });
+        screen.orientation.lock("landscape").catch(() => {});
+      } else setSearchParams({ fullscreen: undefined }, { replace: true });
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    window.addEventListener("resize", handleSetMobilePlayer);
+
+    onCleanup(() => {
+      window.removeEventListener("resize", handleSetMobilePlayer);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    });
+  });
+
   return (
     <media-player
       keep-alive
@@ -926,7 +994,7 @@ export default function Player() {
       // load="eager"
       key-disabled
       tabIndex={-1}
-      playbackRate={10.75}
+      playbackRate={preferences.speed}
       muted={preferences.muted}
       volume={preferences.volume}
       onMouseMove={() => {
@@ -965,12 +1033,24 @@ export default function Player() {
         updateProgressParametrized();
       }}
       on:rate-change={(e) => {
-        console.log(e, "dash-playback-rate-changed");
         setPreferences("speed", e.detail);
       }}
       on:hls-manifest-loaded={(e: any) => {
         console.log(e.detail, "levels");
       }}
+      on:fullscreen-change={(e) => {
+        console.log(e, "fullscreen");
+        if (e.detail) {
+          console.log(`fullscreen button pressed, entering fullscreen`);
+          screen.orientation.lock("landscape").catch(() => {});
+          setSearchParams({ fullscreen: true }, { replace: true });
+          document.body.scroll({ top: 0, left: 0, behavior: "smooth" });
+        } else {
+          screen.orientation.unlock();
+          setSearchParams({ fullscreen: undefined }, { replace: true });
+        }
+      }}
+      hideControlsOnMouseLeave={false}
       ref={mediaPlayer}
       title={video.data?.title ?? ""}
       poster={video.data?.thumbnailUrl ?? ""}
@@ -983,7 +1063,7 @@ export default function Player() {
         <media-poster
           aria-hidden="true"
           src={video.data?.thumbnailUrl ?? ""}
-          class="absolute inset-0 block h-full w-full rounded-md opacity-0 transition-opacity data-[visible]:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
+          class="absolute z-[1] inset-0 block h-full w-full rounded-md opacity-0 transition-opacity data-[visible]:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
         />
         <For each={Object.values(captionsStore)}>
           {(track) => {
@@ -1065,20 +1145,97 @@ export default function Player() {
           </div>
         </div>
       </Show>
-      <VideoLayout
-        hidden={route.pathname !== "/watch"}
-        thumbnails={generateStoryboard(video.data?.previewFrames?.[1])}
-        loop={preferences.loop}
-        hasChapters={!!(video.data?.chapters && video.data.chapters.length > 0)}
-        title={video.data?.title ?? ""}
-        onLoopChange={(value) => {
-          setPreferences("loop", value);
+      <div
+        data-fullscreen={searchParams.fullscreen}
+        classList={{
+          hidden: route.pathname !== "/watch",
         }}
-        navigateNext={nextVideo() ? () => playNext() : undefined}
-        navigatePrev={prevVideo() ? () => playPrev() : undefined}
-        playlist={queueVideos()}
-        currentVideoId={getVideoId(video.data)!}
-      />
+      >
+        <media-video-layout
+          style={{
+            "--media-focus-ring-color": "rgb(var(--colors-primary))",
+          }}
+          thumbnails={generateStoryboard(video.data?.previewFrames?.[1])}
+        />
+        <media-controls
+          id="controls"
+          classList={{
+            "text-[#f5f5f5] z-0 font-sans pointer-events-none media-controls:opacity-100 invisible media-controls:visible  absolute inset-0 flex h-full w-full flex-col bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300":
+              true,
+            "z-10": !isMobilePlayer(),
+          }}
+        >
+          <media-controls-group
+            classList={{
+              "!pointer-events-none -mt-0.5 flex w-full absolute bottom-4 items-center px-2 pb-2 ":
+                true,
+              "-bottom-[2px]": !isMobilePlayer(),
+            }}
+          >
+            <div class="flex-1" />
+            <FullscreenButton tooltipPlacement="top-end" />
+          </media-controls-group>
+          <media-controls-group
+            classList={{
+              "!pointer-events-none flex flex-col h-full mt-10 my-auto relative items-center px-5 my-2 justify-start w-[26px] sm:w-[30px]":
+                true,
+              "mt-0": !isMobilePlayer(),
+            }}
+          >
+            <div class="pointer-events-auto flex flex-col items-center justify-between">
+              <Show when={searchParams.fullscreen}>
+                <Tooltip
+                  onClick={() => {
+                    const fullscreen = searchParams.fullscreen;
+                    const list = searchParams.list;
+                    const index = searchParams.index;
+
+                    window.addEventListener(
+                      "popstate",
+                      () => {
+                        setSearchParams({ fullscreen, list, index });
+                      },
+                      { once: true }
+                    );
+
+                    history.back();
+                  }}
+                  placement="right"
+                  openDelay={500}
+                  class="ring-primary relative inline-flex h-8 w-8 sm:w-10 sm:h-10 cursor-pointer items-center justify-center rounded-md outline-none ring-inset hover:bg-white/20 focus-visible:ring-4 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  triggerSlot={
+                    <FaSolidArrowLeft aria-label="Back" class="h-6 w-6" />
+                  }
+                  contentSlot={
+                    <>
+                      <span>Back</span>
+                    </>
+                  }
+                />
+              </Show>
+              <RecommendedVideosMenu
+                tooltipPlacement="right center"
+                placement="bottom start"
+                videos={queueVideos()}
+                currentVideoId={getVideoId(video.data)!}
+              />
+              <div class="w-24 flex flex-col items-center justify-between">
+                <PrevButton
+                  tooltipPlacement="right"
+                  onClick={playPrev}
+                  disabled={!prevVideo()}
+                />
+                <div class="h-px w-6 bg-text1/50" />
+                <NextButton
+                  tooltipPlacement="right"
+                  onClick={playNext}
+                  disabled={!nextVideo()}
+                />
+              </div>
+            </div>
+          </media-controls-group>
+        </media-controls>
+      </div>
       <PiPLayout />
     </media-player>
   );

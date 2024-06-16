@@ -1,5 +1,3 @@
-import styles from "./VideoLayout.module.css";
-
 import { CaptionButton } from "../buttons/CaptionButton";
 import { FullscreenButton } from "../buttons/FullscreenButton";
 import { MuteButton } from "../buttons/MuteButton";
@@ -48,7 +46,7 @@ export function PiPLayout() {
         <Captions />
       </div>
       <media-controls
-        class={`${styles.controls} font-sans media-controls:opacity-100 invisible media-controls:visible  absolute inset-0 z-10 flex h-full w-full flex-col bg-black/10 to-transparent opacity-0 transition-opacity`}
+        class={`font-sans media-controls:opacity-100 invisible media-controls:visible  absolute inset-0 z-10 flex h-full w-full flex-col bg-black/10 to-transparent opacity-0 transition-opacity`}
       >
         <media-controls-group class="flex w-full items-center px-2 my-2 justify-between h-[30px]">
           <div class="flex items-center justify-between">

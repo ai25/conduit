@@ -14,15 +14,19 @@ export const RecommendedVideosMenu = (props: RecommendedVideosMenuProps) => {
 
   return (
     <Menu
+      isSideTrigger
       placement={props.placement}
       buttonSlot={
-        <media-icon class="h-8 w-8" type="queue-list" aria-label="Queue" />
+        <media-icon
+          class="w-7 h-7 sm:h-8 sm:w-8"
+          type="queue-list"
+          aria-label="Queue"
+        />
       }
       tooltipPlacement={props.tooltipPlacement}
       tooltipSlot={<span>Playlist</span>}
       title={props.title ?? "Queue"}
-      class="w-[clamp(0px,100%,400px)]"
-      
+      class="w-[clamp(0px,100%,400px)] left-[100%]"
     >
       <For each={props.videos}>
         {(video) => (

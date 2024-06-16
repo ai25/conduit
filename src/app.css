@@ -95,3 +95,11 @@ a {
   }
 }
 
+media-fullscreen-button {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+media-player[data-started] #controls {
+  z-index: 99;
+}

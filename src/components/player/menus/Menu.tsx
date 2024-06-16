@@ -11,7 +11,7 @@ export function Menu(props: MenuProps) {
     <media-menu>
       <Tooltip
         triggerSlot={
-          <media-menu-button class="group ring-primary relative mr-0.5 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md outline-none ring-inset hover:bg-white/20 data-[focus]:ring-4 aria-hidden:hidden">
+          <media-menu-button class="group ring-primary relative mr-0.5 inline-flex h-8 w-8 sm:w-10 sm:h-10  cursor-pointer items-center justify-center rounded-md outline-none  hover:bg-white/20 data-[focus]:ring-[3px] aria-hidden:hidden ">
             {props.buttonSlot}
           </media-menu-button>
         }
@@ -27,6 +27,7 @@ export function Menu(props: MenuProps) {
           "sm:!top-12": !!(isPlacementBottom() && params.fullscreen),
           "sm:!left-4  sm:!right-auto": props.placement.includes("start"),
           "sm:!right-4 sm:!left-auto": props.placement.includes("end"),
+          "sm:!left-10 sm:!top-10": props.isSideTrigger,
         }}
         placement={props.placement}
       >
@@ -50,5 +51,6 @@ export interface MenuProps {
   children: JSX.Element;
   tooltipPlacement: TooltipPlacement;
   title?: string;
-  class?:string;
+  class?: string;
+  isSideTrigger?: boolean;
 }
