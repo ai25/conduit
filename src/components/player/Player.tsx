@@ -953,7 +953,12 @@ export default function Player() {
     const handleSetMobilePlayer = () => {
       const width = mediaPlayer.clientWidth;
       const height = mediaPlayer.clientHeight;
-      if (height > 380 && width > 590) {
+      let mobileHeight = 380;
+      let mobileWidth = 590;
+      if (searchParams.fullscreen) {
+        mobileWidth = 575;
+      }
+      if (height > mobileHeight && width > mobileWidth) {
         setIsMobilePlayer(false);
       } else {
         setIsMobilePlayer(true);
