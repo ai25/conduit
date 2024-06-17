@@ -31,19 +31,10 @@ export const PlayerStateProvider = (props: { children: any }) => {
   });
   let unsubscribe: () => void | undefined;
 
-  onMount(() => {
-    document.addEventListener("canplay", () => {
-      console.log(player(), "gogg", document.querySelector("media-player"));
-    });
-    // setTimeout(() => {
-    //   console.log(player(), "gogg", document.querySelector("media-player"));
-    // }, 1000);
-  });
   createEffect(() => {
     if (!player()) return;
     unsubscribe = player()!.subscribe(
       ({ paused, canAirPlay, canGoogleCast }) => {
-        console.log(canGoogleCast, "gogg");
         setPlayerState({ paused, canGoogleCast, canAirPlay });
       }
     );

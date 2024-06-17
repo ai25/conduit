@@ -965,6 +965,14 @@ export default function Player() {
       } else {
         setIsMobilePlayer(true);
       }
+      console.log(
+        "width",
+        width,
+        "height",
+        height,
+        "isMobilePlayer",
+        isMobilePlayer()
+      );
     };
     handleSetMobilePlayer();
     const handleFullscreenChange = () => {
@@ -1174,9 +1182,9 @@ export default function Player() {
         >
           <media-controls-group
             classList={{
-              "!pointer-events-none -mt-0.5 flex w-full absolute bottom-4 items-center px-2 pb-2 ":
+              "!pointer-events-none -mt-0.5 flex w-full absolute -bottom-[2px] items-center px-2 pb-2 ":
                 true,
-              "-bottom-[2px]": !isMobilePlayer(),
+              "bottom-4": isMobilePlayer(),
             }}
           >
             <div class="flex-1" />
@@ -1184,9 +1192,9 @@ export default function Player() {
           </media-controls-group>
           <media-controls-group
             classList={{
-              "!pointer-events-none flex flex-col h-full mt-10 my-auto relative items-center px-5 my-2 justify-start w-[26px] sm:w-[30px]":
+              "!pointer-events-none flex flex-col h-full relative items-center px-5 my-2 mt-0 justify-start w-[26px] sm:w-[30px]":
                 true,
-              "mt-0": !isMobilePlayer() || (!canGoogleCast && !canAirPlay),
+              "mt-10": isMobilePlayer() && !canGoogleCast && !canAirPlay,
             }}
           >
             <div class="pointer-events-auto flex flex-col items-center justify-between">
