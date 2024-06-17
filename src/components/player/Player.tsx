@@ -62,6 +62,7 @@ import { RecommendedVideosMenu } from "./menus/RecommendedVideosMenu";
 import { PrevButton } from "./buttons/PrevButton";
 import { NextButton } from "./buttons/NextButton";
 import { FaSolidArrowLeft } from "solid-icons/fa";
+import { usePlayerState } from "~/stores/playerStateStore";
 
 export default function Player() {
   const route = useLocation();
@@ -948,12 +949,13 @@ export default function Player() {
   });
 
   const [isMobilePlayer, setIsMobilePlayer] = createSignal(false);
+  const { canAirPlay, canGoogleCast } = usePlayerState();
 
   onMount(() => {
     const handleSetMobilePlayer = () => {
       const width = mediaPlayer.clientWidth;
       const height = mediaPlayer.clientHeight;
-      let mobileHeight = 380;
+      let mobileHeight = 379;
       let mobileWidth = 590;
       if (searchParams.fullscreen) {
         mobileWidth = 575;
@@ -1184,7 +1186,7 @@ export default function Player() {
             classList={{
               "!pointer-events-none flex flex-col h-full mt-10 my-auto relative items-center px-5 my-2 justify-start w-[26px] sm:w-[30px]":
                 true,
-              "mt-0": !isMobilePlayer(),
+              "mt-0": !isMobilePlayer() || (!canGoogleCast && !canAirPlay),
             }}
           >
             <div class="pointer-events-auto flex flex-col items-center justify-between">
