@@ -949,7 +949,6 @@ export default function Player() {
   });
 
   const [isMobilePlayer, setIsMobilePlayer] = createSignal(false);
-  const { canAirPlay, canGoogleCast } = usePlayerState();
 
   onMount(() => {
     const handleSetMobilePlayer = () => {
@@ -965,14 +964,6 @@ export default function Player() {
       } else {
         setIsMobilePlayer(true);
       }
-      console.log(
-        "width",
-        width,
-        "height",
-        height,
-        "isMobilePlayer",
-        isMobilePlayer()
-      );
     };
     handleSetMobilePlayer();
     const handleFullscreenChange = () => {
@@ -1006,23 +997,15 @@ export default function Player() {
         "!hidden": appState.player.dismissed,
       }}
       current-time={currentTime()}
-      // load="eager"
       key-disabled
       tabIndex={-1}
-      playbackRate={preferences.speed}
-      muted={preferences.muted}
-      volume={preferences.volume}
+      storage="player"
       onMouseMove={() => {
         if (isMobile()) return;
         showControls();
       }}
       onMouseLeave={() => {
         mediaPlayer?.controls.hide(0);
-      }}
-      on:volume-change={(e) => {
-        console.log("volume change", e.detail);
-        setPreferences("volume", e.detail.volume);
-        setPreferences("muted", e.detail.muted);
       }}
       on:time-update={() => {
         autoSkipHandler();
@@ -1047,9 +1030,6 @@ export default function Player() {
         showControls();
         updateProgressParametrized();
       }}
-      on:rate-change={(e) => {
-        setPreferences("speed", e.detail);
-      }}
       on:hls-manifest-loaded={(e: any) => {
         console.log(e.detail, "levels");
       }}
@@ -1073,6 +1053,10 @@ export default function Player() {
       playsInline
       autoPlay={false}
       src={video.data?.hls}
+      loop={preferences.loop}
+      on:media-user-loop-change-request={(e)=>{
+        setPreferences("loop",e.detail)
+      }}
     >
       <media-provider class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full">
         <media-poster
@@ -1194,7 +1178,10 @@ export default function Player() {
             classList={{
               "!pointer-events-none flex flex-col h-full relative items-center px-5 my-2 mt-0 justify-start w-[26px] sm:w-[30px]":
                 true,
-              "mt-10": isMobilePlayer() && !canGoogleCast && !canAirPlay,
+              "mt-10":
+                isMobilePlayer() &&
+                !document.querySelector("media-google-cast-button") &&
+                !document.querySelector("media-airplay-button"),
             }}
           >
             <div class="pointer-events-auto flex flex-col items-center justify-between">

@@ -21,13 +21,15 @@ export function Menu(props: MenuProps) {
 
       <media-menu-items
         classList={{
-          "animate-out fade-out slide-out-to-bottom-2 data-[open]:animate-in data-[open]:fade-in data-[open]:slide-in-from-bottom-4 flex h-[var(--menu-height)] !w-[clamp(0px,100%,400px)] flex-col overflow-y-auto overscroll-y-contain rounded-md border border-white/10 bg-black/95 p-2.5 font-sans text-sm font-medium outline-none backdrop-blur-sm transition-[height] duration-300 will-change-[height] data-[resizing]:overflow-hidden z-10 !fixed !bottom-[4.2rem] !left-0 !right-0 !top-auto sm:!bottom-auto sm:!left-auto sm:max-w-[calc(var(--media-width)-20px)] max-h-[60vh] sm:max-h-[65vh] mx-auto sm:ml-[unset] sm:mr-[unset]":
+          "animate-out fade-out slide-out-to-bottom-2 data-[open]:animate-in data-[open]:fade-in data-[open]:slide-in-from-bottom-4 flex h-[var(--menu-height)] !w-[clamp(0px,100%,400px)] flex-col overflow-y-auto overscroll-y-contain rounded-md border border-white/10 bg-black/95 p-2.5 font-sans text-sm font-medium outline-none backdrop-blur-sm transition-[height] duration-300 will-change-[height] data-[resizing]:overflow-hidden z-10 !fixed !bottom-[4.2rem] !left-0 !right-0 !top-auto sm:!bottom-auto sm:left-auto sm:max-w-[calc(var(--media-width)-20px)] max-h-[60vh] sm:max-h-[65vh] mx-auto sm:ml-[unset] sm:mr-[unset]":
             true,
           "sm:!top-[5.4rem]": isPlacementBottom() && !params.fullscreen,
           "sm:!top-12": !!(isPlacementBottom() && params.fullscreen),
-          "sm:!left-4  sm:!right-auto": props.placement.includes("start"),
-          "sm:!right-4 sm:!left-auto": props.placement.includes("end"),
-          "sm:!left-10 sm:!top-10": props.isSideTrigger,
+          "sm:!left-4  sm:!right-auto":
+            props.placement.includes("start") && !props.isSideTrigger,
+          "sm:!right-4 sm:!left-auto":
+            props.placement.includes("end") && !props.isSideTrigger,
+          "sm:!left-12 sm:!top-10": props.isSideTrigger,
         }}
         placement={props.placement}
       >
