@@ -17,6 +17,7 @@ import {
   formatRelativeShort,
   generateThumbnailUrl,
   getVideoId,
+  relativeTimeFormatter,
 } from "~/utils/helpers";
 import { mergeProps } from "solid-js";
 import { createTimeAgo } from "@solid-primitives/date";
@@ -47,9 +48,6 @@ const VideoCard = (props: {
     setWatchedAt(watchedAt());
   });
 
-  const [uploaded] = props.v
-    ? createTimeAgo(props.v.uploaded, { interval: 0 })
-    : [() => ""];
   const id = () => getVideoId(props.v);
   const historyItem = () => (id() ? sync.store.history[id()!] : undefined);
 
@@ -141,7 +139,10 @@ const VideoCard = (props: {
               uploaderUrl={props.v!.uploaderUrl}
               uploaderAvatar={props.v!.uploaderAvatar}
               views={props.v!.views}
-              uploaded={uploaded()}
+              uploaded={createTimeAgo(props.v!.uploaded, {
+                interval: 3600 * 1000,
+                relativeFormatter: relativeTimeFormatter,
+              })[0]()}
               uploadedDate={new Date(props.v!.uploaded)}
               live={props.v!.uploaded === -1}
             />

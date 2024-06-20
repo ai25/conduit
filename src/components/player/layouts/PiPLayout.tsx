@@ -22,14 +22,7 @@ import { useNavigate, useSearchParams } from "@solidjs/router";
 export function PiPLayout() {
   const [appState, setAppState] = useAppState();
   const navigate = useNavigate();
-  const [v, setV] = createSignal<string | undefined>(undefined);
-  const [searchParams] = useSearchParams();
   const [preferences] = usePreferences();
-  createEffect(() => {
-    console.log(searchParams.v, "searchParams.v");
-    if (!searchParams.v) return;
-    setV(searchParams.v);
-  });
 
   return (
     <div
@@ -67,12 +60,7 @@ export function PiPLayout() {
               class="hover:bg-white/20 rounded-md p-0 h-10 w-10 flex items-center justify-center"
               icon={<TbArrowUpLeft class="text-white w-8 h-8 min-w-max" />}
               onClick={() => {
-                if (!v()) return;
-                const params = new URLSearchParams(
-                  window.location.search
-                ).toString();
-
-                navigate(`/watch?v=${v()}${params ? `&${params}` : ""}`);
+                navigate(appState.lastWatchUrl!);
               }}
             />
           </div>
