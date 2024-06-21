@@ -965,8 +965,9 @@ export default function Player() {
           !!searchParams.fullscreen && !appState.player.small,
         "!sticky sm:!relative !top-0": !searchParams.fullscreen,
         "!sticky sm:!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ":
-          appState.player.small,
-        "!hidden": appState.player.dismissed,
+          appState.player.small && !!video.data,
+        "!hidden":
+          appState.player.dismissed || (appState.player.small && !video.data),
       }}
       current-time={currentTime()}
       key-disabled
@@ -1200,7 +1201,9 @@ export default function Player() {
           </media-controls-group>
         </media-controls>
       </div>
-      <Show when={appState.player.small && !appState.player.dismissed}>
+      <Show
+        when={video.data && appState.player.small && !appState.player.dismissed}
+      >
         <PiPLayout />
       </Show>
     </media-player>
