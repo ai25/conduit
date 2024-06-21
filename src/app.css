@@ -103,3 +103,7 @@ media-fullscreen-button {
 media-player[data-started] #controls {
   z-index: 99;
 }
+
+#nprogress.bar {
+  z-index: 999999 !important;
+}

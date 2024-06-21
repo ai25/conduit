@@ -34,7 +34,13 @@ import { clientOnly } from "@solidjs/start";
 import { parseCookie } from "./utils/helpers";
 import { BiSolidCog } from "solid-icons/bi";
 import Player from "./components/player/Player";
+import { SolidNProgress } from "solid-progressbar";
+import NProgress from "nprogress";
+
 const ReloadPrompt = clientOnly(() => import("./components/ReloadPrompt"));
+NProgress.configure({
+  showSpinner: false,
+});
 
 const [theme, setTheme] = createSignal("");
 export const ThemeContext = createContext<Signal<string>>([theme, setTheme]);
@@ -68,6 +74,13 @@ export default function App() {
   createEffect(() => {
     console.log(sync.store, "sync store");
   });
+  createEffect(() => {
+    if (appState.loading) {
+      NProgress.start();
+    } else {
+      NProgress.done();
+    }
+  });
 
   return (
     <Router
@@ -86,19 +99,18 @@ export default function App() {
                               <div
                                 class={`${theme()} bg-bg1 min-h-screen font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3`}
                               >
-                                <Suspense>
-                                  <Header />
-                                </Suspense>
+                                <Header />
 
+                                <SolidNProgress
+                                  color="rgb(var(--colors-primary))"
+                                  options={{
+                                    showSpinner: false,
+                                    speed: 150,
+                                    easing: "ease-in",
+                                  }}
+                                />
                                 <div aria-hidden="true" class="h-10" />
                                 <Player />
-                                <Show when={appState.loading}>
-                                  <div class="fixed h-1 w-full -mx-2 top-0 z-[9999999]">
-                                    <div
-                                      class={`h-1 bg-gradient-to-r from-accent1 via-primary to-accent1 bg-repeat-x w-full animate-stripe`}
-                                    />
-                                  </div>
-                                </Show>
                                 <Portal>
                                   <Toast.Region>
                                     <Toast.List class="fixed bottom-0 right-0 p-4 flex flex-col gap-2 z-[999999] w-[400px] max-w-[100vw] outline-none" />

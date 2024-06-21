@@ -23,6 +23,7 @@ import {
   For,
   untrack,
   on,
+  createRenderEffect,
 } from "solid-js";
 import { Chapter, PipedVideo, RelatedStream, Subtitle } from "~/types";
 import { chaptersVtt } from "~/lib/chapters";
@@ -959,7 +960,7 @@ export default function Player() {
       keep-alive
       id="player"
       classList={{
-        "block z-[99999] aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
+        "z-[1000] bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
           true,
         "!absolute inset-0 w-screen h-screen":
           !!searchParams.fullscreen && !appState.player.small,
@@ -968,7 +969,11 @@ export default function Player() {
           appState.player.small && !!video.data,
         "!hidden":
           appState.player.dismissed || (appState.player.small && !video.data),
+        "block aspect-video": !!video.data || route.pathname === "/watch",
       }}
+      aria-hidden={
+        appState.player.dismissed || (appState.player.small && !video.data)
+      }
       current-time={currentTime()}
       key-disabled
       tabIndex={-1}
