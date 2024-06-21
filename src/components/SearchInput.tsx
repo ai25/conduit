@@ -283,7 +283,7 @@ const SearchInput = () => {
       <Show when={suggestions().length > 0 && showSuggestions()}>
         <Portal>
           <ul
-            class={`fixed w-screen h-screen sm:h-auto left-0 right-0 sm:w-max sm:min-w-[30rem] sm:left-[calc(70vw-18rem)] top-10 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
+            class={`fixed w-screen h-screen sm:h-auto max-h-screen overflow-y-auto left-0 right-0 sm:w-max sm:min-w-[30rem] sm:left-[calc(70vw-18rem)] top-10 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
             aria-multiselectable="false"
             aria-live="polite"
             aria-label="Suggestions"

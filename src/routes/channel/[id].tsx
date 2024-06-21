@@ -21,7 +21,7 @@ import {
   Tab,
 } from "~/types";
 import Button from "~/components/Button";
-import { Spinner } from "~/components/PlayerContainer";
+import { Spinner } from "~/components/Spinner";
 import { assertType, fetchJson } from "~/utils/helpers";
 import { A, useLocation } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";

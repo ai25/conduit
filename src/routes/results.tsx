@@ -20,7 +20,7 @@ import { assertType, fetchJson } from "~/utils/helpers";
 import numeral from "numeral";
 import Button from "~/components/Button";
 import SubscribeButton from "~/components/SubscribeButton";
-import { Spinner } from "~/components/PlayerContainer";
+import { Spinner } from "~/components/Spinner";
 import Select from "~/components/Select";
 import Modal from "~/components/Modal";
 import { useAppState } from "~/stores/appStateStore";
@@ -167,6 +167,9 @@ export default function Search() {
       operators: [],
     }
   );
+  createEffect(() => {
+    console.log(filter(), "filter");
+  });
 
   return (
     <>

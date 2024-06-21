@@ -27,13 +27,13 @@ import {
 } from "@tanstack/solid-query";
 import { PreferencesProvider } from "./stores/preferencesStore";
 import { QueueProvider } from "./stores/queueStore";
-import PlayerContainer from "./components/PlayerContainer";
 import Header from "./components/Header";
 import { MetaProvider } from "@solidjs/meta";
 import { VideoContextProvider } from "./stores/VideoContext";
 import { clientOnly } from "@solidjs/start";
 import { parseCookie } from "./utils/helpers";
 import { BiSolidCog } from "solid-icons/bi";
+import Player from "./components/player/Player";
 const ReloadPrompt = clientOnly(() => import("./components/ReloadPrompt"));
 
 const [theme, setTheme] = createSignal("");
@@ -75,14 +75,14 @@ export default function App() {
         <>
           <MetaProvider tags={[]}>
             <QueryClientProvider client={queryClient}>
-              <ThemeContext.Provider value={[theme, setTheme]}>
-                <PreferencesProvider>
-                  <AppStateProvider>
-                    <PlaylistProvider>
-                      <QueueProvider>
-                        <PlayerStateProvider>
-                          <SyncedStoreProvider>
-                            <VideoContextProvider>
+              <VideoContextProvider>
+                <ThemeContext.Provider value={[theme, setTheme]}>
+                  <PreferencesProvider>
+                    <AppStateProvider>
+                      <PlaylistProvider>
+                        <QueueProvider>
+                          <PlayerStateProvider>
+                            <SyncedStoreProvider>
                               <div
                                 class={`${theme()} bg-bg1 min-h-screen font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3`}
                               >
@@ -91,7 +91,7 @@ export default function App() {
                                 </Suspense>
 
                                 <div aria-hidden="true" class="h-10" />
-                                <PlayerContainer />
+                                <Player />
                                 <Show when={appState.loading}>
                                   <div class="fixed h-1 w-full -mx-2 top-0 z-[9999999]">
                                     <div
@@ -152,14 +152,14 @@ export default function App() {
                                 <div class="h-20 md:h-0" />
                                 <RouteAnnouncer />
                               </div>
-                            </VideoContextProvider>
-                          </SyncedStoreProvider>
-                        </PlayerStateProvider>
-                      </QueueProvider>
-                    </PlaylistProvider>
-                  </AppStateProvider>
-                </PreferencesProvider>
-              </ThemeContext.Provider>
+                            </SyncedStoreProvider>
+                          </PlayerStateProvider>
+                        </QueueProvider>
+                      </PlaylistProvider>
+                    </AppStateProvider>
+                  </PreferencesProvider>
+                </ThemeContext.Provider>
+              </VideoContextProvider>
             </QueryClientProvider>
           </MetaProvider>
         </>

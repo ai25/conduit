@@ -4,13 +4,7 @@ import { LANGUAGES, VIDEO_RESOLUTIONS } from "~/config/constants";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 
 export const DEFAULT_PREFERENCES = {
-  autoplay: false,
   pip: false,
-  muted: false,
-  volume: 0.5,
-  speed: 1,
-  quality: "auto",
-  theatreMode: false,
   loop: false,
   instance: {
     name: "Piped",
@@ -43,6 +37,8 @@ export const DEFAULT_PREFERENCES = {
     maxSearchHistory: 10,
   },
   playback: {
+    autoplay: false,
+    autoplayMuted: false,
     preferedQuality: "Auto",
     defaultCaptionsEnabled: false,
     defaultCaptionsLanguage: "en",

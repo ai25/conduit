@@ -221,6 +221,34 @@ export default function Preferences() {
         <div class="ml-10">
           <div class="flex justify-between items-center">
             <PreferencesCard
+              icon={<FaSolidPlay class="w-6 h-6" />}
+              title="Autoplay videos"
+            />
+            <Toggle
+              label="Autoplay videos"
+              checked={preferences.playback.autoplay}
+              onChange={(v) => setPreferences("playback", "autoplay", v)}
+            />
+          </div>
+        </div>
+        <div class="ml-10">
+          <div class="flex justify-between items-center">
+            <PreferencesCard
+              icon={<FaSolidPlay class="w-6 h-6" />}
+              title="Autoplay muted when autoplay fails"
+              description="Browsers don't allow websites to play audio without user interaction. Enable this to start videos without sound when autoplay fails."
+            />
+            <Toggle
+              disabled={!preferences.playback.autoplay}
+              label="Autoplay muted when autoplay fails"
+              checked={preferences.playback.autoplayMuted}
+              onChange={(v) => setPreferences("playback", "autoplayMuted", v)}
+            />
+          </div>
+        </div>
+        <div class="ml-10">
+          <div class="flex justify-between items-center">
+            <PreferencesCard
               icon={<FaSolidFilm class="w-5 h-5" />}
               title="Preferred Video Quality"
             />

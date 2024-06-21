@@ -22,6 +22,7 @@ import {
   onMount,
   For,
   untrack,
+  on,
 } from "solid-js";
 import { Chapter, PipedVideo, RelatedStream, Subtitle } from "~/types";
 import { chaptersVtt } from "~/lib/chapters";
@@ -946,13 +947,19 @@ export default function Player() {
       }
     }
   }
+  const [canAirPlay, setCanAirPlay] = createSignal(false);
+  const [canGoogleCast, setCanGoogleCast] = createSignal(false);
+  createEffect(() => {
+    setCanAirPlay(!!mediaPlayer.getAttribute("data-can-airplay"));
+    setCanGoogleCast(!!mediaPlayer.getAttribute("data-can-google-cast"));
+  });
 
   return (
     <media-player
       keep-alive
       id="player"
       classList={{
-        " z-[99999] aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
+        "block z-[99999] aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
           true,
         "!absolute inset-0 w-screen h-screen":
           !!searchParams.fullscreen && !appState.player.small,
@@ -1017,8 +1024,14 @@ export default function Player() {
       poster={video.data?.thumbnailUrl ?? ""}
       crossOrigin
       playsInline
-      autoPlay={false}
-      src={video.data?.hls}
+      autoPlay={preferences.playback.autoplay}
+      on:auto-play-fail={() => {
+        if (preferences.playback.autoplayMuted) {
+          mediaPlayer.muted = true;
+          mediaPlayer.play();
+        }
+      }}
+      src={video.data?.hls ?? ""}
       loop={preferences.loop}
       on:media-user-loop-change-request={(e) => {
         setPreferences("loop", e.detail);
@@ -1130,10 +1143,7 @@ export default function Player() {
             classList={{
               "!pointer-events-none flex flex-col h-full relative items-center px-5 my-2 mt-0 justify-start w-[26px] sm:w-[30px]":
                 true,
-              "mt-10":
-                isMobilePlayer() &&
-                !document.querySelector("media-google-cast-button") &&
-                !document.querySelector("media-airplay-button"),
+              "mt-10": isMobilePlayer() && !canAirPlay() && !canGoogleCast(),
             }}
           >
             <div class="pointer-events-auto flex flex-col items-center justify-between">

@@ -1,3 +1,6 @@
+{
+  /*eslint-disable no-case-declarations*/
+}
 import { RelatedChannel, RelatedPlaylist, RelatedStream } from "~/types";
 import { RadioGroup } from "@kobalte/core";
 import { For, Show, createEffect, createSignal, Match } from "solid-js";
@@ -7,6 +10,7 @@ import Select from "./Select";
 import Field from "./Field";
 import { Switch } from "solid-js";
 import Button from "./Button";
+import { parseRelativeTime } from "~/utils/helpers";
 
 type FieldName =
   | keyof RelatedStream
@@ -15,15 +19,15 @@ type FieldName =
 
 type Condition = {
   type:
-  | "INCLUDES"
-  | "IS"
-  | "LESS_THAN"
-  | "GREATER_THAN"
-  | "NOT_INCLUDES"
-  | "IS_NOT"
-  | "IS_BEFORE"
-  | "IS_AFTER"
-  | "IS_BETWEEN";
+    | "INCLUDES"
+    | "IS"
+    | "LESS_THAN"
+    | "GREATER_THAN"
+    | "NOT_INCLUDES"
+    | "IS_NOT"
+    | "IS_BEFORE"
+    | "IS_AFTER"
+    | "IS_BETWEEN";
   field: FieldName;
   value: string;
 };
@@ -89,7 +93,7 @@ const RemoveButton = (props: { onClick: () => void }) => (
     <FaSolidX fill="currentColor" class="w-3 h-3" />
   </button>
 );
-const Filter = (props: {
+const FilterComponent = (props: {
   operatorText: string;
   field: FieldName;
   value: string;
@@ -139,27 +143,6 @@ const Filter = (props: {
   );
 };
 
-const LogicalOperator = (props: {
-  operator: {
-    value: LogicalOperator;
-    label: LogicalOperator;
-    disabled: boolean;
-  };
-  updateOperator: (operator: LogicalOperator) => void;
-}) => (
-  <Select
-    options={[
-      { value: "AND", label: "AND", disabled: false },
-      { value: "OR", label: "OR", disabled: false },
-    ]}
-    onChange={(value) => {
-      console.log(value);
-      props.updateOperator(value.value as LogicalOperator);
-    }}
-    value={props.operator}
-  />
-);
-
 const ConditionEditor = (props: {
   addCondition: (condition: Condition) => void;
 }) => {
@@ -169,12 +152,15 @@ const ConditionEditor = (props: {
     label: FieldName;
     disabled: boolean;
   }>({ value: "title", label: "title", disabled: false });
-  const [currentOperator, setCurrentOperator] =
-    createSignal<{ value: Condition["type"]; label: Condition["type"], disabled: boolean }>({
-      value: "INCLUDES",
-      label: "INCLUDES",
-      disabled: false,
-          });
+  const [currentOperator, setCurrentOperator] = createSignal<{
+    value: Condition["type"];
+    label: Condition["type"];
+    disabled: boolean;
+  }>({
+    value: "INCLUDES",
+    label: "INCLUDES",
+    disabled: false,
+  });
 
   return (
     <div class="flex gap-2 items-center flex-wrap">
@@ -206,10 +192,10 @@ const ConditionEditor = (props: {
           "IS_AFTER",
           "IS_BETWEEN",
         ].map((operator) => ({
-        value: operator,
-        label: operator,
-        disabled: false,
-                }))}
+          value: operator,
+          label: operator,
+          disabled: false,
+        }))}
       />
 
       <Switch>
@@ -230,8 +216,8 @@ const ConditionEditor = (props: {
           {(() => {
             setCurrentValue(
               JSON.stringify({
-                start: new Date("1970-01-01").toISOString(),
-                end: new Date().toISOString(),
+                start: new Date("1970-01-01").toISOString().substring(0, 10),
+                end: new Date().toISOString().substring(0, 10),
               })
             );
             return <></>;
@@ -299,23 +285,29 @@ const ConditionEditor = (props: {
           />
         </Match>
         <Match
-          when={currentOperator().value === "IS" || currentOperator().value === "IS_NOT"}
+          when={
+            currentOperator().value === "IS" ||
+            currentOperator().value === "IS_NOT"
+          }
         >
           <Select
             value={{
-            value: currentValue(),
-            label: currentValue(),
-            disabled: false,
-                        }}
-            options={[{
-              value: "true",
-              label: "true",
+              value: currentValue(),
+              label: currentValue(),
               disabled: false,
-                          }, {
-              value: "false",
-              label: "false",
-              disabled: false,
-                          }]}
+            }}
+            options={[
+              {
+                value: "true",
+                label: "true",
+                disabled: false,
+              },
+              {
+                value: "false",
+                label: "false",
+                disabled: false,
+              },
+            ]}
             onChange={(value) => setCurrentValue(value.value)}
           />
         </Match>
@@ -369,7 +361,7 @@ const FilterEditor = (props: {
         class="my-2"
         show={visible()}
       >
-        <Filter
+        <FilterComponent
           operatorText={condition.type}
           field={condition.field}
           value={condition.value as string}
@@ -439,71 +431,74 @@ const FilterEditor = (props: {
 };
 export const evaluateFilter = (
   filter: Filter,
-  video: Record<FieldName, string | number>,
+  item: Record<FieldName, string | number>,
   onError: (error: unknown) => void = console.error
 ): boolean => {
   if (filter.conditions.length === 0) return true;
-  let conditionResults: boolean[] = [];
+
+  const conditionResults: boolean[] = [];
+
   try {
-    for (let condition of filter.conditions) {
+    for (const condition of filter.conditions) {
       let result = false;
+      const fieldValue = item[condition.field]?.toString();
+
+      if (fieldValue === undefined) {
+        conditionResults.push(false);
+        continue;
+      }
+
       switch (condition.type) {
         case "INCLUDES":
           result = new RegExp(condition.value).test(
-            video[condition.field]?.toString().toLowerCase().trim()
+            fieldValue.toLowerCase().trim()
           );
           break;
         case "NOT_INCLUDES":
           result = !new RegExp(condition.value).test(
-            video[condition.field]?.toString().toLowerCase().trim()
+            fieldValue.toLowerCase().trim()
           );
           break;
         case "LESS_THAN":
-          const value = parseInt(condition.value);
-          const field = parseInt(video[condition.field]?.toString());
-          result = isNaN(value) || isNaN(field) ? false : field < value;
+          const valueLT = parseFloat(condition.value.replaceAll(",", ""));
+          const fieldLT = parseFloat(fieldValue.replaceAll(",", ""));
+          result = !isNaN(valueLT) && !isNaN(fieldLT) && fieldLT < valueLT;
           break;
         case "GREATER_THAN":
-          const valueGT = parseInt(condition.value);
-          const fieldGT = parseInt(video[condition.field]?.toString());
-          result = isNaN(valueGT) || isNaN(fieldGT) ? false : fieldGT > valueGT;
+          const valueGT = parseFloat(condition.value.replaceAll(",", ""));
+          const fieldGT = parseFloat(fieldValue.replaceAll(",", ""));
+          console.log("filter gt", valueGT, fieldGT);
+          result = !isNaN(valueGT) && !isNaN(fieldGT) && fieldGT > valueGT;
           break;
         case "IS":
-          result = new RegExp(condition.value).test(
-            video[condition.field]?.toString()
-          );
+          result = new RegExp(condition.value).test(fieldValue);
           break;
         case "IS_NOT":
-          result = !new RegExp(condition.value).test(
-            video[condition.field]?.toString()
-          );
+          result = !new RegExp(condition.value).test(fieldValue);
+          break; // Missing break statement fixed
         case "IS_BEFORE":
-          const date = new Date(condition.value);
-          const fieldDate = new Date(video[condition.field]?.toString());
+          const dateBefore = new Date(condition.value);
+          const fieldDateBefore = new Date(fieldValue);
           result =
-            isNaN(date.getTime()) || isNaN(fieldDate.getTime())
-              ? false
-              : fieldDate.getTime() < date.getTime();
+            !isNaN(dateBefore.getTime()) &&
+            !isNaN(fieldDateBefore.getTime()) &&
+            fieldDateBefore < dateBefore;
           break;
         case "IS_AFTER":
           const dateAfter = new Date(condition.value);
-          const fieldDateAfter = new Date(video[condition.field]?.toString());
+          const fieldDateAfter = new Date(fieldValue);
           result =
-            isNaN(dateAfter.getTime()) || isNaN(fieldDateAfter.getTime())
-              ? false
-              : fieldDateAfter.getTime() > dateAfter.getTime();
+            !isNaN(dateAfter.getTime()) &&
+            !isNaN(fieldDateAfter.getTime()) &&
+            fieldDateAfter > dateAfter;
           break;
         case "IS_BETWEEN":
           let start: Date | null = null,
             end: Date | null = null;
           try {
-            let values = JSON.parse(condition.value);
-            if (values.start) {
-              start = new Date(values.start);
-            }
-            if (values.end) {
-              end = new Date(values.end);
-            }
+            const values = JSON.parse(condition.value);
+            if (values.start) start = new Date(values.start);
+            if (values.end) end = new Date(values.end);
           } catch (error) {
             onError(error);
             result = false;
@@ -513,11 +508,19 @@ export const evaluateFilter = (
             result = false;
             break;
           }
-          const fieldDateBetween = new Date(video[condition.field]?.toString());
-          result = isNaN(fieldDateBetween.getTime())
-            ? false
-            : fieldDateBetween.getTime() >= start.getTime() &&
-            fieldDateBetween.getTime() <= end.getTime();
+
+          let fieldDateBetween;
+          try {
+            fieldDateBetween = new Date(parseRelativeTime(fieldValue));
+            console.log("filterr", fieldValue, fieldDateBetween, start, end);
+          } catch (_) {
+            fieldDateBetween = new Date(parseInt(fieldValue, 10));
+          }
+
+          result =
+            !isNaN(fieldDateBetween.getTime()) &&
+            fieldDateBetween >= start &&
+            fieldDateBetween <= end;
           break;
       }
       conditionResults.push(result);
@@ -525,10 +528,10 @@ export const evaluateFilter = (
 
     let finalResult = conditionResults[0];
     for (let i = 0; i < filter.operators.length; i++) {
-      let operator = filter.operators[i];
-      let nextCondition = conditionResults[i + 1];
+      const operator = filter.operators[i];
+      const nextCondition = conditionResults[i + 1];
+      if (nextCondition === undefined) break;
       if (operator === "AND") {
-        if (nextCondition === undefined) break;
         finalResult = finalResult && nextCondition;
       } else if (operator === "OR") {
         finalResult = finalResult || nextCondition;

@@ -45,7 +45,7 @@ import { Toast, toaster } from "@kobalte/core";
 import { JSX } from "solid-js/jsx-runtime";
 import { Switch, Match, Show } from "solid-js/web";
 import { FaSolidCircleCheck, FaSolidCircleXmark, FaSolidX } from "solid-icons/fa";
-import { Spinner } from "./PlayerContainer";
+import { Spinner } from "./Spinner";
 function show(message: string) {
   return toaster.show(props => (
     <ToastComponent toastId={props.toastId} title={message} />

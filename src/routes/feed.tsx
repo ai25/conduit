@@ -8,7 +8,7 @@ import {
   createMemo,
   onCleanup,
 } from "solid-js";
-import { Spinner } from "~/components/PlayerContainer";
+import { Spinner } from "~/components/Spinner";
 import { RelatedStream } from "~/types";
 import { createQuery, isServer } from "@tanstack/solid-query";
 import { useSyncStore } from "~/stores/syncStore";

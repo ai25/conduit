@@ -1,6 +1,5 @@
 import { JSX, Show } from "solid-js";
 import { Button as KobalteButton } from "@kobalte/core";
-import { Spinner } from "./PlayerContainer";
 import { useNavigate } from "@solidjs/router";
 
 export default function Button(props: {
