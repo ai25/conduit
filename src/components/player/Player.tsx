@@ -24,6 +24,8 @@ import {
   untrack,
   on,
   createRenderEffect,
+  Suspense,
+  ErrorBoundary,
 } from "solid-js";
 import { Chapter, PipedVideo, RelatedStream, Subtitle } from "~/types";
 import { chaptersVtt } from "~/lib/chapters";
@@ -65,6 +67,7 @@ import { PrevButton } from "./buttons/PrevButton";
 import { NextButton } from "./buttons/NextButton";
 import { FaSolidArrowLeft } from "solid-icons/fa";
 import { usePlayerState } from "~/stores/playerStateStore";
+import { Spinner } from "../Spinner";
 
 export default function Player() {
   const route = useLocation();
@@ -386,8 +389,7 @@ export default function Player() {
     console.log(event, "provider change");
     const provider = event.detail;
     if (isHLSProvider(provider)) {
-      provider.library = async () => await import("hls.js");
-      console.log(provider);
+      console.log(provider, "provider change");
       provider.config = {
         // Reduce the quality to prevent frequent buffering
         maxBufferSize: 60 * 1000 * 1000, // lower buffer size to save memory
@@ -951,8 +953,17 @@ export default function Player() {
   const [canAirPlay, setCanAirPlay] = createSignal(false);
   const [canGoogleCast, setCanGoogleCast] = createSignal(false);
   createEffect(() => {
-    setCanAirPlay(!!mediaPlayer.getAttribute("data-can-airplay"));
-    setCanGoogleCast(!!mediaPlayer.getAttribute("data-can-google-cast"));
+    if (!canPlay()) return; // wait until player has all attributes
+    if (mediaPlayer.getAttribute("data-can-airplay") !== null) {
+      setCanAirPlay(true);
+    } else {
+      setCanAirPlay(false);
+    }
+    if (mediaPlayer.getAttribute("data-can-google-cast") !== null) {
+      setCanGoogleCast(true);
+    } else {
+      setCanGoogleCast(false);
+    }
   });
 
   return (
@@ -960,7 +971,7 @@ export default function Player() {
       keep-alive
       id="player"
       classList={{
-        "z-[1000] bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
+        "z-[1000] hidden bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
           true,
         "!absolute inset-0 w-screen h-screen":
           !!searchParams.fullscreen && !appState.player.small,
@@ -969,7 +980,7 @@ export default function Player() {
           appState.player.small && !!video.data,
         "!hidden":
           appState.player.dismissed || (appState.player.small && !video.data),
-        "block aspect-video": !!video.data || route.pathname === "/watch",
+        "!block aspect-video": !!video.data || route.pathname === "/watch",
       }}
       aria-hidden={
         appState.player.dismissed || (appState.player.small && !video.data)
@@ -1149,7 +1160,7 @@ export default function Player() {
             classList={{
               "!pointer-events-none flex flex-col h-full relative items-center px-5 my-2 mt-0 justify-start w-[26px] sm:w-[30px]":
                 true,
-              "mt-10": isMobilePlayer() && !canAirPlay() && !canGoogleCast(),
+              "mt-10": isMobilePlayer() && (canAirPlay() || canGoogleCast()),
             }}
           >
             <div class="pointer-events-auto flex flex-col items-center justify-between">
@@ -1214,3 +1225,26 @@ export default function Player() {
     </media-player>
   );
 }
+
+export const PlayerLoading = () => {
+  const video = useVideoContext();
+  const [appState] = useAppState();
+  const [searchParams] = useSearchParams();
+  const route = useLocation();
+  return (
+    <div
+      classList={{
+        "z-[1000] flex aspect-video justify-center items-center bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
+          true,
+        "!absolute inset-0 w-screen h-screen":
+          !!searchParams.fullscreen && !appState.player.small,
+        "!sticky sm:!relative !top-0": !searchParams.fullscreen,
+        "!sticky sm:!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ":
+          appState.player.small,
+        "!hidden": appState.player.dismissed || appState.player.small,
+      }}
+    >
+      <Spinner />
+    </div>
+  );
+};

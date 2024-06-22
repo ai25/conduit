@@ -4,6 +4,7 @@ import { LANGUAGES, VIDEO_RESOLUTIONS } from "~/config/constants";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 
 export const DEFAULT_PREFERENCES = {
+  theme: "monokai",
   pip: false,
   loop: false,
   instance: {

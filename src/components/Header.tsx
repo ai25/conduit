@@ -11,7 +11,6 @@ import {
   onCleanup,
   createMemo,
 } from "solid-js";
-import { ThemeContext } from "~/app";
 import { useCookie } from "~/utils/hooks";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { Dropdown } from "./Dropdown";
@@ -57,7 +56,6 @@ export enum ProviderStatus {
 }
 
 export default function Header() {
-  const [theme, setTheme] = useContext(ThemeContext);
   const [, setThemeCookie] = useCookie("theme", "monokai");
   const sync = useSyncStore();
 
@@ -344,11 +342,11 @@ export default function Header() {
             isOpen={themeOpen()}
             onOpenChange={setThemeOpen}
             onChange={(value) => {
-              setTheme(value);
+              setPreferences("theme", value);
               setThemeCookie(value);
             }}
             options={THEME_OPTIONS}
-            selectedValue={theme()}
+            selectedValue={preferences.theme}
             triggerIcon={
               <FaSolidBrush fill="currentColor" class="h-5 w-5 text-text1" />
             }
