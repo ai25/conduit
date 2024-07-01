@@ -57,7 +57,12 @@ export default function VideoCardMenu(props: {
         modal={false}
         // hideWhenDetached={true}
       >
-        <DropdownMenu.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+        <DropdownMenu.Trigger
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+        >
           <BsThreeDotsVertical
             fill="currentColor"
             class="text-text2 w-6 h-6 group-hover:text-text1"

@@ -33,11 +33,9 @@ export const PlayerStateProvider = (props: { children: any }) => {
 
   createEffect(() => {
     if (!player()) return;
-    unsubscribe = player()!.subscribe(
-      ({ paused, canAirPlay, canGoogleCast }) => {
-        setPlayerState({ paused, canGoogleCast, canAirPlay });
-      }
-    );
+    unsubscribe = player()!.subscribe(({ paused }) => {
+      setPlayerState({ paused });
+    });
   });
 
   onCleanup(() => {

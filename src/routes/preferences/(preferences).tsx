@@ -36,7 +36,6 @@ import { TiCog } from "solid-icons/ti";
 import { Show } from "solid-js";
 import { For, createSignal } from "solid-js";
 import { createEffect, useContext } from "solid-js";
-import { ThemeContext } from "~/app";
 import Button from "~/components/Button";
 import Collapsible from "~/components/Collapsible";
 import Field from "~/components/Field";
@@ -56,7 +55,6 @@ import { useCookie } from "~/utils/hooks";
 export default function Preferences() {
   const navigate = useNavigate();
   const [preferences, setPreferences] = usePreferences();
-  const [theme, setTheme] = useContext(ThemeContext);
   const [, setThemeCookie] = useCookie("theme", "monokai");
   function capitalize(str: string) {
     return str.slice(0, 1).toUpperCase() + str.slice(1);
@@ -81,12 +79,12 @@ export default function Preferences() {
             <Select
               options={THEME_OPTIONS}
               onChange={(value) => {
-                setTheme(value.value);
+                setPreferences("theme", value.value);
                 setThemeCookie(value.value);
               }}
               value={{
-                value: theme(),
-                label: capitalize(theme()),
+                value: preferences.theme,
+                label: capitalize(preferences.theme),
                 disabled: false,
               }}
             />

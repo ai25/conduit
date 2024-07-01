@@ -1,0 +1,30 @@
+.player {
+  --media-brand: rgb(var(--colors-primary));
+  --media-focus-ring-color: rgb(var(--colors-primary));
+  --media-focus-ring: 0 0 0 3px var(--media-focus-ring-color);
+}
+
+.player[data-view-type="audio"] {
+  --media-tooltip-y-offset: 44px;
+  --media-menu-y-offset: 40px;
+  --media-slider-chapter-title-color: black;
+  --media-border-radius: 4px;
+  background-color: black;
+  border-radius: var(--media-border-radius);
+  contain: layout;
+}
+
+.player[data-view-type="video"] {
+  --media-tooltip-y-offset: 30px;
+  --media-menu-y-offset: 30px;
+  --media-border-radius: 6px;
+  aspect-ratio: 16 /9;
+  background-color: black;
+  border-radius: var(--media-border-radius);
+  contain: layout;
+}
+
+.player video,
+media-poster {
+  border-radius: var(--media-border-radius);
+}

@@ -17,7 +17,6 @@ import {
   formatRelativeShort,
   generateThumbnailUrl,
   getVideoId,
-  relativeTimeFormatter,
 } from "~/utils/helpers";
 import { mergeProps } from "solid-js";
 import { createTimeAgo } from "@solid-primitives/date";
@@ -52,28 +51,28 @@ const VideoCard = (props: {
   const historyItem = () => (id() ? sync.store.history[id()!] : undefined);
 
   return (
-    <div
-      classList={{
-        "flex flex-row gap-2 items-start rounded-xl bg-bg1 p-2 overflow-hidden":
-          true,
-        "min-w-full": props.layout === "list",
-        "sm:max-w-max  sm:flex-col sm:w-72 sm:gap-0 min-w-full sm:min-w-0":
-          props.layout === "sm:grid",
-        "h-max max-h-max max-w-max flex-col w-full gap-2 sm:w-72":
-          props.layout === "grid",
-      }}
+    <Show
+      when={props.v}
+      fallback={<VideoCardFallback layout={props.layout!} />}
     >
       <div
         classList={{
-          "aspect-video overflow-hidden rounded": true,
-          "max-h-96": props.layout === "list",
-          "max-h-44 min-w-min sm:max-h-full sm:w-full":
+          "flex flex-row gap-2 items-start rounded-xl bg-bg1 p-2 overflow-hidden":
+            true,
+          "min-w-full": props.layout === "list",
+          "sm:max-w-max  sm:flex-col sm:w-72 sm:gap-0 min-w-full sm:min-w-0":
             props.layout === "sm:grid",
+          "h-max max-h-max max-w-max flex-col w-full gap-2 sm:w-72":
+            props.layout === "grid",
         }}
       >
-        <Show
-          when={props.v}
-          fallback={<ImageContainerFallback layout={props.layout as any} />}
+        <div
+          classList={{
+            "aspect-video overflow-hidden rounded": true,
+            "max-h-96": props.layout === "list",
+            "max-h-44 min-w-min sm:max-h-full sm:w-full":
+              props.layout === "sm:grid",
+          }}
         >
           <ImageContainer
             url={`/watch?v=${id()}${searchParams.fullscreen ? `&fullscreen=${searchParams.fullscreen}` : ""}`}
@@ -83,37 +82,21 @@ const VideoCard = (props: {
             watchedAt={watchedAt()}
             currentTime={historyItem()?.currentTime}
           />
-        </Show>
-      </div>
-      <div
-        classList={{
-          "flex w-full min-w-0 max-w-full justify-between h-full  sm:mt-2 max-h-20":
-            true,
-          "max-w-[22rem]": props.layout === "grid",
-        }}
-      >
+        </div>
         <div
           classList={{
-            "flex flex-col min-w-0 gap-2 pr-2 h-full w-full": true,
-            "max-w-[10rem] [@media(min-width:380px)]:max-w-[11rem] [@media(min-width:400px)]:max-w-full":
-              props.layout === "sm:grid" || props.layout === "list",
-            "max-w-full": props.layout === "grid",
+            "flex w-full min-w-0 max-w-full justify-between h-full  sm:mt-2 max-h-20":
+              true,
+            "max-w-[22rem]": props.layout === "grid",
           }}
         >
-          <Show
-            when={props.v}
-            fallback={
-              <div class="flex flex-col gap-1">
-                <div
-                  aria-hidden="true"
-                  class="animate-pulse bg-bg2 w-full rounded-lg h-4 "
-                />
-                <div
-                  aria-hidden="true"
-                  class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg "
-                />
-              </div>
-            }
+          <div
+            classList={{
+              "flex flex-col min-w-0 gap-2 pr-2 h-full w-full": true,
+              "max-w-[10rem] [@media(min-width:380px)]:max-w-[11rem] [@media(min-width:400px)]:max-w-full":
+                props.layout === "sm:grid" || props.layout === "list",
+              "max-w-full": props.layout === "grid",
+            }}
           >
             <Tooltip
               as="div"
@@ -129,9 +112,7 @@ const VideoCard = (props: {
               }
               contentSlot={props.v!.title}
             />
-          </Show>
 
-          <Show when={props.v} fallback={<InfoContainerFallback />}>
             <InfoContainer
               url={props.v!.url}
               title={props.v!.title}
@@ -141,25 +122,84 @@ const VideoCard = (props: {
               views={props.v!.views}
               uploaded={createTimeAgo(props.v!.uploaded, {
                 interval: 3600 * 1000,
-                relativeFormatter: relativeTimeFormatter,
               })[0]()}
               uploadedDate={new Date(props.v!.uploaded)}
               live={props.v!.uploaded === -1}
             />
-          </Show>
-        </div>
+          </div>
 
-        <div class="flex flex-col justify-start min-w-[32px]">
-          <Show when={props.v}>
+          <div class="flex flex-col justify-start min-w-[32px]">
             <VideoCardMenu v={props.v!} progress={historyItem()?.currentTime} />
-          </Show>
+          </div>
         </div>
       </div>
-    </div>
+    </Show>
   );
 };
 
 export default VideoCard;
+export const VideoCardFallback = (props: {
+  layout: "list" | "grid" | "sm:grid";
+}) => {
+  return (
+    <Switch>
+      <Match when={props.layout === "list"}>
+        <div class="flex p-2 gap-2 w-full">
+          <ImageContainerFallback layout={props.layout} />
+          <div class="flex flex-col gap-2 w-[60%]">
+            <div class="flex flex-col gap-1">
+              <div
+                aria-hidden="true"
+                class="animate-pulse bg-bg2 w-full rounded-lg h-4 "
+              />
+              <div
+                aria-hidden="true"
+                class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg "
+              />
+            </div>
+            <InfoContainerFallback />
+          </div>
+        </div>
+      </Match>
+      <Match when={props.layout === "grid"}>
+        <div class="flex flex-col p-2 gap-2">
+          <ImageContainerFallback layout={props.layout} />
+          <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-1">
+              <div
+                aria-hidden="true"
+                class="animate-pulse bg-bg2 w-full rounded-lg h-4 "
+              />
+              <div
+                aria-hidden="true"
+                class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg "
+              />
+            </div>
+            <InfoContainerFallback />
+          </div>
+        </div>
+      </Match>
+      <Match when={props.layout === "sm:grid"}>
+        <div class="flex sm:flex-col p-2 gap-2 w-full sm:w-auto">
+          <ImageContainerFallback layout={props.layout} />
+          <div class="flex flex-col gap-2 w-[60%] sm:w-auto">
+            <div class="flex flex-col gap-1">
+              <div
+                aria-hidden="true"
+                class="animate-pulse bg-bg2 w-full rounded-lg h-4 "
+              />
+              <div
+                aria-hidden="true"
+                class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg "
+              />
+            </div>
+            <InfoContainerFallback />
+          </div>
+        </div>
+      </Match>
+    </Switch>
+  );
+};
 
 const ImageContainer = (props: {
   url: string;
@@ -174,7 +214,7 @@ const ImageContainer = (props: {
   return (
     <Link
       href={props.url}
-      class="relative w-[10rem] flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative min-w-[10rem] flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{

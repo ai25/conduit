@@ -21,7 +21,7 @@ export default createHandler(() => {
             <link rel="icon" href="/favicon.ico" />
             {assets}
           </head>
-          <body class="bg-black text-white">
+          <body class="bg-black text-white scrollbar">
             <div id="app">{children}</div>
             {scripts}
           </body>

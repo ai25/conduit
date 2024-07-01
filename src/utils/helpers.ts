@@ -164,31 +164,6 @@ export function isMobile() {
     navigator.maxTouchPoints > 1 && typeof screen.orientation !== "undefined"
   );
 }
-// export function isMobile() {
-//   if (isServer) return false;
-//   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-//
-//   // Regular expressions to match mobile devices
-//   const mobileRegex =
-//     /(android|avantgo|blackberry|bolt|boost|cricket|docomo|fone|hiptop|mini|mobi|palm|phone|pie|tablet|up\.browser|up\.link|webos|wos)/i;
-//
-//   // Check if user agent matches mobile patterns
-//   if (mobileRegex.test(userAgent)) {
-//     return true;
-//   }
-//
-//   // Additional check for iPad which is sometimes considered as a desktop device
-//   if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-//     return true;
-//   }
-//
-//   // Fallback for touch events support
-//   return (
-//     "ontouchstart" in window ||
-//     navigator.maxTouchPoints > 0 ||
-//     navigator.msMaxTouchPoints > 0
-//   );
-// }
 
 export function formatRelativeShort(now: Date, past: Date): string {
   const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
@@ -196,8 +171,8 @@ export function formatRelativeShort(now: Date, past: Date): string {
   const secondsInAMinute = 60;
   const secondsInAnHour = secondsInAMinute * 60;
   const secondsInADay = secondsInAnHour * 24;
-  const secondsInAMonth = secondsInADay * 30; // rough average
-  const secondsInAYear = secondsInADay * 365; // ignoring leap years for simplicity
+  const secondsInAMonth = secondsInADay * 30.44;
+  const secondsInAYear = secondsInADay * 365.25;
 
   if (diffInSeconds >= secondsInAYear) {
     return `${Math.floor(diffInSeconds / secondsInAYear)}y`;
@@ -211,44 +186,6 @@ export function formatRelativeShort(now: Date, past: Date): string {
     return `${Math.floor(diffInSeconds / secondsInAMinute)}m`;
   } else {
     return `now`;
-  }
-}
-export function relativeTimeFormatter(now: Date, past: Date): string {
-  const seconds = Math.floor((now.getTime() - past.getTime()) / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  const weeks = Math.floor(days / 7);
-  const months = Math.floor(days / 30.44); // average days in a month
-  const years = Math.floor(days / 365.25); // average days in a year considering leap years
-
-  if (seconds < 60) {
-    return `${seconds} seconds ago`;
-  } else if (minutes < 60) {
-    return `${minutes} minutes ago`;
-  } else if (hours < 24) {
-    return `${hours} hours ago`;
-  } else if (days === 1) {
-    return `yesterday`;
-  } else if (days < 7) {
-    return `${days} days ago`;
-  } else if (weeks === 1) {
-    return `last week`;
-  } else if (weeks < 5) {
-    return `${weeks} weeks ago`;
-  } else if (months === 1) {
-    return `last month`;
-  } else if (months < 12) {
-    return `${months} months ago`;
-  } else if (years === 1) {
-    return `last year`;
-  } else {
-    const remainingMonths = Math.floor((days % 365.25) / 30.44);
-    if (remainingMonths > 0) {
-      return `${years} years and ${remainingMonths} months ago`;
-    } else {
-      return `${years} years ago`;
-    }
   }
 }
 export function parseRelativeTime(relativeTime: string) {

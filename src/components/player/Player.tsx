@@ -7,6 +7,7 @@ import "vidstack/icons";
 import "vidstack/player/styles/default/theme.css";
 import "vidstack/player/styles/default/layouts/audio.css";
 import "vidstack/player/styles/default/layouts/video.css";
+import styles from "./player.module.css";
 
 import {
   HLSErrorEvent,
@@ -69,10 +70,22 @@ import { FaSolidArrowLeft } from "solid-icons/fa";
 import { usePlayerState } from "~/stores/playerStateStore";
 import { Spinner } from "../Spinner";
 
-export default function Player() {
+export default function Player(props: {
+  forwardRef?: (playerRef: MediaPlayerElement) => void;
+  nextVideo?: (nextVideo: RelatedStream | null | undefined) => void;
+  prevVideo?: (prevVideo: RelatedStream | null | undefined) => void;
+  playNext?: (playNext: () => void) => void;
+  playPrev?: (playPrev: () => void) => void;
+  showEndScreen?: (showEndScreen: boolean) => void;
+  endScreenCounter?: (counter: number) => void;
+  dismissEndScreen?: (dismissEndScreen: () => void) => void;
+}) {
   const route = useLocation();
   let mediaPlayer!: MediaPlayerElement;
   const sync = useSyncStore();
+  onMount(() => {
+    props.forwardRef?.(mediaPlayer);
+  });
 
   const [preferences, setPreferences] = usePreferences();
   const [videoId, setVideoId] = createSignal<string | undefined>(undefined);
@@ -342,6 +355,16 @@ export default function Player() {
     navigate(url);
   };
 
+  createEffect(() => {
+    props.nextVideo?.(nextVideo());
+    props.prevVideo?.(prevVideo());
+    props.playNext?.(playNext);
+    props.playPrev?.(playPrev);
+    props.showEndScreen?.(showEndScreen());
+    props.endScreenCounter?.(counter());
+    props.dismissEndScreen?.(dismissEndScreen);
+  });
+
   const handleEnded = () => {
     console.log("ended");
     if (!mediaPlayer) return;
@@ -577,7 +600,7 @@ export default function Player() {
     if (document.activeElement?.tagName === "INPUT") return;
     switch (e.key) {
       case "f":
-        console.log(`f key pressed, fullscreen: ${document.fullscreenElement}`);
+        if (e.ctrlKey || e.shiftKey) break;
         if (!searchParams.fullscreen) {
           try {
             document.documentElement.requestFullscreen();
@@ -893,21 +916,32 @@ export default function Player() {
 
   const [isMobilePlayer, setIsMobilePlayer] = createSignal(false);
 
+  const handleSetMobilePlayer = () => {
+    const width = mediaPlayer.clientWidth;
+    const height = mediaPlayer.clientHeight;
+    let mobileHeight = 379;
+    let mobileWidth = 590;
+    if (searchParams.fullscreen) {
+      mobileWidth = 575;
+    }
+    if (height > mobileHeight && width > mobileWidth) {
+      setIsMobilePlayer(false);
+    } else {
+      setIsMobilePlayer(true);
+    }
+  };
+
+  createEffect(
+    // Fix size not updating when navigating from a different page
+    on(
+      () => route.pathname,
+      () => {
+        setTimeout(handleSetMobilePlayer, 0);
+      }
+    )
+  );
+
   onMount(() => {
-    const handleSetMobilePlayer = () => {
-      const width = mediaPlayer.clientWidth;
-      const height = mediaPlayer.clientHeight;
-      let mobileHeight = 379;
-      let mobileWidth = 590;
-      if (searchParams.fullscreen) {
-        mobileWidth = 575;
-      }
-      if (height > mobileHeight && width > mobileWidth) {
-        setIsMobilePlayer(false);
-      } else {
-        setIsMobilePlayer(true);
-      }
-    };
     handleSetMobilePlayer();
     const handleFullscreenChange = () => {
       handleSetMobilePlayer();
@@ -954,6 +988,11 @@ export default function Player() {
   const [canGoogleCast, setCanGoogleCast] = createSignal(false);
   createEffect(() => {
     if (!canPlay()) return; // wait until player has all attributes
+    console.log(
+      "canGoogleCast",
+      mediaPlayer.getAttribute("data-can-google-cast"),
+      isMobilePlayer()
+    );
     if (mediaPlayer.getAttribute("data-can-airplay") !== null) {
       setCanAirPlay(true);
     } else {
@@ -971,16 +1010,14 @@ export default function Player() {
       keep-alive
       id="player"
       classList={{
-        "z-[1000] hidden bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
+        [styles.player]: true,
+        "z-[1000] block aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
           true,
-        "!absolute inset-0 w-screen h-screen":
+        "!absolute top-0 left-0 w-screen h-screen":
           !!searchParams.fullscreen && !appState.player.small,
-        "!sticky sm:!relative !top-0": !searchParams.fullscreen,
-        "!sticky sm:!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ":
-          appState.player.small && !!video.data,
-        "!hidden":
-          appState.player.dismissed || (appState.player.small && !video.data),
-        "!block aspect-video": !!video.data || route.pathname === "/watch",
+        "!sticky sm:!relative !top-0":
+          !searchParams.fullscreen && !appState.player.small,
+        "!hidden": !video.data || appState.player.dismissed,
       }}
       aria-hidden={
         appState.player.dismissed || (appState.player.small && !video.data)
@@ -1041,7 +1078,9 @@ export default function Player() {
       poster={video.data?.thumbnailUrl ?? ""}
       crossOrigin
       playsInline
-      autoPlay={preferences.playback.autoplay}
+      autoPlay={
+        appState.player.dismissed ? false : preferences.playback.autoplay
+      }
       on:auto-play-fail={() => {
         if (preferences.playback.autoplayMuted) {
           mediaPlayer.muted = true;
@@ -1054,7 +1093,10 @@ export default function Player() {
         setPreferences("loop", e.detail);
       }}
     >
-      <media-provider class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full">
+      <media-provider
+        id="media-provider"
+        class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full"
+      >
         <media-poster
           aria-hidden="true"
           src={video.data?.thumbnailUrl ?? ""}
@@ -1095,16 +1137,20 @@ export default function Player() {
           </div>
         </div>
       </Show>
-      <Show when={showEndScreen()}>
-        <div class="absolute z-50 top-0 right-0 w-full h-full pointer-events-auto">
-          <div class="flex flex-col items-center justify-center w-full h-full gap-3">
+      <Show when={showEndScreen() && !appState.player.small}>
+        <div class="absolute z-50 top-0 right-0 w-full h-full pointer-events-auto bg-black/50">
+          <div class="flex flex-col items-center justify-center w-full h-full gap-1 py-2">
             <div class="text-2xl font-bold text-white">
               Playing next in {counter()} seconds
             </div>
-            <div class="flex flex-col">
-              <div class="text-lg scale-75 sm:scale-100 text-white w-96 h-full my-2">
-                <VideoCard layout="sm:grid" v={nextVideo() ?? undefined} />
+            <div class="text-lg min-h-0 max-h-full space-y-2">
+              <div class="h-[80%] mx-auto min-h-0 max-w-full max-h-full aspect-video relative bg-red-500">
+                <img
+                  class="absolute w-full h-full object-contain rounded"
+                  src={nextVideo()?.thumbnail}
+                />
               </div>
+              <div>{nextVideo()?.title}</div>
             </div>
             <div class="flex justify-center gap-2">
               <Button
@@ -1135,6 +1181,8 @@ export default function Player() {
         <media-video-layout
           style={{
             "--media-focus-ring-color": "rgb(var(--colors-primary))",
+
+            "--media-brand": "rgb(var(--colors-primary))",
           }}
           thumbnails={generateStoryboard(video.data?.previewFrames?.[1])}
         />
@@ -1217,9 +1265,10 @@ export default function Player() {
           </media-controls-group>
         </media-controls>
       </div>
-      <Show
-        when={video.data && appState.player.small && !appState.player.dismissed}
-      >
+      {/* <VideoLayout */}
+      {/*   thumbnails={generateStoryboard(video.data?.previewFrames?.[1])} */}
+      {/* /> */}
+      <Show when={video.data && appState.player.small && !appState.smallDevice}>
         <PiPLayout />
       </Show>
     </media-player>
@@ -1232,19 +1281,19 @@ export const PlayerLoading = () => {
   const [searchParams] = useSearchParams();
   const route = useLocation();
   return (
-    <div
-      classList={{
-        "z-[1000] flex aspect-video justify-center items-center bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
-          true,
-        "!absolute inset-0 w-screen h-screen":
-          !!searchParams.fullscreen && !appState.player.small,
-        "!sticky sm:!relative !top-0": !searchParams.fullscreen,
-        "!sticky sm:!sticky !top-10 !left-1 !w-56 sm:!w-72 lg:!w-96 ":
-          appState.player.small,
-        "!hidden": appState.player.dismissed || appState.player.small,
-      }}
-    >
-      <Spinner />
-    </div>
+    <Show when={route.pathname === "/watch"}>
+      <div
+        classList={{
+          "z-[1000] rounded flex aspect-video justify-center items-center bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
+            true,
+          "!absolute top-0 left-0 w-full h-screen max-w-screen":
+            !!searchParams.fullscreen && !appState.player.small,
+          "!sticky sm:!relative !top-0": !searchParams.fullscreen,
+          "!hidden": appState.player.dismissed || appState.player.small,
+        }}
+      >
+        <Spinner class="!text-primary" />
+      </div>
+    </Show>
   );
 };

@@ -7,6 +7,7 @@ export const DEFAULT_PREFERENCES = {
   theme: "monokai",
   pip: false,
   loop: false,
+  theatreMode: false,
   instance: {
     name: "Piped",
     api_url: "https://pipedapi.kavin.rocks",

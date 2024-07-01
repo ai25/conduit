@@ -23,19 +23,16 @@ export function PiPLayout() {
   const [appState, setAppState] = useAppState();
   const navigate = useNavigate();
   const [preferences] = usePreferences();
+  const [searchParams] = useSearchParams();
 
   return (
-    <div
-      classList={{
-        hidden: appState.player.dismissed || !appState.player.small,
-      }}
-    >
+    <div>
       <media-gesture
         class="absolute inset-0 z-0 block h-full w-full"
         event="pointerup"
         action="toggle:controls"
       />
-      <div class="lg:flex">
+      <div class="flex">
         <Captions />
       </div>
       <media-controls
@@ -60,7 +57,7 @@ export function PiPLayout() {
               class="hover:bg-white/20 rounded-md p-0 h-10 w-10 flex items-center justify-center"
               icon={<TbArrowUpLeft class="text-white w-8 h-8 min-w-max" />}
               onClick={() => {
-                navigate(appState.lastWatchUrl!);
+                navigate(`/watch${location.search}`);
               }}
             />
           </div>
@@ -78,12 +75,12 @@ export function PiPLayout() {
         </media-controls-group>
 
         <div class="flex-1" />
-        <media-controls-group class="lg:flex w-full items-center px-2 hidden ">
+        <media-controls-group class="flex w-full items-center px-2 ">
           <TimeSlider />
         </media-controls-group>
-        <media-controls-group class="-mt-0.5 flex w-full justify-between lg:justify-center gap-1 items-center px-2 pb-2">
+        <media-controls-group class="-mt-0.5 flex w-full justify-center gap-1 items-center px-2 pb-2">
           <MuteButton tooltipPlacement="top" />
-          <div class="hidden lg:inline-flex">
+          <div class="inline-flex">
             <TimeGroup />
           </div>
           <CaptionButton tooltipPlacement="top" />

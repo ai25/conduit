@@ -24,6 +24,7 @@ const store = createStore({
   },
   lastBrowseUrl: undefined as string | undefined,
   lastWatchUrl: undefined as string | undefined,
+  smallDevice: false,
 });
 const AppStateContext = createContext(store);
 export const AppStateProvider = (props: { children: any }) => {

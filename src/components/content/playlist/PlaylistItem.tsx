@@ -14,6 +14,7 @@ import { usePreferences } from "~/stores/preferencesStore";
 import { createTimeAgo } from "@solid-primitives/date";
 import Link from "~/components/Link";
 import VideoCardMenu from "../stream/VideoCardMenu";
+import { useSearchParams } from "@solidjs/router";
 
 const PlaylistItem = (props: {
   v: RelatedStream;
@@ -52,13 +53,26 @@ const PlaylistItem = (props: {
   });
   const [isOpen, setIsOpen] = createSignal(false);
   const [timeAgo] = createTimeAgo(props.v.uploaded, { interval: 1000 * 60 });
+  const [searchParams, setSearchParams] = useSearchParams();
 
   return (
-    <Link
+    <button
       // draggable="false"
       // data-long-press-delay="500"
       ref={card}
-      href={`${props.v.url}&list=${props.list}&index=${props.index}`}
+      onClick={() => {
+        setSearchParams(
+          {
+            v: props.v.url.split("v=")[1],
+            list: props.list,
+            index: props.index,
+          },
+          {
+            replace: true,
+          }
+        );
+      }}
+      // href={`${props.v.url}&list=${props.list}&index=${props.index}`}
       // style={{ "background-image": `url(${props.v.thumbnail})` }}
       class={`select-none relative min-h-[5rem] flex justify-between bg-bg2 hover:bg-bg1 px-1 focus-visible:ring-2 focus-visible:ring-accent1 outline-none mx-1 py-2 rounded-lg text-text1`}
     >
@@ -146,7 +160,7 @@ const PlaylistItem = (props: {
         {/*   <DropdownItem as="button" label="Add to queue" /> */}
         {/* </Dropdown> */}
       </div>
-    </Link>
+    </button>
   );
 };
 

@@ -36,6 +36,7 @@ import { BiSolidCog } from "solid-icons/bi";
 import Player, { PlayerLoading } from "./components/player/Player";
 import { SolidNProgress } from "solid-progressbar";
 import NProgress from "nprogress";
+import Watch, { WatchFallback } from "./components/Watch";
 
 const ReloadPrompt = clientOnly(() => import("./components/ReloadPrompt"));
 NProgress.configure({
@@ -44,10 +45,20 @@ NProgress.configure({
 
 export default function App() {
   const [preferences, setPreferences] = usePreferences();
+  createRenderEffect(() => {
+    if (!isServer) return;
+    const event = getRequestEvent();
+
+    const cookie = parseCookie(event?.request.headers.get("cookie") ?? "");
+    const theatreMode = cookie.theatreMode;
+    setPreferences("theatreMode", !!theatreMode);
+  });
   createEffect(() => {
     const cookie = parseCookie(document.cookie);
     const theme = cookie.theme ?? "monokai";
+    const theatreMode = !!JSON.parse(cookie.theatreMode ?? "false");
     setPreferences("theme", theme);
+    setPreferences("theatreMode", theatreMode);
   });
 
   createEffect(() => {
@@ -96,7 +107,7 @@ export default function App() {
                         <PlayerStateProvider>
                           <SyncedStoreProvider>
                             <div
-                              class={` bg-bg1 min-h-screen font-manrope text-sm scrollbar text-text1 selection:bg-accent2 selection:text-text3`}
+                              class={` bg-bg1 min-h-screen font-manrope text-sm text-text1 selection:bg-accent2 selection:text-text3`}
                             >
                               <Header />
 
@@ -109,11 +120,9 @@ export default function App() {
                                 }}
                               />
                               <div aria-hidden="true" class="h-10" />
-
-                              <Suspense fallback={<PlayerLoading />}>
-                                <Player />
+                              <Suspense fallback={<WatchFallback />}>
+                                <Watch />
                               </Suspense>
-                              {/* <Watch /> */}
                               <Portal>
                                 <Toast.Region>
                                   <Toast.List class="fixed bottom-0 right-0 p-4 flex flex-col gap-2 z-[999999] w-[400px] max-w-[100vw] outline-none" />
@@ -165,6 +174,9 @@ export default function App() {
                                 />
                               </div>
                               <div class="h-20 md:h-0" />
+                              <Show when={appState.player.small}>
+                                <div class="h-32" />
+                              </Show>
                               <RouteAnnouncer />
                             </div>
                           </SyncedStoreProvider>

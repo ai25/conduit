@@ -10,7 +10,7 @@ export default function BottomNav(props: {
   }[];
 }) {
   return (
-    <nav class="flex gap-2 px-2 py-2 justify-evenly">
+    <nav class="flex gap-2 h-[var(--bottom-nav-height)] justify-evenly">
       <For each={props.items}>
         {(item) => (
           <Link

@@ -46,6 +46,8 @@ import Link from "./Link";
 import { useVideoContext } from "~/stores/VideoContext";
 import ShareModal from "./ShareModal";
 import { usePlayerState } from "~/stores/playerStateStore";
+import { BsAspectRatio, BsAspectRatioFill } from "solid-icons/bs";
+import { useCookie } from "~/utils/hooks";
 
 function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
   const player = document.querySelector("media-player") as MediaPlayerElement;
@@ -174,14 +176,9 @@ const Description = (props: { downloaded: boolean }) => {
             navigator.clipboard.writeText(JSON.stringify(video.data, null, 2));
           }}
         />
-        <Show
-          when={video.data}
-          fallback={<div class="w-full h-96 bg-bg1 animate-pulse" />}
-        >
-          <div class="max-w-screen-sm max-h-[80vh] overflow-auto">
-            <JSONViewer data={video.data} folded={false} />
-          </div>
-        </Show>
+        <div class="max-w-screen-sm max-h-[80vh] overflow-auto">
+          <JSONViewer data={video.data} folded={false} />
+        </div>
       </Modal>
       <Suspense>
         <DownloadModal
@@ -190,213 +187,188 @@ const Description = (props: { downloaded: boolean }) => {
           setIsOpen={setDownloadModalOpen}
         />
       </Suspense>
-      <Show when={video.data}>
-        <ShareModal
-          isOpen={shareModalOpen()}
-          setIsOpen={handleSetShareModalOpen}
-          thumbnail={video.data!.thumbnailUrl}
-          id={getVideoId(video.data)!}
-          title={video.data!.title}
-          t={currentTime()}
-        />
-      </Show>
+      <ShareModal
+        isOpen={shareModalOpen()}
+        setIsOpen={handleSetShareModalOpen}
+        thumbnail={video.data!.thumbnailUrl}
+        id={getVideoId(video.data)!}
+        title={video.data!.title}
+        t={currentTime()}
+      />
       <div class="bg-bg1 w-[clamp(250px,100%,98vw)] mx-auto p-4 @container">
         <div class="flex flex-col gap-2">
           <div class="flex flex-col gap-2 ">
             <div class="flex items-start justify-between h-full">
-              <Show
-                when={video.data}
-                fallback={
-                  <div class="w-full h-6 bg-bg2 rounded animate-pulse" />
-                }
-              >
-                <h1 class="text-lg leading-tight font-bold sm:text-xl ">
-                  {video.data!.title}
-                </h1>
-              </Show>
+              <h1 class="text-lg leading-tight font-bold sm:text-xl ">
+                {video.data!.title}
+              </h1>
             </div>
-            <Show
-              when={video.data}
-              fallback={
-                <div class="w-full h-12 flex sm:justify-start justify-between gap-2">
-                  <div class="w-44 flex items-center gap-2">
-                    <div class="w-12 h-12 aspect-square bg-bg2 animate-pulse rounded-full" />
-                    <div class="flex flex-col justify-between py-1 gap-1 h-full w-full ">
-                      <div class="w-full h-4  bg-bg2 animate-pulse rounded" />
-                      <div class="w-3/4 h-4 bg-bg2 animate-pulse rounded" />
-                    </div>
-                  </div>
-                  <div class="w-32 h-10  bg-bg2 animate-pulse rounded-full" />
-                </div>
-              }
-            >
-              <div class="my-1 flex justify-between items-center gap-4 sm:justify-start ">
-                <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
-                  <Link class="link" href={`${video.data!.uploaderUrl}`}>
-                    <img
-                      src={video.data!.uploaderAvatar}
-                      width={42}
-                      height={42}
-                      alt={video.data!.uploader}
-                      class="rounded-full"
-                    />
+            <div class="my-1 flex justify-between items-center gap-4 sm:justify-start ">
+              <div class="flex max-w-max items-center gap-2 text-sm sm:text-base">
+                <Link class="link" href={`${video.data!.uploaderUrl}`}>
+                  <img
+                    src={video.data!.uploaderAvatar}
+                    width={42}
+                    height={42}
+                    alt={video.data!.uploader}
+                    class="rounded-full"
+                  />
+                </Link>
+                <div class="flex flex-col items-start justify-start">
+                  <Link
+                    href={`${video.data!.uploaderUrl}`}
+                    class="link flex w-fit items-center gap-2"
+                  >
+                    {video.data!.uploader}{" "}
+                    {video.data!.uploaderVerified && <Checkmark />}
                   </Link>
-                  <div class="flex flex-col items-start justify-start">
-                    <Link
-                      href={`${video.data!.uploaderUrl}`}
-                      class="link flex w-fit items-center gap-2"
-                    >
-                      {video.data!.uploader}{" "}
-                      {video.data!.uploaderVerified && <Checkmark />}
-                    </Link>
-                    <div
-                      title={`${
-                        video.data!.uploaderSubscriberCount
-                      } subscribers`}
-                      class="flex w-full items-center text-start text-xs text-text2 sm:text-sm"
-                    >
-                      {numeral(video.data!.uploaderSubscriberCount)
-                        .format("0a")
-                        .toUpperCase()}{" "}
-                      subscribers
-                    </div>
+                  <div
+                    title={`${video.data!.uploaderSubscriberCount} subscribers`}
+                    class="flex w-full items-center text-start text-xs text-text2 sm:text-sm"
+                  >
+                    {numeral(video.data!.uploaderSubscriberCount)
+                      .format("0a")
+                      .toUpperCase()}{" "}
+                    subscribers
                   </div>
                 </div>
+              </div>
 
-                <SubscribeButton
-                  name={video.data!.uploader}
-                  id={
-                    (() => video.data?.uploaderUrl?.split("/channel/")[1])() ??
-                    ""
-                  }
+              <SubscribeButton
+                name={video.data!.uploader}
+                id={
+                  (() => video.data?.uploaderUrl?.split("/channel/")[1])() ?? ""
+                }
+              />
+            </div>
+          </div>
+          <ActionsContainer
+            downloaded={props.downloaded}
+            deleteVideo={() => deleteVideo(getVideoId(video.data)!)}
+            setDownloadModalOpen={() => setDownloadModalOpen(true)}
+            refetch={() => {
+              console.dir(window);
+            }}
+            setDebugInfoOpen={() => setDebugInfoOpen(true)}
+            setShareModalOpen={() => handleSetShareModalOpen(true)}
+          />
+          <div
+            title={`Published ${(() => {
+              const substr = date().toString().split(":")[0];
+              return substr.slice(0, substr.length - 3);
+            })()} • ${numeral(video.data!.views).format("0,0")} views`}
+            class="flex flex-col @sm:flex-row items-start @sm:items-center justify-between gap-1 my-1 text-sm "
+          >
+            <div class="flex items-center gap-1 @sm:max-w-[16rem] @md:max-w-full">
+              <p class="truncate">
+                {(() => {
+                  const substr = date().toString().split(":")[0];
+                  const time = date().toString().split(" ")[4];
+                  return `${substr.slice(0, substr.length - 3)} ${time.slice(0, time.length - 3)}`;
+                })()}
+              </p>
+              •
+              <p class="truncate">
+                {video.data!.views > 10000
+                  ? numeral(video.data!.views).format("0.00a").toUpperCase()
+                  : numeral(video.data!.views).format("0,0").toUpperCase()}{" "}
+                views
+              </p>
+            </div>
+            <div class="flex flex-col w-full @sm:w-36 ">
+              <div class="flex items-center justify-between">
+                <span
+                  title={`${numeral(video.data!.likes).format("0,0")} likes`}
+                  class="flex items-center gap-1 "
+                >
+                  <TbThumbUpFilled class="w-5 h-5 text-text2" />
+                  {video.data!.likes > 1000
+                    ? numeral(video.data!.likes).format("0.0a").toUpperCase()
+                    : numeral(video.data!.likes).format("0,0").toUpperCase()}
+                </span>
+                <span
+                  title={`${numeral(video.data!.dislikes).format("0,0")} likes`}
+                  class="flex items-center gap-1"
+                >
+                  <TbThumbDownFilled
+                    class="h-5 w-5 text-text2 "
+                    fill="currentColor"
+                  />
+                  {video.data!.dislikes > 1000
+                    ? numeral(video.data!.dislikes).format("0.0a").toUpperCase()
+                    : numeral(video.data!.dislikes).format("0,0").toUpperCase()}
+                </span>
+              </div>
+              <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
+                <div
+                  class="h-full bg-bg3 rounded-r"
+                  style={{
+                    width: `${
+                      (video.data!.dislikes /
+                        (video.data!.likes + video.data!.dislikes)) *
+                      100
+                    }%`,
+                  }}
                 />
               </div>
-            </Show>
-          </div>
-          <Show when={video.data} fallback={<ActionsContainerFallback />}>
-            <ActionsContainer
-              downloaded={props.downloaded}
-              deleteVideo={() => deleteVideo(getVideoId(video.data)!)}
-              setDownloadModalOpen={() => setDownloadModalOpen(true)}
-              refetch={() => {
-                console.dir(window);
-              }}
-              setDebugInfoOpen={() => setDebugInfoOpen(true)}
-              setShareModalOpen={() => handleSetShareModalOpen(true)}
-            />
-          </Show>
-          <Show
-            when={video.data}
-            fallback={
-              <div class="w-full h-8 flex flex-wrap gap-2 mb-2 items-end justify-between ">
-                <div class="w-64 h-4 bg-bg2 animate-pulse rounded-lg" />
-                <div class="w-full @sm:w-36 h-4 bg-bg2 animate-pulse rounded-lg" />
-              </div>
-            }
-          >
-            <div
-              title={`Published ${(() => {
-                const substr = date().toString().split(":")[0];
-                return substr.slice(0, substr.length - 3);
-              })()} • ${numeral(video.data!.views).format("0,0")} views`}
-              class="flex flex-col @sm:flex-row items-start @sm:items-center justify-between gap-1 my-1 text-sm "
-            >
-              <div class="flex items-center gap-1 @sm:max-w-[16rem] @md:max-w-full">
-                <p class="truncate">
-                  {(() => {
-                    const substr = date().toString().split(":")[0];
-                    const time = date().toString().split(" ")[4];
-                    return `${substr.slice(0, substr.length - 3)} ${time.slice(0, time.length - 3)}`;
-                  })()}
-                </p>
-                •
-                <p class="truncate">
-                  {video.data!.views > 10000
-                    ? numeral(video.data!.views).format("0.00a").toUpperCase()
-                    : numeral(video.data!.views)
-                        .format("0,0")
-                        .toUpperCase()}{" "}
-                  views
-                </p>
-              </div>
-              <div class="flex flex-col w-full @sm:w-36 ">
-                <div class="flex items-center justify-between">
-                  <span
-                    title={`${numeral(video.data!.likes).format("0,0")} likes`}
-                    class="flex items-center gap-1 "
-                  >
-                    <TbThumbUpFilled class="w-5 h-5 text-text2" />
-                    {video.data!.likes > 1000
-                      ? numeral(video.data!.likes).format("0.0a").toUpperCase()
-                      : numeral(video.data!.likes).format("0,0").toUpperCase()}
-                  </span>
-                  <span
-                    title={`${numeral(video.data!.dislikes).format(
-                      "0,0"
-                    )} likes`}
-                    class="flex items-center gap-1"
-                  >
-                    <TbThumbDownFilled
-                      class="h-5 w-5 text-text2 "
-                      fill="currentColor"
-                    />
-                    {video.data!.dislikes > 1000
-                      ? numeral(video.data!.dislikes)
-                          .format("0.0a")
-                          .toUpperCase()
-                      : numeral(video.data!.dislikes)
-                          .format("0,0")
-                          .toUpperCase()}
-                  </span>
-                </div>
-                <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
-                  <div
-                    class="h-full bg-bg3 rounded-r"
-                    style={{
-                      width: `${
-                        (video.data!.dislikes /
-                          (video.data!.likes + video.data!.dislikes)) *
-                        100
-                      }%`,
-                    }}
-                  />
-                </div>
-              </div>
             </div>
-          </Show>
+          </div>
         </div>
-        <Show
-          when={video.data}
-          fallback={
-            <div class="mt-1 rounded-lg w-full h-24 bg-bg2 animate-pulse" />
-          }
-        >
-          <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
-            <div
-              tabIndex={0}
-              id="description"
-              aria-expanded={expanded()}
-              class={`min-w-0 max-w-full overflow-hidden ${
-                expanded() ? "" : "max-h-20"
-              }`}
-              innerHTML={sanitizedDescription()!}
-            />
-            <div classList={{ hidden: expanded() }} class="w-full h-0 relative">
-              <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
-            </div>
-            <button
-              aria-controls="description"
-              onClick={() => {
-                setExpanded(!expanded());
-              }}
-              class="text-center text-sm text-accent1 hover:underline "
-            >
-              Show {expanded() ? "less" : "more"}
-            </button>
+        <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
+          <div
+            tabIndex={0}
+            id="description"
+            aria-expanded={expanded()}
+            class={`min-w-0 max-w-full overflow-hidden ${
+              expanded() ? "" : "max-h-20"
+            }`}
+            innerHTML={sanitizedDescription()!}
+          />
+          <div classList={{ hidden: expanded() }} class="w-full h-0 relative">
+            <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
           </div>
-        </Show>
+          <button
+            aria-controls="description"
+            onClick={() => {
+              setExpanded(!expanded());
+            }}
+            class="text-center text-sm text-accent1 hover:underline "
+          >
+            Show {expanded() ? "less" : "more"}
+          </button>
+        </div>
       </div>
     </>
+  );
+};
+
+export const DescriptionFallback = () => {
+  return (
+    <div class="flex flex-col gap-2 p-4 w-full">
+      <div class="w-3/4 h-6 rounded-full animate-pulse bg-bg2" />
+      <div class="w-1/2 h-6 rounded-full animate-pulse bg-bg2" />
+      <div class="flex gap-2 w-1/2 items-center">
+        <div class="w-16 h-16 aspect-square rounded-full animate-pulse bg-bg2" />
+        <div class="flex flex-col w-full gap-2">
+          <div class="w-44 h-4 rounded-full animate-pulse bg-bg2" />
+          <div class="w-32 h-4 rounded-full animate-pulse bg-bg2" />
+        </div>
+      </div>
+      <div class="w-full h-12 rounded-full animate-pulse bg-bg2" />
+      <div class="w-1/3 h-4 rounded-full animate-pulse bg-bg2" />
+      <div class="w-full h-32 rounded-lg animate-pulse bg-bg2" />
+      <For each={Array(5)}>
+        {() => (
+          <div class="flex gap-2 w-full items-center">
+            <div class="w-16 h-16 aspect-square rounded-full animate-pulse bg-bg2" />
+            <div class="flex flex-col w-full gap-2">
+              <div class="w-1/2 h-4 rounded-full animate-pulse bg-bg2" />
+              <div class="w-1/3 h-4 rounded-full animate-pulse bg-bg2" />
+            </div>
+          </div>
+        )}
+      </For>
+    </div>
   );
 };
 
@@ -464,6 +436,9 @@ const ActionsContainer = (props: {
   setDebugInfoOpen: () => void;
   setShareModalOpen: () => void;
 }) => {
+  const [, setTheatreMode] = useCookie("theatreMode", "false");
+  const [preferences, setPreferences] = usePreferences();
+  const [searchParams] = useSearchParams();
   return (
     <div class="flex items-center justify-evenly rounded-full p-2 bg-bg2">
       <Switch>
@@ -530,26 +505,28 @@ const ActionsContainer = (props: {
         }
       />
       <Tooltip
+        class={`hidden ${searchParams.fullscreen ? "" : "lg:block"}`}
         as="div"
-        contentSlot="Soft Refresh (Shift+R)"
+        contentSlot={
+          preferences.theatreMode ? "Exit Theatre Mode" : "Theatre Mode"
+        }
         triggerSlot={
           <Button
-            icon={<FaSolidArrowsRotate class="h-6 w-6" />}
+            icon={
+              preferences.theatreMode ? (
+                <BsAspectRatioFill class="h-6 w-6" />
+              ) : (
+                <BsAspectRatio class="h-6 w-6" />
+              )
+            }
             appearance="subtle"
-            onClick={props.refetch}
+            onClick={() => {
+              setTheatreMode(JSON.stringify(!preferences.theatreMode));
+              setPreferences("theatreMode", !preferences.theatreMode);
+            }}
           />
         }
       />
     </div>
   );
 };
-
-const ActionsContainerFallback = () => (
-  <div class="flex items-center bg-bg2 justify-evenly rounded-full p-2 ">
-    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse" />
-    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse" />
-    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse" />
-    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse" />
-    <div class="w-10 h-10 bg-bg1 rounded-full animate-pulse" />
-  </div>
-);

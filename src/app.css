@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bottom-nav-height: 60px;
+}
+
 @font-face {
   font-family: "Poppins";
   src: url("/fonts/poppins-500.woff2") format("woff2");
