@@ -1,5 +1,14 @@
 import { createInfiniteQuery } from "@tanstack/solid-query";
-import { createEffect, createSignal, Match, onCleanup, onMount, Show, Suspense, Switch } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  Match,
+  onCleanup,
+  onMount,
+  Show,
+  Suspense,
+  Switch,
+} from "solid-js";
 import { For } from "solid-js";
 import { isServer } from "solid-js/web";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
@@ -9,8 +18,9 @@ import { Bottomsheet } from "./Bottomsheet";
 import Comment, { PipedCommentResponse } from "./Comment";
 
 export default function Comments(props: {
-  videoId: string; uploader: string;
-  display: "default" | "bottomsheet"
+  videoId: string;
+  uploader: string;
+  display: "default" | "bottomsheet";
 }) {
   const [preferences] = usePreferences();
   const fetchComments = async ({
@@ -40,13 +50,12 @@ export default function Comments(props: {
   const query = createInfiniteQuery(() => ({
     queryKey: ["comments", props.videoId, preferences.instance.api_url],
     queryFn: fetchComments,
-    enabled: (preferences.instance?.api_url && props.videoId) ? true : false,
+    enabled: preferences.instance?.api_url && props.videoId ? true : false,
     getNextPageParam: (lastPage) => {
       return lastPage.nextpage;
     },
     initialPageParam: "initial",
-  })
-  );
+  }));
   const [commentsOpen, setCommentsOpen] = createSignal(false);
   const [intersectionRef, setIntersectionRef] = createSignal<
     HTMLDivElement | undefined
@@ -64,7 +73,6 @@ export default function Comments(props: {
     }
   });
 
-
   return (
     <>
       <Switch>
@@ -78,8 +86,13 @@ export default function Comments(props: {
           {commentsOpen() && (
             <Bottomsheet
               variant="snap"
-              defaultSnapPoint={({ maxHeight }) => maxHeight - playerHeight() ?? 300}
-              snapPoints={({ maxHeight }) => [maxHeight - 40, maxHeight - playerHeight() ?? 300]}
+              defaultSnapPoint={({ maxHeight }) =>
+                maxHeight - playerHeight() ?? 300
+              }
+              snapPoints={({ maxHeight }) => [
+                maxHeight - 40,
+                maxHeight - playerHeight() ?? 300,
+              ]}
               onClose={() => {
                 console.log("close");
                 setCommentsOpen(false);
@@ -91,9 +104,9 @@ export default function Comments(props: {
                   <Show when={query.data}>
                     <For each={query.data!.pages}>
                       {(page) => (
-                        <For each={page.comments
-                          .filter((c) => c.commentText)
-                        }>
+                        <For
+                          each={page?.comments?.filter((c) => c.commentText)}
+                        >
                           {(comment) => (
                             <Comment
                               videoId={props.videoId}
@@ -123,9 +136,7 @@ export default function Comments(props: {
                 <Show when={query.data}>
                   <For each={query.data!.pages}>
                     {(page) => (
-                      <For each={page.comments
-                          .filter((c) => c.commentText)
-                      }>
+                      <For each={page.comments.filter((c) => c.commentText)}>
                         {(comment) => (
                           <Comment
                             videoId={props.videoId}

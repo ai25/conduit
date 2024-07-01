@@ -13,12 +13,14 @@ import {
 import { usePreferences } from "./preferencesStore";
 import api from "~/utils/api";
 import { PipedVideo } from "~/types";
+import { useAppState } from "./appStateStore";
 
 const VideoContext = createContext<CreateQueryResult<PipedVideo, Error>>();
 export const VideoContextProvider = (props: { children: any }) => {
   const [videoId, setVideoId] = createSignal<string | undefined>(undefined);
   const [searchParams] = useSearchParams();
   const [preferences] = usePreferences();
+  const [appState] = useAppState();
   createEffect(() => {
     notifyManager.setScheduler(requestAnimationFrame);
     if (!searchParams.v) return;
@@ -27,7 +29,10 @@ export const VideoContextProvider = (props: { children: any }) => {
   const videoQuery = createQuery(() => ({
     queryKey: ["streams", videoId(), preferences.instance.api_url],
     queryFn: () => api.fetchVideo(videoId(), preferences.instance.api_url),
-    enabled: videoId() && preferences.instance.api_url ? true : false,
+    enabled:
+      videoId() && preferences.instance.api_url && !appState.player.dismissed
+        ? true
+        : false,
     refetchOnReconnect: false,
     refetchOnMount: false,
     cacheTime: Infinity,
