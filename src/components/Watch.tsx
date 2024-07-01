@@ -90,7 +90,7 @@ export default function Watch() {
     HTMLDivElement | undefined
   >();
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [windowWidth, setWindowWidth] = createSignal(1000);
   const [windowHeight, setWindowHeight] = createSignal(1000);
@@ -404,19 +404,26 @@ export default function Watch() {
   });
 
   return (
-    <Show when={video.data} fallback={<WatchFallback />}>
+    <Show
+      when={video.data && !appState.player.dismissed}
+      fallback={<WatchFallback />}
+    >
       <div
         classList={{
           "max-w-screen-2xl mx-auto w-full flex flex-col": true,
-          "!fixed bottom-[calc(var(--bottom-nav-height)+8px)] md:bottom-0 rounded backdrop-blur-sm left-[2vw] z-[9999] bg-bg2/70 w-[96vw] ":
+          "!fixed bottom-[calc(var(--bottom-nav-height)+8px)] md:bottom-0 left-0 z-[9999] bg-transparent pointer-events-none":
             appState.player.small,
-          "sm:w-[400px]": appState.player.small && !appState.smallDevice,
+          "sm:items-start": appState.player.small && !appState.smallDevice,
+          "items-center": appState.player.small && appState.smallDevice,
         }}
       >
         <div
           classList={{
-            "flex flex-col sm:flex-row w-full": true,
+            "flex flex-col sm:flex-row w-full pointer-events-auto": true,
             "sm:flex-row": !preferences.theatreMode && !searchParams.fullscreen,
+            " rounded backdrop-blur-sm bg-bg2/70 w-[96vw] ":
+              appState.player.small,
+            "sm:w-[400px]": appState.player.small && !appState.smallDevice,
           }}
         >
           <div class="flex flex-col w-full">
@@ -483,7 +490,7 @@ export default function Watch() {
                   "w-full": !appState.player.small,
                   "w-[240px] sm:w-full":
                     appState.player.small && !appState.smallDevice,
-                  "w-full max-w-[140px]":
+                  "w-full max-w-[140px] flex":
                     appState.player.small && appState.smallDevice,
                 }}
               >
@@ -571,6 +578,7 @@ export default function Watch() {
                     onClick={() => {
                       playerRef()?.pause();
                       setAppState("player", "dismissed", true);
+                      setSearchParams({ ...searchParams, v: undefined });
                     }}
                     class="p-3 outline-none focus-visible:ring-2 ring-primary/80 rounded-lg"
                   >

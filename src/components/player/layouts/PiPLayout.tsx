@@ -23,7 +23,7 @@ export function PiPLayout() {
   const [appState, setAppState] = useAppState();
   const navigate = useNavigate();
   const [preferences] = usePreferences();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   return (
     <div>
@@ -48,6 +48,7 @@ export function PiPLayout() {
                 const mediaPlayer = document.querySelector("media-player");
                 mediaPlayer?.pause();
                 setAppState("player", "dismissed", true);
+                setSearchParams({ ...searchParams, v: undefined });
               }}
             />
           </div>
