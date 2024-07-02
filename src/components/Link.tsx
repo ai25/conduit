@@ -40,6 +40,9 @@ export default function Link(props: LinkProps) {
           hrefUrl.searchParams.delete("index");
         }
       }
+      if (!props.href.includes("list=")) {
+        hrefUrl.searchParams.delete("playnext");
+      }
 
       const relativePath = hrefUrl.pathname;
       setHref(`${relativePath}${hrefUrl.search}${hrefUrl.hash}`);

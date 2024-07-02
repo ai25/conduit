@@ -22,6 +22,7 @@ import Field from "~/components/Field";
 import { debounce, getVideoId } from "~/utils/helpers";
 import VideoCard from "~/components/content/stream/VideoCard";
 import { Title } from "@solidjs/meta";
+import { exportConduitData } from "~/utils/import-helpers";
 
 export default function History() {
   const [limit, setLimit] = createSignal(50);
@@ -104,26 +105,6 @@ export default function History() {
     }
   });
 
-  const exportHistory = () => {
-    const history = Object.values(sync.store.history);
-    const toExport = JSON.stringify(
-      {
-        platform: "Conduit",
-        version: 1,
-        history,
-      },
-      null,
-      2
-    );
-    const blob = new Blob([toExport], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    const fileName = `conduit-history-${new Date().toISOString()}.json`;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
   const [deleteModalOpen, setDeleteModalOpen] = createSignal(false);
   const [deleteConfirmInput, setDeleteConfirmInput] = createSignal("");
   const [touched, setTouched] = createSignal(false);
@@ -140,7 +121,12 @@ export default function History() {
           setImportModalOpen(isOpen);
         }}
       />
-      <Button label="Export" onClick={exportHistory} />
+      <Button
+        label="Export"
+        onClick={() => {
+          exportConduitData({ history: true }, sync.store);
+        }}
+      />
       <Button label="Clear" onClick={() => setDeleteModalOpen(true)} />
       <Modal
         title="Delete history?"

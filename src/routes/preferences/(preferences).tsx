@@ -38,6 +38,7 @@ import { For, createSignal } from "solid-js";
 import { createEffect, useContext } from "solid-js";
 import Button from "~/components/Button";
 import Collapsible from "~/components/Collapsible";
+import ExportDataModal from "~/components/ExportDataModal";
 import Field from "~/components/Field";
 import ImportHistoryModal from "~/components/ImportHistoryModal";
 import PreferencesCard from "~/components/PreferencesCard";
@@ -59,6 +60,7 @@ export default function Preferences() {
   function capitalize(str: string) {
     return str.slice(0, 1).toUpperCase() + str.slice(1);
   }
+  const [exportDataModalOpen, setExportDataModalOpen] = createSignal(false);
   return (
     <div class="flex flex-col max-w-2xl mx-auto gap-2 p-4">
       <Collapsible
@@ -350,13 +352,22 @@ export default function Preferences() {
           />
         }
       >
-        <button class="w-full ml-10 outline-none focus-visible:ring-4 focus-visible:ring-primary rounded hover:bg-bg2">
+        <button
+          onClick={() => {
+            setExportDataModalOpen(true);
+          }}
+          class="w-full ml-10 outline-none focus-visible:ring-4 focus-visible:ring-primary rounded hover:bg-bg2"
+        >
           <PreferencesCard
             title="Export Conduit data"
             icon={<FaSolidDownload class="w-5 h-5" />}
           />
         </button>
       </Collapsible>
+      <ExportDataModal
+        isOpen={exportDataModalOpen()}
+        setIsOpen={setExportDataModalOpen}
+      />
     </div>
   );
 }

@@ -5,12 +5,21 @@ import Button from "./Button";
 import Modal from "./Modal";
 import { toast } from "./Toast";
 import { getVideoId } from "~/utils/helpers";
+import { RelatedStream } from "~/types";
+import {
+  processConduitHistory,
+  processFreeTubeHistory,
+  processInvidiousHistory,
+  processLibreTubeHistory,
+  processPipedHistory,
+  processYouTubeHistory,
+} from "~/utils/import-helpers";
 
 export default function ImportHistoryModal(props: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }) {
-  const [items, setItems] = createSignal([]);
+  const [items, setItems] = createSignal<Partial<RelatedStream>[]>([]);
   const [index, setIndex] = createSignal(0);
   const [success, setSuccess] = createSignal(0);
   const [error, setError] = createSignal(0);
@@ -23,123 +32,28 @@ export default function ImportHistoryModal(props: {
     const file = fileSelector.files[0];
     file.text().then((text) => {
       console.log(text);
-      setItems([]);
-      // Conduit
-      if (text.includes("Conduit")) {
-        const json = JSON.parse(text);
-        console.log(json);
-        const history = json.history;
-        console.log(history);
-        setItems(history);
-      }
-      // YouTube
-      else if (text.includes("products") && text.includes("YouTube")) {
-        const json = JSON.parse(text);
-        console.log(json);
-        const items = json.map((video: any) => {
-          const item = {
-            url: video.titleUrl.split("https://www.youtube.com")[1],
-            title: video.title,
-            uploaderName: video.subtitles[0].name,
-            uploaderUrl: video.subtitles[0].url.split(
-              "https://www.youtube.com"
-            )[1],
-            watchedAt: new Date(video.time).getTime(),
-          };
-          console.log(item);
-          return item;
-        });
-        console.log(items);
-        setItems(
-          items.sort((a: any, b: any) => {
-            return b.watchedAt - a.watchedAt;
-          })
-        );
-      }
-      // LibreTube
-      else if (text.includes("watchPositions")) {
-        console.log("LibreTube");
-        const json = JSON.parse(text);
-        const lt = json.watchHistory.map((video: any) => {
-          return {
-            url: `/watch?v=${video.videoId}`,
-            duration: video.duration,
-            thumbnail: video.thumbnailUrl,
-            title: video.title,
-            uploaderName: video.uploader,
-            uploaderUrl: video.uploaderUrl,
-            uploaded: new Date(video.uploadDate).getTime(),
-            currentTime:
-              json.watchPositions.find((i: any) => i.videoId === video.videoId)
-                ?.position / 1000 ?? 0,
-          };
-        });
-        setItems(lt.sort((a: any, b: any) => b.watchedAt - a.watchedAt));
-      }
 
-      // Piped
-      else if (text.includes("watchHistory")) {
-        const json = JSON.parse(text);
-        console.log(json);
-        const items = json.watchHistory.map((video: any) => {
-          const item = {
-            duration: video.duration,
-            url: video.url,
-            title: video.title,
-            uploaderName: video.uploaderName,
-            uploaderUrl: video.uploaderUrl,
-            watchedAt: video.watchedAt ?? 0,
-            currentTime: video.currentTime ?? 0,
-          };
-          return item;
-        });
-        setItems(items.sort((a: any, b: any) => b.watchedAt - a.watchedAt));
-      }
+      // Order matters
+      let processedItems =
+        processConduitHistory(text) ||
+        processYouTubeHistory(text) ||
+        processLibreTubeHistory(text) ||
+        processPipedHistory(text) ||
+        processFreeTubeHistory(text) ||
+        processInvidiousHistory(text);
 
-      // FreeTube
-      else if (text.startsWith(`{"videoId:`)) {
-        text = `[${text.replace(/\n/g, ", ").slice(0, -2)}]`;
-        let json = JSON.parse(text);
-        console.log(json);
-        const ft = json
-          .map((video: any) => {
-            return {
-              duration: video.duration,
-              thumbnail: video.thumbnail,
-              title: video.title,
-              uploaderName: video.author,
-              uploaderUrl: video.authorUrl,
-              videoId: video.videoId,
-              watchedAt: video.watchedDate,
-              currentTime: video.currentTime,
-            };
-          })
-          .sort((a: any, b: any) => b.watchedAt - a.watchedAt);
-        setItems(ft);
-      }
-      // Invidious
-      else if (text.startsWith(`{"subscriptions":`)) {
-        const json = JSON.parse(text);
-        console.log(json);
-        const iv = json.watch_history.map((video: any) => {
-          return {
-            videoId: video,
-            watchedAt: 0,
-            currentTime: 0,
-          };
-        });
-        setItems(iv);
+      if (processedItems) {
+        setItems(processedItems);
       } else {
         alert("Unsupported file");
+        setItems([]);
       }
+
       console.log(items());
     });
   }
   const sync = useSyncStore();
-  async function handleImport(e: any) {
-    e.preventDefault();
-    e.stopPropagation();
-
+  async function handleImport() {
     const newItems: Record<string, HistoryItem>[] = [];
     if (!sync.store) return;
     for (const item of items() as HistoryItem[]) {
@@ -221,7 +135,7 @@ export default function ImportHistoryModal(props: {
           <div>{`Success: ${success()} Error: ${error()} Skipped: ${skipped()}`}</div>
         </div>
         <div>
-          <button class="btn w-auto" onClick={handleImport}>
+          <button class="btn w-auto" onClick={() => handleImport()}>
             Import
           </button>
           {/* <button class="btn w-auto" onClick={deleteHistory}> */}

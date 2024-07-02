@@ -52,8 +52,8 @@ export default function App() {
     const event = getRequestEvent();
 
     const cookie = parseCookie(event?.request.headers.get("cookie") ?? "");
-    const theatreMode = cookie.theatreMode;
-    setPreferences("theatreMode", !!theatreMode);
+    const theatreMode = !!JSON.parse(cookie.theatreMode ?? "false");
+    setPreferences("theatreMode", theatreMode);
   });
   createEffect(() => {
     const cookie = parseCookie(document.cookie);
