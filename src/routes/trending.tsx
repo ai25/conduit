@@ -14,13 +14,18 @@ import { Title } from "@solidjs/meta";
 
 export default function Trending() {
   const sync = useSyncStore();
-  const [preferences] = usePreferences();
-  const [region, setRegion] = createSignal("US");
+  const [preferences, setPreferences] = usePreferences();
   const query = createQuery(() => ({
-    queryKey: ["trending", preferences.instance.api_url, region()],
+    queryKey: [
+      "trending",
+      preferences.instance.api_url,
+      preferences.content.trendingRegion,
+    ],
     queryFn: async (): Promise<TrendingStream[]> => {
       const res = await fetch(
-        preferences.instance.api_url + "/trending?region=" + region()
+        preferences.instance.api_url +
+          "/trending?region=" +
+          preferences.content.trendingRegion ?? "US"
       );
       if (!res.ok) {
         throw new Error("Error fetching trending");
@@ -30,23 +35,18 @@ export default function Trending() {
     enabled: preferences.instance?.api_url ? true : false,
     placeholderData: Array(40).fill(undefined),
   }));
-  const [, setAppState] = useAppState();
-  createEffect(() => {
-    setAppState(
-      "loading",
-      query.isFetching || query.isRefetching || query.isInitialLoading
-    );
-  });
 
   return (
     <div class="flex min-h-full flex-wrap justify-center bg-bg1">
       <Title>Trending | Conduit</Title>
       <div class="flex flex-col w-full mt-2">
         <KobalteSelect.Root
-          defaultValue={TRENDING_REGIONS.find((r) => r.value === region())}
+          defaultValue={TRENDING_REGIONS.find(
+            (r) => r.value === preferences.content.trendingRegion ?? "US"
+          )}
           optionValue="value"
           optionTextValue="label"
-          onChange={(v) => setRegion(v.value)}
+          onChange={(v) => setPreferences("content", "trendingRegion", v.value)}
           placeholder="Select a region"
           options={TRENDING_REGIONS}
           itemComponent={(props) => {

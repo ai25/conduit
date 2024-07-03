@@ -1,4 +1,5 @@
 import { useNavigate } from "@solidjs/router";
+import { AiOutlineFire } from "solid-icons/ai";
 import { BiRegularRotateLeft } from "solid-icons/bi";
 import {
   BsPlay,
@@ -15,6 +16,7 @@ import {
   FaSolidDownload,
   FaSolidFilm,
   FaSolidGlobe,
+  FaSolidHouse,
   FaSolidLanguage,
   FaSolidList,
   FaSolidMagnifyingGlass,
@@ -51,6 +53,7 @@ import InstancePreferences from "~/components/preferences/InstancePreferences";
 import {
   LANGUAGES,
   THEME_OPTIONS,
+  TRENDING_REGIONS,
   VIDEO_RESOLUTIONS,
 } from "~/config/constants";
 import { usePreferences } from "~/stores/preferencesStore";
@@ -78,6 +81,7 @@ export default function Preferences() {
       sync.setStore(...newPath, undefined);
     }
   }
+  const [, setDefaultHomePageCookie] = useCookie("defaultHomePage", "Trending");
   return (
     <div class="flex flex-col max-w-2xl mx-auto gap-2 p-4">
       <Collapsible
@@ -165,6 +169,52 @@ export default function Preferences() {
               label="Display Shorts"
               checked={preferences.content.displayShorts}
               onChange={(v) => setPreferences("content", "displayShorts", v)}
+            />
+          </div>
+          <div class="flex justify-between items-center">
+            <PreferencesCard
+              icon={<FaSolidHouse class="w-5 h-5" />}
+              title="Default Home Page"
+            />
+            <Select
+              options={["Feed", "Trending"].map((page) => ({
+                value: page,
+                label: page,
+              }))}
+              onChange={(value) => {
+                setPreferences(
+                  "content",
+                  "defaultHomePage",
+                  value.value as "Feed" | "Trending"
+                );
+                setDefaultHomePageCookie(value.value);
+              }}
+              value={{
+                value: preferences.content.defaultHomePage,
+                label: preferences.content.defaultHomePage,
+              }}
+            />
+          </div>
+          <div class="flex justify-between items-center">
+            <PreferencesCard
+              icon={<AiOutlineFire class="w-5 h-5" />}
+              title="Trending Region"
+            />
+            <Select
+              options={TRENDING_REGIONS.map((region) => ({
+                value: region.value,
+                label: region.flag + region.label,
+              }))}
+              onChange={(value) => {
+                setPreferences("content", "trendingRegion", value.value);
+              }}
+              value={{
+                value: preferences.content.trendingRegion,
+                label:
+                  TRENDING_REGIONS.find(
+                    (r) => r.value === preferences.content.trendingRegion
+                  )?.label ?? "",
+              }}
             />
           </div>
         </div>
