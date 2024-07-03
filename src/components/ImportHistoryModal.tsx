@@ -1,7 +1,5 @@
-import { toaster } from "@kobalte/core";
 import { batch, createEffect, createSignal, Show } from "solid-js";
 import { HistoryItem, useSyncStore } from "~/stores/syncStore";
-import Button from "./Button";
 import Modal from "./Modal";
 import { toast } from "./Toast";
 import { getVideoId } from "~/utils/helpers";

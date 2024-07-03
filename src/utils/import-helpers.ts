@@ -34,7 +34,7 @@ export function exportConduitData<T extends ExportOptions>(
   const exportedItems: string[] = [];
 
   if (history) {
-    exportData.history = Object.values(store.history);
+    exportData.history = store.history;
     exportedItems.push("history");
   }
 
@@ -92,7 +92,7 @@ export function processConduitHistory(text: string): any[] | null {
 
   const json = JSON.parse(text);
   console.log(json);
-  const history = json.history;
+  const history = Object.values(json.history);
   console.log(history);
   return history;
 }

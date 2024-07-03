@@ -24,6 +24,8 @@ import {
   FaSolidPlus,
   FaSolidRss,
   FaSolidTrash,
+  FaSolidTrashCan,
+  FaSolidUpload,
   FaSolidX,
 } from "solid-icons/fa";
 import {
@@ -40,6 +42,7 @@ import Button from "~/components/Button";
 import Collapsible from "~/components/Collapsible";
 import ExportDataModal from "~/components/ExportDataModal";
 import Field from "~/components/Field";
+import ImportDataModal from "~/components/ImportDataModal";
 import ImportHistoryModal from "~/components/ImportHistoryModal";
 import PreferencesCard from "~/components/PreferencesCard";
 import Select from "~/components/Select";
@@ -51,6 +54,7 @@ import {
   VIDEO_RESOLUTIONS,
 } from "~/config/constants";
 import { usePreferences } from "~/stores/preferencesStore";
+import { useSyncStore } from "~/stores/syncStore";
 import { useCookie } from "~/utils/hooks";
 
 export default function Preferences() {
@@ -61,6 +65,19 @@ export default function Preferences() {
     return str.slice(0, 1).toUpperCase() + str.slice(1);
   }
   const [exportDataModalOpen, setExportDataModalOpen] = createSignal(false);
+  const [importDataModalOpen, setImportDataModalOpen] = createSignal(false);
+  const sync = useSyncStore();
+
+  function recursiveDelete(obj: any, path: string[] = []) {
+    for (let key in obj) {
+      const newPath = [...path, key];
+      console.log("delete", newPath);
+      if (typeof obj[key] === "object" && obj[key] !== null) {
+        recursiveDelete(obj[key], newPath);
+      }
+      sync.setStore(...newPath, undefined);
+    }
+  }
   return (
     <div class="flex flex-col max-w-2xl mx-auto gap-2 p-4">
       <Collapsible
@@ -354,19 +371,45 @@ export default function Preferences() {
       >
         <button
           onClick={() => {
+            setImportDataModalOpen(true);
+          }}
+          class="w-full pl-10 outline-none focus-visible:ring-4 focus-visible:ring-primary rounded hover:bg-bg2"
+        >
+          <PreferencesCard
+            title="Import data"
+            icon={<FaSolidUpload class="w-5 h-5" />}
+          />
+        </button>
+        <button
+          onClick={() => {
             setExportDataModalOpen(true);
           }}
-          class="w-full ml-10 outline-none focus-visible:ring-4 focus-visible:ring-primary rounded hover:bg-bg2"
+          class="w-full pl-10 outline-none focus-visible:ring-4 focus-visible:ring-primary rounded hover:bg-bg2"
         >
           <PreferencesCard
             title="Export Conduit data"
             icon={<FaSolidDownload class="w-5 h-5" />}
           />
         </button>
+        <button
+          onClick={() => {
+            // recursiveDelete(sync.store);
+          }}
+          class="w-full pl-10 outline-none focus-visible:ring-4 focus-visible:ring-primary rounded hover:bg-bg2"
+        >
+          <PreferencesCard
+            title="Delete Conduit data"
+            icon={<FaSolidTrashCan class="w-5 h-5" />}
+          />
+        </button>
       </Collapsible>
       <ExportDataModal
         isOpen={exportDataModalOpen()}
         setIsOpen={setExportDataModalOpen}
+      />
+      <ImportDataModal
+        isOpen={importDataModalOpen()}
+        setIsOpen={setImportDataModalOpen}
       />
     </div>
   );

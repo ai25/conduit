@@ -256,7 +256,7 @@ export default function Watch() {
       }
     }
     if (isLocalPlaylist()) {
-      const list = sync.store.playlists[route.query.list];
+      const list = sync.store.playlists?.[route.query.list];
       setPlaylist({
         ...list,
         id: route.query.list,
