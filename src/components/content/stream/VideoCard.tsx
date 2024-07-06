@@ -302,9 +302,11 @@ const InfoContainer = (props: {
 }) => {
   const uploaderUrl = () => {
     let url = "";
-    if (props.uploaderUrl.startsWith("UC")) {
+    if (!props.uploaderUrl) return url;
+    console.log(props.uploaderUrl, "uploaderUrl");
+    if (props.uploaderUrl?.startsWith("UC")) {
       url = `/channel/${props.uploaderUrl}`;
-    } else if (props.uploaderUrl.startsWith("/")) {
+    } else if (props.uploaderUrl?.startsWith("/")) {
       url = props.uploaderUrl;
     }
     return url;

@@ -4,7 +4,11 @@ import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { useSyncStore } from "~/stores/syncStore";
 import { useAppState } from "~/stores/appStateStore";
 
-const SubscribeButton = (props: { id: string; name:string; class?: string }) => {
+const SubscribeButton = (props: {
+  id: string;
+  name: string;
+  class?: string;
+}) => {
   const sync = useSyncStore();
   const [appState, setAppState] = useAppState();
   const isSubscribed = () => !!sync.store.subscriptions[props.id];
@@ -15,11 +19,7 @@ const SubscribeButton = (props: { id: string; name:string; class?: string }) => 
         name: props.name,
       });
     } else {
-      sync.setStore(
-        "subscriptions",
-        props.id,
-        undefined!,
-      );
+      sync.setStore("subscriptions", props.id, undefined!);
     }
   };
 
@@ -30,8 +30,8 @@ const SubscribeButton = (props: { id: string; name:string; class?: string }) => 
       onClick={toggleSubscribed}
       isSelected={isSubscribed()}
       label={`Subscribe${isSubscribed() ? "d" : ""}`}
-      isLoading={appState.sync.providers.opfs === "connecting"}
-      isDisabled={appState.sync.providers.opfs !== "connected" && appState.sync.providers.webrtc !== "connected"}
+      // isLoading={appState.sync.providers.opfs === "connecting"}
+      // isDisabled={appState.sync.providers.opfs !== "connected" && appState.sync.providers.webrtc !== "connected"}
     />
   );
 };

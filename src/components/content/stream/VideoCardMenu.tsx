@@ -34,6 +34,7 @@ import { useAppState } from "~/stores/appStateStore";
 import { useQueue } from "~/stores/queueStore";
 import { AiFillMinusSquare } from "solid-icons/ai";
 import ShareModal from "~/components/ShareModal";
+import { CgBlock, CgUnblock } from "solid-icons/cg";
 
 export default function VideoCardMenu(props: {
   v: RelatedStream;
@@ -46,6 +47,9 @@ export default function VideoCardMenu(props: {
   const [appState, setAppState] = useAppState();
   const queue = useQueue();
   const [shareModalOpen, setShareModalOpen] = createSignal(false);
+  const channelId = props.v.uploaderUrl.split("/channel/")[1];
+  const isSubscribed = !!sync.store.subscriptions[channelId];
+  const isBlocked = !!sync.store.blocklist[channelId];
 
   return (
     <>
@@ -301,46 +305,29 @@ export default function VideoCardMenu(props: {
                     setAppState("touchInProgress", true);
                   }}
                   onSelect={() => {
-                    const id = props.v.uploaderUrl.split("/channel/")[1];
-                    const isSubscribed = sync.store.subscriptions[id];
                     if (isSubscribed) {
-                      sync.setStore("subscriptions", id, undefined!);
+                      sync.setStore("subscriptions", channelId, undefined!);
                       toast.success(
                         `Unsubscribed from ${props.v.uploaderName}.`
                       );
                     } else {
-                      sync.setStore("subscriptions", id, {
+                      sync.setStore("subscriptions", channelId, {
                         subscribedAt: Date.now(),
+                        name: props.v.uploaderName,
                       });
                       toast.success(`Subscribed to ${props.v.uploaderName}.`);
                     }
                   }}
                 >
                   <div class="flex items-center gap-2">
-                    <Show
-                      when={
-                        sync.store.subscriptions[
-                          props.v.uploaderUrl.split("/channel/")[1]
-                        ]
-                      }
-                    >
+                    <Show when={isSubscribed}>
                       <FaSolidHeartCircleMinus />
                     </Show>
-                    <Show
-                      when={
-                        !sync.store.subscriptions[
-                          props.v.uploaderUrl.split("/channel/")[1]
-                        ]
-                      }
-                    >
+                    <Show when={!isSubscribed}>
                       <FaSolidHeartCirclePlus />
                     </Show>
                     <div class="text-text1">
-                      {sync.store.subscriptions[
-                        props.v.uploaderUrl.split("/channel/")[1]
-                      ]
-                        ? "Unsubscribe"
-                        : "Subscribe"}
+                      {isSubscribed ? "Unsubscribe" : "Subscribe"}
                     </div>
                   </div>
                 </DropdownMenu.Item>
@@ -350,32 +337,35 @@ export default function VideoCardMenu(props: {
                     setAppState("touchInProgress", true);
                   }}
                   onSelect={() => {
-                    let id = props.v.uploaderUrl.split("/channel/")[1];
-
-                    if (!id) {
-                      toast.error(
-                        "Failed to block channel. No channel ID found."
-                      );
-                      return;
-                    }
                     try {
-                      sync.setStore(
-                        "blocklist",
-                        props.v.uploaderUrl.split("/channel/")[1],
-                        { name: props.v.uploaderName }
-                      );
-                      toast.success(`Blocked ${props.v.uploaderName}.`);
+                      if (isBlocked) {
+                        sync.setStore("blocklist", channelId, undefined!);
+                        toast.success(`Unblocked ${props.v.uploaderName}.`);
+                      } else {
+                        sync.setStore("blocklist", channelId, {
+                          name: props.v.uploaderName,
+                        });
+                        toast.success(`Blocked ${props.v.uploaderName}.`);
+                      }
                     } catch (e) {
                       toast.error(
-                        "Failed to block channel. " + (e as any).message
+                        `Failed to ${
+                          isBlocked ? "unblock" : "block"
+                        } channel. ${(e as any).message}`
                       );
                       console.error(e);
                     }
                   }}
                 >
                   <div class="flex items-center gap-2">
-                    <FaSolidBan />
-                    <div class="text-text1">Block</div>
+                    <Show when={isBlocked}>
+                      <CgUnblock class="w-5 h-5" />
+                      <div class="text-text1">Unblock</div>
+                    </Show>
+                    <Show when={!isBlocked}>
+                      <CgBlock class="w-6 h-6" />
+                      <div class="text-text1">Block</div>
+                    </Show>
                   </div>
                 </DropdownMenu.Item>
               </DropdownMenu.Group>

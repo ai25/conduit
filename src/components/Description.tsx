@@ -374,7 +374,7 @@ export const DescriptionFallback = () => {
 
 export const Checkmark = () => (
   <svg
-    class="h-4 w-4 "
+    class="h-4 w-4 aspect-square min-w-[1rem] text-text1"
     xmlns="http://www.w3.org/2000/svg"
     fill="currentColor"
     viewBox="0 0 24 24"

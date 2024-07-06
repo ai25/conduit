@@ -87,7 +87,13 @@ export default function Feed() {
       <Suspense fallback={<Spinner />}>
         <Tooltip.Root>
           <Tooltip.Trigger
-            class="fixed bottom-20 sm:bottom-10 right-10 rounded-full w-10 h-10 bg-primary z-50 flex items-center justify-center"
+            classList={{
+              "fixed bottom-20 right-4 rounded-full w-10 h-10 bg-primary disabled:opacity-75 z-50 flex items-center justify-center":
+                true,
+              "animate-spin": query.isFetching,
+              "bottom-40 md:bottom-20": appState.player.small,
+            }}
+            disabled={query.isFetching}
             onClick={() => {
               if (!query.isFetching) {
                 query.refetch();
