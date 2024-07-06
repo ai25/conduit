@@ -707,7 +707,7 @@ const PlaylistContainer = (props: {
           <RiMediaPlayList2Fill class="h-4 w-4 mr-2" />
           <div class="truncate">
             {props.playlist.name} - {props.playlist.index} /{" "}
-            {props.playlist.relatedStreams.length}
+            {props.playlist.relatedStreams?.length}
           </div>
           <FaSolidChevronUp
             classList={{

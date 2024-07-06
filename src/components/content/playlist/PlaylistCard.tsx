@@ -26,15 +26,21 @@ const PlaylistCard = (props: {
     >
       <div
         classList={{
-          "aspect-video overflow-hidden rounded": true,
+          "aspect-video overflow-hidden rounded ": true,
           "max-h-96": props.layout === "list",
-          "max-h-44 min-w-min sm:max-h-full sm:w-full":
+          "max-h-44 min-w-min sm:max-h-full sm:w-full sm:h-44":
             props.layout === "sm:grid",
         }}
       >
         <Show
-          when={props.item}
-          fallback={<ImageContainerFallback layout={props.layout as any} />}
+          when={props.item?.thumbnail}
+          fallback={
+            <ImageContainer
+              url={props.item?.url ?? ""}
+              src="/img/placeholder.webp"
+              videos={props.item?.videos ?? 0}
+            />
+          }
         >
           <ImageContainer
             url={props.item!.url}
@@ -64,7 +70,7 @@ const PlaylistCard = (props: {
                 <div
                   aria-hidden="true"
                   class="animate-pulse bg-bg2 w-full rounded-lg h-4 "
-                 />
+                />
                 <div
                   aria-hidden="true"
                   class="animate-pulse bg-bg2 w-1/2 h-4 rounded-lg "

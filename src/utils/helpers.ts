@@ -1,5 +1,13 @@
+import { SetStoreFunction } from "solid-js/store";
 import { isServer } from "solid-js/web";
-import { PipedVideo, PreviewFrame, RelatedStream } from "~/types";
+import { Store } from "~/stores/syncStore";
+import {
+  ConduitPlaylist,
+  PipedVideo,
+  Playlist,
+  PreviewFrame,
+  RelatedStream,
+} from "~/types";
 
 export async function fetchJson(
   url: string,
@@ -272,4 +280,24 @@ export function parseCookie(cookie: string) {
       },
       {} as Record<string, string>
     );
+}
+export function createPlaylist(setStore: SetStoreFunction<Store>) {
+  const name = prompt("Playlist name");
+  if (!name) return;
+  const id = `conduit-${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}`;
+  const playlist: ConduitPlaylist = {
+    name,
+    relatedStreams: [],
+    videos: 0,
+    uploader: "You",
+    description: "",
+    bannerUrl: "",
+    uploaderAvatar: "",
+    uploaderUrl: "",
+    thumbnailUrl: "",
+    nextpage: "",
+  };
+  setStore("playlists", {
+    [id]: playlist,
+  });
 }

@@ -57,8 +57,6 @@ const PlaylistItem = (props: {
 
   return (
     <button
-      // draggable="false"
-      // data-long-press-delay="500"
       ref={card}
       onClick={() => {
         setSearchParams(
@@ -72,8 +70,6 @@ const PlaylistItem = (props: {
           }
         );
       }}
-      // href={`${props.v.url}&list=${props.list}&index=${props.index}`}
-      // style={{ "background-image": `url(${props.v.thumbnail})` }}
       class={`select-none relative min-h-[5rem] flex justify-between bg-bg2 hover:bg-bg1 px-1 focus-visible:ring-2 focus-visible:ring-accent1 outline-none mx-1 py-2 rounded-lg text-text1`}
     >
       <div
@@ -116,7 +112,7 @@ const PlaylistItem = (props: {
           </div>
         </div>
 
-        <div class="px-2 max-w-full min-w-0">
+        <div class="px-2 max-w-full min-w-0 flex flex-col items-start">
           <div
             // style={{"text-shadow": "1px 1px 2px rgba(0,0,0,0.9)"}}
             class="max-h-10 min-w-0 font-bold max-w-full text-sm overflow-hidden overflow-ellipsis "
@@ -139,26 +135,6 @@ const PlaylistItem = (props: {
       </div>
       <div class="self-center z-10 justify-self-end ml-2">
         <VideoCardMenu v={props.v} progress={progress()} />
-        {/* <Dropdown */}
-        {/*   icon={ */}
-        {/*     <svg */}
-        {/*       xmlns="http://www.w3.org/2000/svg" */}
-        {/*       width="16" */}
-        {/*       height="16" */}
-        {/*       fill="currentColor" */}
-        {/*       class="text-text1 rounded-full w-6 h-6" */}
-        {/*       viewBox="0 0 16 16" */}
-        {/*     > */}
-        {/*       {" "} */}
-        {/*       <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />{" "} */}
-        {/*     </svg> */}
-        {/*   } */}
-        {/*   iconPosition="right" */}
-        {/*   panelPosition="left" */}
-        {/* > */}
-        {/*   <DropdownItem as="button" label="Add to playlist" /> */}
-        {/*   <DropdownItem as="button" label="Add to queue" /> */}
-        {/* </Dropdown> */}
       </div>
     </button>
   );

@@ -5,33 +5,14 @@ import { Match, Switch, createSignal } from "solid-js";
 import Select from "../Select";
 import Button from "../Button";
 import { toast } from "../Toast";
+import { createPlaylist } from "~/utils/helpers";
 
-const PlaylistModal = (props: {
+const AddToPlaylistModal = (props: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   v: RelatedStream;
 }) => {
   const sync = useSyncStore();
-  const createPlaylist = () => {
-    const name = prompt("Playlist name");
-    if (!name) return;
-    const id = `conduit-${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}`;
-    const playlist: ConduitPlaylist = {
-      name,
-      relatedStreams: [],
-      videos: 0,
-      uploader: "You",
-      description: "",
-      bannerUrl: "",
-      uploaderAvatar: "",
-      uploaderUrl: "",
-      thumbnailUrl: "",
-      nextpage: "",
-    };
-    sync.setStore("playlists", {
-      [id]: playlist,
-    });
-  };
   const [list, setList] = createSignal({
     value: "",
     label: "",
@@ -77,7 +58,7 @@ const PlaylistModal = (props: {
         <Button
           appearance="subtle"
           label="Create a playlist"
-          onClick={() => createPlaylist()}
+          onClick={() => createPlaylist(sync.setStore)}
         />
         <Button
           onClick={() => {
@@ -128,4 +109,4 @@ const PlaylistModal = (props: {
   );
 };
 
-export default PlaylistModal;
+export default AddToPlaylistModal;

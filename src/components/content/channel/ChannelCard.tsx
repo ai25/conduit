@@ -91,8 +91,8 @@ const Dropdown = (props: { item: RelatedChannel }) => {
   const [modalOpen, setModalOpen] = createSignal(false);
   const sync = useSyncStore();
   const [appState, setAppState] = useAppState();
-  const channelId = props.item.url.split("/channel/")[1];
-  const isBlocked = !!sync.store.blocklist[channelId];
+  const channelId = props.item.url?.split("/channel/")[1];
+  const isBlocked = () => !!sync.store.blocklist[channelId];
   return (
     <>
       <DropdownMenu.Root
@@ -136,7 +136,7 @@ const Dropdown = (props: { item: RelatedChannel }) => {
                   return;
                 }
                 try {
-                  if (isBlocked) {
+                  if (isBlocked()) {
                     sync.setStore("blocklist", channelId, undefined!);
                     toast.success(`Unblocked ${props.item.name}.`);
                   } else {
@@ -148,7 +148,7 @@ const Dropdown = (props: { item: RelatedChannel }) => {
                 } catch (e) {
                   toast.error(
                     `Failed to ${
-                      isBlocked ? "unblock" : "block"
+                      isBlocked() ? "unblock" : "block"
                     } channel. ${(e as any).message}`
                   );
                   console.error(e);
@@ -156,11 +156,11 @@ const Dropdown = (props: { item: RelatedChannel }) => {
               }}
             >
               <div class="flex items-center gap-2">
-                <Show when={isBlocked}>
+                <Show when={isBlocked()}>
                   <CgUnblock class="w-5 h-5" />
                   <div class="text-text1">Unblock</div>
                 </Show>
-                <Show when={!isBlocked}>
+                <Show when={!isBlocked()}>
                   <CgBlock class="w-6 h-6" />
                   <div class="text-text1">Block</div>
                 </Show>

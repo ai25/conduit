@@ -29,7 +29,7 @@ import Button from "~/components/Button";
 import Modal from "~/components/Modal";
 import Select from "~/components/Select";
 import { toast } from "~/components/Toast";
-import PlaylistModal from "../PlaylistModal";
+import AddToPlaylistModal from "../AddToPlaylistModal";
 import { useAppState } from "~/stores/appStateStore";
 import { useQueue } from "~/stores/queueStore";
 import { AiFillMinusSquare } from "solid-icons/ai";
@@ -47,9 +47,9 @@ export default function VideoCardMenu(props: {
   const [appState, setAppState] = useAppState();
   const queue = useQueue();
   const [shareModalOpen, setShareModalOpen] = createSignal(false);
-  const channelId = props.v.uploaderUrl.split("/channel/")[1];
-  const isSubscribed = !!sync.store.subscriptions[channelId];
-  const isBlocked = !!sync.store.blocklist[channelId];
+  const channelId = props.v?.uploaderUrl?.split("/channel/")[1];
+  const isSubscribed = () => !!sync.store.subscriptions[channelId];
+  const isBlocked = () => !!sync.store.blocklist[channelId];
 
   return (
     <>
@@ -305,7 +305,7 @@ export default function VideoCardMenu(props: {
                     setAppState("touchInProgress", true);
                   }}
                   onSelect={() => {
-                    if (isSubscribed) {
+                    if (isSubscribed()) {
                       sync.setStore("subscriptions", channelId, undefined!);
                       toast.success(
                         `Unsubscribed from ${props.v.uploaderName}.`
@@ -320,14 +320,14 @@ export default function VideoCardMenu(props: {
                   }}
                 >
                   <div class="flex items-center gap-2">
-                    <Show when={isSubscribed}>
+                    <Show when={isSubscribed()}>
                       <FaSolidHeartCircleMinus />
                     </Show>
-                    <Show when={!isSubscribed}>
+                    <Show when={!isSubscribed()}>
                       <FaSolidHeartCirclePlus />
                     </Show>
                     <div class="text-text1">
-                      {isSubscribed ? "Unsubscribe" : "Subscribe"}
+                      {isSubscribed() ? "Unsubscribe" : "Subscribe"}
                     </div>
                   </div>
                 </DropdownMenu.Item>
@@ -338,7 +338,7 @@ export default function VideoCardMenu(props: {
                   }}
                   onSelect={() => {
                     try {
-                      if (isBlocked) {
+                      if (isBlocked()) {
                         sync.setStore("blocklist", channelId, undefined!);
                         toast.success(`Unblocked ${props.v.uploaderName}.`);
                       } else {
@@ -350,7 +350,7 @@ export default function VideoCardMenu(props: {
                     } catch (e) {
                       toast.error(
                         `Failed to ${
-                          isBlocked ? "unblock" : "block"
+                          isBlocked() ? "unblock" : "block"
                         } channel. ${(e as any).message}`
                       );
                       console.error(e);
@@ -358,11 +358,11 @@ export default function VideoCardMenu(props: {
                   }}
                 >
                   <div class="flex items-center gap-2">
-                    <Show when={isBlocked}>
+                    <Show when={isBlocked()}>
                       <CgUnblock class="w-5 h-5" />
                       <div class="text-text1">Unblock</div>
                     </Show>
-                    <Show when={!isBlocked}>
+                    <Show when={!isBlocked()}>
                       <CgBlock class="w-6 h-6" />
                       <div class="text-text1">Block</div>
                     </Show>
@@ -391,7 +391,7 @@ export default function VideoCardMenu(props: {
           {JSON.stringify(props.v, null, 2)}
         </pre>
       </Modal>
-      <PlaylistModal
+      <AddToPlaylistModal
         isOpen={playlistModalOpen()}
         setIsOpen={setPlaylistModalOpen}
         v={props.v}

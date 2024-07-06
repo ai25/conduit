@@ -1,5 +1,5 @@
 import { JSX, Show } from "solid-js";
-import { Button as KobalteButton } from "@kobalte/core";
+import { Button as KobalteButton } from "@kobalte/core/button";
 import { useNavigate } from "@solidjs/router";
 
 export default function Button(props: {
@@ -43,7 +43,7 @@ export default function Button(props: {
   };
   const navigate = useNavigate();
   return (
-    <KobalteButton.Root
+    <KobalteButton
       as={props.as ?? "button"}
       title={props.title}
       onClick={
@@ -87,7 +87,7 @@ export default function Button(props: {
       <Show when={props.isLoading}>
         <LoadingDots class="absolute h-full w-full top-0.5 left-0 flex items-center justify-center" />
       </Show>
-    </KobalteButton.Root>
+    </KobalteButton>
   );
 }
 

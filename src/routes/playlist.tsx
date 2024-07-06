@@ -15,6 +15,7 @@ import { usePreferences } from "~/stores/preferencesStore";
 import PlaylistItem from "~/components/content/playlist/PlaylistItem";
 import { useLocation } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
+import EmptyState from "~/components/EmptyState";
 
 export default function Playlist() {
   const [list, setList] = createSignal<PlaylistType>();
@@ -24,15 +25,15 @@ export default function Playlist() {
   const sync = useSyncStore();
   const [preferences] = usePreferences();
 
-  createEffect(async () => {
+  createEffect(() => {
     if (!id) return;
     if (!isLocal()) return;
-    await new Promise((r) => setTimeout(r, 100));
+    // await new Promise((r) => setTimeout(r, 100));
     const l = sync.store.playlists[id];
     setList(l);
   });
   const query = createQuery(() => ({
-    queryKey: ["playlist"],
+    queryKey: ["playlist", preferences.instance.api_url, id],
     queryFn: async (): Promise<PlaylistType> =>
       (await fetch(preferences.instance.api_url + "/playlists/" + id)).json(),
     enabled: preferences.instance.api_url && !isLocal() && id ? true : false,
@@ -41,6 +42,7 @@ export default function Playlist() {
   createEffect(() => {
     if (!query.data) return;
     setList(query.data);
+    document.title = query.data.name;
   });
 
   return (
@@ -53,7 +55,10 @@ export default function Playlist() {
               <h1 class="text-2xl font-bold mb-4">{list()!.name}</h1>
 
               <div class="grid grid-cols-1 gap-4 ">
-                <Show when={l.relatedStreams.length > 0}>
+                <Show
+                  fallback={<EmptyState />}
+                  when={l.relatedStreams.length > 0}
+                >
                   <For
                     each={l.relatedStreams
                       // blocklist
