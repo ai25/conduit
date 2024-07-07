@@ -1,3 +1,6 @@
+{
+  /* eslint-disable solid/no-innerhtml */
+}
 import { createInfiniteQuery } from "@tanstack/solid-query";
 import {
   createEffect,
@@ -17,6 +20,7 @@ import { fetchJson, isMobile } from "~/utils/helpers";
 import { Bottomsheet } from "./Bottomsheet";
 import Comment, { PipedCommentResponse } from "./Comment";
 import numeral from "numeral";
+import { sanitizeText } from "./Description";
 
 export default function Comments(props: {
   videoId: string;
@@ -69,6 +73,11 @@ export default function Comments(props: {
   });
   const numberOfComments = () => query.data?.pages?.[0]?.commentCount;
   const firstComment = () => query.data?.pages?.[0]?.comments?.[0];
+  const [sanitizedText, setSanitizedText] = createSignal("");
+  createEffect(async () => {
+    if (!firstComment()) return;
+    setSanitizedText(await sanitizeText(firstComment()!.commentText));
+  });
 
   return (
     <>
@@ -93,7 +102,7 @@ export default function Comments(props: {
                   src={firstComment()!.thumbnail}
                   alt={firstComment()!.author}
                 />
-                {firstComment()!.commentText}
+                <div innerHTML={sanitizedText()} class="two-line-ellipsis" />
               </div>
             </Show>
           </button>
@@ -143,6 +152,12 @@ export default function Comments(props: {
           <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto ">
             <Suspense fallback={<p>Loading...</p>}>
               <div id="sb-content" class="flex flex-col gap-1 relative  ">
+                <div class="p-2 text-md font-semibold">
+                  Comments{" "}
+                  {numberOfComments() &&
+                    ` - ${numeral(numberOfComments()).format("0a")}`}
+                </div>
+                <div class="h-px w-full bg-bg3 mb-2" />
                 <Show when={query.data}>
                   <For each={query.data!.pages}>
                     {(page) => (
