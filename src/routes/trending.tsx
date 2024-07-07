@@ -9,8 +9,12 @@ import { useSyncStore } from "~/stores/syncStore";
 import type { TrendingStream } from "~/types";
 import { TRENDING_REGIONS } from "~/config/constants";
 import { Select as KobalteSelect } from "@kobalte/core";
-import VideoCard from "~/components/content/stream/VideoCard";
+import VideoCard, {
+  VideoCardFallback,
+} from "~/components/content/stream/VideoCard";
 import { Title } from "@solidjs/meta";
+import Select from "~/components/Select";
+import { filterContent } from "~/utils/content-filter";
 
 export default function Trending() {
   const sync = useSyncStore();
@@ -25,109 +29,63 @@ export default function Trending() {
       const res = await fetch(
         preferences.instance.api_url +
           "/trending?region=" +
-          preferences.content.trendingRegion ?? "US"
+          preferences.content.trendingRegion
       );
       if (!res.ok) {
         throw new Error("Error fetching trending");
       }
       return await res.json();
     },
-    enabled: preferences.instance?.api_url ? true : false,
-    placeholderData: Array(40).fill(undefined),
+    enabled: preferences.instance?.api_url && !isServer ? true : false,
   }));
 
   return (
     <div class="flex min-h-full flex-wrap justify-center bg-bg1">
       <Title>Trending | Conduit</Title>
-      <div class="flex flex-col w-full mt-2">
-        <KobalteSelect.Root
-          defaultValue={TRENDING_REGIONS.find(
-            (r) => r.value === preferences.content.trendingRegion ?? "US"
-          )}
-          optionValue="value"
-          optionTextValue="label"
-          onChange={(v) => setPreferences("content", "trendingRegion", v.value)}
-          placeholder="Select a region"
-          options={TRENDING_REGIONS}
-          itemComponent={(props) => {
-            return (
-              <KobalteSelect.Item
-                class="cursor-pointer w-full border-bg3 flex relative items-center px-7 py-2 rounded border-b hover:bg-bg3 focus-visible:bg-bg3 focus-visible:ring-4 focus-visible:ring-highlight focus-visible:outline-none"
-                item={props.item}
-              >
-                <KobalteSelect.Label>
-                  {props.item.rawValue.flag} {props.item.rawValue.label}
-                </KobalteSelect.Label>
-                <KobalteSelect.ItemIndicator class="inline-flex absolute left-0">
-                  <FaSolidCheck
-                    fill="currentColor"
-                    class="h-4 w-4 mx-1 text-text1"
-                  />
-                </KobalteSelect.ItemIndicator>
-              </KobalteSelect.Item>
-            );
+      <div class="flex flex-col w-full mt-2 p-2">
+        <Select
+          options={TRENDING_REGIONS.map((region) => ({
+            value: region.value,
+            label: region.flag + region.label,
+          }))}
+          onChange={(value) => {
+            setPreferences("content", "trendingRegion", value.value);
           }}
-          class="relative"
-        >
-          <KobalteSelect.Trigger class=" p-1 outline-none bg-bg3 ring-1 ring-bg2 inline-flex items-center justify-between py-2 px-3 focus-visible:ring-2 focus-visible:ring-primary rounded-md">
-            <KobalteSelect.Value<{
-              value: string;
-              label: string;
-              flag: string;
-            }>>
-              {(state) =>
-                state.selectedOption().flag + " " + state.selectedOption().label
-              }
-            </KobalteSelect.Value>
-            <KobalteSelect.Icon>
-              <FaSolidSort
-                fill="currentColor"
-                class="h-3 w-3 text-text1 relative left-1"
-              />
-            </KobalteSelect.Icon>
-          </KobalteSelect.Trigger>
-          <KobalteSelect.Portal>
-            <KobalteSelect.Content
-              class="bg-bg2 rounded-md z-50
-                animate-in
-                fade-in
-                slide-in-from-top-10
-                duration-200
-              "
-            >
-              <KobalteSelect.Arrow />
-              <KobalteSelect.Listbox class="max-h-[40vh] p-2 overflow-y-auto scrollbar" />
-            </KobalteSelect.Content>
-          </KobalteSelect.Portal>
-        </KobalteSelect.Root>
+          value={{
+            value: preferences.content.trendingRegion,
+            label:
+              TRENDING_REGIONS.find(
+                (r) => r.value === preferences.content.trendingRegion
+              )?.label ?? "",
+          }}
+        />
       </div>
 
-      <Suspense fallback={<div>Loading...</div>}>
-        <Show when={query.error}>{(query.error as Error).message}</Show>
-        <Show when={!Array.isArray(query.data)}>
-          <ErrorComponent error={query.data} />
+      <Show when={query.error}>{(query.error as Error).message}</Show>
+      <Show when={query.data && !Array.isArray(query.data)}>
+        <ErrorComponent error={query.data} />
+      </Show>
+      <div class="flex flex-wrap justify-center">
+        <Show
+          when={query.data}
+          keyed
+          fallback={
+            <For each={Array(20)}>
+              {() => <VideoCardFallback layout="sm:grid" />}
+            </For>
+          }
+        >
+          {(videos) =>
+            videos && (
+              <For
+                each={filterContent(videos, preferences, sync.store.blocklist)}
+              >
+                {(video) => <VideoCard v={video} layout="sm:grid" />}
+              </For>
+            )
+          }
         </Show>
-        <div class="flex flex-wrap justify-center">
-          <Show when={query.data} keyed>
-            {(videos) =>
-              videos && (
-                <For
-                  each={videos
-                    // blocklist
-                    .filter(
-                      (item) =>
-                        !sync.store.blocklist[
-                          item?.uploaderUrl?.split("/").pop()!
-                        ]
-                    )}
-                >
-                  {(video) => <VideoCard v={video} layout="sm:grid" />}
-                </For>
-              )
-            }
-          </Show>
-        </div>
-      </Suspense>
+      </div>
     </div>
   );
 }

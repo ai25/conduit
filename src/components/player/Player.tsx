@@ -69,6 +69,18 @@ import { NextButton } from "./buttons/NextButton";
 import { FaSolidArrowLeft } from "solid-icons/fa";
 import { usePlayerState } from "~/stores/playerStateStore";
 import { Spinner } from "../Spinner";
+import { createQuery } from "@tanstack/solid-query";
+import numeral from "numeral";
+export interface SponsorSegment {
+  category: string;
+  actionType: string;
+  segment: number[];
+  UUID: string;
+  videoDuration: number;
+  locked: number;
+  votes: number;
+  description: string;
+}
 
 export default function Player(props: {
   forwardRef?: (playerRef: MediaPlayerElement) => void;
@@ -109,23 +121,153 @@ export default function Player(props: {
   const [counter, setCounter] = createSignal(defaultCounter);
   let timeoutCounter: any;
 
-  function parseChapters() {
+  const sponsorsQuery = createQuery<SponsorSegment[]>(() => ({
+    queryKey: ["sponsors", route.query.v, preferences.instance.api_url],
+    queryFn: async (): Promise<SponsorSegment[]> => {
+      const sha256Encrypted = await globalThis.crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(route.query.v)
+      );
+      const sha256Array = Array.from(new Uint8Array(sha256Encrypted));
+      const prefix = sha256Array
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .slice(0, 5);
+      const urlObj = new URL(
+        "https://sponsor.ajay.app/api/skipSegments/" + prefix
+      );
+      urlObj.searchParams.set(
+        "categories",
+        JSON.stringify([
+          "sponsor",
+          "interaction",
+          "selfpromo",
+          "music_offtopic",
+        ])
+      );
+      const url = urlObj.toString();
+      console.log(url);
+      const res = await fetch(url);
+      if (!res.ok) {
+        if (res.status === 404) {
+          return Promise.reject("no sponsors found");
+        } else {
+          const text = await res.text();
+          return Promise.reject("error fetching sponsors: " + text);
+        }
+      }
+      const data = await res.json();
+      const video = data.find((v: any) => v.videoID === route.query.v);
+      if (!video) {
+        return Promise.reject("no sponsors found");
+      }
+      return video.segments;
+    },
+    enabled:
+      preferences.instance?.api_url && !isServer && route.query.v
+        ? true
+        : false,
+    refetchOnReconnect: false,
+    retry: false,
+    suspense: false,
+    useErrorBoundary: false,
+  }));
+
+  const mergeChaptersAndSponsors = (
+    chapters: Chapter[],
+    sponsors: SponsorSegment[]
+  ): Chapter[] => {
+    console.log(chapters, "chapters", sponsors, "sponsors");
+    // Create a unified timeline of all events
+    const timeline: Array<{
+      time: number;
+      type: string;
+      data: Chapter | SponsorSegment;
+    }> = [
+      ...chapters.map((ch) => ({ time: ch.start, type: "chapter", data: ch })),
+      ...sponsors.flatMap((sp) => [
+        { time: sp.segment[0], type: "sponsorStart", data: sp },
+        { time: sp.segment[1], type: "sponsorEnd", data: sp },
+      ]),
+    ];
+
+    // Sort the timeline, ensuring stability
+    timeline.sort((a, b) => a.time - b.time || (a.type < b.type ? -1 : 1));
+
+    const result: Chapter[] = [];
+    let activeSponsors: SponsorSegment[] = [];
+
+    for (const event of timeline) {
+      switch (event.type) {
+        case "chapter":
+          if (activeSponsors.length === 0) {
+            result.push(event.data as Chapter);
+          }
+          break;
+        case "sponsorStart":
+          if (activeSponsors.length === 0) {
+            result.push({
+              title: `Sponsor: ${(event.data as SponsorSegment).category}`,
+              start: event.time,
+            } as Chapter);
+          }
+          activeSponsors.push(event.data as SponsorSegment);
+          break;
+        case "sponsorEnd":
+          activeSponsors = activeSponsors.filter((sp) => sp !== event.data);
+          if (activeSponsors.length === 0) {
+            result.push({
+              title: `End Sponsor: ${(event.data as SponsorSegment).category}`,
+              start: event.time,
+            } as Chapter);
+          }
+          break;
+      }
+    }
+
+    return result;
+  };
+  function parseChapters(chapters: Chapter[]) {
     if (!video.data) return;
-    let chapters = [];
-    for (let i = 0; i < video.data.chapters.length; i++) {
-      const chapter = video.data.chapters[i];
+    let parsedChapters = [];
+    for (let i = 0; i < chapters.length; i++) {
+      const chapter = chapters[i];
       const name = chapter.title;
       // seconds to 00:00:00
       const timestamp = new Date(chapter.start * 1000)
         .toISOString()
         .slice(11, 22);
       const seconds =
-        video.data.chapters[i + 1]?.start - chapter.start ??
+        chapters[i + 1]?.start - chapter.start ??
         video.data.duration - chapter.start;
-      chapters.push({ name, timestamp, seconds });
+      parsedChapters.push({ name, timestamp, seconds });
     }
-    return chaptersVtt(chapters, video.data.duration);
+    return chaptersVtt(parsedChapters, video.data.duration);
   }
+  createEffect(() => {
+    console.log(sponsorsQuery.data);
+    if (!sponsorsQuery.data) return;
+    if (!video.data?.chapters) return;
+    const mergedChapters = mergeChaptersAndSponsors(
+      video.data.chapters,
+      sponsorsQuery.data
+    );
+    console.log(mergedChapters);
+    const chaptersTracks = mediaPlayer.textTracks.getByKind("chapters");
+    for (const chaptersTrack of chaptersTracks) {
+      mediaPlayer.textTracks.remove(chaptersTrack);
+    }
+    const chapters = parseChapters(mergedChapters);
+
+    if (chapters) {
+      mediaPlayer.textTracks.add({
+        kind: "chapters",
+        default: true,
+        content: chapters,
+        type: "vtt",
+      });
+    }
+  });
 
   const init = async () => {
     if (!video.data) throw new Error("No video");
@@ -139,17 +281,6 @@ export default function Player(props: {
     initMediaSession(navigator.mediaSession, videoMetadata, mediaPlayer);
 
     selectDefaultQuality();
-
-    const chapters = parseChapters();
-
-    if (chapters) {
-      mediaPlayer.textTracks.add({
-        kind: "chapters",
-        default: true,
-        content: chapters,
-        type: "vtt",
-      });
-    }
   };
 
   function selectDefaultQuality() {
@@ -796,27 +927,35 @@ export default function Player(props: {
   const [sponsorSegments, setSponsorSegments] = createSignal<Segment[]>([]);
 
   createEffect(() => {
-    if (!video.data?.chapters) return;
+    if (!sponsorsQuery.data) return;
     const segments: Segment[] = [];
 
-    for (let i = 0; i < video.data.chapters.length; i++) {
-      const chapter = video.data.chapters[i];
-      if (chapter.title.startsWith("Sponsor")) {
+    for (let i = 0; i < sponsorsQuery.data.length; i++) {
+      const sponsor = sponsorsQuery.data[i];
+      if (sponsor.segment) {
         segments.push({
-          ...chapter,
-          end: video.data.chapters[i + 1]?.start || video.data.duration,
+          start: sponsor.segment[0],
+          end: sponsor.segment[1],
           manuallyNavigated: false,
           autoSkipped: false,
+          title: sponsor.category,
+          image: "",
         });
       }
     }
     setSponsorSegments(segments);
   });
 
+  let lastCheckedTime = -1;
   const autoSkipHandler = () => {
     if (!mediaPlayer) return;
     if (sponsorSegments().length === 0) return;
+
     const currentTime = mediaPlayer.currentTime;
+    if (Math.abs(currentTime - lastCheckedTime) < 1) return; // Reduce checks
+    lastCheckedTime = currentTime;
+    console.log("segment timeupdate");
+
     let segments = sponsorSegments();
     for (const segment of segments) {
       if (
@@ -827,7 +966,11 @@ export default function Player(props: {
       ) {
         mediaPlayer.currentTime = segment.end;
         segment.autoSkipped = true; // Mark as automatically skipped
-        toast.show(`Skipped segment ${segment.title}`);
+        toast.show(`Skipped segment ${segment.title}`, () => {
+          mediaPlayer.currentTime = currentTime;
+          segment.manuallyNavigated = true;
+          setSponsorSegments(segments);
+        });
         break;
       }
     }
@@ -1033,7 +1176,8 @@ export default function Player(props: {
       onMouseLeave={() => {
         mediaPlayer?.controls.hide(0);
       }}
-      on:time-update={() => {
+      on:time-update={(e) => {
+        if (e.trigger?.type === "seeked") return;
         autoSkipHandler();
       }}
       on:can-play={onCanPlay}

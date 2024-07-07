@@ -23,7 +23,9 @@ import { FaSolidArrowsRotate } from "solid-icons/fa";
 import { lazy } from "solid-js";
 import { memo } from "solid-js/web";
 import Button from "~/components/Button";
-import VideoCard from "~/components/content/stream/VideoCard";
+import VideoCard, {
+  VideoCardFallback,
+} from "~/components/content/stream/VideoCard";
 import { Title } from "@solidjs/meta";
 import { filterContent } from "~/utils/content-filter";
 
@@ -48,10 +50,10 @@ export default function Feed() {
     },
     enabled:
       preferences.instance?.api_url &&
+      !isServer &&
       Object.keys(sync.store.subscriptions).length > 0
         ? true
         : false,
-    placeholderData: Array(50).fill(undefined),
     refetchOnMount: true,
     refetchOnReconnect: true,
   }));
@@ -84,7 +86,8 @@ export default function Feed() {
 
   const newComponent = (
     <>
-      <Suspense fallback={<Spinner />}>
+      <Title>Feed | Conduit</Title>
+      <div class="mx-2 flex flex-wrap gap-2 justify-center">
         <Tooltip.Root>
           <Tooltip.Trigger
             classList={{
@@ -109,35 +112,47 @@ export default function Feed() {
             </Tooltip.Content>
           </Tooltip.Portal>
         </Tooltip.Root>
-        <Title>Feed | Conduit</Title>
 
-        <Show when={!Object.keys(sync.store.subscriptions).length}>
+        <Show
+          when={
+            !query.isPending && !Object.keys(sync.store.subscriptions).length
+          }
+        >
           <div class="h-[80vh] w-full flex items-center justify-center">
             <EmptyState message="You have no subscriptions.">
               <Button as="a" label="Import" href="/import" />
             </EmptyState>
           </div>
         </Show>
-        <Show when={Object.keys(sync.store.subscriptions).length}>
-          <div class="mx-2 flex flex-wrap gap-2 justify-center">
-            <Show when={!Array.isArray(query.data)}>
-              <ErrorComponent error={query.data} />
-            </Show>
-            <Show when={query.data && query.data.length > 0}>
-              <For
-                each={filterContent(
-                  query.data!,
-                  preferences,
-                  sync.store.blocklist
-                ).slice(0, limit())}
-              >
-                {(video) => <VideoCard v={video} />}
-              </For>
-            </Show>
-          </div>
+        <Show
+          when={
+            !query.isPending && Object.keys(sync.store.subscriptions).length
+          }
+        >
+          <Show when={!Array.isArray(query.data)}>
+            <ErrorComponent error={query.data} />
+          </Show>
         </Show>
-        <div ref={setIntersectionRef} class="h-20 " />
-      </Suspense>
+        <Show
+          when={query.data && query.data.length > 0}
+          fallback={
+            <For each={Array(20)}>
+              {() => <VideoCardFallback layout="sm:grid" />}
+            </For>
+          }
+        >
+          <For
+            each={filterContent(
+              query.data!,
+              preferences,
+              sync.store.blocklist
+            ).slice(0, limit())}
+          >
+            {(video) => <VideoCard v={video} />}
+          </For>
+        </Show>
+      </div>
+      <div ref={setIntersectionRef} class="h-20 " />
     </>
   );
 

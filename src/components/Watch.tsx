@@ -8,6 +8,7 @@ import {
   onCleanup,
   createMemo,
   Setter,
+  untrack,
 } from "solid-js";
 import { For } from "solid-js";
 import { getHlsManifest, getStreams } from "~/utils/hls";
@@ -42,17 +43,6 @@ import { RiMediaPlayList2Fill } from "solid-icons/ri";
 import { usePlayerState } from "~/stores/playerStateStore";
 import { MediaPlayerElement } from "vidstack/elements";
 import Button from "./Button";
-
-export interface SponsorSegment {
-  category: string;
-  actionType: string;
-  segment: number[];
-  UUID: string;
-  videoDuration: number;
-  locked: number;
-  votes: number;
-  description: string;
-}
 
 export async function fetchWithTimeout(
   resource: string,
@@ -155,58 +145,6 @@ export default function Watch() {
     document.title = `${video.data.title} - Conduit`;
   });
 
-  const sponsorsQuery = createQuery<SponsorSegment[]>(() => ({
-    queryKey: ["sponsors", route.query.v, preferences.instance.api_url],
-    queryFn: async (): Promise<SponsorSegment[]> => {
-      const sha256Encrypted = await globalThis.crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(route.query.v)
-      );
-      const sha256Array = Array.from(new Uint8Array(sha256Encrypted));
-      const prefix = sha256Array
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("")
-        .slice(0, 5);
-      const urlObj = new URL(
-        "https://sponsor.ajay.app/api/skipSegments/" + prefix
-      );
-      urlObj.searchParams.set(
-        "categories",
-        JSON.stringify([
-          "sponsor",
-          "interaction",
-          "selfpromo",
-          "music_offtopic",
-        ])
-      );
-      const url = urlObj.toString();
-      console.log(url);
-      const res = await fetch(url);
-      if (!res.ok) {
-        if (res.status === 404) {
-          return Promise.reject("no sponsors found");
-        } else {
-          const text = await res.text();
-          return Promise.reject("error fetching sponsors: " + text);
-        }
-      }
-      const data = await res.json();
-      const video = data.find((v: any) => v.videoID === route.query.v);
-      if (!video) {
-        return Promise.reject("no sponsors found");
-      }
-      return video.segments;
-    },
-    enabled:
-      preferences.instance?.api_url && !isServer && route.query.v
-        ? true
-        : false,
-    refetchOnReconnect: false,
-    retry: false,
-    suspense: false,
-    useErrorBoundary: false,
-  }));
-
   const isLocalPlaylist = createMemo(() =>
     route.query.list?.startsWith("conduit-")
   );
@@ -286,99 +224,11 @@ export default function Watch() {
     }, 100);
   });
 
-  const mergeChaptersAndSponsors = (
-    chapters: Chapter[],
-    sponsors: SponsorSegment[]
-  ): Chapter[] => {
-    const sortedChapters = [...chapters].sort((a, b) => a.start - b.start);
-    const sortedSponsors = [...sponsors].sort(
-      (a, b) => a.segment[0] - b.segment[0]
-    );
-
-    const result: Chapter[] = [];
-
-    let chapterIndex = 0;
-    let sponsorIndex = 0;
-
-    while (
-      chapterIndex < sortedChapters.length ||
-      sponsorIndex < sortedSponsors.length
-    ) {
-      const currentChapter = sortedChapters[chapterIndex];
-      const currentSponsor = sortedSponsors[sponsorIndex];
-      const nextChapter = sortedChapters[chapterIndex];
-
-      const nextSegmentStart = nextChapter?.start ?? Number.MAX_SAFE_INTEGER;
-
-      if (
-        currentChapter &&
-        (!currentSponsor || currentChapter.start <= currentSponsor.segment[0])
-      ) {
-        result.push(currentChapter);
-        chapterIndex++;
-      } else if (currentSponsor) {
-        result.push({
-          title: `Sponsor: ${currentSponsor.category}`,
-          start: currentSponsor.segment[0],
-        } as Chapter);
-
-        if (Math.abs(nextSegmentStart - currentSponsor.segment[1]) >= 5) {
-          console.log(
-            "Next chapter is more than 5s after end of sponsor, adding chapter. ",
-            "next segment start is: ",
-            numeral(nextSegmentStart).format("00:00:00"),
-            "current sponsor end is: ",
-            numeral(currentSponsor.segment[1]).format("00:00:00"),
-            "absolute value is: ",
-            Math.abs(nextSegmentStart - currentSponsor.segment[1])
-          );
-          result.push({
-            title: `End Sponsor: ${currentSponsor.category}`,
-            start: currentSponsor.segment[1],
-          } as Chapter);
-        }
-
-        sponsorIndex++;
-      }
-    }
-
-    return result;
-  };
-  // createEffect(() => {
-  //   console.log(sponsorsQuery.data);
-  //   if (!sponsorsQuery.data) return;
-  //   const video = untrack(() => videoQuery.data);
-  //   if (!video) return;
-  //   const mergedChapters = mergeChaptersAndSponsors(
-  //     video.chapters,
-  //     sponsorsQuery.data
-  //   );
-  //   console.log(mergedChapters);
-  //   // setVideo("value", "chapters", mergedChapters);
-  // });
-  //
-  // createEffect(() => {
-  //   setAppState({
-  //     loading:
-  //       videoQuery.isInitialLoading ||
-  //       videoQuery.isFetching ||
-  //       videoQuery.isRefetching,
-  //   });
-  // });
-  //
-  // createEffect(() => {
-  //   if (videoQuery.data) {
-  //     setVideo({ value: videoQuery.data });
-  //   }
-  // });
-  //
   const [appState] = useAppState();
   createEffect(() => {
     setAppState("smallDevice", windowWidth() < 640 || windowHeight() < 640);
   });
-  createEffect(() => {
-    console.log(video.data, video, route.query.index, "video data");
-  });
+
   const [playerRef, setPlayerRef] = createSignal<
     MediaPlayerElement | undefined
   >();
@@ -399,9 +249,6 @@ export default function Watch() {
   const [showEndScreen, setShowEndScreen] = createSignal(false);
   const [endScreenCounter, setEndScreenCounter] = createSignal(5);
   const [dismissEndScreen, setDismissEndScreen] = createSignal(() => {});
-  createEffect(() => {
-    console.log("theatreMode", preferences.theatreMode);
-  });
 
   return (
     <Show
@@ -430,9 +277,15 @@ export default function Watch() {
             <div
               classList={{
                 "w-full transition-[height]": true,
-                "h-0 ": !showEndScreen(),
-                "h-24 p-3": showEndScreen() && appState.smallDevice,
-                "h-44 p-3": showEndScreen() && !appState.smallDevice,
+                "h-0 ": !showEndScreen() || route.pathname === "/watch",
+                "h-24 p-3":
+                  showEndScreen() &&
+                  appState.smallDevice &&
+                  route.pathname !== "/watch",
+                "h-44 p-3":
+                  showEndScreen() &&
+                  !appState.smallDevice &&
+                  route.pathname !== "/watch",
               }}
             >
               <Show when={showEndScreen()}>
