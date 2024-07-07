@@ -16,10 +16,12 @@ import { usePreferences } from "~/stores/preferencesStore";
 import { fetchJson, isMobile } from "~/utils/helpers";
 import { Bottomsheet } from "./Bottomsheet";
 import Comment, { PipedCommentResponse } from "./Comment";
+import numeral from "numeral";
 
 export default function Comments(props: {
   videoId: string;
   uploader: string;
+  uploaderAvatar: string;
   display: "default" | "bottomsheet";
 }) {
   const [preferences] = usePreferences();
@@ -39,13 +41,6 @@ export default function Comments(props: {
       );
     }
   };
-  const [playerHeight, setPlayerHeight] = createSignal(0);
-  createEffect(() => {
-    const player = document.querySelector("media-player");
-    if (player) {
-      setPlayerHeight(player.clientHeight + 50);
-    }
-  });
 
   const query = createInfiniteQuery(() => ({
     queryKey: ["comments", props.videoId, preferences.instance.api_url],
@@ -72,27 +67,41 @@ export default function Comments(props: {
       }
     }
   });
+  const numberOfComments = () => query.data?.pages?.[0]?.commentCount;
+  const firstComment = () => query.data?.pages?.[0]?.comments?.[0];
 
   return (
     <>
       <Switch>
         <Match when={props.display === "bottomsheet"}>
           <button
-            class="text-center text-sm w-full rounded-lg bg-bg2 p-2 mb-2"
+            class="text-center text-sm w-full rounded-xl bg-bg2 p-2 mb-2"
             onClick={() => setCommentsOpen(true)}
           >
-            Comments
+            <Show when={!firstComment()}>
+              Comments{" "}
+              {numberOfComments() &&
+                ` - ${numeral(numberOfComments()).format("0a")}`}
+            </Show>
+            <Show when={firstComment()}>
+              Comments{" "}
+              {numberOfComments() &&
+                ` - ${numeral(numberOfComments()).format("0a")}`}
+              <div class="text-xs flex items-center gap-2">
+                <img
+                  class="rounded-full h-10 w-10"
+                  src={firstComment()!.thumbnail}
+                  alt={firstComment()!.author}
+                />
+                {firstComment()!.commentText}
+              </div>
+            </Show>
           </button>
           {commentsOpen() && (
             <Bottomsheet
               variant="snap"
-              defaultSnapPoint={({ maxHeight }) =>
-                maxHeight - playerHeight() ?? 300
-              }
-              snapPoints={({ maxHeight }) => [
-                maxHeight - 40,
-                maxHeight - playerHeight() ?? 300,
-              ]}
+              defaultSnapPoint={({ maxHeight }) => maxHeight - 300}
+              snapPoints={({ maxHeight }) => [maxHeight - 40, maxHeight - 300]}
               onClose={() => {
                 console.log("close");
                 setCommentsOpen(false);
@@ -112,6 +121,7 @@ export default function Comments(props: {
                               videoId={props.videoId}
                               comment={comment}
                               uploader={props.uploader}
+                              uploaderAvatar={props.uploaderAvatar}
                               nextpage={""}
                             />
                           )}
@@ -142,6 +152,7 @@ export default function Comments(props: {
                             videoId={props.videoId}
                             comment={comment}
                             uploader={props.uploader}
+                            uploaderAvatar={props.uploaderAvatar}
                             nextpage={""}
                           />
                         )}

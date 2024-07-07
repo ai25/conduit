@@ -1,16 +1,27 @@
-// TODO: Pinned, verified, hearted
+{
+  /* eslint-disable solid/no-innerhtml */
+}
 import { createInfiniteQuery } from "@tanstack/solid-query";
-import { FaSolidThumbsUp } from "solid-icons/fa";
-import { Show, createSignal, useContext, Suspense, For, createEffect } from "solid-js";
+import { FaSolidHeart, FaSolidThumbsUp } from "solid-icons/fa";
+import {
+  Show,
+  createSignal,
+  useContext,
+  Suspense,
+  For,
+  createEffect,
+} from "solid-js";
 import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncStore } from "~/stores/syncStore";
 import { fetchJson } from "~/utils/helpers";
 import { sanitizeText } from "./Description";
 import Link from "./Link";
+import { BsPin } from "solid-icons/bs";
 export interface PipedCommentResponse {
   comments: PipedComment[];
   disabled: boolean;
   nextpage: string;
+  commentCount: number;
 }
 
 export interface PipedComment {
@@ -26,6 +37,8 @@ export interface PipedComment {
   hearted: boolean;
   pinned: boolean;
   verified: boolean;
+  channelOwner: boolean;
+  creatorReplied: boolean;
 }
 
 interface Props {
@@ -33,6 +46,7 @@ interface Props {
   comment: PipedComment;
   nextpage: string;
   uploader: string;
+  uploaderAvatar: string;
 }
 export default function Comment(props: Props) {
   const [showingReplies, setShowingReplies] = createSignal(false);
@@ -65,18 +79,18 @@ export default function Comment(props: Props) {
       props.comment.commentId,
     ],
     queryFn: fetchComments,
-    enabled: preferences.instance?.api_url &&
+    enabled:
+      preferences.instance?.api_url &&
       props.videoId &&
       props.comment.repliesPage &&
       showingReplies()
-      ? true
-      : false,
+        ? true
+        : false,
     getNextPageParam: (lastPage) => {
       return lastPage.nextpage;
     },
-    initialPageParam: "initial"
-  })
-  );
+    initialPageParam: "initial",
+  }));
 
   const [sanitizedText, setSanitizedText] = createSignal("");
   createEffect(async () => {
@@ -99,12 +113,19 @@ export default function Comment(props: Props) {
           />
         </Link>
         <div class="flex flex-col  w-11/12">
+          <Show when={props.comment.pinned}>
+            <div class="text-xs text-text2 flex items-center gap-1">
+              <BsPin class="w-3 h-3" />
+              Pinned by {props.uploader}
+            </div>
+          </Show>
           <span class="flex gap-2 items-center">
             <Link
               href={`${props.comment.commentorUrl}`}
-              class={`text-sm font-bold ${props.comment.commentorUrl === props.uploader &&
-                "bg-background rounded-full px-4"
-                }`}
+              classList={{
+                "text-sm font-bold": true,
+                "bg-primary rounded-full px-2": props.comment.channelOwner,
+              }}
             >
               {props.comment.author}
             </Link>
@@ -125,14 +146,21 @@ export default function Comment(props: Props) {
             <p class="text-xs text-text2">{props.comment.commentedTime}</p>
           </span>
           <Suspense fallback={<p>Loading...</p>}>
-            <p
-              class="text-xs"
-              innerHTML={sanitizedText()}
-            ></p>
+            <p class="text-xs" innerHTML={sanitizedText()} />
           </Suspense>
           <span class="flex gap-1 items-center text-xs ">
             <FaSolidThumbsUp />
             {props.comment.likeCount}
+            <Show when={props.comment.hearted}>
+              <div class="relative w-6 h-6 ">
+                <img
+                  src={props.uploaderAvatar}
+                  class="rounded-full absolute top-0 left-0 w-full h-full object-contain"
+                  alt="Liked by author"
+                />
+                <FaSolidHeart class="w-3 h-3 text-red-500 absolute bottom-0 right-0" />
+              </div>
+            </Show>
             <Show when={props.comment.replyCount > 0 && !showingReplies()}>
               {props.comment.replyCount > 1 && (
                 <button
@@ -175,6 +203,7 @@ export default function Comment(props: Props) {
                 <Comment
                   comment={comment}
                   uploader={props.uploader}
+                  uploaderAvatar={props.uploaderAvatar}
                   videoId={props.videoId}
                   nextpage={""}
                 />

@@ -14,6 +14,7 @@ import { usePreferences } from "./preferencesStore";
 import api from "~/utils/api";
 import { PipedVideo } from "~/types";
 import { useAppState } from "./appStateStore";
+import { isServer } from "solid-js/web";
 
 const VideoContext = createContext<CreateQueryResult<PipedVideo, Error>>();
 export const VideoContextProvider = (props: { children: any }) => {
@@ -30,7 +31,10 @@ export const VideoContextProvider = (props: { children: any }) => {
     queryKey: ["streams", videoId(), preferences.instance.api_url],
     queryFn: () => api.fetchVideo(videoId(), preferences.instance.api_url),
     enabled:
-      videoId() && preferences.instance.api_url && !appState.player.dismissed
+      !isServer &&
+      videoId() &&
+      preferences.instance.api_url &&
+      !appState.player.dismissed
         ? true
         : false,
     refetchOnReconnect: false,

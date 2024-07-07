@@ -65,6 +65,7 @@ export default function Link(props: LinkProps) {
       }}
       href={href()}
       class={props.class}
+      classList={props.classList}
       style={props.style}
       activeClass={props.activeClass}
       inactiveClass={props.inactiveClass}
@@ -76,6 +77,7 @@ export default function Link(props: LinkProps) {
 interface LinkProps {
   href: string;
   class?: string;
+  classList?: Record<string, boolean>;
   style?: any;
   children?: any;
   activeClass?: string;

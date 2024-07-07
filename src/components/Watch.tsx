@@ -486,6 +486,7 @@ export default function Watch() {
                     <Comments
                       videoId={getVideoId(video.data)!}
                       uploader={video.data!.uploader}
+                      uploaderAvatar={video.data!.uploaderAvatar}
                       display={windowWidth() >= 768 ? "default" : "bottomsheet"}
                     />
                   </Suspense>

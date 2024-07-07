@@ -7,10 +7,9 @@ import {
   onCleanup,
   onMount,
 } from "solid-js";
+import { BsX } from "solid-icons/bs";
 
 const DEFAULT_THRESHOLD = 50;
-const VELOCITY_THRESHOLD = 0.5; // Units: pixels/ms
-
 
 export interface BaseSolidBottomsheetProps {
   children: JSX.Element;
@@ -85,10 +84,7 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
 
   let touchStartPosition = 0;
   let lastTouchPosition = 0;
-  const acceptIds = new Set<string>(["sb-handle", "sb-content"]);
-
-  let lastTouchTime = 0;
-  let velocityY = 0;
+  const acceptIds = new Set<string>(["sb-handle"]);
 
   const onTouchStart: JSX.EventHandlerUnion<HTMLDivElement, TouchEvent> = (
     event
@@ -96,29 +92,20 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
     if (!acceptIds.has(event.target.id) && !isEventFromContentChildren(event)) {
       return;
     }
-    lastTouchTime = event.timeStamp;
     isSnapVariant && setIsSnapping(false);
 
     touchStartPosition = lastTouchPosition = event.touches[0].clientY;
     event.preventDefault();
     event.stopPropagation();
   };
-  const [contentScrollTop, setContentScrollTop] = createSignal(1);
-  const [isInitialTouch, setIsInitialTouch] = createSignal(true);
 
-  const onTouchMoveHandle: JSX.EventHandlerUnion<HTMLDivElement, TouchEvent> = (
+  const onTouchMove: JSX.EventHandlerUnion<HTMLDivElement, TouchEvent> = (
     event
   ) => {
     if (event.target.id !== "sb-handle") return;
     event.preventDefault();
     let dragDistance = 0;
     const currentTime = event.timeStamp;
-    const timeDelta = currentTime - lastTouchTime;
-    if (timeDelta > 0) {
-      // Calculate velocity in pixels per millisecond
-      velocityY = dragDistance / timeDelta;
-    }
-    lastTouchTime = currentTime;
 
     switch (props.variant) {
       case "snap":
@@ -146,59 +133,6 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
 
         break;
     }
-  };
-
-  const onTouchMoveContent: JSX.EventHandlerUnion<
-    HTMLDivElement,
-    TouchEvent
-  > = (event) => {
-    if (!isEventFromContentChildren(event)) return;
-    console.log("onTouchMoveContent", contentScrollTop());
-    if (contentScrollTop() > 5) return;
-    let dragDistance = 0;
-    const currentTime = event.timeStamp;
-    lastTouchTime = currentTime;
-
-    switch (props.variant) {
-      case "snap":
-        dragDistance = event.touches[0].clientY - lastTouchPosition;
-
-        setBottomsheetTranslateValue((previousVal) =>
-          clampInRange({
-            minimum: 0,
-            maximum: maxHeight(),
-            current: previousVal + dragDistance,
-          })
-        );
-
-        lastTouchPosition = event.touches[0].clientY;
-
-        break;
-      case "default":
-      default:
-        lastTouchPosition = event.touches[0].clientY;
-        dragDistance = lastTouchPosition - touchStartPosition;
-
-        if (dragDistance > 0) {
-          setBottomsheetTranslateValue(dragDistance);
-        }
-
-        break;
-    }
-  };
-  async function wait(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  const isInertialScrolling = async (lastScrollTop: number) => {
-    await wait(100);
-    return new Promise((resolve) => {
-      if (lastScrollTop === contentScrollTop()) {
-        resolve(false);
-      } else {
-        resolve(true);
-      }
-    });
   };
 
   const onTouchEnd: JSX.EventHandlerUnion<HTMLDivElement, TouchEvent> = async (
@@ -209,47 +143,17 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
     }
     let currentPoint = 0;
     let closestPoint = 0;
-    const swipeDuration = event.timeStamp - lastTouchTime;
-    const swipeDistance = lastTouchPosition - touchStartPosition;
-    const swipeVelocity = -swipeDistance / swipeDuration;
-    console.log("swipeVelocity", swipeVelocity, velocityY);
 
     switch (props.variant) {
       case "snap":
-        if (event.target.id !== "sb-handle") {
-          if (await isInertialScrolling(contentScrollTop())) {
-            console.log("isInertialScrolling");
-            return;
-          }
-          setContentScrollTop(Math.max(0, contentScrollTop() - 1));
-          if (contentScrollTop() > 5) {
-            console.log("contentScrollTop", contentScrollTop());
-            return;
-          }
-        }
-        // Decide to snap or close based on the swipe velocity as well as the distance
-        if (Math.abs(swipeVelocity) > VELOCITY_THRESHOLD || Math.abs(swipeDistance) > DEFAULT_THRESHOLD) {
-          // If the swipe is quick or long enough, determine the closest snap point or closing
-          currentPoint = (maxHeight() - lastTouchPosition) + (swipeVelocity * 2)
+        currentPoint = maxHeight() - lastTouchPosition;
 
-          // Use velocity to determine if we should adjust our snap point
-          closestPoint = snapPoints.reduce((previousVal, currentVal) => {
-            return Math.abs(currentVal - currentPoint) <
-              Math.abs(previousVal - currentPoint)
-              ? currentVal
-              : previousVal;
-          });
-
-        } else {
-          currentPoint = maxHeight() - bottomsheetTranslateValue();
-          closestPoint = snapPoints.reduce((previousVal, currentVal) => {
-            return Math.abs(currentVal - currentPoint) <
-              Math.abs(previousVal - currentPoint)
-              ? currentVal
-              : previousVal;
-          }
-          );
-        }
+        closestPoint = snapPoints.reduce((previousVal, currentVal) => {
+          return Math.abs(currentVal - currentPoint) <
+            Math.abs(previousVal - currentPoint)
+            ? currentVal
+            : previousVal;
+        });
 
         if (closestPoint === 0) {
           setIsClosing(true);
@@ -287,17 +191,17 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
     return false;
   };
 
-  let sbHandle!: HTMLDivElement
+  let sbHandle!: HTMLDivElement;
   onMount(() => {
     const options = { passive: false };
     sbHandle.addEventListener("touchstart", onTouchStart as any, options);
-    sbHandle.addEventListener("touchmove", onTouchMoveHandle as any, options);
+    sbHandle.addEventListener("touchmove", onTouchMove as any, options);
     sbHandle.addEventListener("touchend", onTouchEnd as any, options);
     sbHandle.addEventListener("touchcancel", onTouchEnd as any, options);
 
     onCleanup(() => {
       sbHandle.removeEventListener("touchstart", onTouchStart as any);
-      sbHandle.removeEventListener("touchmove", onTouchMoveHandle as any);
+      sbHandle.removeEventListener("touchmove", onTouchMove as any);
       sbHandle.removeEventListener("touchend", onTouchEnd as any);
       sbHandle.removeEventListener("touchcancel", onTouchEnd as any);
     });
@@ -324,11 +228,16 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
         >
           <div
             id="sb-handle"
-            class="py-5 my-0 mx-auto bg-bg1"
+            class="py-2 my-0 mx-auto bg-bg1 flex "
             ref={sbHandle}
-
           >
             <div class="w-10 h-1 m-auto bg-bg3 pointer-events-none" />
+            <button
+              onClick={() => setIsClosing(true)}
+              class="outline-none focus-visible:ring-2 ring-primary/80 w-10 h-10 flex items-center justify-center rounded"
+            >
+              <BsX title="Close bottomsheet" class="w-6 h-6" />
+            </button>
           </div>
           <div
             id="sb-content"
@@ -339,12 +248,6 @@ export const Bottomsheet: Component<SolidBottomsheetProps> = (props) => {
             style={{
               height: `calc(100vh - ${bottomsheetTranslateValue()}px)`,
             }}
-            onScroll={(e) => {
-              setContentScrollTop(e.currentTarget.scrollTop + 1);
-            }}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMoveContent}
-            onTouchEnd={onTouchEnd}
           >
             {props.children}
           </div>
