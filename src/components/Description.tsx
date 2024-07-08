@@ -255,23 +255,24 @@ const Description = (props: { downloaded: boolean }) => {
                     }%,
                     rgba(var(--colors-bg2),1) 100%`,
                 }}
-                class="flex items-center justify-between gap-1 p-2 rounded-full"
+                class="flex items-center justify-between gap-1 p-2 rounded-full relative shadow-lg"
               >
+                <div class="w-full h-[90%] z-0 bg-gradient-to-b from-bg1 via-bg1 absolute top-0 left-0" />
                 <span
                   title={`${numeral(video.data!.likes).format("0,0")} likes`}
-                  class="flex items-center gap-1 "
+                  class="flex items-center gap-1 relative z-1"
                 >
-                  <RiSystemThumbUpFill class="w-5 h-5 text-text2" />
+                  <RiSystemThumbUpFill class="w-5 h-5 text-text1" />
                   {video.data!.likes > 1000
                     ? numeral(video.data!.likes).format("0.0a").toUpperCase()
                     : numeral(video.data!.likes).format("0,0").toUpperCase()}
                 </span>
                 <span
                   title={`${numeral(video.data!.dislikes).format("0,0")} likes`}
-                  class="flex items-center gap-1"
+                  class="flex items-center gap-1 relative z-1"
                 >
                   <RiSystemThumbDownFill
-                    class="h-5 w-5 text-text2 "
+                    class="h-5 w-5 text-text1 "
                     fill="currentColor"
                   />
                   {video.data!.dislikes > 1000
