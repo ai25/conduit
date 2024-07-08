@@ -16,11 +16,10 @@ import { For } from "solid-js";
 import { isServer } from "solid-js/web";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import { usePreferences } from "~/stores/preferencesStore";
-import { fetchJson, isMobile } from "~/utils/helpers";
+import { fetchJson, isMobile, sanitizeText } from "~/utils/helpers";
 import { Bottomsheet } from "./Bottomsheet";
 import Comment, { PipedCommentResponse } from "./Comment";
 import numeral from "numeral";
-import { sanitizeText } from "./Description";
 
 export default function Comments(props: {
   videoId: string;
@@ -88,14 +87,14 @@ export default function Comments(props: {
             onClick={() => setCommentsOpen(true)}
           >
             <Show when={!firstComment()}>
-              Comments{" "}
               {numberOfComments() &&
-                ` - ${numeral(numberOfComments()).format("0a")}`}
+                `${numeral(numberOfComments()).format("0a")} `}
+              Comments{" "}
             </Show>
             <Show when={firstComment()}>
-              Comments{" "}
               {numberOfComments() &&
-                ` - ${numeral(numberOfComments()).format("0a")}`}
+                `${numeral(numberOfComments()).format("0a")} `}
+              Comments{" "}
               <div class="text-xs flex items-center gap-2">
                 <img
                   class="rounded-full h-10 w-10"
@@ -153,9 +152,9 @@ export default function Comments(props: {
             <Suspense fallback={<p>Loading...</p>}>
               <div id="sb-content" class="flex flex-col gap-1 relative  ">
                 <div class="p-2 text-md font-semibold">
-                  Comments{" "}
                   {numberOfComments() &&
-                    ` - ${numeral(numberOfComments()).format("0a")}`}
+                    `${numeral(numberOfComments()).format("0a")} `}
+                  Comments{" "}
                 </div>
                 <div class="h-px w-full bg-bg3 mb-2" />
                 <Show when={query.data}>
@@ -175,7 +174,7 @@ export default function Comments(props: {
                     )}
                   </For>
                   <div
-                    class="w-full h-40 bg-primary"
+                    class="w-full h-40"
                     ref={(ref) => setIntersectionRef(ref)}
                   />
                 </Show>

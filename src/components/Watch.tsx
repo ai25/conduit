@@ -431,7 +431,14 @@ export default function Watch() {
                     onClick={() => {
                       playerRef()?.pause();
                       setAppState("player", "dismissed", true);
-                      setSearchParams({ ...searchParams, v: undefined });
+                      setSearchParams({
+                        ...searchParams,
+                        v: undefined,
+                        index: undefined,
+                      });
+                      if (route.pathname !== "/playlist") {
+                        setSearchParams({ ...searchParams, list: undefined });
+                      }
                     }}
                     class="p-3 outline-none focus-visible:ring-2 ring-primary/80 rounded-lg"
                   >

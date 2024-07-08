@@ -28,7 +28,7 @@ import { createQuery } from "@tanstack/solid-query";
 import { MediaPlayerElement } from "vidstack/elements";
 import { createDate, createTimeAgo } from "@solid-primitives/date";
 import DownloadModal from "./DownloadModal";
-import { getVideoId, isMobile } from "~/utils/helpers";
+import { getVideoId, isMobile, sanitizeText } from "~/utils/helpers";
 import api from "~/utils/api";
 import { isServer } from "solid-js/web";
 import SubscribeButton from "./SubscribeButton";
@@ -48,6 +48,7 @@ import ShareModal from "./ShareModal";
 import { usePlayerState } from "~/stores/playerStateStore";
 import { BsAspectRatio, BsAspectRatioFill } from "solid-icons/bs";
 import { useCookie } from "~/utils/hooks";
+import { RiSystemThumbDownFill, RiSystemThumbUpFill } from "solid-icons/ri";
 
 function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
   const player = document.querySelector("media-player") as MediaPlayerElement;
@@ -65,47 +66,6 @@ function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
 }
 
 (globalThis as any).handleTimestamp = handleTimestamp;
-
-export async function sanitizeText(text: string) {
-  const dompurify = await import("dompurify");
-  const sanitize = dompurify.default().sanitize;
-  const t = sanitize(text)
-    .replaceAll(
-      /(?:http(?:s)?:\/\/)?(?:www\.)?youtube\.com(\/[/a-zA-Z0-9_?=&-]*)/gm,
-      "$1"
-    )
-    .replaceAll(
-      /(?:http(?:s)?:\/\/)?(?:www\.)?youtu\.be\/(?:watch\?v=)?([/a-zA-Z0-9_?=&-]*)/gm,
-      "/watch?v=$1"
-    )
-    .replaceAll("\n", "<br>")
-    .replace(
-      /<a href="\/watch\?v=([a-zA-Z0-9_?=&-]*)&amp;([^"]*)">([a-zA-Z0-9_?=&-:]*)<\/a>/gm,
-      (_, videoId, params, textContent) => {
-        const url = new URL(`https://youtube.com/watch?v=${videoId}`);
-        const searchParams = new URLSearchParams(params);
-        const existingParams = new URLSearchParams(window.location.search);
-
-        const timestamp = searchParams.get("t") || "0";
-
-        const allParams = new URLSearchParams();
-        searchParams.forEach((value, key) => {
-          allParams.set(key, value);
-        });
-        existingParams.forEach((value, key) => {
-          allParams.set(key, value);
-        });
-
-        allParams.forEach((value, key) => {
-          url.searchParams.set(key, value);
-        });
-
-        return `<button class="link" onclick="handleTimestamp('${videoId}','${timestamp}', '${url.search}')">${textContent}</button>`;
-      }
-    )
-    .replaceAll(/<a href/gm, '<a class="link" href');
-  return t;
-}
 
 const Description = (props: { downloaded: boolean }) => {
   const [expanded, setExpanded] = createSignal(false);
@@ -167,8 +127,9 @@ const Description = (props: { downloaded: boolean }) => {
           contentSlot="Copy to clipboard"
           triggerSlot={
             <Button
+              class="[&>span]:whitespace-nowrap"
               as="div"
-              appearance="subtle"
+              appearance="ghost"
               icon={<FaSolidCopy class="w-4 h-4" />}
             />
           }
@@ -276,12 +237,31 @@ const Description = (props: { downloaded: boolean }) => {
               </p>
             </div>
             <div class="flex flex-col w-full @sm:w-36 ">
-              <div class="flex items-center justify-between">
+              <div
+                style={{
+                  "background-image": `linear-gradient(90deg, 
+                    rgba(var(--colors-primary),0.5) 0%, 
+                    rgba(var(--colors-primary),0.5) ${
+                      (video.data!.likes /
+                        (video.data!.likes + video.data!.dislikes)) *
+                        100 -
+                      10
+                    }%, 
+                    rgba(var(--colors-bg2),1) ${
+                      (video.data!.likes /
+                        (video.data!.likes + video.data!.dislikes)) *
+                        100 +
+                      10
+                    }%,
+                    rgba(var(--colors-bg2),1) 100%`,
+                }}
+                class="flex items-center justify-between gap-1 p-2 rounded-full"
+              >
                 <span
                   title={`${numeral(video.data!.likes).format("0,0")} likes`}
                   class="flex items-center gap-1 "
                 >
-                  <TbThumbUpFilled class="w-5 h-5 text-text2" />
+                  <RiSystemThumbUpFill class="w-5 h-5 text-text2" />
                   {video.data!.likes > 1000
                     ? numeral(video.data!.likes).format("0.0a").toUpperCase()
                     : numeral(video.data!.likes).format("0,0").toUpperCase()}
@@ -290,7 +270,7 @@ const Description = (props: { downloaded: boolean }) => {
                   title={`${numeral(video.data!.dislikes).format("0,0")} likes`}
                   class="flex items-center gap-1"
                 >
-                  <TbThumbDownFilled
+                  <RiSystemThumbDownFill
                     class="h-5 w-5 text-text2 "
                     fill="currentColor"
                   />
@@ -299,22 +279,10 @@ const Description = (props: { downloaded: boolean }) => {
                     : numeral(video.data!.dislikes).format("0,0").toUpperCase()}
                 </span>
               </div>
-              <div class="w-full h-1 bg-primary rounded mt-2 flex justify-end">
-                <div
-                  class="h-full bg-bg3 rounded-r"
-                  style={{
-                    width: `${
-                      (video.data!.dislikes /
-                        (video.data!.likes + video.data!.dislikes)) *
-                      100
-                    }%`,
-                  }}
-                />
-              </div>
             </div>
           </div>
         </div>
-        <div class="mt-1 flex flex-col rounded-lg bg-bg2 p-2">
+        <div class="mt-1 flex flex-col rounded-xl bg-bg2 p-2">
           <div
             tabIndex={0}
             id="description"
@@ -440,92 +408,65 @@ const ActionsContainer = (props: {
   const [preferences, setPreferences] = usePreferences();
   const [searchParams] = useSearchParams();
   return (
-    <div class="flex items-center justify-evenly rounded-full p-2 bg-bg2">
+    <div class="flex items-center gap-2 p-2 overflow-auto scrollbar-horizontal">
       <Switch>
         <Match when={props.downloaded}>
-          <Tooltip
-            as="div"
-            contentSlot="Delete"
-            triggerSlot={
-              <Button
-                icon={<FaSolidTrashCan class="h-6 w-6" />}
-                appearance="subtle"
-                onClick={props.deleteVideo}
-              />
-            }
+          <Button
+            class="[&>span]:whitespace-nowrap"
+            icon={<FaSolidTrashCan class="h-4 w-4" />}
+            label="Delete"
+            appearance="ghost"
+            onClick={props.deleteVideo}
           />
         </Match>
         <Match when={!props.downloaded}>
-          <Tooltip
-            as="div"
-            contentSlot="Download"
-            triggerSlot={
-              <Button
-                icon={<FaSolidDownload class="h-6 w-6" />}
-                appearance="subtle"
-                onClick={props.setDownloadModalOpen}
-              />
-            }
+          <Button
+            class="[&>span]:whitespace-nowrap"
+            label="Download"
+            icon={<FaSolidDownload class="h-4 w-4" />}
+            appearance="ghost"
+            onClick={props.setDownloadModalOpen}
           />
         </Match>
       </Switch>
-      <Tooltip
-        as="div"
-        contentSlot={"Share"}
-        triggerSlot={
-          <Button
-            icon={<FaSolidShare class="h-6 w-6" />}
-            appearance="subtle"
-            onClick={props.setShareModalOpen}
-          />
-        }
+      <Button
+        class="[&>span]:whitespace-nowrap"
+        label="Share"
+        icon={<FaSolidShare class="h-4 w-4" />}
+        appearance="ghost"
+        onClick={props.setShareModalOpen}
       />
-      <Tooltip
-        as="div"
-        contentSlot="Save"
-        triggerSlot={
-          <Button
-            icon={<FaSolidBookmark class="h-6 w-6" />}
-            appearance="subtle"
-            onClick={() => {
-              toast.show("Not implemented");
-            }}
-          />
-        }
+      <Button
+        class="[&>span]:whitespace-nowrap"
+        icon={<FaSolidBookmark class="h-4 w-4" />}
+        appearance="ghost"
+        onClick={() => {
+          toast.show("Not implemented");
+        }}
+        label="Save"
       />
-      <Tooltip
-        as="div"
-        contentSlot="Debug info"
-        triggerSlot={
-          <Button
-            icon={<FaSolidBug class="h-6 w-6" />}
-            appearance="subtle"
-            onClick={props.setDebugInfoOpen}
-          />
-        }
+      <Button
+        class="[&>span]:whitespace-nowrap"
+        icon={<FaSolidBug class="h-4 w-4" />}
+        appearance="ghost"
+        onClick={props.setDebugInfoOpen}
+        label="Debug info"
       />
-      <Tooltip
-        class={`hidden ${searchParams.fullscreen ? "" : "lg:block"}`}
-        as="div"
-        contentSlot={
-          preferences.theatreMode ? "Exit Theatre Mode" : "Theatre Mode"
+      <Button
+        class="[&>span]:whitespace-nowrap"
+        icon={
+          preferences.theatreMode ? (
+            <BsAspectRatioFill class="h-4 w-4" />
+          ) : (
+            <BsAspectRatio class="h-4 w-4" />
+          )
         }
-        triggerSlot={
-          <Button
-            icon={
-              preferences.theatreMode ? (
-                <BsAspectRatioFill class="h-6 w-6" />
-              ) : (
-                <BsAspectRatio class="h-6 w-6" />
-              )
-            }
-            appearance="subtle"
-            onClick={() => {
-              setTheatreMode(JSON.stringify(!preferences.theatreMode));
-              setPreferences("theatreMode", !preferences.theatreMode);
-            }}
-          />
-        }
+        label="Theatre mode"
+        appearance="ghost"
+        onClick={() => {
+          setTheatreMode(JSON.stringify(!preferences.theatreMode));
+          setPreferences("theatreMode", !preferences.theatreMode);
+        }}
       />
     </div>
   );

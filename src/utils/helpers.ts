@@ -301,3 +301,44 @@ export function createPlaylist(setStore: SetStoreFunction<Store>) {
     [id]: playlist,
   });
 }
+
+export async function sanitizeText(text: string) {
+  const dompurify = await import("dompurify");
+  const sanitize = dompurify.default().sanitize;
+  const t = sanitize(text)
+    .replaceAll(
+      /(?:http(?:s)?:\/\/)?(?:www\.)?youtube\.com(\/[/a-zA-Z0-9_?=&-]*)/gm,
+      "$1"
+    )
+    .replaceAll(
+      /(?:http(?:s)?:\/\/)?(?:www\.)?youtu\.be\/(?:watch\?v=)?([/a-zA-Z0-9_?=&-]*)/gm,
+      "/watch?v=$1"
+    )
+    .replaceAll("\n", "<br>")
+    .replace(
+      /<a href="\/watch\?v=([a-zA-Z0-9_?=&-]*)&amp;([^"]*)">([a-zA-Z0-9_?=&-:]*)<\/a>/gm,
+      (_, videoId, params, textContent) => {
+        const url = new URL(`https://youtube.com/watch?v=${videoId}`);
+        const searchParams = new URLSearchParams(params);
+        const existingParams = new URLSearchParams(window.location.search);
+
+        const timestamp = searchParams.get("t") || "0";
+
+        const allParams = new URLSearchParams();
+        searchParams.forEach((value, key) => {
+          allParams.set(key, value);
+        });
+        existingParams.forEach((value, key) => {
+          allParams.set(key, value);
+        });
+
+        allParams.forEach((value, key) => {
+          url.searchParams.set(key, value);
+        });
+
+        return `<button class="link" onclick="handleTimestamp('${videoId}','${timestamp}', '${url.search}')">${textContent}</button>`;
+      }
+    )
+    .replaceAll(/<a href/gm, '<a class="link" href');
+  return t;
+}

@@ -20,6 +20,9 @@ export default function Link(props: LinkProps) {
         }
       });
 
+      hrefUrl.searchParams.delete("t");
+      hrefUrl.searchParams.delete("filter");
+
       if (fullscreen) {
         hrefUrl.searchParams.set("fullscreen", "true");
       } else {

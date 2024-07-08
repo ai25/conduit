@@ -11,7 +11,7 @@ export default function Button(props: {
   isSelected?: boolean;
   isLoading?: boolean;
   isDisabled?: boolean;
-  appearance?: "primary" | "subtle" | "link" | "danger" | "warning";
+  appearance?: "primary" | "subtle" | "link" | "danger" | "warning" | "ghost";
   as?: keyof JSX.IntrinsicElements;
   href?: string;
 }) {
@@ -35,6 +35,10 @@ export default function Button(props: {
       },
       warning: {
         "bg-yellow-600 hover:bg-yellow-600/90 shadow hover:shadow-3xl text-text1 border-transparent hover:border-yellow-600/30":
+          true,
+      },
+      ghost: {
+        "bg-bg2 hover:bg-text2/20 shadow hover:shadow-3xl text-text1 border-transparent hover:border-bg2/30":
           true,
       },
     };

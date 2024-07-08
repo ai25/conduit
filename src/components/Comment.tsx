@@ -13,8 +13,7 @@ import {
 } from "solid-js";
 import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncStore } from "~/stores/syncStore";
-import { fetchJson } from "~/utils/helpers";
-import { sanitizeText } from "./Description";
+import { fetchJson, sanitizeText } from "~/utils/helpers";
 import Link from "./Link";
 import { BsPin } from "solid-icons/bs";
 export interface PipedCommentResponse {

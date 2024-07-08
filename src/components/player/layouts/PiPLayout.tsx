@@ -17,13 +17,14 @@ import { createQuery, isServer } from "@tanstack/solid-query";
 import { createEffect, createSignal } from "solid-js";
 import { usePreferences } from "~/stores/preferencesStore";
 import api from "~/utils/api";
-import { useNavigate, useSearchParams } from "@solidjs/router";
+import { useLocation, useNavigate, useSearchParams } from "@solidjs/router";
 
 export function PiPLayout() {
   const [appState, setAppState] = useAppState();
   const navigate = useNavigate();
   const [preferences] = usePreferences();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
 
   return (
     <div>
@@ -48,7 +49,14 @@ export function PiPLayout() {
                 const mediaPlayer = document.querySelector("media-player");
                 mediaPlayer?.pause();
                 setAppState("player", "dismissed", true);
-                setSearchParams({ ...searchParams, v: undefined });
+                setSearchParams({
+                  ...searchParams,
+                  v: undefined,
+                  index: undefined,
+                });
+                if (location.pathname !== "/playlist") {
+                  setSearchParams({ ...searchParams, list: undefined });
+                }
               }}
             />
           </div>
