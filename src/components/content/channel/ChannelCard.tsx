@@ -138,18 +138,24 @@ const Dropdown = (props: { item: RelatedChannel }) => {
                 try {
                   if (isBlocked()) {
                     sync.setStore("blocklist", channelId, undefined!);
-                    toast.success(`Unblocked ${props.item.name}.`);
+                    toast.success(`Unblocked ${props.item.name}.`, () => {
+                      sync.setStore("blocklist", channelId, {
+                        name: props.item.name,
+                      });
+                    });
                   } else {
                     sync.setStore("blocklist", channelId, {
                       name: props.item.name,
                     });
-                    toast.success(`Blocked ${props.item.name}.`);
+                    toast.success(`Blocked ${props.item.name}.`, () => {
+                      sync.setStore("blocklist", channelId, undefined!);
+                    });
                   }
                 } catch (e) {
                   toast.error(
-                    `Failed to ${
-                      isBlocked() ? "unblock" : "block"
-                    } channel. ${(e as any).message}`
+                    `Failed to ${isBlocked() ? "unblock" : "block"} channel. ${
+                      (e as any).message
+                    }`
                   );
                   console.error(e);
                 }

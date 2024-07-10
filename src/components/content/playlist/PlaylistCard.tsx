@@ -15,7 +15,7 @@ const PlaylistCard = (props: {
   return (
     <div
       classList={{
-        "flex flex-row gap-2 overflow-hidden items-start rounded-xl bg-bg1 p-2 ":
+        "flex flex-row gap-2 overflow-hidden items-start h-max rounded-xl bg-bg1 p-2 ":
           true,
         "min-w-full": props.layout === "list",
         "sm:max-w-max  sm:flex-col sm:w-72 sm:gap-0 min-w-full sm:min-w-0":
@@ -26,9 +26,9 @@ const PlaylistCard = (props: {
     >
       <div
         classList={{
-          "aspect-video overflow-hidden rounded ": true,
+          "aspect-video overflow-hidden rounded h-full": true,
           "max-h-96": props.layout === "list",
-          "max-h-44 min-w-min sm:max-h-full sm:w-full sm:h-44":
+          "max-h-44 min-w-min sm:max-h-full sm:w-full sm:h-full":
             props.layout === "sm:grid",
         }}
       >
@@ -124,7 +124,7 @@ const ImageContainer = (props: {
   return (
     <Link
       href={props.url}
-      class="relative w-[10rem] flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative min-w-[10rem] flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{

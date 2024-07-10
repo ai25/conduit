@@ -480,7 +480,7 @@ const ActionsContainer = (props: {
         label="Debug info"
       />
       <Button
-        class="[&>span]:whitespace-nowrap"
+        class="[&>span]:whitespace-nowrap hidden lg:flex"
         icon={
           preferences.theatreMode ? (
             <BsAspectRatioFill class="h-4 w-4" />

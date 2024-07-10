@@ -1245,7 +1245,13 @@ export default function Player(props: {
           class="absolute z-[1] inset-0 block h-full w-full rounded-md opacity-0 transition-opacity data-[visible]:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
         />
       </media-provider>
-      <Show when={showErrorScreen().show && !showErrorScreen().dismissed}>
+      <Show
+        when={
+          showErrorScreen().show &&
+          !showErrorScreen().dismissed &&
+          !appState.player.small
+        }
+      >
         <div
           // classList={{hidden: preferences.pip}}
           class="absolute z-50 top-0 right-0 w-full h-full opacity-100 pointer-events-auto bg-black/50"

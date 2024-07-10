@@ -340,12 +340,19 @@ export default function VideoCardMenu(props: {
                     try {
                       if (isBlocked()) {
                         sync.setStore("blocklist", channelId, undefined!);
-                        toast.success(`Unblocked ${props.v.uploaderName}.`);
+                        toast.success(`Unblocked ${props.v.uploaderName}.`, ()=>{
+                        sync.setStore("blocklist", channelId, {
+                          name: props.v.uploaderName,
+                        });
+
+                        });
                       } else {
                         sync.setStore("blocklist", channelId, {
                           name: props.v.uploaderName,
                         });
-                        toast.success(`Blocked ${props.v.uploaderName}.`);
+                        toast.success(`Blocked ${props.v.uploaderName}.`,()=>{
+                        sync.setStore("blocklist", channelId, undefined!);
+                        });
                       }
                     } catch (e) {
                       toast.error(

@@ -109,12 +109,19 @@ export default function PlaylistMenu(props: { item: RelatedPlaylist }) {
                     try {
                       if (isBlocked()) {
                         sync.setStore("blocklist", channelId, undefined!);
-                        toast.success(`Unblocked ${props.item.uploaderName}.`);
+                        toast.success(`Unblocked ${props.item.uploaderName}.`, ()=>{
+                        sync.setStore("blocklist", channelId, {
+                          name: props.item.uploaderName,
+                        });
+
+                        });
                       } else {
                         sync.setStore("blocklist", channelId, {
                           name: props.item.uploaderName,
                         });
-                        toast.success(`Blocked ${props.item.uploaderName}.`);
+                        toast.success(`Blocked ${props.item.uploaderName}.`,()=>{
+                        sync.setStore("blocklist", channelId, undefined!);
+                        });
                       }
                     } catch (e) {
                       toast.error(

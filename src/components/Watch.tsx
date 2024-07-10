@@ -266,8 +266,8 @@ export default function Watch() {
       >
         <div
           classList={{
-            "flex flex-col sm:flex-row w-full pointer-events-auto": true,
-            "sm:flex-row": !preferences.theatreMode && !searchParams.fullscreen,
+            "flex flex-col w-full pointer-events-auto": true,
+            "lg:flex-row": !preferences.theatreMode && !searchParams.fullscreen,
             " rounded backdrop-blur-sm bg-bg2/70 w-[96vw] ":
               appState.player.small,
             "sm:w-[400px]": appState.player.small && !appState.smallDevice,
@@ -334,7 +334,7 @@ export default function Watch() {
 
             <div
               classList={{
-                "flex w-full": true,
+                "flex w-full p-1": true,
                 "sticky sm:relative z-[999] top-0 ":
                   !searchParams.fullscreen && !appState.player.small,
                 "sm:flex-col": !appState.smallDevice,

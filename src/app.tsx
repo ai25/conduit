@@ -122,7 +122,7 @@ export default function App() {
                               <Header />
                               <Show when={!alphaWarningDismissed()}>
                                 <div class="w-full h-14 " />
-                                <div class="fixed top-10 w-full z-[9999] bg-amber-600 flex justify-evenly items-center p-2">
+                                <div class="fixed top-14 w-full z-[9999] bg-amber-600 flex justify-evenly items-center p-2">
                                   <div>
                                     This website is in Alpha stage, meaning
                                     things{" "}

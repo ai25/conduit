@@ -338,7 +338,7 @@ export default function Header() {
           <Link
             class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
             tabIndex={sidebarOpen() ? 0 : -1}
-            href="/"
+            href="/trending"
           >
             <AiOutlineFire class="w-6 h-6 mr-4" />
             Trending

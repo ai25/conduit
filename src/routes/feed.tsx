@@ -91,10 +91,11 @@ export default function Feed() {
         <Tooltip.Root>
           <Tooltip.Trigger
             classList={{
-              "fixed bottom-20 right-4 rounded-full w-10 h-10 bg-primary disabled:opacity-75 z-50 flex items-center justify-center":
+              "fixed right-4 rounded-full w-10 h-10 bg-primary disabled:opacity-75 z-50 flex items-center justify-center":
                 true,
               "animate-spin": query.isFetching,
-              "bottom-40 md:bottom-20": appState.player.small,
+              "bottom-10": !appState.player.small,
+              "bottom-24 md:bottom-20": appState.player.small,
             }}
             disabled={query.isFetching}
             onClick={() => {

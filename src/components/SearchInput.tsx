@@ -225,7 +225,8 @@ const SearchInput = () => {
       classList={{
         "z-[999999] flex items-center transition-[width] sm:max-w-sm duration-200 h-full w-full px-3":
           true,
-        "relative max-w-sm sm:max-w-sm": suggestions().length === 0,
+        "relative max-w-sm sm:max-w-sm":
+          suggestions().length === 0 || !showSuggestions(),
         "absolute sm:relative left-0 w-screen max-w-full sm:w-full sm:max-w-sm pr-6 sm:pr-3 bg-bg1":
           suggestions().length > 0 && showSuggestions(),
       }}
