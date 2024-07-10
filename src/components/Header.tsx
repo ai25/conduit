@@ -10,11 +10,16 @@ import {
   onMount,
   onCleanup,
   createMemo,
+  on,
 } from "solid-js";
-import { useCookie } from "~/utils/hooks";
+import {
+  useCookie,
+  useOnClickOutside,
+  useOutsideClickHandler,
+} from "~/utils/hooks";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 import { Dropdown } from "./Dropdown";
-import Search from "./SearchInput";
+import Search, { FocusTrap } from "./SearchInput";
 import Modal from "./Modal";
 import Button from "./Button";
 import Field from "./Field";
@@ -25,9 +30,15 @@ import {
 } from "@kobalte/core";
 import {
   FaSolidArrowsRotate,
+  FaSolidBan,
   FaSolidBrush,
   FaSolidCheck,
+  FaSolidClock,
+  FaSolidClockRotateLeft,
+  FaSolidDownload,
   FaSolidGlobe,
+  FaSolidHeart,
+  FaSolidList,
 } from "solid-icons/fa";
 import { useSyncStore } from "~/stores/syncStore";
 import { createQuery } from "@tanstack/solid-query";
@@ -35,13 +46,21 @@ import { usePreferences } from "~/stores/preferencesStore";
 import { useAppState } from "~/stores/appStateStore";
 import { Switch } from "solid-js";
 import { Match } from "solid-js";
-import { BsCloudCheck, BsCloudSlash, BsDatabaseX } from "solid-icons/bs";
+import {
+  BsCloudCheck,
+  BsCloudSlash,
+  BsDatabaseX,
+  BsViewList,
+} from "solid-icons/bs";
 import { TiTimes } from "solid-icons/ti";
 import { isServer } from "solid-js/web";
 import { createMachine } from "@solid-primitives/state-machine";
 import { toast } from "./Toast";
 import Link from "./Link";
 import { THEME_OPTIONS } from "~/config/constants";
+import { useLocation, useSearchParams } from "@solidjs/router";
+import { AiOutlineFire } from "solid-icons/ai";
+import { BiSolidCog } from "solid-icons/bi";
 
 enum SyncState {
   DISCONNECTED = "disconnected",
@@ -177,6 +196,23 @@ export default function Header() {
     );
   };
 
+  const [isVisible, setIsVisible] = createSignal(true);
+  const [lastScrollY, setLastScrollY] = createSignal(0);
+  const [searchParams] = useSearchParams();
+
+  const controlNavbar = () => {
+    if (typeof window !== "undefined") {
+      if (searchParams.fullscreen && window.scrollY === 0) {
+        setIsVisible(false);
+      } else if (window.scrollY > lastScrollY()) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+
+      setLastScrollY(window.scrollY);
+    }
+  };
   onMount(() => {
     if (isServer) return;
     document.addEventListener("keydown", (e) => {
@@ -185,6 +221,7 @@ export default function Header() {
         e.preventDefault();
       }
     });
+    window.addEventListener("scroll", controlNavbar);
   });
   onCleanup(() => {
     if (isServer) return;
@@ -194,10 +231,38 @@ export default function Header() {
         e.preventDefault();
       }
     });
+    window.removeEventListener("scroll", controlNavbar);
+  });
+  const [sidebarOpen, setSidebarOpen] = createSignal(false);
+  let sidebarRef: HTMLDivElement;
+  let toggleSidebarRef: HTMLButtonElement;
+  createEffect(() => {
+    if (sidebarRef && toggleSidebarRef) {
+      useOnClickOutside([toggleSidebarRef, sidebarRef], () => {
+        setSidebarOpen(false);
+      });
+    }
   });
 
+  const location = useLocation();
+  createEffect(
+    on(
+      () => location.pathname,
+      () => {
+        setSidebarOpen(false);
+      }
+    )
+  );
+
   return (
-    <nav class="fixed top-0 left-0 bg-bg2 w-full z-[999] h-10 px-2 flex items-center justify-between">
+    <nav
+      classList={{
+        "fixed top-0 left-0 bg-bg1 w-full z-[99999] h-14 border-b border-bg2 px-2 transition-transform duration-300 flex items-center justify-between":
+          true,
+        "translate-y-0": isVisible(),
+        "-translate-y-full": !isVisible(),
+      }}
+    >
       <button
         class="sr-only focus:not-sr-only absolute top-0 left-0"
         onClick={() => {
@@ -212,7 +277,133 @@ export default function Header() {
       >
         Skip navigation
       </button>
-      <div class="flex items-center justify-between w-full max-w-full min-w-0">
+
+      <button
+        ref={toggleSidebarRef!}
+        onKeyDown={(e) => {
+          console.log(e.key);
+          if (e.key === "Escape") {
+            setSidebarOpen((prev) => !prev);
+            e.preventDefault();
+          }
+        }}
+        onClick={() => setSidebarOpen((prev) => !prev)}
+        class="outline-none aspect-square w-9 h-9 p-1 focus-visible:ring-2 ring-primary/80 rounded-lg flex flex-col gap-[6px] justify-center items-center"
+      >
+        <div
+          classList={{
+            "w-[24px] bg-text1 h-[2px] rounded transition-transform origin-top-left":
+              true,
+            "rotate-45 translate-x-[4px] -translate-y-[0.25px]": sidebarOpen(),
+          }}
+        />
+        <div
+          classList={{
+            "w-[24px] bg-text1 h-[2px] rounded transition-opacity": true,
+            "opacity-0": sidebarOpen(),
+          }}
+        />
+        <div
+          classList={{
+            "w-[24px] bg-text1 h-[2px] rounded transition-transform origin-bottom-left":
+              true,
+            "-rotate-45 translate-x-[4px] translate-y-[0.25px]": sidebarOpen(),
+          }}
+        />
+      </button>
+      <div class="bg-red-500" ref={sidebarRef!}>
+        <FocusTrap
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setSidebarOpen((prev) => !prev);
+              e.preventDefault();
+            }
+          }}
+          classList={{
+            "absolute transition-[width,opacity] duration-300 bg-bg1 h-screen top-14 left-0 p-3 overflow-auto flex flex-col items-center gap-2":
+              true,
+            "w-0 opacity-0": !sidebarOpen(),
+            "w-screen sm:w-72": sidebarOpen(),
+          }}
+          active={true}
+        >
+          <Link
+            class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
+            tabIndex={sidebarOpen() ? 0 : -1}
+            href="/feed"
+          >
+            <BsViewList class="w-6 h-6 mr-4" />
+            Feed
+          </Link>
+          <Link
+            class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
+            tabIndex={sidebarOpen() ? 0 : -1}
+            href="/"
+          >
+            <AiOutlineFire class="w-6 h-6 mr-4" />
+            Trending
+          </Link>
+          <div class="self-start bg-bg3/80 h-px rounded w-full my-2" />
+          <Link
+            tabIndex={sidebarOpen() ? 0 : -1}
+            class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
+            href="/library/history"
+          >
+            <FaSolidClockRotateLeft class="w-5 h-5 ml-1 mr-4" />
+            History
+          </Link>
+          <Link
+            tabIndex={sidebarOpen() ? 0 : -1}
+            class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
+            href="/library/playlists"
+          >
+            <FaSolidList class="w-5 h-5 ml-1 mr-4" />
+            Playlists
+          </Link>
+          <Link
+            tabIndex={sidebarOpen() ? 0 : -1}
+            class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
+            href="/library/watch-later"
+          >
+            <FaSolidClock class="w-5 h-5 ml-1 mr-4" />
+            Watch Later
+          </Link>
+          <Link
+            tabIndex={sidebarOpen() ? 0 : -1}
+            class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
+            href="/library/downloads"
+          >
+            <FaSolidDownload class="w-5 h-5 ml-1 mr-4" />
+            Downloads
+          </Link>
+          <Link
+            tabIndex={sidebarOpen() ? 0 : -1}
+            class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
+            href="/library/blocklist"
+          >
+            <FaSolidBan class="w-5 h-5 ml-1 mr-4" />
+            Blocklist
+          </Link>
+          <Link
+            tabIndex={sidebarOpen() ? 0 : -1}
+            class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
+            href="/library/subscriptions"
+          >
+            <FaSolidHeart class="w-5 h-5 ml-1 mr-4" />
+            Subscriptions
+          </Link>
+          <div class="self-start bg-bg3/80 h-px rounded w-full my-2" />
+          <Link
+            tabIndex={sidebarOpen() ? 0 : -1}
+            class="outline-none w-full focus-visible:ring-2 ring-primary/80 bg-bg1 hover:bg-bg2 px-3 py-2 rounded-lg flex items-center gap-2"
+            href="/preferences"
+          >
+            <BiSolidCog class="w-5 h-5 ml-1 mr-4" />
+            Preferences
+          </Link>
+        </FocusTrap>
+      </div>
+      <div class="flex items-center justify-between w-full h-full py-2 max-w-full min-w-0">
         <Link href="/" class="text-text1 mx-2 w-8 h-8">
           <img
             src="/logo.svg"
@@ -220,19 +411,10 @@ export default function Header() {
             class="h-8 w-8 aspect-square min-w-max "
           />
         </Link>
-        <ul class="hidden md:inline">
-          <For each={links}>
-            {(link) => (
-              <Link href={link.href} class="text-sm p-1 text-left transition ">
-                {link.label}
-              </Link>
-            )}
-          </For>
-        </ul>
         <Search />
         <div class="flex items-center gap-2 ">
           <KobaltePopover.Root>
-            <KobaltePopover.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+            <KobaltePopover.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg">
               <Switch>
                 <Match when={appState.sync.syncing}>
                   <FaSolidArrowsRotate class="w-6 h-6 text-yellow-500" />
@@ -281,7 +463,7 @@ export default function Header() {
             </KobaltePopover.Trigger>
             <KobaltePopover.Portal>
               <KobaltePopover.Content
-                class="bg-bg1 border border-bg3/80 p-2 rounded-md
+                class="bg-bg1 border border-bg3/80 p-2 rounded-lg
                 animate-in
                 fade-in
                 slide-in-from-top-10

@@ -201,18 +201,38 @@ const SearchInput = () => {
       setShowSuggestions(false);
     }, 150);
   };
+  const [inputX, setInputX] = createSignal(0);
+  const [inputWidth, setInputWidth] = createSignal(100);
+  onMount(() => {
+    if (inputRef) {
+      setInputX(inputRef.getBoundingClientRect().x);
+      setInputWidth(inputRef!.getBoundingClientRect().width);
+    }
+
+    window.addEventListener("resize", () => {
+      setInputX(inputRef!.getBoundingClientRect().x);
+      setInputWidth(inputRef!.getBoundingClientRect().width);
+    });
+    onCleanup(() => {
+      window.removeEventListener("resize", () => {
+        setInputX(inputRef!.getBoundingClientRect().x);
+        setInputWidth(inputRef!.getBoundingClientRect().width);
+      });
+    });
+  });
   return (
     <div
       classList={{
-        "relative z-[999999] flex items-center transition-all duration-500 ":
+        "z-[999999] flex items-center transition-[width] sm:max-w-sm duration-200 h-full w-full px-3":
           true,
-        "-left-10 sm:left-0 w-screen sm:w-auto":
+        "relative max-w-sm sm:max-w-sm": suggestions().length === 0,
+        "absolute sm:relative left-0 w-screen max-w-full sm:w-full sm:max-w-sm pr-6 sm:pr-3 bg-bg1":
           suggestions().length > 0 && showSuggestions(),
       }}
     >
       <Show when={suggestions().length > 0 && showSuggestions()}>
         <button
-          class="sm:hidden bg-bg2 p-1 px-2 text-gray-500 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
+          class="sm:hidden bg-bg1 p-1 px-2 mr-2 text-gray-500 flex items-center justify-center hover:bg-bg2 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded-lg focus-visible:outline-none "
           onClick={() => {
             setSuggestions([]);
             setShowSuggestions(false);
@@ -234,7 +254,7 @@ const SearchInput = () => {
         aria-controls="suggestion-list"
         id="search-input"
         ref={inputRef}
-        class="w-full border-0 max-w-full peer outline-none bg-bg1 border-bg2 focus:border-2 focus:border-r-0 placeholder-shown:focus:border-r-2 text-text1 text-sm rounded-lg rounded-r-none placeholder-shown:rounded-r-lg transition-transform focus:ring-primary focus:border-primary py-1 px-2.5"
+        class="w-full h-10 border-0 max-w-full peer outline-none bg-bg2 border-bg2 focus:border-2 focus:border-r-0 placeholder-shown:focus:border-r-2 text-text1 text-sm rounded-full rounded-r-none placeholder-shown:rounded-r-full transition-transform focus:ring-primary focus:border-primary py-1 px-2.5"
         type="combobox"
         value={inputValue()}
         placeholder="Search... (Ctrl + K)"
@@ -250,12 +270,7 @@ const SearchInput = () => {
           activeIndex() > -1 ? `option-${activeIndex()}` : undefined
         }
       />
-      <div
-        onTransitionStart={(e) => {
-          console.log("transition start", e.propertyName);
-        }}
-        class="relative peer-placeholder-shown:hidden  flex w-max items-center justify-center gap-1 peer h-[29px] peer-focus:h-[33px] bg-bg1 py-1 px-1 -left-1 border-0 peer-focus:border-2 peer-focus:border-primary peer-focus:border-l-0 rounded-r-lg"
-      >
+      <div class="relative peer-placeholder-shown:hidden  flex w-max items-center justify-center gap-1 peer h-10 bg-bg2 py-1 px-1 -left-1 border-0 peer-focus:border-2 peer-focus:border-primary peer-focus:border-l-0 rounded-r-full">
         <button
           id="search-button"
           class="text-gray-500 flex items-center justify-center hover:bg-bg1 hover:text-text1 focus-visible:ring-2 focus-visible:ring-primary/80 rounded focus-visible:outline-none "
@@ -283,7 +298,11 @@ const SearchInput = () => {
       <Show when={suggestions().length > 0 && showSuggestions()}>
         <Portal>
           <ul
-            class={`fixed w-screen h-screen sm:h-auto max-h-screen overflow-y-auto left-0 right-0 sm:w-max sm:min-w-[30rem] sm:left-[calc(70vw-18rem)] top-10 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
+            class={`fixed w-screen h-screen sm:h-auto w-screen sm:w-[var(--input-width)] left-0 sm:left-[var(--input-left)] max-h-screen overflow-y-auto left-0 right-0  top-14 sm:mt-1 bg-bg1 border-1 border-bg2/80 p-2 z-[999999] text-text1 rounded-md border border-bg1 shadow-md transform transition-transform duration-250 ease-in origin-center animate-in fade-in aria-[expanded]:animate-out aria-[expanded]:fade-out `}
+            style={{
+              "--input-left": `${inputX()}px`,
+              "--input-width": `${inputWidth()}px`,
+            }}
             aria-multiselectable="false"
             aria-live="polite"
             aria-label="Suggestions"
@@ -391,12 +410,15 @@ export default SearchInput;
 type FocusTrapProps = {
   active: boolean;
   children: JSX.Element;
+  class?: string;
+  classList?: Record<string, boolean>;
+  onKeyDown?: (e: KeyboardEvent) => void;
 };
 
 export function FocusTrap(props: FocusTrapProps) {
   let focusTrapContainer: HTMLDivElement | undefined;
 
-  const [isActive, setIsActive] = createSignal(props.active);
+  const [isActive, setIsActive] = createSignal(() => props.active);
 
   const focusableElementsString =
     'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [contenteditable], [tabindex]:not([tabindex^="-"])';
@@ -458,7 +480,9 @@ export function FocusTrap(props: FocusTrapProps) {
 
   return (
     <div
-      class="focus-trap-container" // Add TailwindCSS classes as needed
+      class={props.class}
+      classList={props.classList}
+      onKeyDown={(e) => props.onKeyDown?.(e)}
       ref={focusTrapContainer}
     >
       {props.children}

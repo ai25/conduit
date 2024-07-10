@@ -121,7 +121,7 @@ export default function App() {
                             >
                               <Header />
                               <Show when={!alphaWarningDismissed()}>
-                                <div class="w-full h-10 " />
+                                <div class="w-full h-14 " />
                                 <div class="fixed top-10 w-full z-[9999] bg-amber-600 flex justify-evenly items-center p-2">
                                   <div>
                                     This website is in Alpha stage, meaning
@@ -159,7 +159,7 @@ export default function App() {
                                   easing: "ease-in",
                                 }}
                               />
-                              <div aria-hidden="true" class="h-10" />
+                              <div aria-hidden="true" class="h-14" />
                               <Suspense fallback={<WatchFallback />}>
                                 <Watch />
                               </Suspense>
@@ -172,47 +172,6 @@ export default function App() {
                                 <Suspense>{props.children}</Suspense>
                                 <ReloadPrompt />
                               </main>
-                              <div class="fixed bottom-0 left-0 w-full md:hidden pb-2 sm:pb-5 bg-bg2 z-50">
-                                <BottomNav
-                                  items={[
-                                    {
-                                      href: "/feed",
-                                      label: "Feed",
-                                      icon: (
-                                        <TiHome
-                                          fill="currentColor"
-                                          class="w-6 h-6 "
-                                        />
-                                      ),
-                                    },
-                                    {
-                                      href: "/trending",
-                                      label: "Trending",
-                                      icon: (
-                                        <AiOutlineFire
-                                          fill="currentColor"
-                                          class="w-6 h-6 "
-                                        />
-                                      ),
-                                    },
-                                    {
-                                      href: "/library",
-                                      label: "Library",
-                                      icon: (
-                                        <AiOutlineMenu
-                                          fill="currentColor"
-                                          class="w-6 h-6 "
-                                        />
-                                      ),
-                                    },
-                                    {
-                                      href: "/preferences",
-                                      label: "Preferences",
-                                      icon: <BiSolidCog class="w-6 h-6 " />,
-                                    },
-                                  ]}
-                                />
-                              </div>
                               <div class="h-20 md:h-0" />
                               <Show when={appState.player.small}>
                                 <div class="h-32" />

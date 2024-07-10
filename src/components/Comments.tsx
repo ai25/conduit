@@ -72,6 +72,7 @@ export default function Comments(props: {
   });
   const numberOfComments = () => query.data?.pages?.[0]?.commentCount;
   const firstComment = () => query.data?.pages?.[0]?.comments?.[0];
+  const commentsDisabled = () => query.data?.pages?.[0].disabled;
   const [sanitizedText, setSanitizedText] = createSignal("");
   createEffect(async () => {
     if (!firstComment()) return;
@@ -81,19 +82,34 @@ export default function Comments(props: {
   return (
     <>
       <Switch>
+        <Match when={commentsDisabled()}>
+          <div class="text-center text-sm w-full rounded-xl bg-bg2 p-2 mb-2">
+            Comments disabled
+          </div>
+        </Match>
         <Match when={props.display === "bottomsheet"}>
           <button
             class="text-center text-sm w-full rounded-xl bg-bg2 p-2 mb-2"
             onClick={() => setCommentsOpen(true)}
           >
             <Show when={!firstComment()}>
-              {numberOfComments() &&
-                `${numeral(numberOfComments()).format("0a")} `}
+              <Show when={numberOfComments()}>
+                {numberOfComments()! > 10000
+                  ? numeral(numberOfComments()!).format("0.00a").toUpperCase()
+                  : numeral(numberOfComments()!)
+                      .format("0,0")
+                      .toUpperCase()}{" "}
+              </Show>
               Comments{" "}
             </Show>
             <Show when={firstComment()}>
-              {numberOfComments() &&
-                `${numeral(numberOfComments()).format("0a")} `}
+              <Show when={numberOfComments()}>
+                {numberOfComments()! > 10000
+                  ? numeral(numberOfComments()!).format("0.00a").toUpperCase()
+                  : numeral(numberOfComments()!)
+                      .format("0,0")
+                      .toUpperCase()}{" "}
+              </Show>
               Comments{" "}
               <div class="text-xs flex items-center gap-2">
                 <img
@@ -152,8 +168,15 @@ export default function Comments(props: {
             <Suspense fallback={<p>Loading...</p>}>
               <div id="sb-content" class="flex flex-col gap-1 relative  ">
                 <div class="p-2 text-md font-semibold">
-                  {numberOfComments() &&
-                    `${numeral(numberOfComments()).format("0a")} `}
+                  <Show when={numberOfComments()}>
+                    {numberOfComments()! > 10000
+                      ? numeral(numberOfComments()!)
+                          .format("0.00a")
+                          .toUpperCase()
+                      : numeral(numberOfComments()!)
+                          .format("0,0")
+                          .toUpperCase()}{" "}
+                  </Show>
                   Comments{" "}
                 </div>
                 <div class="h-px w-full bg-bg3 mb-2" />

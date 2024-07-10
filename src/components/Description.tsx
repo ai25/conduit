@@ -18,6 +18,7 @@ import {
   FaSolidChevronRight,
   FaSolidCopy,
   FaSolidDownload,
+  FaSolidEye,
   FaSolidShare,
   FaSolidThumbsDown,
   FaSolidThumbsUp,
@@ -35,6 +36,7 @@ import SubscribeButton from "./SubscribeButton";
 import { Tooltip } from "./Tooltip";
 import Button from "./Button";
 import {
+  TbLicense,
   TbThumbDown,
   TbThumbDownFilled,
   TbThumbUp,
@@ -49,6 +51,7 @@ import { usePlayerState } from "~/stores/playerStateStore";
 import { BsAspectRatio, BsAspectRatioFill } from "solid-icons/bs";
 import { useCookie } from "~/utils/hooks";
 import { RiSystemThumbDownFill, RiSystemThumbUpFill } from "solid-icons/ri";
+import { BiSolidCategoryAlt } from "solid-icons/bi";
 
 function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
   const player = document.querySelector("media-player") as MediaPlayerElement;
@@ -255,7 +258,7 @@ const Description = (props: { downloaded: boolean }) => {
                     }%,
                     rgba(var(--colors-bg2),1) 100%`,
                 }}
-                class="flex items-center justify-between gap-1 p-2 rounded-full relative shadow-lg"
+                class="flex items-center justify-between gap-1 p-2 rounded-full relative shadow-md"
               >
                 <div class="w-full h-[90%] z-0 bg-gradient-to-b from-bg1 via-bg1 absolute top-0 left-0" />
                 <span
@@ -288,11 +291,34 @@ const Description = (props: { downloaded: boolean }) => {
             tabIndex={0}
             id="description"
             aria-expanded={expanded()}
-            class={`min-w-0 max-w-full overflow-hidden ${
+            class={`min-w-0 max-w-full overflow-hidden py-2 flex flex-col gap-2 ${
               expanded() ? "" : "max-h-20"
             }`}
-            innerHTML={sanitizedDescription()!}
-          />
+          >
+            <div innerHTML={sanitizedDescription()!} />
+            <div class="flex items-center gap-1">
+              <BiSolidCategoryAlt class="h-5 w-5" />
+              <div class="font-semibold">Category:</div>
+              {video.data?.category}
+            </div>
+            <div class="flex items-center gap-1">
+              <TbLicense class="h-5 w-5" />
+              <div class="font-semibold">License:</div>
+              {video.data?.license}
+            </div>
+            <div class="flex items-center gap-1">
+              <FaSolidEye class="h-5 w-5" />
+              <div class="font-semibold">Visibility:</div>
+              {video.data?.visibility}
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <For each={video.data?.tags}>
+                {(tag) => (
+                  <div class="bg-bg1 px-2 py-1 rounded-full">{tag}</div>
+                )}
+              </For>
+            </div>
+          </div>
           <div classList={{ hidden: expanded() }} class="w-full h-0 relative">
             <div class="absolute bottom-full w-full h-5 bg-gradient-to-t from-bg2 to-transparent pointer-events-none" />
           </div>

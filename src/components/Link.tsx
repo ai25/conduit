@@ -72,6 +72,7 @@ export default function Link(props: LinkProps) {
       style={props.style}
       activeClass={props.activeClass}
       inactiveClass={props.inactiveClass}
+      tabIndex={props.tabIndex}
     >
       {props.children}
     </A>
@@ -85,4 +86,5 @@ interface LinkProps {
   children?: any;
   activeClass?: string;
   inactiveClass?: string;
+  tabIndex?: number;
 }

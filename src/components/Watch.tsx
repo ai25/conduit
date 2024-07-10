@@ -258,7 +258,7 @@ export default function Watch() {
       <div
         classList={{
           "max-w-screen-2xl mx-auto w-full flex flex-col": true,
-          "!fixed bottom-[calc(var(--bottom-nav-height)+8px)] md:bottom-0 left-0 z-[9999] bg-transparent pointer-events-none":
+          "!fixed bottom-0 left-0 sm:bottom-2 sm:left-1 z-[9999] bg-transparent pointer-events-none":
             appState.player.small,
           "sm:items-start": appState.player.small && !appState.smallDevice,
           "items-center": appState.player.small && appState.smallDevice,
@@ -335,6 +335,8 @@ export default function Watch() {
             <div
               classList={{
                 "flex w-full": true,
+                "sticky sm:relative z-[999] top-0 ":
+                  !searchParams.fullscreen && !appState.player.small,
                 "sm:flex-col": !appState.smallDevice,
               }}
             >

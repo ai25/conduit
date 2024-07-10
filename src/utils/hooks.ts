@@ -1,4 +1,4 @@
-import { Accessor, createSignal } from "solid-js";
+import { Accessor, createSignal, onCleanup, onMount } from "solid-js";
 import { isServer } from "solid-js/web";
 
 function stringifyOptions(options: Record<string, any> = {}): string {
@@ -59,7 +59,7 @@ export function useCookie(
   initialValue: string
 ): [
   Accessor<string | (() => string)>,
-  (value: string, options?: Record<string, any>) => void
+  (value: string, options?: Record<string, any>) => void,
 ] {
   const [item, setItem] = createSignal<string | (() => string)>(() => {
     return getCookie(key, initialValue);
@@ -72,3 +72,26 @@ export function useCookie(
 
   return [item, updateItem];
 }
+
+export const useOnClickOutside = (refs: any[], onOutsideClick: () => void) => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (refs.length > 0) {
+      const isOutside = refs.every(
+        (ref) => !ref || !ref.contains(event.target as Node)
+      );
+      if (isOutside) {
+        onOutsideClick();
+      }
+    }
+  };
+
+  onMount(() => {
+    if (isServer) return;
+    document.addEventListener("click", handleClickOutside, false);
+  });
+
+  onCleanup(() => {
+    if (isServer) return;
+    document.removeEventListener("click", handleClickOutside, false);
+  });
+};

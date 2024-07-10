@@ -1158,8 +1158,6 @@ export default function Player(props: {
           true,
         "!absolute top-0 left-0 w-screen h-screen":
           !!searchParams.fullscreen && !appState.player.small,
-        "!sticky sm:!relative !top-0":
-          !searchParams.fullscreen && !appState.player.small,
         "!hidden": !video.data || appState.player.dismissed,
       }}
       aria-hidden={
