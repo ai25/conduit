@@ -39,6 +39,8 @@ import { CgBlock, CgUnblock } from "solid-icons/cg";
 export default function VideoCardMenu(props: {
   v: RelatedStream;
   progress: number | undefined;
+  dearrowTitle?: string;
+  dearrowThumbnail?: string;
 }) {
   const [dropdownOpen, setDropdownOpen] = createSignal(false);
   const [modalOpen, setModalOpen] = createSignal(false);
@@ -340,19 +342,24 @@ export default function VideoCardMenu(props: {
                     try {
                       if (isBlocked()) {
                         sync.setStore("blocklist", channelId, undefined!);
-                        toast.success(`Unblocked ${props.v.uploaderName}.`, ()=>{
-                        sync.setStore("blocklist", channelId, {
-                          name: props.v.uploaderName,
-                        });
-
-                        });
+                        toast.success(
+                          `Unblocked ${props.v.uploaderName}.`,
+                          () => {
+                            sync.setStore("blocklist", channelId, {
+                              name: props.v.uploaderName,
+                            });
+                          }
+                        );
                       } else {
                         sync.setStore("blocklist", channelId, {
                           name: props.v.uploaderName,
                         });
-                        toast.success(`Blocked ${props.v.uploaderName}.`,()=>{
-                        sync.setStore("blocklist", channelId, undefined!);
-                        });
+                        toast.success(
+                          `Blocked ${props.v.uploaderName}.`,
+                          () => {
+                            sync.setStore("blocklist", channelId, undefined!);
+                          }
+                        );
                       }
                     } catch (e) {
                       toast.error(
@@ -395,7 +402,15 @@ export default function VideoCardMenu(props: {
       </DropdownMenu.Root>
       <Modal isOpen={modalOpen()} setIsOpen={setModalOpen} title="Debug info">
         <pre class="break-all text-text1 max-w-full min-w-0 overflow-auto z-[9999999]">
-          {JSON.stringify(props.v, null, 2)}
+          {JSON.stringify(
+            {
+              ...props.v,
+              dearrowTitle: props.dearrowTitle,
+              dearrowThumbnail: props.dearrowThumbnail,
+            },
+            null,
+            2
+          )}
         </pre>
       </Modal>
       <AddToPlaylistModal

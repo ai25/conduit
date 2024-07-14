@@ -51,6 +51,7 @@ export const DEFAULT_PREFERENCES = {
     secondaryCaptionsLanguage: undefined as string | undefined,
   },
   customInstances: [] as CustomInstance[],
+  dearrow: false,
 };
 interface CustomInstance {
   name: string;

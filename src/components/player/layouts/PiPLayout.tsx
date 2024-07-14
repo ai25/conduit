@@ -48,15 +48,15 @@ export function PiPLayout() {
               onClick={() => {
                 const mediaPlayer = document.querySelector("media-player");
                 mediaPlayer?.pause();
-                setAppState("player", "dismissed", true);
+                if (location.pathname !== "/playlist") {
+                  setSearchParams({ list: undefined });
+                }
                 setSearchParams({
-                  ...searchParams,
                   v: undefined,
                   index: undefined,
+                  local: undefined,
                 });
-                if (location.pathname !== "/playlist") {
-                  setSearchParams({ ...searchParams, list: undefined });
-                }
+                setAppState("player", "dismissed", true);
               }}
             />
           </div>

@@ -136,8 +136,9 @@ export default function Watch() {
   }
 
   createEffect(() => {
-    if (!route.query.v) return;
-    init();
+    if (route.query.v) {
+      init();
+    }
   });
 
   createEffect(() => {
@@ -438,15 +439,15 @@ export default function Watch() {
                   <button
                     onClick={() => {
                       playerRef()?.pause();
-                      setAppState("player", "dismissed", true);
+                      if (location.pathname !== "/playlist") {
+                        setSearchParams({ list: undefined });
+                      }
                       setSearchParams({
-                        ...searchParams,
                         v: undefined,
                         index: undefined,
+                        local: undefined,
                       });
-                      if (route.pathname !== "/playlist") {
-                        setSearchParams({ ...searchParams, list: undefined });
-                      }
+                      setAppState("player", "dismissed", true);
                     }}
                     class="p-3 outline-none focus-visible:ring-2 ring-primary/80 rounded-lg"
                   >
@@ -557,7 +558,7 @@ export default function Watch() {
             >
               <div
                 classList={{
-                  "flex-col gap-2 items-center w-full min-w-0 max-w-max md:max-w-[400px]":
+                  "flex-col gap-2 items-center w-full min-w-0 max-w-max lg:max-w-[400px]":
                     true,
                   hidden: preferences.theatreMode || !!searchParams.fullscreen,
                   flex: !preferences.theatreMode && !searchParams.fullscreen,

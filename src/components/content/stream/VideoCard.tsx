@@ -1,4 +1,4 @@
-import type { RelatedStream } from "~/types";
+import type { DeArrowResponse, RelatedStream } from "~/types";
 import numeral from "numeral";
 // import { DBContext } from "~/routes/layout";
 import {
@@ -11,6 +11,7 @@ import {
   useContext,
   createMemo,
   For,
+  Suspense,
 } from "solid-js";
 import { useSyncStore, HistoryItem } from "~/stores/syncStore";
 import {
@@ -25,11 +26,16 @@ import { FaSolidEye } from "solid-icons/fa";
 import { Tooltip } from "~/components/Tooltip";
 import Link from "~/components/Link";
 import { useSearchParams } from "@solidjs/router";
+import { createQuery } from "@tanstack/solid-query";
+import { isServer } from "solid-js/web";
+import { usePreferences } from "~/stores/preferencesStore";
 
-const VideoCard = (props: {
+interface VideoCardProps {
   v?: RelatedStream;
   layout?: "list" | "grid" | "sm:grid";
-}) => {
+}
+
+const VideoCard = (props: VideoCardProps) => {
   props = mergeProps({ layout: "sm:grid" as "sm:grid" }, props);
 
   const sync = useSyncStore();
@@ -46,9 +52,63 @@ const VideoCard = (props: {
     });
     setWatchedAt(watchedAt());
   });
+  const [preferences] = usePreferences();
 
   const id = () => getVideoId(props.v);
   const historyItem = () => (id() ? sync.store.history[id()!] : undefined);
+  const dearrowQuery = createQuery<DeArrowResponse>(() => ({
+    queryKey: ["dearrow", id()],
+    queryFn: async (): Promise<DeArrowResponse> => {
+      const urlObj = new URL("https://sponsor.ajay.app/api/branding/");
+      urlObj.searchParams.set("videoID", id()!);
+      const url = urlObj.toString();
+      const res = await fetch(url);
+      if (!res.ok) {
+        if (res.status === 404) {
+          return Promise.reject("no data found");
+        } else {
+          const text = await res.text();
+          return Promise.reject("error: " + text);
+        }
+      }
+      const data = await res.json();
+      return data;
+    },
+    enabled: !isServer && id() && preferences.dearrow ? true : false,
+  }));
+  const title = () => dearrowQuery.data?.titles?.[0]?.title ?? props.v!.title;
+  const thumbnailQuery = createQuery(() => ({
+    queryKey: ["dearrow-thumbnail", id()],
+    queryFn: async () => {
+      const urlObj = new URL(
+        "https://dearrow-thumb.ajay.app/api/v1/getThumbnail"
+      );
+      urlObj.searchParams.set("videoID", id()!);
+      urlObj.searchParams.set(
+        "time",
+        dearrowQuery.data!.thumbnails[0].timestamp.toString()
+      );
+      const url = urlObj.toString();
+      const res = await fetch(url);
+      if (!res.ok) {
+        if (res.status === 404) {
+          return Promise.reject("no data found");
+        } else {
+          const text = await res.text();
+          return Promise.reject("error: " + text);
+        }
+      }
+      const data = await res.blob();
+      return data;
+    },
+    enabled:
+      dearrowQuery.data?.thumbnails?.[0]?.original === false &&
+      Number.isFinite(dearrowQuery.data?.thumbnails?.[0]?.timestamp),
+  }));
+  const thumbnail = () =>
+    thumbnailQuery.data
+      ? URL.createObjectURL(thumbnailQuery.data)
+      : props.v?.thumbnail;
 
   return (
     <Show
@@ -76,7 +136,7 @@ const VideoCard = (props: {
         >
           <ImageContainer
             url={`/watch?v=${id()}${searchParams.fullscreen ? `&fullscreen=${searchParams.fullscreen}` : ""}`}
-            src={props.v!.thumbnail}
+            src={thumbnail() ?? ""}
             duration={props.v!.duration}
             watched={!!historyItem()}
             watchedAt={watchedAt()}
@@ -107,15 +167,15 @@ const VideoCard = (props: {
                   href={`/watch?v=${id()}`}
                   class="rounded text-start two-line-ellipsis min-w-0 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  {props.v!.title}
+                  {title()}
                 </Link>
               }
-              contentSlot={props.v!.title}
+              contentSlot={title()}
             />
 
             <InfoContainer
               url={props.v!.url}
-              title={props.v!.title}
+              title={title()}
               uploaderName={props.v!.uploaderName}
               uploaderUrl={props.v!.uploaderUrl}
               uploaderAvatar={props.v!.uploaderAvatar}
@@ -129,7 +189,14 @@ const VideoCard = (props: {
           </div>
 
           <div class="flex flex-col justify-start min-w-[32px]">
-            <VideoCardMenu v={props.v!} progress={historyItem()?.currentTime} />
+            <VideoCardMenu
+              v={props.v!}
+              dearrowTitle={title() === props.v?.title ? undefined : title()}
+              dearrowThumbnail={
+                thumbnail() === props.v?.thumbnail ? undefined : thumbnail()
+              }
+              progress={historyItem()?.currentTime}
+            />
           </div>
         </div>
       </div>
@@ -137,7 +204,11 @@ const VideoCard = (props: {
   );
 };
 
-export default VideoCard;
+export default (props: VideoCardProps) => (
+  <Suspense fallback={<VideoCardFallback layout={props.layout || "sm:grid"} />}>
+    <VideoCard v={props.v} layout={props.layout} />
+  </Suspense>
+);
 export const VideoCardFallback = (props: {
   layout: "list" | "grid" | "sm:grid";
 }) => {
@@ -209,8 +280,6 @@ const ImageContainer = (props: {
   watchedAt?: string | undefined;
   currentTime?: number;
 }) => {
-  const [src, setSrc] = createSignal(props.src);
-
   return (
     <Link
       href={props.url}
@@ -221,10 +290,7 @@ const ImageContainer = (props: {
           "cursor-pointer w-full aspect-video max-w-md break-words ": true,
           "saturate-[0.35] opacity-75": props.watched,
         }}
-        src={src()}
-        onError={() => {
-          setSrc("/img/error.png");
-        }}
+        src={props.src}
         width={2560}
         height={1440}
         alt=""

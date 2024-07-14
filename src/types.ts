@@ -222,3 +222,26 @@ export interface RelatedPlaylist {
 }
 
 export type ContentItem = RelatedStream | RelatedChannel | RelatedPlaylist;
+
+export interface DeArrowResponse {
+  titles: DeArrowTitle[];
+  thumbnails: DeArrowThumbnail[];
+  randomTime: number;
+  videoDuration: number;
+}
+
+export interface DeArrowTitle {
+  title: string;
+  original: boolean;
+  votes: number;
+  locked: boolean;
+  UUID: string;
+}
+
+export interface DeArrowThumbnail {
+  timestamp: number;
+  original: boolean;
+  votes: number;
+  locked: boolean;
+  UUID: string;
+}

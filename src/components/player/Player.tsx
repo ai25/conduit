@@ -1052,10 +1052,13 @@ export default function Player(props: {
     } else {
       setAppState("player", "small", false);
       // If returning to '/watch', the player should not be dismissed
-      if (appState.player.dismissed) {
+      if (untrack(() => appState.player.dismissed)) {
         setAppState("player", "dismissed", false);
       }
     }
+  });
+  createEffect(() => {
+    console.log(appState.player.dismissed, "dismissed");
   });
 
   const [isMobilePlayer, setIsMobilePlayer] = createSignal(false);
