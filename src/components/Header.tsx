@@ -197,16 +197,29 @@ export default function Header() {
   };
 
   const [lastScrollY, setLastScrollY] = createSignal(0);
+  const [scrollDelta, setScrollDelta] = createSignal(0);
   const [searchParams] = useSearchParams();
+  const SCROLL_THRESHOLD = 50;
 
   const controlNavbar = () => {
     if (typeof window !== "undefined") {
-      if (searchParams.fullscreen && window.scrollY === 0) {
-        setAppState("showNavbar", false);
-      } else if (window.scrollY > lastScrollY()) {
+      const currentScrollY = window.scrollY;
+      if (
+        searchParams.fullscreen &&
+        location.pathname === "/watch" &&
+        currentScrollY === 0
+      ) {
         setAppState("showNavbar", false);
       } else {
-        setAppState("showNavbar", true);
+        setScrollDelta((prev) => prev + currentScrollY - lastScrollY());
+        if (Math.abs(scrollDelta()) > SCROLL_THRESHOLD) {
+          if (scrollDelta() > 0) {
+            setAppState("showNavbar", false);
+          } else {
+            setAppState("showNavbar", true);
+          }
+          setScrollDelta(0);
+        }
       }
 
       setLastScrollY(window.scrollY);
@@ -214,6 +227,7 @@ export default function Header() {
   };
   onMount(() => {
     if (isServer) return;
+    controlNavbar();
     document.addEventListener("keydown", (e) => {
       if (e.key === "I" && e.shiftKey && !e.ctrlKey && !e.altKey) {
         cycleInstances();
