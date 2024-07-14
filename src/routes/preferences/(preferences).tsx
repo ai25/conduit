@@ -3,6 +3,7 @@ import { useNavigate } from "@solidjs/router";
 import { AiOutlineFire, AiOutlineStop } from "solid-icons/ai";
 import { BiRegularRotateLeft } from "solid-icons/bi";
 import {
+  BsLayoutSidebarInsetReverse,
   BsPlay,
   BsUniversalAccess,
   BsUniversalAccessCircle,
@@ -14,6 +15,7 @@ import {
   FaSolidClock,
   FaSolidClockRotateLeft,
   FaSolidClosedCaptioning,
+  FaSolidComments,
   FaSolidDownload,
   FaSolidFilm,
   FaSolidGlobe,
@@ -201,7 +203,7 @@ export default function Preferences() {
             </div>
             <div class="flex justify-between items-center">
               <PreferencesCard
-                icon={<AiOutlineFire class="w-5 h-5" />}
+                icon={<AiOutlineFire class="w-6 h-6" />}
                 title="Trending Region"
               />
               <Select
@@ -219,6 +221,32 @@ export default function Preferences() {
                     TRENDING_REGIONS.find(
                       (r) => r.value === preferences.content.trendingRegion
                     )?.label ?? "",
+                }}
+              />
+            </div>
+            <div class="flex justify-between items-center">
+              <PreferencesCard
+                icon={<BsLayoutSidebarInsetReverse class="w-6 h-6" />}
+                title="Hide related videos"
+              />
+              <Toggle
+                label="Hide related videos"
+                checked={preferences.content.hideRelated}
+                onChange={(v) => {
+                  setPreferences("content", "hideRelated", v);
+                }}
+              />
+            </div>
+            <div class="flex justify-between items-center">
+              <PreferencesCard
+                icon={<FaSolidComments class="w-6 h-6" />}
+                title="Hide comments"
+              />
+              <Toggle
+                label="Hide comments"
+                checked={preferences.content.hideComments}
+                onChange={(v) => {
+                  setPreferences("content", "hideComments", v);
                 }}
               />
             </div>

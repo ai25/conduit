@@ -34,6 +34,8 @@ export const DEFAULT_PREFERENCES = {
     defaultHomePage: "Trending" as "Feed" | "Trending",
     displayShorts: true,
     trendingRegion: "US",
+    hideRelated: false,
+    hideComments: false,
   },
   history: {
     saveWatchHistory: true,

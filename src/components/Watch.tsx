@@ -339,7 +339,7 @@ export default function Watch() {
                   !searchParams.fullscreen &&
                   !appState.player.small &&
                   !appState.showNavbar,
-                "sticky p-1 sm:relative z-[999] top-14 ":
+                "sticky p-1 sm:relative z-[999] top-14 sm:top-0 ":
                   !searchParams.fullscreen &&
                   !appState.player.small &&
                   appState.showNavbar,
@@ -498,12 +498,21 @@ export default function Watch() {
                 </Show>
                 <div class="mx-4">
                   <Suspense>
-                    <Comments
-                      videoId={getVideoId(video.data)!}
-                      uploader={video.data!.uploader}
-                      uploaderAvatar={video.data!.uploaderAvatar}
-                      display={windowWidth() >= 768 ? "default" : "bottomsheet"}
-                    />
+                    <Show
+                      when={!preferences.content.hideComments}
+                      fallback={
+                        <div class="px-1">Comments disabled in settings.</div>
+                      }
+                    >
+                      <Comments
+                        videoId={getVideoId(video.data)!}
+                        uploader={video.data!.uploader}
+                        uploaderAvatar={video.data!.uploaderAvatar}
+                        display={
+                          windowWidth() >= 768 ? "default" : "bottomsheet"
+                        }
+                      />
+                    </Show>
                   </Suspense>
                 </div>
               </div>
@@ -517,8 +526,16 @@ export default function Watch() {
                     flex: preferences.theatreMode || !!searchParams.fullscreen,
                   }}
                 >
-                  <Show when={video.data} fallback={<RelatedVideosFallback />}>
-                    <RelatedVideos />
+                  <Show
+                    when={!preferences.content.hideRelated}
+                    fallback={<div>Related videos disabled in settings.</div>}
+                  >
+                    <Show
+                      when={video.data}
+                      fallback={<RelatedVideosFallback />}
+                    >
+                      <RelatedVideos />
+                    </Show>
                   </Show>
                 </div>
               </Show>
@@ -532,18 +549,25 @@ export default function Watch() {
               route.pathname === "/watch"
             }
           >
-            <div
-              classList={{
-                "flex-col gap-2 items-center w-full min-w-0 max-w-max md:max-w-[400px]":
-                  true,
-                hidden: preferences.theatreMode || !!searchParams.fullscreen,
-                flex: !preferences.theatreMode && !searchParams.fullscreen,
-              }}
+            <Show
+              when={!preferences.content.hideRelated}
+              fallback={
+                <div class="px-5">Related videos disabled in settings.</div>
+              }
             >
-              <Show when={video.data} fallback={<RelatedVideosFallback />}>
-                <RelatedVideos />
-              </Show>
-            </div>
+              <div
+                classList={{
+                  "flex-col gap-2 items-center w-full min-w-0 max-w-max md:max-w-[400px]":
+                    true,
+                  hidden: preferences.theatreMode || !!searchParams.fullscreen,
+                  flex: !preferences.theatreMode && !searchParams.fullscreen,
+                }}
+              >
+                <Show when={video.data} fallback={<RelatedVideosFallback />}>
+                  <RelatedVideos />
+                </Show>
+              </div>
+            </Show>
           </Show>
         </div>
       </div>
