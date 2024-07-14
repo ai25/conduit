@@ -117,14 +117,15 @@ export default function Feed() {
           </Tooltip.Portal>
         </Tooltip.Root>
 
-        <Switch
+        <Show
+          when={appState.sync.ready}
           fallback={
             <For each={Array(20)}>
               {() => <VideoCardFallback layout="sm:grid" />}
             </For>
           }
         >
-          <Match when={query.data && query.data?.length > 0}>
+          <Show when={query.data && query.data.length > 0}>
             <For
               each={filterContent(
                 query.data!,
@@ -134,10 +135,9 @@ export default function Feed() {
             >
               {(video) => <VideoCard v={video} />}
             </For>
-          </Match>
-          <Match
+          </Show>
+          <Show
             when={
-              appState.sync.ready &&
               !query.data?.length &&
               !Object.keys(sync.store.subscriptions).length
             }
@@ -147,8 +147,8 @@ export default function Feed() {
                 <Button as="a" label="Import" href="/import" />
               </EmptyState>
             </div>
-          </Match>
-          <Match
+          </Show>
+          <Show
             when={
               appState.sync.ready &&
               !query.data?.length &&
@@ -156,8 +156,8 @@ export default function Feed() {
             }
           >
             <ErrorComponent error={query.error} />
-          </Match>
-        </Switch>
+          </Show>
+        </Show>
       </div>
       <div ref={setIntersectionRef} class="h-20 " />
     </>
