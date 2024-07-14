@@ -159,7 +159,7 @@ const Description = (props: { downloaded: boolean }) => {
         title={video.data!.title}
         t={currentTime()}
       />
-      <div class="bg-bg1 w-[clamp(250px,100%,98vw)] mx-auto p-4 @container">
+      <div class="bg-bg1 w-[clamp(250px,100%,98vw)] mx-auto p-3 @container">
         <div class="flex flex-col gap-2">
           <div class="flex flex-col gap-2 ">
             <div class="flex items-start justify-between h-full">
@@ -240,27 +240,7 @@ const Description = (props: { downloaded: boolean }) => {
               </p>
             </div>
             <div class="flex flex-col w-full @sm:w-36 ">
-              <div
-                style={{
-                  "background-image": `linear-gradient(90deg, 
-                    rgba(var(--colors-primary),0.5) 0%, 
-                    rgba(var(--colors-primary),0.5) ${
-                      (video.data!.likes /
-                        (video.data!.likes + video.data!.dislikes)) *
-                        100 -
-                      10
-                    }%, 
-                    rgba(var(--colors-bg2),1) ${
-                      (video.data!.likes /
-                        (video.data!.likes + video.data!.dislikes)) *
-                        100 +
-                      10
-                    }%,
-                    rgba(var(--colors-bg2),1) 100%`,
-                }}
-                class="flex items-center justify-between gap-1 p-2 rounded-full relative shadow-md"
-              >
-                <div class="w-full h-[90%] z-0 bg-gradient-to-b from-bg1 via-bg1 absolute top-0 left-0" />
+              <div class="flex items-center justify-between gap-1 p-2 rounded-full relative shadow-md">
                 <span
                   title={`${numeral(video.data!.likes).format("0,0")} likes`}
                   class="flex items-center gap-1 relative z-1"
@@ -283,6 +263,26 @@ const Description = (props: { downloaded: boolean }) => {
                     : numeral(video.data!.dislikes).format("0,0").toUpperCase()}
                 </span>
               </div>
+              <div
+                class="w-full h-1 rounded-full"
+                style={{
+                  "background-image": `linear-gradient(90deg, 
+                    rgba(var(--colors-primary),1) 0%, 
+                    rgba(var(--colors-primary),1) ${
+                      (video.data!.likes /
+                        (video.data!.likes + video.data!.dislikes)) *
+                        100 -
+                      10
+                    }%, 
+                    rgba(var(--colors-bg2),1) ${
+                      (video.data!.likes /
+                        (video.data!.likes + video.data!.dislikes)) *
+                        100 +
+                      10
+                    }%,
+                    rgba(var(--colors-bg2),1) 100%`,
+                }}
+              />
             </div>
           </div>
         </div>
@@ -339,7 +339,7 @@ const Description = (props: { downloaded: boolean }) => {
 
 export const DescriptionFallback = () => {
   return (
-    <div class="flex flex-col gap-2 p-4 w-full">
+    <div class="flex flex-col gap-2 p-3 w-full">
       <div class="w-3/4 h-6 rounded-full animate-pulse bg-bg2" />
       <div class="w-1/2 h-6 rounded-full animate-pulse bg-bg2" />
       <div class="flex gap-2 w-1/2 items-center">

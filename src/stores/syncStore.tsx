@@ -76,6 +76,7 @@ export const SyncedStoreProvider = (props: { children: any }) => {
   const initWebrtc = async () => {
     if (!room().id) {
       setAppState("sync", "providers", "webrtc", ProviderStatus.DISCONNECTED);
+      setAppState("sync", "ready", true);
       return;
     }
     if (webrtcProvider) {
@@ -91,6 +92,7 @@ export const SyncedStoreProvider = (props: { children: any }) => {
       console.log(webrtcProvider, "webrtc provider");
       webrtcProvider.connect();
     }
+    setAppState("sync", "ready", true);
   };
 
   createEffect(async () => {

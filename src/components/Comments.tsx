@@ -20,6 +20,7 @@ import { fetchJson, isMobile, sanitizeText } from "~/utils/helpers";
 import { Bottomsheet } from "./Bottomsheet";
 import Comment, { PipedCommentResponse } from "./Comment";
 import numeral from "numeral";
+import { Spinner } from "./Spinner";
 
 export default function Comments(props: {
   videoId: string;
@@ -133,7 +134,10 @@ export default function Comments(props: {
             >
               {/* <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-h-full max-w-full overflow-auto"> */}
               <Suspense fallback={<p>Loading...</p>}>
-                <div id="sb-content" class="flex flex-col gap-1 relative z-50 ">
+                <div
+                  id="sb-content"
+                  class="flex flex-col  gap-2 relative z-50 "
+                >
                   <Show when={query.data}>
                     <For each={query.data!.pages}>
                       {(page) => (
@@ -152,8 +156,11 @@ export default function Comments(props: {
                         </For>
                       )}
                     </For>
+                    <Show when={query.isFetching}>
+                      <Spinner class="self-center !h-10" />
+                    </Show>
                     <div
-                      class="w-full h-40 bg-primary"
+                      class="w-full h-40"
                       ref={(ref) => setIntersectionRef(ref)}
                     />
                   </Show>
@@ -166,7 +173,7 @@ export default function Comments(props: {
         <Match when={props.display === "default"}>
           <div class="text-text1 bg-bg1 p-2 rounded-t-lg max-w-full overflow-y-auto ">
             <Suspense fallback={<p>Loading...</p>}>
-              <div id="sb-content" class="flex flex-col gap-1 relative  ">
+              <div id="sb-content" class="flex flex-col gap-2 relative  ">
                 <div class="p-2 text-md font-semibold">
                   <Show when={numberOfComments()}>
                     {numberOfComments()! > 10000
@@ -196,6 +203,9 @@ export default function Comments(props: {
                       </For>
                     )}
                   </For>
+                  <Show when={query.isFetching}>
+                    <Spinner class="self-center !h-10" />
+                  </Show>
                   <div
                     class="w-full h-40"
                     ref={(ref) => setIntersectionRef(ref)}

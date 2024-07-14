@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { useNavigate } from "@solidjs/router";
-import { AiOutlineFire } from "solid-icons/ai";
+import { AiOutlineFire, AiOutlineStop } from "solid-icons/ai";
 import { BiRegularRotateLeft } from "solid-icons/bi";
 import {
   BsPlay,
@@ -43,6 +43,7 @@ import { For, createSignal } from "solid-js";
 import { createEffect, useContext } from "solid-js";
 import Button from "~/components/Button";
 import Collapsible from "~/components/Collapsible";
+import Combobox from "~/components/Combobox";
 import ExportDataModal from "~/components/ExportDataModal";
 import Field from "~/components/Field";
 import ImportDataModal from "~/components/ImportDataModal";
@@ -210,6 +211,7 @@ export default function Preferences() {
                 }))}
                 onChange={(value) => {
                   setPreferences("content", "trendingRegion", value.value);
+                  setDefaultHomePageCookie(value.value);
                 }}
                 value={{
                   value: preferences.content.trendingRegion,

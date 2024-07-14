@@ -98,14 +98,14 @@ export default function Comment(props: Props) {
 
   return (
     <>
-      <div class="flex  gap-2 ">
+      <div class="flex  gap-2 px-2 py-1">
         <Link
           href={`${props.comment.commentorUrl}`}
-          class="w-1/12 min-w-[48px] max-w-[100px] rounded-full justify-center flex h-fit"
+          class="w-[40px] rounded-full justify-center flex h-fit"
         >
           <img
-            width="48"
-            height="48"
+            width="40"
+            height="40"
             src={props.comment.thumbnail}
             alt=""
             class="rounded-full w-full h-full"

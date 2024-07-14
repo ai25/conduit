@@ -1,3 +1,20 @@
+export const YOUTUBE_CATEGORIES = [
+  "Film & Animation",
+  "Autos & Vehicles",
+  "Music",
+  "Pets & Animals",
+  "Sports",
+  "Travel & Events",
+  "Gaming",
+  "People & Blogs",
+  "Comedy",
+  "Entertainment",
+  "News & Politics",
+  "Howto & Style",
+  "Education",
+  "Science & Technology",
+  "Nonprofits & Activism",
+];
 export const THEME_OPTIONS = [
   { value: "monokai", label: "Monokai" },
   { value: "dracula", label: "Dracula" },

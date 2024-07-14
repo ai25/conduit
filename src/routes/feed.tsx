@@ -7,6 +7,9 @@ import {
   Suspense,
   createMemo,
   onCleanup,
+  Switch,
+  createRenderEffect,
+  onMount,
 } from "solid-js";
 import { Spinner } from "~/components/Spinner";
 import { RelatedStream } from "~/types";
@@ -28,6 +31,7 @@ import VideoCard, {
 } from "~/components/content/stream/VideoCard";
 import { Title } from "@solidjs/meta";
 import { filterContent } from "~/utils/content-filter";
+import { Match } from "solid-js";
 
 export default function Feed() {
   const [limit, setLimit] = createSignal(10);
@@ -44,14 +48,14 @@ export default function Feed() {
         }
       );
       if (!res.ok) {
-        throw new Error("Error fetching feed");
+        throw res.json();
       }
-      return res.json() as Promise<RelatedStream[]>;
+      return res.json();
     },
     enabled:
       preferences.instance?.api_url &&
       !isServer &&
-      Object.keys(sync.store.subscriptions).length > 0
+      Object.keys(sync.store.subscriptions).length
         ? true
         : false,
     refetchOnMount: true,
@@ -64,24 +68,23 @@ export default function Feed() {
   const isIntersecting = useIntersectionObserver({
     setTarget: () => intersectionRef(),
   });
+
   createEffect(() => {
     if (isIntersecting()) {
       setLimit((l) => l + 10);
     }
   });
+
   const [appState, setAppState] = useAppState();
+
   createEffect(() => {
-    console.log(
-      sync.store.subscriptions,
-      Object.keys(sync.store.subscriptions),
-      "feed"
-    );
     setAppState({
       loading: query.isRefetching || query.isFetching,
     });
   });
+
   createEffect(() => {
-    console.log(query.data, "feed");
+    console.log("query feed", query.error?.message);
   });
 
   const newComponent = (
@@ -114,44 +117,47 @@ export default function Feed() {
           </Tooltip.Portal>
         </Tooltip.Root>
 
-        <Show
-          when={
-            !query.isPending && !Object.keys(sync.store.subscriptions).length
-          }
-        >
-          <div class="h-[80vh] w-full flex items-center justify-center">
-            <EmptyState message="You have no subscriptions.">
-              <Button as="a" label="Import" href="/import" />
-            </EmptyState>
-          </div>
-        </Show>
-        <Show
-          when={
-            !query.isPending && Object.keys(sync.store.subscriptions).length
-          }
-        >
-          <Show when={!Array.isArray(query.data)}>
-            <ErrorComponent error={query.data} />
-          </Show>
-        </Show>
-        <Show
-          when={query.data && query.data.length > 0}
+        <Switch
           fallback={
             <For each={Array(20)}>
               {() => <VideoCardFallback layout="sm:grid" />}
             </For>
           }
         >
-          <For
-            each={filterContent(
-              query.data!,
-              preferences,
-              sync.store.blocklist
-            ).slice(0, limit())}
+          <Match when={query.data && query.data.length > 0}>
+            <For
+              each={filterContent(
+                query.data!,
+                preferences,
+                sync.store.blocklist
+              ).slice(0, limit())}
+            >
+              {(video) => <VideoCard v={video} />}
+            </For>
+          </Match>
+          <Match
+            when={
+              appState.sync.ready &&
+              !query.data?.length &&
+              !Object.keys(sync.store.subscriptions).length
+            }
           >
-            {(video) => <VideoCard v={video} />}
-          </For>
-        </Show>
+            <div class="h-[80vh] w-full flex items-center justify-center">
+              <EmptyState message="You have no subscriptions.">
+                <Button as="a" label="Import" href="/import" />
+              </EmptyState>
+            </div>
+          </Match>
+          <Match
+            when={
+              appState.sync.ready &&
+              !query.data?.length &&
+              Object.keys(sync.store.subscriptions).length
+            }
+          >
+            <ErrorComponent error={query.error} />
+          </Match>
+        </Switch>
       </div>
       <div ref={setIntersectionRef} class="h-20 " />
     </>
