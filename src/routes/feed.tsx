@@ -124,7 +124,7 @@ export default function Feed() {
             </For>
           }
         >
-          <Match when={query.data && query.data.length > 0}>
+          <Match when={query.data && query.data?.length > 0}>
             <For
               each={filterContent(
                 query.data!,
