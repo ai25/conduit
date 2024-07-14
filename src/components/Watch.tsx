@@ -334,10 +334,16 @@ export default function Watch() {
 
             <div
               classList={{
-                "flex w-full p-1": true,
-                "sticky sm:relative z-[999] top-0 ":
-                  !searchParams.fullscreen && !appState.player.small,
-                "sm:flex-col": !appState.smallDevice,
+                "flex w-full transition-[top] duration-300": true,
+                "sticky p-1 sm:relative z-[999] top-0 ":
+                  !searchParams.fullscreen &&
+                  !appState.player.small &&
+                  !appState.showNavbar,
+                "sticky p-1 sm:relative z-[999] top-14 ":
+                  !searchParams.fullscreen &&
+                  !appState.player.small &&
+                  appState.showNavbar,
+                "sm:flex-col ": !appState.smallDevice,
               }}
             >
               <div

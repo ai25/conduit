@@ -16,27 +16,18 @@ const store = createStore({
     lastSync: 0,
     userId: 0,
     users: [] as { id: number; name: string }[],
+    ready: false,
   },
   player: {
     small: false,
     dismissed: false,
-    lastVideoUrl: "",
   },
-  lastBrowseUrl: undefined as string | undefined,
-  lastWatchUrl: undefined as string | undefined,
+  showNavbar: true,
   smallDevice: false,
 });
 const AppStateContext = createContext(store);
 export const AppStateProvider = (props: { children: any }) => {
   const location = useLocation();
-  createEffect(() => {
-    console.log("location", location.pathname, location.query, location.search);
-    if (location.pathname === "/watch") {
-      store[1]("lastWatchUrl", `${location.pathname}${location.search}`);
-    } else {
-      store[1]("lastBrowseUrl", `${location.pathname}${location.search}`);
-    }
-  });
   return (
     <AppStateContext.Provider value={store}>
       {props.children}

@@ -133,7 +133,7 @@ export default function Header() {
     "Yvonne",
     "Zelda",
   ];
-  const [appState] = useAppState();
+  const [appState, setAppState] = useAppState();
   const [modalOpen, setModalOpen] = createSignal(false);
   const [name, setName] = createSignal(
     randomNames[Math.floor(Math.random() * randomNames.length)]
@@ -196,18 +196,17 @@ export default function Header() {
     );
   };
 
-  const [isVisible, setIsVisible] = createSignal(true);
   const [lastScrollY, setLastScrollY] = createSignal(0);
   const [searchParams] = useSearchParams();
 
   const controlNavbar = () => {
     if (typeof window !== "undefined") {
       if (searchParams.fullscreen && window.scrollY === 0) {
-        setIsVisible(false);
+        setAppState("showNavbar", false);
       } else if (window.scrollY > lastScrollY()) {
-        setIsVisible(false);
+        setAppState("showNavbar", false);
       } else {
-        setIsVisible(true);
+        setAppState("showNavbar", true);
       }
 
       setLastScrollY(window.scrollY);
@@ -253,14 +252,26 @@ export default function Header() {
       }
     )
   );
+  onMount(() => {
+    const handleFullscreenChange = () => {
+      if (document.fullscreenElement) {
+        setAppState("showNavbar", false);
+      } else setAppState("showNavbar", true);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    onCleanup(() => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    });
+  });
 
   return (
     <nav
       classList={{
         "fixed top-0 left-0 bg-bg1 w-full z-[99999] h-14 border-b border-bg2 px-2 transition-transform duration-300 flex items-center justify-between":
           true,
-        "translate-y-0": isVisible(),
-        "-translate-y-full": !isVisible(),
+        "translate-y-0": appState.showNavbar,
+        "-translate-y-full": !appState.showNavbar,
       }}
     >
       <button
@@ -320,10 +331,10 @@ export default function Header() {
             }
           }}
           classList={{
-            "absolute transition-[width,opacity] duration-300 bg-bg1 h-screen top-14 left-0 p-3 overflow-auto flex flex-col items-center gap-2":
+            "absolute w-screen sm:w-72  p-3 transition-[transform,opacity] duration-300 bg-bg1 h-screen top-14 left-0 flex flex-col items-center gap-2 overflow-auto":
               true,
-            "w-0 opacity-0": !sidebarOpen(),
-            "w-screen sm:w-72": sidebarOpen(),
+            "-translate-x-full scale-x-0 opacity-0": !sidebarOpen(),
+            "translate-x-0 scale-x-1": sidebarOpen(),
           }}
           active={true}
         >
@@ -404,7 +415,10 @@ export default function Header() {
         </FocusTrap>
       </div>
       <div class="flex items-center justify-between w-full h-full py-2 max-w-full min-w-0">
-        <Link href="/" class="text-text1 mx-2 w-8 h-8">
+        <Link
+          href={`/${preferences.content.defaultHomePage?.toLowerCase() ?? "trending"}`}
+          class="text-text1 mx-2 w-8 h-8"
+        >
           <img
             src="/logo.svg"
             alt="Conduit"
@@ -505,7 +519,7 @@ export default function Header() {
                       label="Leave"
                       onClick={() => {
                         localStorage.removeItem("room");
-                        location.reload();
+                        window.location.reload();
                       }}
                     />
                   </Show>
