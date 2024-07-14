@@ -544,6 +544,7 @@ export default function Player(props: {
     const provider = event.detail;
     if (isHLSProvider(provider)) {
       console.log(provider, "provider change");
+      provider.library = () => import("hls.js");
       provider.config = {
         // Reduce the quality to prevent frequent buffering
         maxBufferSize: 60 * 1000 * 1000, // lower buffer size to save memory
@@ -1091,6 +1092,12 @@ export default function Player(props: {
       if (document.fullscreenElement) {
         setSearchParams({ fullscreen: true }, { replace: true });
         screen.orientation.lock("landscape").catch(() => {});
+        setTimeout(() => {
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          });
+        }, 100);
       } else setSearchParams({ fullscreen: undefined }, { replace: true });
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
