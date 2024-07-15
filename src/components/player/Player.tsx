@@ -67,7 +67,6 @@ import { RecommendedVideosMenu } from "./menus/RecommendedVideosMenu";
 import { PrevButton } from "./buttons/PrevButton";
 import { NextButton } from "./buttons/NextButton";
 import { FaSolidArrowLeft } from "solid-icons/fa";
-import { usePlayerState } from "~/stores/playerStateStore";
 import { Spinner } from "../Spinner";
 import { createQuery } from "@tanstack/solid-query";
 import numeral from "numeral";
@@ -83,7 +82,6 @@ export interface SponsorSegment {
 }
 
 export default function Player(props: {
-  forwardRef?: (playerRef: MediaPlayerElement) => void;
   nextVideo?: (nextVideo: RelatedStream | null | undefined) => void;
   prevVideo?: (prevVideo: RelatedStream | null | undefined) => void;
   playNext?: (playNext: () => void) => void;
@@ -94,9 +92,10 @@ export default function Player(props: {
 }) {
   const route = useLocation();
   let mediaPlayer!: MediaPlayerElement;
+  const [appState, setAppState] = useAppState();
   const sync = useSyncStore();
   onMount(() => {
-    props.forwardRef?.(mediaPlayer);
+    setAppState("player","instance",mediaPlayer)
   });
 
   const [preferences, setPreferences] = usePreferences();
@@ -1044,7 +1043,6 @@ export default function Player(props: {
     if (!nextChapter) return;
     mediaPlayer.currentTime = nextChapter.start;
   };
-  const [appState, setAppState] = useAppState();
 
   createEffect(() => {
     if (route.pathname !== "/watch") {

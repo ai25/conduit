@@ -1,6 +1,7 @@
 import { useLocation } from "@solidjs/router";
 import { createContext, createEffect, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
+import { MediaPlayerElement } from "vidstack/elements";
 import { ProviderStatus } from "~/components/Header";
 
 const store = createStore({
@@ -19,6 +20,7 @@ const store = createStore({
     ready: false,
   },
   player: {
+    instance: undefined as MediaPlayerElement | undefined,
     small: false,
     dismissed: false,
   },

@@ -190,6 +190,7 @@ export default function Header() {
     );
     currentInstanceIndex = currentInstanceIndex > -1 ? currentInstanceIndex : 0;
     const nextInstanceIndex = (currentInstanceIndex + 1) % instances.length;
+    appState.player.instance?.pause()
     setPreferences("instance", instances()[nextInstanceIndex]);
     toast.show(
       `You are now connected to ${instances()[nextInstanceIndex].name}`
@@ -569,6 +570,7 @@ export default function Header() {
             onChange={(value) => {
               let instance = instances().find((i) => i.api_url === value);
               if (instance) {
+                appState.player.instance?.pause()
                 setPreferences("instance", instance);
               }
             }}

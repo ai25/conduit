@@ -46,7 +46,7 @@ export function PiPLayout() {
               class="hover:bg-white/20 rounded-md p-0 w-10 h-10 flex items-center justify-center"
               icon={<TbX class="h-8 w-8 text-white " />}
               onClick={() => {
-                const mediaPlayer = document.querySelector("media-player");
+                const mediaPlayer = appState.player.instance;
                 mediaPlayer?.pause();
                 if (location.pathname !== "/playlist") {
                   setSearchParams({ list: undefined });

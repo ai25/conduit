@@ -40,7 +40,6 @@ import {
 } from "solid-icons/fa";
 import { BsSkipEndFill, BsSkipStartFill } from "solid-icons/bs";
 import { RiMediaPlayList2Fill } from "solid-icons/ri";
-import { usePlayerState } from "~/stores/playerStateStore";
 import { MediaPlayerElement } from "vidstack/elements";
 import Button from "./Button";
 
@@ -230,14 +229,11 @@ export default function Watch() {
     setAppState("smallDevice", windowWidth() < 640 || windowHeight() < 640);
   });
 
-  const [playerRef, setPlayerRef] = createSignal<
-    MediaPlayerElement | undefined
-  >();
   const [paused, setPaused] = createSignal(true);
   let unsubscribe: () => void | undefined;
   createEffect(() => {
     unsubscribe?.();
-    playerRef()?.subscribe(({ paused }) => {
+    appState.player.instance?.subscribe(({ paused }) => {
       setPaused(paused);
     });
   });
@@ -359,7 +355,6 @@ export default function Watch() {
               >
                 <Show when={video.data} fallback={<PlayerLoading />}>
                   <Player
-                    forwardRef={setPlayerRef}
                     playNext={(playNext) => setPlayNext(() => playNext)}
                     playPrev={(playPrev) => setPlayPrev(() => playPrev)}
                     nextVideo={setNextVideo}
@@ -395,11 +390,11 @@ export default function Watch() {
                     </button>
                     <button
                       onClick={() => {
-                        if (!playerRef()) return;
+                        if (!appState.player.instance) return;
                         if (paused()) {
-                          playerRef()!.play();
+                          appState.player.instance.play();
                         } else if (!paused()) {
-                          playerRef()!.pause();
+                          appState.player.instance.pause();
                         }
                       }}
                       class="p-3 outline-none focus-visible:ring-2 ring-primary/80 rounded-lg"
@@ -439,7 +434,7 @@ export default function Watch() {
                   </button>
                   <button
                     onClick={() => {
-                      playerRef()?.pause();
+                      appState.player.instance?.pause();
                       if (location.pathname !== "/playlist") {
                         setSearchParams({ list: undefined });
                       }

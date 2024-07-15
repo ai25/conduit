@@ -510,6 +510,7 @@ export default function Preferences() {
             <PreferencesCard
               icon={<DeArrowIcon class="w-6 h-6" />}
               title="Enable DeArrow"
+              description="Enabling this will cause the app to make significantly more network requests on pages with video items (watch, trending, feed etc.) which might slow down browsing."
             />
             <Toggle
               label="Enable DeArrow"

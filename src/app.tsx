@@ -14,7 +14,6 @@ import {
 } from "solid-js";
 import { Portal, getRequestEvent } from "solid-js/web";
 import { PlaylistProvider } from "./stores/playlistStore";
-import { PlayerStateProvider } from "./stores/playerStateStore";
 import { SyncedStoreProvider, useSyncStore } from "./stores/syncStore";
 import { AppStateProvider, useAppState } from "./stores/appStateStore";
 import BottomNav from "./components/BottomNav";
@@ -114,7 +113,6 @@ export default function App() {
                   <AppStateProvider>
                     <PlaylistProvider>
                       <QueueProvider>
-                        <PlayerStateProvider>
                           <SyncedStoreProvider>
                             <div
                               class={` bg-bg1 min-h-screen font-manrope text-sm text-text1 selection:bg-accent2 selection:text-text3`}
@@ -179,7 +177,6 @@ export default function App() {
                               <RouteAnnouncer />
                             </div>
                           </SyncedStoreProvider>
-                        </PlayerStateProvider>
                       </QueueProvider>
                     </PlaylistProvider>
                   </AppStateProvider>

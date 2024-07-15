@@ -47,11 +47,11 @@ import { useSearchParams } from "@solidjs/router";
 import Link from "./Link";
 import { useVideoContext } from "~/stores/VideoContext";
 import ShareModal from "./ShareModal";
-import { usePlayerState } from "~/stores/playerStateStore";
 import { BsAspectRatio, BsAspectRatioFill } from "solid-icons/bs";
 import { useCookie } from "~/utils/hooks";
 import { RiSystemThumbDownFill, RiSystemThumbUpFill } from "solid-icons/ri";
 import { BiSolidCategoryAlt } from "solid-icons/bi";
+import { useAppState } from "~/stores/appStateStore";
 
 function handleTimestamp(videoId: string, t: string, extraQueryParams: string) {
   const player = document.querySelector("media-player") as MediaPlayerElement;
@@ -107,9 +107,10 @@ const Description = (props: { downloaded: boolean }) => {
   const [currentTime, setCurrentTime] = createSignal<number | undefined>(
     undefined
   );
+  const [appState] = useAppState()
   function handleSetShareModalOpen(open: boolean) {
     if (open) {
-      const player = document.querySelector("media-player");
+      const player = appState.player.instance;
       if (player) {
         setCurrentTime(player.currentTime);
       }
