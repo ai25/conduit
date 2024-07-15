@@ -2,7 +2,12 @@
   /* eslint-disable solid/no-innerhtml */
 }
 import { createInfiniteQuery } from "@tanstack/solid-query";
-import { FaSolidHeart, FaSolidThumbsUp } from "solid-icons/fa";
+import {
+  FaSolidComment,
+  FaSolidCommentDots,
+  FaSolidHeart,
+  FaSolidThumbsUp,
+} from "solid-icons/fa";
 import {
   Show,
   createSignal,
@@ -16,6 +21,7 @@ import { useSyncStore } from "~/stores/syncStore";
 import { fetchJson, sanitizeText } from "~/utils/helpers";
 import Link from "./Link";
 import { BsPin } from "solid-icons/bs";
+import { Spinner } from "./Spinner";
 export interface PipedCommentResponse {
   comments: PipedComment[];
   disabled: boolean;
@@ -151,32 +157,49 @@ export default function Comment(props: Props) {
             <FaSolidThumbsUp />
             {props.comment.likeCount}
             <Show when={props.comment.hearted}>
-              <div class="relative w-6 h-6 ">
+              <div class="relative w-4 h-4 ">
                 <img
                   src={props.uploaderAvatar}
                   class="rounded-full absolute top-0 left-0 w-full h-full object-contain"
                   alt="Liked by author"
                 />
-                <FaSolidHeart class="w-3 h-3 text-red-500 absolute bottom-0 right-0" />
+                <div class="bg-red-500">
+                  <FaSolidHeart class="w-3 h-3 text-red-500 absolute -bottom-1 -right-1" />
+                </div>
               </div>
             </Show>
+          </span>
+          <div>
             <Show when={props.comment.replyCount > 0 && !showingReplies()}>
-              {props.comment.replyCount > 1 && (
-                <button
-                  onClick={() => setShowingReplies(true)}
-                  class="underline"
-                >
-                  View {props.comment.replyCount} replies
-                </button>
-              )}
-              {props.comment.replyCount === 1 && (
-                <button
-                  onClick={() => setShowingReplies(true)}
-                  class="underline"
-                >
-                  View 1 reply
-                </button>
-              )}
+              <div class="flex items-center gap-1 mt-1">
+                <Show when={props.comment.replyCount > 1}>
+                  <button
+                    onClick={() => setShowingReplies(true)}
+                    class="underline"
+                  >
+                    View {props.comment.replyCount} replies
+                  </button>
+                </Show>
+                <Show when={props.comment.replyCount === 1}>
+                  <button
+                    onClick={() => setShowingReplies(true)}
+                    class="underline"
+                  >
+                    View 1 reply
+                  </button>
+                </Show>
+
+                <Show when={props.comment.creatorReplied}>
+                  <div class="relative w-4 h-4 ">
+                    <img
+                      src={props.uploaderAvatar}
+                      class="rounded-full absolute top-0 left-0 w-full h-full object-contain"
+                      alt="Creator replied"
+                    />
+                    <FaSolidCommentDots class="w-3 h-3 text-white absolute -bottom-1 -right-1" />
+                  </div>
+                </Show>
+              </div>
             </Show>
             <Show when={showingReplies()}>
               <button
@@ -186,12 +209,12 @@ export default function Comment(props: Props) {
                 Hide replies
               </button>
             </Show>
-          </span>
+          </div>
         </div>
       </div>
       <Show when={showingReplies()}>
         <div class="ml-8 my-2">
-          <Suspense fallback={<div class="text-xs">Loading...</div>}>
+          <Suspense fallback={<Spinner class="self-center !h-10" />}>
             <For
               each={query.data?.pages
                 ?.flat()
@@ -208,6 +231,9 @@ export default function Comment(props: Props) {
                 />
               )}
             </For>
+            <Show when={query.isFetching}>
+              <Spinner class="self-center !h-10" />
+            </Show>
             <Show when={query.hasNextPage}>
               <button
                 onClick={() => query.fetchNextPage()}
