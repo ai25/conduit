@@ -145,7 +145,7 @@ const VideoCard = (props: VideoCardProps) => {
         </div>
         <div
           classList={{
-            "flex w-full min-w-0 max-w-full justify-between h-full  sm:mt-2 max-h-20":
+            "flex w-full min-w-0 max-w-full justify-between h-full  sm:mt-2 max-h-20 basis-[150%]":
               true,
             "max-w-[22rem]": props.layout === "grid",
           }}

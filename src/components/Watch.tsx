@@ -517,7 +517,7 @@ export default function Watch() {
               </div>
               <div
                 classList={{
-                  "flex-col gap-2 items-center w-full min-w-0 md:max-w-[400px]":
+                  "flex-col gap-2 items-center w-full min-w-0 lg:max-w-md":
                     true,
                   "hidden sm:flex lg:hidden":
                     !preferences.theatreMode && !searchParams.fullscreen,
@@ -551,7 +551,7 @@ export default function Watch() {
             >
               <div
                 classList={{
-                  "flex-col gap-2 items-center w-full min-w-0 lg:max-w-[400px]":
+                  "flex-col gap-2 items-center w-full min-w-0 lg:max-w-md":
                     true,
                   hidden: preferences.theatreMode || !!searchParams.fullscreen,
                   "flex sm:hidden lg:flex":

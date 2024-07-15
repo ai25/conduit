@@ -22,7 +22,12 @@ import {
 } from "~/types";
 import Button from "~/components/Button";
 import { Spinner } from "~/components/Spinner";
-import { assertType, fetchJson } from "~/utils/helpers";
+import {
+  assertType,
+  fetchJson,
+  formatRelativeShort,
+  getVideoId,
+} from "~/utils/helpers";
 import { A, useLocation } from "@solidjs/router";
 import { Checkmark } from "~/components/Description";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
@@ -37,9 +42,17 @@ import { isServer } from "solid-js/web";
 import EmptyState from "~/components/EmptyState";
 import { Collapsible, Tabs } from "@kobalte/core";
 import { Transition, TransitionGroup } from "solid-transition-group";
-import { FaSolidCheck } from "solid-icons/fa";
+import { FaSolidCheck, FaSolidEye } from "solid-icons/fa";
 import PlaylistCard from "~/components/content/playlist/PlaylistCard";
-import VideoCard from "~/components/content/stream/VideoCard";
+import VideoCard, {
+  VideoCardFallback,
+} from "~/components/content/stream/VideoCard";
+import numeral from "numeral";
+import { ErrorComponent } from "~/components/Error";
+import VideoCardMenu from "~/components/content/stream/VideoCardMenu";
+import { useSyncStore } from "~/stores/syncStore";
+import { createTimeAgo } from "@solid-primitives/date";
+import Link from "~/components/Link";
 // Fetching logic for tabs
 async function fetchTabNextPage(
   instance: string,
@@ -153,81 +166,100 @@ export default function Channel() {
   }
 
   return (
-    <Suspense fallback={<Spinner />}>
-      <Show when={query.data} fallback={<Spinner />}>
-        <Show when={query.data?.pages?.[0]?.bannerUrl}>
-          <img
-            src={query.data?.pages[0].bannerUrl}
-            class="w-full pb-1.5"
-            loading="lazy"
-          />
-        </Show>
-        <div class="flex items-center">
-          <img
-            height="48"
-            width="48"
-            class="rounded-full m-1"
-            src={query.data?.pages?.[0]?.avatarUrl}
-          />
-          <h1 class="text-xl font-bold mr-2">{query.data?.pages?.[0]?.name}</h1>
-          <Show when={query.data?.pages?.[0]?.verified}>
-            <Checkmark />
-          </Show>
-          <Show when={query.data?.pages?.[0]?.id}>
-            <div class="ml-auto">
-              <SubscribeButton
-                name={query.data?.pages[0].name!}
-                id={query.data?.pages[0].id!}
+    <Suspense fallback={<ChannelFallback />}>
+      <Show when={query.data} fallback={<ChannelFallback />}>
+        <div class="flex flex-col justify-center gap-2 w-[90%] max-w-screen-xl mx-auto py-4">
+          <Show when={query.data?.pages?.[0]?.bannerUrl}>
+            <div class="relative w-full min-h-[100px] h-full aspect-[6.2] rounded-2xl overflow-hidden ">
+              <img
+                src={query.data?.pages[0].bannerUrl}
+                class="absolute top-0 left-0 h-full w-full object-cover"
+                loading="lazy"
               />
             </div>
           </Show>
-        </div>
-        <CollapsibleText
-          description={query.data?.pages?.[0]?.description ?? ""}
-        />
-
-        <Tabs.Root
-          class="w-full min-h-screen"
-          value={selectedTab()}
-          onChange={(value) => loadTab(value)}
-          activationMode="manual"
-        >
-          <Tabs.List class="relative flex items-center border-b overflow-x-auto scrollbar [&::-webkit-scrollbar]:!h-1">
-            <For
-              each={[
-                "videos",
-                "shorts",
-                "livestreams",
-                "playlists",
-                "channels",
-              ]}
+          <div class="flex items-center flex-wrap gap-2">
+            <Show when={query.data?.pages?.[0]?.avatarUrl}>
+              <div class="relative rounded-full overflow-hidden aspect-square w-20 h-20">
+                <img
+                  height="160"
+                  width="160"
+                  class="absolute w-full h-full object-cover"
+                  src={query.data?.pages?.[0]?.avatarUrl}
+                />
+              </div>
+            </Show>
+            <div class="flex flex-col flex-1 items-start justify-center gap-1 ml-2">
+              <h1 class="flex items-center gap-2 text-xl font-bold ">
+                {query.data?.pages?.[0]?.name}
+                <Show when={query.data?.pages?.[0]?.verified}>
+                  <span>
+                    <Checkmark />
+                  </span>
+                </Show>
+              </h1>
+              <Show when={(query.data?.pages?.[0]?.subscriberCount || -1) >= 0}>
+                <div class="text-text2">
+                  {numeral(query.data?.pages[0].subscriberCount).format("0,0")}{" "}
+                  Subscribers
+                </div>
+              </Show>
+            </div>
+            <Show when={query.data?.pages?.[0]?.id}>
+              <div class="">
+                <SubscribeButton
+                  name={query.data?.pages[0].name!}
+                  id={query.data?.pages[0].id!}
+                />
+              </div>
+            </Show>
+          </div>
+          <div class="text-text2">
+            <Show when={query.data?.pages?.[0]?.description?.length || 0 > 200}>
+              <CollapsibleText
+                description={query.data?.pages?.[0]?.description ?? ""}
+              />
+            </Show>
+            <Show
+              when={!query.data?.pages?.[0]?.description?.length || 0 < 200}
             >
-              {(tab) => {
-                return (
-                  <Tabs.Trigger
-                    class="inline-block pl-1 pt-2 pr-4 outline-none hover:bg-primary/20 focus-visible:bg-primary/20 first-letter:uppercase"
-                    value={tab}
-                  >
-                    {tab}
-                  </Tabs.Trigger>
-                );
-              }}
-            </For>
-            <Tabs.Indicator class="absolute -bottom-px w-full h-[2px] bg-primary transition-all duration-250" />
-          </Tabs.List>
-          <TransitionGroup
-            appear
-            enterActiveClass="transition-all ease-in-out duration-250 transform"
-            enterClass={
-              isNavigatingLeft() ? "-translate-x-full" : "translate-x-full"
-            }
-            enterToClass="translate-x-0"
-            exitActiveClass="transition-all ease-in-out duration-250 transform"
-            exitClass="translate-x-0"
-            exitToClass={
-              isNavigatingLeft() ? "translate-x-full" : "-translate-x-full"
-            }
+              {query.data?.pages?.[0]?.description ?? ""}
+            </Show>
+          </div>
+          <Tabs.Root
+            class="w-full min-h-screen"
+            value={selectedTab()}
+            onChange={(value) => loadTab(value)}
+            activationMode="manual"
           >
+            <Tabs.List class="relative flex items-center border-b-2 border-bg2 overflow-x-auto scrollbar-horizontal [&::-webkit-scrollbar]:!h-1">
+              <For
+                each={[
+                  "videos",
+                  "shorts",
+                  "livestreams",
+                  "playlists",
+                  "channels",
+                ].filter((tab) => {
+                  if (tab === "videos") return true;
+                  return query.data?.pages?.[0]?.tabs?.find(
+                    (channelTab) => channelTab.name === tab
+                  );
+                })}
+              >
+                {(tab) => {
+                  return (
+                    <Tabs.Trigger
+                      class="inline-block px-3 py-2 outline-none hover:bg-primary/20 focus-visible:bg-primary/20 first-letter:uppercase"
+                      value={tab}
+                    >
+                      {tab}
+                    </Tabs.Trigger>
+                  );
+                }}
+              </For>
+              <Tabs.Indicator class="absolute bottom-0 w-full h-1 bg-primary transition-all duration-250" />
+            </Tabs.List>
             <Tabs.Content value="videos">
               <div class="flex flex-wrap justify-center">
                 <Show when={query.error}>{JSON.stringify(query.error)}</Show>
@@ -297,10 +329,37 @@ export default function Channel() {
                 />
               </Suspense>
             </Tabs.Content>
-          </TransitionGroup>
-        </Tabs.Root>
+          </Tabs.Root>
+        </div>
       </Show>
     </Suspense>
+  );
+}
+
+function ChannelFallback() {
+  return (
+    <div class="flex flex-col justify-center gap-2 w-[90%] max-w-screen-xl mx-auto p-2">
+      <div class="relative w-full min-h-[100px] h-full aspect-[6.2] rounded-2xl bg-bg2 animate-pulse" />
+      <div class="flex gap-2 items-center">
+        <div class="aspect-square rounded-full w-20 animate-pulse bg-bg2" />
+        <div class="flex flex-col gap-1 w-full">
+          <div class="rounded-full h-4 w-44 animate-pulse bg-bg2" />
+          <div class="rounded-full h-4 w-20 animate-pulse bg-bg2" />
+        </div>
+      </div>
+      <div class="flex gap-2 overflow-hidden">
+        <div class="rounded-full h-6 w-20 animate-pulse bg-bg2" />
+        <div class="rounded-full h-6 w-20 animate-pulse bg-bg2" />
+        <div class="rounded-full h-6 w-20 animate-pulse bg-bg2" />
+        <div class="rounded-full h-6 w-20 animate-pulse bg-bg2" />
+      </div>
+
+      <div class="flex flex-wrap justify-center">
+        <For each={Array(10)}>
+          {() => <VideoCardFallback layout="sm:grid" />}
+        </For>
+      </div>
+    </div>
   );
 }
 interface CollapsibleTextProps {
@@ -313,21 +372,27 @@ const CollapsibleText = (props: CollapsibleTextProps) => {
   return (
     <div class="relative">
       {isCollapsed() ? (
-        <span class="">
+        <div class="">
           {props.description.slice(0, 200)}...
           <br />
-          <button class="underline" onClick={() => setIsCollapsed(false)}>
+          <button
+            class="underline text-text1 outline-none rounded-lg focus-visible:ring-2 ring-primary/80"
+            onClick={() => setIsCollapsed(false)}
+          >
             Read more
           </button>
-        </span>
+        </div>
       ) : (
-        <span class="">
+        <div class="">
           {props.description}
           <br />
-          <button class="underline" onClick={() => setIsCollapsed(true)}>
+          <button
+            class="underline text-text1 outline-none rounded-lg focus-visible:ring-2 ring-primary/80"
+            onClick={() => setIsCollapsed(true)}
+          >
             Read less
           </button>
-        </span>
+        </div>
       )}
     </div>
   );
@@ -361,10 +426,11 @@ const ShortsTab = (props: { tabData: string }) => {
       console.log(query.data);
     }
   });
+  const sync = useSyncStore();
 
   return (
     <Suspense fallback={<Spinner />}>
-      <div class="flex flex-wrap justify-center">
+      <div class="flex flex-wrap justify-center gap-2 py-2">
         <Show when={query.data}>
           <Switch fallback={<Spinner />}>
             <Match
@@ -388,13 +454,84 @@ const ShortsTab = (props: { tabData: string }) => {
                   ?.map((page) => page.content ?? [])
                   .flat()}
               >
-                {(item) => <VideoCard v={item} />}
+                {(item) => (
+                  <Link
+                    href={item.url}
+                    class="relative aspect-[0.5625] w-screen max-w-full sm:w-64 rounded-lg overflow-hidden"
+                  >
+                    <img
+                      classList={{
+                        "absolute top-0 left-0 object-cover w-full h-full":
+                          true,
+                        "saturate-75 opacity-75":
+                          !!sync.store.history[getVideoId(item)!]?.currentTime,
+                      }}
+                      src={item.thumbnail}
+                    />
+                    <Switch>
+                      <Match
+                        when={
+                          sync.store.history[getVideoId(item)!]?.currentTime &&
+                          sync.store.history[getVideoId(item)!]?.watchedAt
+                        }
+                      >
+                        <div class="relative h-0 w-0 ">
+                          <div class="absolute flex items-center left-2 top-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
+                            <FaSolidEye
+                              title="Watched"
+                              class="inline-block h-3 w-3 mr-1"
+                            />
+                            {createTimeAgo(
+                              sync.store.history[getVideoId(item)!]?.watchedAt,
+                              {
+                                interval: 1000 * 60,
+                                relativeFormatter: formatRelativeShort,
+                              }
+                            )[0]()}
+                          </div>
+                        </div>
+                      </Match>
+                      <Match
+                        when={
+                          sync.store.history[getVideoId(item)!]?.currentTime &&
+                          !sync.store.history[getVideoId(item)!]?.watchedAt
+                        }
+                      >
+                        <div class="absolute left-2 bottom-2 bg-bg1/90 rounded px-1 py-px border border-bg2 w-max h-max text-xs">
+                          Watched
+                        </div>
+                      </Match>
+                    </Switch>
+                    <div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/75 flex flex-col justify-end p-2">
+                      <div class="flex justify-between gap-1">
+                        <div class="flex flex-col gap-1">
+                          <div>{item.title}</div>
+                          <div class="text-xs text-text2">
+                            {numeral(item.views).format("0,0")} views
+                          </div>
+                        </div>
+                        <VideoCardMenu
+                          v={{
+                            ...item,
+                            uploadedDate: item.uploadedDate ?? "",
+                            uploaderAvatar: item.uploaderAvatar ?? "",
+                            uploaderUrl:
+                              item.uploaderUrl?.replace("/shorts", "") ?? "",
+                          }}
+                          progress={
+                            sync.store.history[getVideoId(item)!]?.currentTime
+                          }
+                        />
+                      </div>
+                    </div>
+                  </Link>
+                )}
               </For>
             </Match>
           </Switch>
         </Show>
         <Show when={query.error}>
-          <ErrorMessage error={query.error} />
+          <ErrorComponent error={query.error} />
         </Show>
       </div>
       <div ref={(ref) => setIntersection(ref)} class="w-full h-20 mt-2" />

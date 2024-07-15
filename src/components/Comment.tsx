@@ -213,7 +213,7 @@ export default function Comment(props: Props) {
         </div>
       </div>
       <Show when={showingReplies()}>
-        <div class="ml-8 my-2">
+        <div class="ml-10 my-2">
           <Suspense fallback={<Spinner class="self-center !h-10" />}>
             <For
               each={query.data?.pages

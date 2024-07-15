@@ -95,7 +95,7 @@ export default function Player(props: {
   const [appState, setAppState] = useAppState();
   const sync = useSyncStore();
   onMount(() => {
-    setAppState("player","instance",mediaPlayer)
+    setAppState("player", "instance", mediaPlayer);
   });
 
   const [preferences, setPreferences] = usePreferences();
@@ -1164,9 +1164,10 @@ export default function Player(props: {
         [styles.player]: true,
         "z-[1000] block aspect-video bg-black text-white font-sans overflow-hidden ring-primary data-[focus]:ring-4":
           true,
-        "!absolute top-0 left-0 w-screen h-screen":
+        "!absolute top-0 left-0 w-screen h-screen !rounded-none":
           !!searchParams.fullscreen && !appState.player.small,
         "!hidden": !video.data || appState.player.dismissed,
+        "max-h-[85vh]": !!preferences.theatreMode && !appState.player.small,
       }}
       aria-hidden={
         appState.player.dismissed || (appState.player.small && !video.data)
@@ -1245,7 +1246,7 @@ export default function Player(props: {
     >
       <media-provider
         id="media-provider"
-        class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full"
+        class="max-h-screen max-w-screen [&>video]:max-h-screen [&>video]:max-w-screen [&>video]:h-full [&>video]:w-full [&>video]:!rounded-[inherit]"
       >
         <media-poster
           aria-hidden="true"

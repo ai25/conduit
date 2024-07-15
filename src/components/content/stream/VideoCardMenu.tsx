@@ -66,6 +66,7 @@ export default function VideoCardMenu(props: {
         <DropdownMenu.Trigger
           onClick={(e) => {
             e.stopPropagation();
+            e.preventDefault();
           }}
           class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
         >
@@ -234,22 +235,22 @@ export default function VideoCardMenu(props: {
                   if (!props.v) return;
                   const item = {
                     [getVideoId(props.v) as string]: {
-                      title: props.v.title,
-                      url: props.v.url,
-                      duration: props.v.duration,
-                      uploaderName: props.v.uploaderName,
+                      title: props.v.title ?? "",
+                      url: props.v.url ?? "",
+                      duration: props.v.duration ?? 0,
+                      uploaderName: props.v.uploaderName ?? "",
                       uploaderUrl: props.v.uploaderUrl,
-                      uploaderAvatar: props.v.uploaderAvatar,
-                      views: props.v.views,
-                      uploaded: props.v.uploaded,
-                      thumbnail: props.v.thumbnail,
-                      uploaderVerified: props.v.uploaderVerified,
-                      currentTime: props.v!.duration,
+                      uploaderAvatar: props.v.uploaderAvatar ?? "",
+                      views: props.v.views ?? 0,
+                      uploaded: props.v.uploaded ?? 0,
+                      thumbnail: props.v.thumbnail ?? "",
+                      uploaderVerified: !!props.v.uploaderVerified,
+                      currentTime: props.v.duration ?? 0,
                       watchedAt: Date.now(),
                     },
                   } as Record<string, HistoryItem>;
                   sync.setStore("history", item);
-                  console.log("added to history");
+                  console.log("added to history", item);
                 }}
               >
                 <div class="flex items-center gap-2">

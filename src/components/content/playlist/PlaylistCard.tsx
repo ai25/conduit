@@ -27,7 +27,7 @@ const PlaylistCard = (props: {
       <div
         classList={{
           "aspect-video overflow-hidden rounded h-full": true,
-          "max-h-96": props.layout === "list",
+          "max-h-96 w-full": props.layout === "list",
           "max-h-44 min-w-min sm:max-h-full sm:w-full sm:h-full":
             props.layout === "sm:grid",
         }}
@@ -51,7 +51,8 @@ const PlaylistCard = (props: {
       </div>
       <div
         classList={{
-          "flex w-full min-w-0 justify-between h-full  sm:mt-2 max-h-20": true,
+          "flex w-full min-w-0 justify-between h-full  sm:mt-2 max-h-20 basis-[150%]":
+            true,
           "max-w-[22rem]": props.layout === "grid",
         }}
       >
