@@ -258,11 +258,12 @@ export default function Watch() {
     >
       <div
         classList={{
-          "max-w-screen-2xl mx-auto w-full flex flex-col": true,
+          "mx-auto w-full flex flex-col": true,
           "!fixed bottom-0 left-0 sm:bottom-2 sm:left-1 z-[9999] bg-transparent pointer-events-none":
             appState.player.small,
           "sm:items-start": appState.player.small && !appState.smallDevice,
           "items-center": appState.player.small && appState.smallDevice,
+          "max-w-screen-2xl": !preferences.theatreMode,
         }}
       >
         <div
@@ -473,10 +474,12 @@ export default function Watch() {
 
             <div
               classList={{
+                "flex-col md:flex-row ": true,
                 flex: route.pathname === "/watch",
                 hidden: route.pathname !== "/watch",
+                "lg:max-w-screen-2xl w-full lg:mx-auto":
+                  preferences.theatreMode,
               }}
-              class="flex flex-col md:flex-row"
             >
               <div class="flex flex-col w-full">
                 <div
@@ -517,29 +520,24 @@ export default function Watch() {
                   </Suspense>
                 </div>
               </div>
-              <Show when={preferences.theatreMode || searchParams.fullscreen}>
-                <div
-                  classList={{
-                    "flex-col gap-2 items-center w-full min-w-0 max-w-max md:max-w-[400px]":
-                      true,
-                    hidden:
-                      !preferences.theatreMode && !searchParams.fullscreen,
-                    flex: preferences.theatreMode || !!searchParams.fullscreen,
-                  }}
+              <div
+                classList={{
+                  "flex-col gap-2 items-center w-full min-w-0 md:max-w-[400px]":
+                    true,
+                  "hidden sm:flex lg:hidden":
+                    !preferences.theatreMode && !searchParams.fullscreen,
+                  flex: preferences.theatreMode || !!searchParams.fullscreen,
+                }}
+              >
+                <Show
+                  when={!preferences.content.hideRelated}
+                  fallback={<div>Related videos disabled in settings.</div>}
                 >
-                  <Show
-                    when={!preferences.content.hideRelated}
-                    fallback={<div>Related videos disabled in settings.</div>}
-                  >
-                    <Show
-                      when={video.data}
-                      fallback={<RelatedVideosFallback />}
-                    >
-                      <RelatedVideos />
-                    </Show>
+                  <Show when={video.data} fallback={<RelatedVideosFallback />}>
+                    <RelatedVideos />
                   </Show>
-                </div>
-              </Show>
+                </Show>
+              </div>
             </div>
           </div>
 
@@ -558,10 +556,11 @@ export default function Watch() {
             >
               <div
                 classList={{
-                  "flex-col gap-2 items-center w-full min-w-0 max-w-max lg:max-w-[400px]":
+                  "flex-col gap-2 items-center w-full min-w-0 lg:max-w-[400px]":
                     true,
                   hidden: preferences.theatreMode || !!searchParams.fullscreen,
-                  flex: !preferences.theatreMode && !searchParams.fullscreen,
+                  "flex sm:hidden lg:flex":
+                    !preferences.theatreMode && !searchParams.fullscreen,
                 }}
               >
                 <Show when={video.data} fallback={<RelatedVideosFallback />}>
@@ -646,7 +645,7 @@ export const WatchFallback = () => {
             <DescriptionFallback />
             <div
               classList={{
-                "flex-col gap-2 items-center w-full min-w-0 max-w-max md:max-w-[400px]":
+                "flex-col gap-2 items-center w-full min-w-0 md:max-w-[400px]":
                   true,
                 "flex lg:hidden":
                   !preferences.theatreMode && !searchParams.fullscreen,
@@ -659,8 +658,7 @@ export const WatchFallback = () => {
         </div>
         <div
           classList={{
-            "flex-col gap-2 items-center w-full min-w-0 max-w-max md:max-w-[400px]":
-              true,
+            "flex-col gap-2 items-center w-full min-w-0 md:max-w-[400px]": true,
             hidden: preferences.theatreMode || !!searchParams.fullscreen,
             "hidden lg:flex":
               !preferences.theatreMode && !searchParams.fullscreen,

@@ -129,7 +129,7 @@ const VideoCard = (props: VideoCardProps) => {
         <div
           classList={{
             "aspect-video overflow-hidden rounded": true,
-            "max-h-96": props.layout === "list",
+            "max-h-96 w-full max-w-sm": props.layout === "list",
             "max-h-44 min-w-min sm:max-h-full sm:w-full":
               props.layout === "sm:grid",
           }}
