@@ -237,7 +237,7 @@ export default function Comment(props: Props) {
             <Show when={query.hasNextPage}>
               <button
                 onClick={() => query.fetchNextPage()}
-                class="text-xs underline"
+                class="underline ml-4"
               >
                 Load more replies
               </button>

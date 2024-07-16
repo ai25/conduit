@@ -12,6 +12,8 @@ const PlaylistCard = (props: {
 }) => {
   props = mergeProps({ layout: "sm:grid" as "sm:grid" }, props);
 
+  const isLocal = () => !!props.item?.uploaderName ?? "" === "You";
+
   return (
     <div
       classList={{
@@ -38,14 +40,24 @@ const PlaylistCard = (props: {
             <ImageContainer
               url={props.item?.url ?? ""}
               src="/img/placeholder.webp"
-              videos={props.item?.videos ?? 0}
+              videos={
+                isLocal()
+                  ? (props.item as any)?.relatedStreams?.length
+                  : props.item?.videos
+              }
+              uploader={props.item?.uploaderName ?? ""}
             />
           }
         >
           <ImageContainer
             url={props.item!.url}
             src={props.item!.thumbnail}
-            videos={props.item!.videos}
+            videos={
+              isLocal()
+                ? (props.item as any)?.relatedStreams?.length
+                : props.item?.videos
+            }
+            uploader={props.item?.uploaderName ?? ""}
           />
         </Show>
       </div>
@@ -121,6 +133,7 @@ const ImageContainer = (props: {
   url: string;
   src: string;
   videos: number;
+  uploader: string;
 }) => {
   return (
     <Link
@@ -140,7 +153,9 @@ const ImageContainer = (props: {
       />
       <div class="relative h-0 w-12 place-self-end lg:w-16 ">
         <div class="absolute w-max bottom-2 right-2 bg-bg1/90 rounded px-1 py-px border border-bg2 text-xs">
-          <Show when={props.videos < 1}>Mix</Show>
+          <Show when={props.videos < 1}>
+            {props.uploader === "You" ? "0 videos" : "Mix"}
+          </Show>
           <Show when={props.videos >= 1}>{props.videos} videos</Show>
         </div>
       </div>
