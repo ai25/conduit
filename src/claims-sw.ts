@@ -2,17 +2,14 @@ import { clientsClaim, skipWaiting } from "workbox-core";
 import {
   cleanupOutdatedCaches,
   createHandlerBoundToURL,
+  precache,
   precacheAndRoute,
 } from "workbox-precaching";
 // import { clientsClaim } from "workbox-core";
 import { NavigationRoute, registerRoute } from "workbox-routing";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { ExpirationPlugin } from "workbox-expiration";
-import {
-  CacheFirst,
-  NetworkFirst,
-  StaleWhileRevalidate,
-} from "workbox-strategies";
+import { CacheFirst, NetworkFirst } from "workbox-strategies";
 
 declare let self: ServiceWorkerGlobalScope;
 
@@ -21,80 +18,94 @@ clientsClaim();
 // clean old assets
 cleanupOutdatedCaches();
 
+const __BUILD_REVISION__ = Date.now().toString(); // TODO: figure out a better way to add revisions
+
 const PRECACHE_ROUTES = [
   {
     url: "/",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/feed",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/trending",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/import",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/library",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/library/history",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/library/playlists",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/library/downloads",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/results",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/playlist",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
   {
     url: "/channel/*",
-    revision: Date.now().toString(),
+    revision: __BUILD_REVISION__,
   },
 ];
+
 try {
-  precacheAndRoute([
-    ...self.__WB_MANIFEST,
-    // ...PRECACHE_ROUTES,
-  ]);
+  precache([...self.__WB_MANIFEST, ...PRECACHE_ROUTES]);
 } catch (e) {
-  console.error("Error in precacheAndRoute:", e);
+  console.error("Error in precache:", e);
 }
 
-const SWRHandlerWithFallback = new StaleWhileRevalidate({
-  cacheName: "dynamic-cache",
+const navigationHandler = new NetworkFirst({
+  cacheName: "navigations",
   plugins: [
     new CacheableResponsePlugin({
       statuses: [0, 200],
     }),
-    new ExpirationPlugin({
-      maxEntries: 50,
-      maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
-    }),
   ],
-  fetchOptions: {
-    mode: "cors",
-  },
 });
 
+const navigationRoute = new NavigationRoute(navigationHandler, {
+  allowlist: [new RegExp("^/$"), /^\/[^._]+$/],
+});
+
+registerRoute(navigationRoute);
+
 registerRoute(
-  new NavigationRoute(SWRHandlerWithFallback, {
-    denylist: [/^\/_/, new RegExp("/[^/?]+\\.[^/]+$")],
+  /\.(?:js|ts|jsx|tsx)$/,
+  new NetworkFirst({
+    cacheName: "js-cache",
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 500,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+      }),
+      {
+        cacheKeyWillBeUsed: async ({ request }) => {
+          return request.url;
+        },
+      },
+    ],
   })
 );
 
@@ -121,7 +132,7 @@ registerRoute(
 
 // Forward messages (and ports) from client to client.
 self.addEventListener("message", async (event: ExtendableMessageEvent) => {
-  console.log("Received message in service worker:", event.data); // Log the received data
+  console.log("Received message in service worker:", event.data);
 
   if (event.data?.sharedService) {
     console.log("Entering sharedService condition");
@@ -130,12 +141,12 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
 
     if (client) {
       console.log("Client found:", client);
-      client.postMessage(event.data, event.ports);
+      client.postMessage(event.data, (event as any).ports);
     } else {
-      console.error("Client not found for clientId:", event.data.clientId); // Log if client is not found
+      console.error("Client not found for clientId:", event.data.clientId);
     }
   } else {
-    console.warn("sharedService property not found in event data"); // Warning if sharedService is not present in the message
+    console.warn("sharedService property not found in event data");
   }
 });
 // Tell clients their clientId. A service worker isn't actually needed
