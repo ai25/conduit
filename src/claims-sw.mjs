@@ -1,3 +1,5 @@
+/// <reference lib="webworker" />
+
 import { clientsClaim, skipWaiting } from "workbox-core";
 import {
   cleanupOutdatedCaches,
@@ -10,8 +12,7 @@ import { NavigationRoute, registerRoute } from "workbox-routing";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheFirst, NetworkFirst } from "workbox-strategies";
-
-declare let self: ServiceWorkerGlobalScope;
+import { warmStrategyCache } from "workbox-recipes";
 
 self.skipWaiting();
 clientsClaim();
@@ -27,6 +28,14 @@ const PRECACHE_ROUTES = [
   },
   {
     url: "/feed",
+    revision: __BUILD_REVISION__,
+  },
+  {
+    url: "/import",
+    revision: __BUILD_REVISION__,
+  },
+  {
+    url: "/watch",
     revision: __BUILD_REVISION__,
   },
   {
@@ -54,6 +63,14 @@ const PRECACHE_ROUTES = [
     revision: __BUILD_REVISION__,
   },
   {
+    url: "/library/blocklist",
+    revision: __BUILD_REVISION__,
+  },
+  {
+    url: "/library/subscriptions",
+    revision: __BUILD_REVISION__,
+  },
+  {
     url: "/results",
     revision: __BUILD_REVISION__,
   },
@@ -65,52 +82,27 @@ const PRECACHE_ROUTES = [
     url: "/channel/*",
     revision: __BUILD_REVISION__,
   },
+  {
+    url: "/preferences",
+    revision: __BUILD_REVISION__,
+  },
 ];
 
+// TODO: Change back when VitePWA works with solid start
+const manifest = self.__WB_MANIFEST
+  .map((asset) => ({
+    ...asset,
+    url: `/_build/${asset.url}`,
+  }))
+  .concat(PRECACHE_ROUTES);
 try {
-  precache([...self.__WB_MANIFEST, ...PRECACHE_ROUTES]);
+  precacheAndRoute(manifest);
 } catch (e) {
   console.error("Error in precache:", e);
 }
 
-const navigationHandler = new NetworkFirst({
-  cacheName: "navigations",
-  plugins: [
-    new CacheableResponsePlugin({
-      statuses: [0, 200],
-    }),
-  ],
-});
-
-const navigationRoute = new NavigationRoute(navigationHandler, {
-  allowlist: [new RegExp("^/$"), /^\/[^._]+$/],
-});
-
-registerRoute(navigationRoute);
-
 registerRoute(
-  /\.(?:js|ts|jsx|tsx)$/,
-  new NetworkFirst({
-    cacheName: "js-cache",
-    plugins: [
-      new CacheableResponsePlugin({
-        statuses: [0, 200],
-      }),
-      new ExpirationPlugin({
-        maxEntries: 500,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
-      }),
-      {
-        cacheKeyWillBeUsed: async ({ request }) => {
-          return request.url;
-        },
-      },
-    ],
-  })
-);
-
-registerRoute(
-  /\.(?:png|jpg|jpeg|svg|gif|com)$/,
+  /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
   new CacheFirst({
     cacheName: "image-cache",
     plugins: [
@@ -131,7 +123,7 @@ registerRoute(
 );
 
 // Forward messages (and ports) from client to client.
-self.addEventListener("message", async (event: ExtendableMessageEvent) => {
+self.addEventListener("message", async (event) => {
   console.log("Received message in service worker:", event.data);
 
   if (event.data?.sharedService) {
@@ -141,7 +133,7 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
 
     if (client) {
       console.log("Client found:", client);
-      client.postMessage(event.data, (event as any).ports);
+      client.postMessage(event.data, event.ports);
     } else {
       console.error("Client not found for clientId:", event.data.clientId);
     }
@@ -152,7 +144,7 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
 // Tell clients their clientId. A service worker isn't actually needed
 // for a context to get its clientId, but this also doubles as a way
 // to verify that the service worker is active.
-self.addEventListener("fetch", async (event: FetchEvent) => {
+self.addEventListener("fetch", async (event) => {
   if (event.request.url === self.registration.scope + "clientId") {
     return event.respondWith(
       new Response(event.clientId, {

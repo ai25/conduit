@@ -4,18 +4,13 @@ import { PWA_ICONS } from "./src/config/constants";
 
 const pwaOptions: Partial<VitePWAOptions> = {
   base: "/",
-  mode: "development",
-  // strategies: "generateSW",
-  // registerType: "autoUpdate",
   srcDir: "src",
-  filename: "claims-sw.ts",
+  filename: "claims-sw.mjs",
   strategies: "injectManifest",
   scope: "/",
-  // selfDestroying: true,
   devOptions: {
     enabled: true,
     type: "module",
-    // navigateFallback: "/",
   },
   minify: false,
   manifest: {
@@ -40,6 +35,7 @@ const config = defineConfig({
     },
     plugins: [VitePWA(pwaOptions)],
   },
+
   // ssr: false,
 });
 

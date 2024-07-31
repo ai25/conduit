@@ -11,6 +11,7 @@ import {
   createSignal,
   createEffect,
   onMount,
+  on,
 } from "solid-js";
 import { Portal, getRequestEvent } from "solid-js/web";
 import { PlaylistProvider } from "./stores/playlistStore";
@@ -38,6 +39,7 @@ import { SolidNProgress } from "solid-progressbar";
 import NProgress from "nprogress";
 import Watch, { WatchFallback } from "./components/Watch";
 import { getStorageValue, setStorageValue } from "./utils/storage";
+import { toast } from "./components/Toast";
 
 const ReloadPrompt = clientOnly(() => import("./components/ReloadPrompt"));
 NProgress.configure({
@@ -96,10 +98,30 @@ export default function App() {
 
   const [alphaWarningDismissed, setAlphaWarningDismissed] = createSignal(true);
 
+  const isDev = () =>
+    isServer
+      ? process.env.NODE_ENV === "development"
+      : import.meta.env.DEV === true;
   onMount(() => {
     setAlphaWarningDismissed(
       getStorageValue("alphaWarningDismissed", false, "boolean", "localStorage")
     );
+    console.log(isDev(), "isDev", import.meta.env);
+    if (!isDev()) {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/sw", {
+            type: "module",
+            scope: "/",
+          })
+          .then((registration) => {
+            console.log("SW registered: ", registration);
+          })
+          .catch((registrationError) => {
+            console.log("SW registration failed: ", registrationError);
+          });
+      }
+    }
   });
 
   return (
@@ -113,70 +135,72 @@ export default function App() {
                   <AppStateProvider>
                     <PlaylistProvider>
                       <QueueProvider>
-                          <SyncedStoreProvider>
-                            <div
-                              class={` bg-bg1 min-h-screen font-manrope text-sm text-text1 selection:bg-accent2 selection:text-text3`}
-                            >
-                              <Header />
-                              <Show when={!alphaWarningDismissed()}>
-                                <div class="w-full h-14 " />
-                                <div class="fixed top-14 w-full z-[9999] bg-amber-600 flex justify-evenly items-center p-2">
-                                  <div>
-                                    This website is in Alpha stage, meaning
-                                    things{" "}
-                                    <span class="font-bold italic mr-0.5">
-                                      will
-                                    </span>{" "}
-                                    break, and your data{" "}
-                                    <span class="font-bold italic mr-0.5">
-                                      might
-                                    </span>{" "}
-                                    be lost. Proceed with caution!
-                                  </div>
-                                  <button
-                                    class="py-2 px-4 rounded-full bg-amber-100 text-amber-900"
-                                    onClick={() => {
-                                      setStorageValue(
-                                        "alphaWarningDismissed",
-                                        true,
-                                        "localStorage"
-                                      );
-                                      setAlphaWarningDismissed(true);
-                                    }}
-                                  >
-                                    I Understand
-                                  </button>
+                        <SyncedStoreProvider>
+                          <div
+                            class={` bg-bg1 min-h-screen font-manrope text-sm text-text1 selection:bg-accent2 selection:text-text3`}
+                          >
+                            <Header />
+                            <Show when={!alphaWarningDismissed()}>
+                              <div class="w-full h-14 " />
+                              <div class="fixed top-14 w-full z-[9999] bg-amber-600 flex justify-evenly items-center p-2">
+                                <div>
+                                  This website is in Alpha stage, meaning things{" "}
+                                  <span class="font-bold italic mr-0.5">
+                                    will
+                                  </span>{" "}
+                                  break, and your data{" "}
+                                  <span class="font-bold italic mr-0.5">
+                                    might
+                                  </span>{" "}
+                                  be lost. Proceed with caution!
                                 </div>
-                              </Show>
+                                <button
+                                  class="py-2 px-4 rounded-full bg-amber-100 text-amber-900"
+                                  onClick={() => {
+                                    setStorageValue(
+                                      "alphaWarningDismissed",
+                                      true,
+                                      "localStorage"
+                                    );
+                                    setAlphaWarningDismissed(true);
+                                  }}
+                                >
+                                  I Understand
+                                </button>
+                              </div>
+                            </Show>
 
-                              <SolidNProgress
-                                color="rgb(var(--colors-primary))"
-                                options={{
-                                  showSpinner: false,
-                                  speed: 150,
-                                  easing: "ease-in",
-                                }}
-                              />
-                              <div aria-hidden="true" class="h-14" />
-                              <Suspense fallback={<WatchFallback />}>
-                                <Watch />
-                              </Suspense>
-                              <Portal>
-                                <Toast.Region>
-                                  <Toast.List class="fixed bottom-0 right-0 p-4 flex flex-col gap-2 z-[999999] w-[400px] max-w-[100vw] outline-none" />
-                                </Toast.Region>
-                              </Portal>
-                              <main>
-                                <Suspense>{props.children}</Suspense>
+
+                            <SolidNProgress
+                              color="rgb(var(--colors-primary))"
+                              options={{
+                                showSpinner: false,
+                                speed: 150,
+                                easing: "ease-in",
+                              }}
+                            />
+                            <div aria-hidden="true" class="h-14" />
+                            <Suspense fallback={<WatchFallback />}>
+                              <Watch />
+                            </Suspense>
+                            <Portal>
+                              <Toast.Region pauseOnPageIdle={false}>
+                                <Toast.List class="fixed bottom-0 right-0 p-4 flex flex-col gap-2 z-[999999] w-[400px] max-w-[100vw] outline-none" />
+                              </Toast.Region>
+                            </Portal>
+                            <main>
+                              <Suspense>{props.children}</Suspense>
+                              <Show when={isDev()}>
                                 <ReloadPrompt />
-                              </main>
-                              <div class="h-20 md:h-0" />
-                              <Show when={appState.player.small}>
-                                <div class="h-32" />
                               </Show>
-                              <RouteAnnouncer />
-                            </div>
-                          </SyncedStoreProvider>
+                            </main>
+                            <div class="h-20 md:h-0" />
+                            <Show when={appState.player.small}>
+                              <div class="h-32" />
+                            </Show>
+                            <RouteAnnouncer />
+                          </div>
+                        </SyncedStoreProvider>
                       </QueueProvider>
                     </PlaylistProvider>
                   </AppStateProvider>
