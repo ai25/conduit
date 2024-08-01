@@ -74,7 +74,10 @@ const VideoCard = (props: VideoCardProps) => {
       const data = await res.json();
       return data;
     },
-    enabled: !isServer && id() && preferences.dearrow && !searchParams.offline ? true : false,
+    enabled:
+      !isServer && id() && preferences.dearrow && !searchParams.offline
+        ? true
+        : false,
   }));
   const title = () => dearrowQuery.data?.titles?.[0]?.title ?? props.v!.title;
   const thumbnailQuery = createQuery(() => ({
@@ -103,9 +106,8 @@ const VideoCard = (props: VideoCardProps) => {
     },
     enabled:
       dearrowQuery.data?.thumbnails?.[0]?.original === false &&
-      Number.isFinite(dearrowQuery.data?.thumbnails?.[0]?.timestamp)
-      && !searchParams.offline
-      ,
+      Number.isFinite(dearrowQuery.data?.thumbnails?.[0]?.timestamp) &&
+      !searchParams.offline,
   }));
   const thumbnail = () =>
     thumbnailQuery.data
@@ -167,7 +169,7 @@ const VideoCard = (props: VideoCardProps) => {
               triggerSlot={
                 <Link
                   href={`/watch?v=${id()}`}
-                  class="rounded text-start two-line-ellipsis min-w-0 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  class="rounded text-start two-line-ellipsis min-w-0 pb-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {title()}
                 </Link>
@@ -285,7 +287,7 @@ const ImageContainer = (props: {
   return (
     <Link
       href={props.url}
-      class="relative min-w-[10rem] flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative min-w-00 flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{

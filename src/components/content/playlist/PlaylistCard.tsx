@@ -98,7 +98,7 @@ const PlaylistCard = (props: {
               triggerSlot={
                 <Link
                   href={props.item!.url}
-                  class="rounded text-start two-line-ellipsis min-w-0 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  class="rounded text-start two-line-ellipsis min-w-0 pb-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {props.item!.name}
                 </Link>
@@ -138,7 +138,7 @@ const ImageContainer = (props: {
   return (
     <Link
       href={props.url}
-      class="relative min-w-[10rem] flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative min-w-0 flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{
