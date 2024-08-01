@@ -142,20 +142,11 @@ export default function Channel() {
   const [currentIndex, setCurrentIndex] = createSignal(
     tabs().findIndex((tab) => tab.name === selectedTab()) ?? 0
   );
-  const [isNavigatingLeft, setIsNavigatingLeft] = createSignal(false);
 
   function loadTab(name: string) {
     console.log("loadTab", name);
-    let prevIndex = currentIndex();
     setCurrentIndex(
       tabs().findIndex((tab) => tab.name === name) ?? currentIndex()
-    );
-    setIsNavigatingLeft(prevIndex > currentIndex());
-    console.log(
-      "navigating ",
-      isNavigatingLeft() ? "left" : "right",
-      prevIndex,
-      currentIndex()
     );
     setSelectedTab(name);
 
@@ -165,10 +156,12 @@ export default function Channel() {
     history.replaceState(window.history.state, "", url);
   }
 
+  const channelDescription = () => query.data?.pages?.[0]?.description ?? "";
+
   return (
     <Suspense fallback={<ChannelFallback />}>
       <Show when={query.data} fallback={<ChannelFallback />}>
-        <div class="flex flex-col justify-center gap-2 w-[90%] max-w-screen-xl mx-auto py-4">
+        <div class="flex flex-col justify-center gap-2 w-[95%] max-w-screen-xl mx-auto py-4">
           <Show when={query.data?.pages?.[0]?.bannerUrl}>
             <div class="relative w-full min-h-[100px] h-full aspect-[6.2] rounded-2xl overflow-hidden ">
               <img
@@ -215,15 +208,11 @@ export default function Channel() {
             </Show>
           </div>
           <div class="text-text2">
-            <Show when={query.data?.pages?.[0]?.description?.length || 0 > 200}>
-              <CollapsibleText
-                description={query.data?.pages?.[0]?.description ?? ""}
-              />
+            <Show when={channelDescription().length >= 200}>
+              <CollapsibleText description={channelDescription()} />
             </Show>
-            <Show
-              when={!query.data?.pages?.[0]?.description?.length || 0 < 200}
-            >
-              {query.data?.pages?.[0]?.description ?? ""}
+            <Show when={channelDescription().length < 200}>
+              {channelDescription()}
             </Show>
           </div>
           <Tabs.Root
@@ -338,7 +327,7 @@ export default function Channel() {
 
 function ChannelFallback() {
   return (
-    <div class="flex flex-col justify-center gap-2 w-[90%] max-w-screen-xl mx-auto p-2">
+    <div class="flex flex-col justify-center gap-2 w-[95%] max-w-screen-xl mx-auto p-2">
       <div class="relative w-full min-h-[100px] h-full aspect-[6.2] rounded-2xl bg-bg2 animate-pulse" />
       <div class="flex gap-2 items-center">
         <div class="aspect-square rounded-full w-20 animate-pulse bg-bg2" />

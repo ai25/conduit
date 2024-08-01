@@ -37,7 +37,7 @@ export default function Feed() {
   const [limit, setLimit] = createSignal(10);
   const [preferences] = usePreferences();
   const sync = useSyncStore();
-  const [searchParams] = useSearchParams()
+  const [searchParams] = useSearchParams();
   const query = createQuery<RelatedStream[]>(() => ({
     queryKey: ["feed", preferences.instance.api_url, sync.store.subscriptions],
     queryFn: async (): Promise<RelatedStream[]> => {
@@ -56,7 +56,8 @@ export default function Feed() {
     enabled:
       preferences.instance?.api_url &&
       !isServer &&
-      Object.keys(sync.store.subscriptions).length && !searchParams.offline
+      Object.keys(sync.store.subscriptions).length &&
+      !searchParams.offline
         ? true
         : false,
     refetchOnMount: true,
