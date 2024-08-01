@@ -3,6 +3,7 @@ import { createContext, createEffect, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { MediaPlayerElement } from "vidstack/elements";
 import { ProviderStatus } from "~/components/Header";
+import { useWindowEvent } from "~/utils/hooks";
 
 const store = createStore({
   loading: false,
@@ -26,10 +27,16 @@ const store = createStore({
   },
   showNavbar: true,
   smallDevice: false,
+  offline: false,
 });
 const AppStateContext = createContext(store);
 export const AppStateProvider = (props: { children: any }) => {
-  const location = useLocation();
+  useWindowEvent("offline", () => {
+    store[1]("offline", navigator.onLine);
+  });
+  useWindowEvent("online", () => {
+    store[1]("offline", navigator.onLine);
+  });
   return (
     <AppStateContext.Provider value={store}>
       {props.children}

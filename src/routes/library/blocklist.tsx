@@ -1,4 +1,5 @@
 import { Title } from "@solidjs/meta";
+import { useSearchParams } from "@solidjs/router";
 import { createQuery } from "@tanstack/solid-query";
 import { For, Show, Suspense } from "solid-js";
 import Button from "~/components/Button";
@@ -15,6 +16,7 @@ export default function Blocklist() {
   const [preferences] = usePreferences();
 
   const isEmpty = () => Object.keys(sync.store.blocklist).length === 0;
+  const [searchParams] = useSearchParams()
   const query = createQuery<RelatedStream[]>(() => ({
     queryKey: ["blocklist", preferences.instance.api_url, sync.store.blocklist],
     queryFn: async (): Promise<RelatedStream[]> => {
@@ -30,7 +32,7 @@ export default function Blocklist() {
       }
       return res.json() as Promise<RelatedStream[]>;
     },
-    enabled: preferences.instance?.api_url && !isEmpty() ? true : false,
+    enabled: preferences.instance?.api_url && !isEmpty() && !searchParams.offline ? true : false,
   }));
 
   return (

@@ -11,11 +11,13 @@ import {
 import {
   FaSolidBan,
   FaSolidBrush,
+  FaSolidBug,
   FaSolidClapperboard,
   FaSolidClock,
   FaSolidClockRotateLeft,
   FaSolidClosedCaptioning,
   FaSolidComments,
+  FaSolidDatabase,
   FaSolidDownload,
   FaSolidFilm,
   FaSolidGlobe,
@@ -52,6 +54,7 @@ import ImportDataModal from "~/components/ImportDataModal";
 import ImportHistoryModal from "~/components/ImportHistoryModal";
 import PreferencesCard from "~/components/PreferencesCard";
 import Select from "~/components/Select";
+import { toast } from "~/components/Toast";
 import Toggle from "~/components/Toggle";
 import InstancePreferences from "~/components/preferences/InstancePreferences";
 import {
@@ -63,6 +66,19 @@ import {
 import { usePreferences } from "~/stores/preferencesStore";
 import { useSyncStore } from "~/stores/syncStore";
 import { useCookie } from "~/utils/hooks";
+async function clearCache() {
+  const cacheNames = await caches.keys();
+  await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+
+  if ("serviceWorker" in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (let registration of registrations) {
+      await registration.unregister();
+    }
+  }
+
+  toast.success("Cache cleared.");
+}
 
 export default function Preferences() {
   const navigate = useNavigate();
@@ -517,6 +533,22 @@ export default function Preferences() {
               checked={preferences.dearrow}
               onChange={(v) => setPreferences("dearrow", v)}
             />
+          </div>
+        </Collapsible>
+        <Collapsible
+          trigger={
+            <PreferencesCard
+              title="Debug"
+              icon={<FaSolidBug class="w-6 h-6" />}
+            />
+          }
+        >
+          <div class="ml-10 flex justify-between items-center">
+            <PreferencesCard
+              icon={<FaSolidDatabase class="w-6 h-6" />}
+              title="Clear cache"
+            />
+            <Button label="Clear" onClick={() => clearCache()} />
           </div>
         </Collapsible>
       </div>

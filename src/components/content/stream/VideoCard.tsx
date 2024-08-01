@@ -74,7 +74,7 @@ const VideoCard = (props: VideoCardProps) => {
       const data = await res.json();
       return data;
     },
-    enabled: !isServer && id() && preferences.dearrow ? true : false,
+    enabled: !isServer && id() && preferences.dearrow && !searchParams.offline ? true : false,
   }));
   const title = () => dearrowQuery.data?.titles?.[0]?.title ?? props.v!.title;
   const thumbnailQuery = createQuery(() => ({
@@ -103,7 +103,9 @@ const VideoCard = (props: VideoCardProps) => {
     },
     enabled:
       dearrowQuery.data?.thumbnails?.[0]?.original === false &&
-      Number.isFinite(dearrowQuery.data?.thumbnails?.[0]?.timestamp),
+      Number.isFinite(dearrowQuery.data?.thumbnails?.[0]?.timestamp)
+      && !searchParams.offline
+      ,
   }));
   const thumbnail = () =>
     thumbnailQuery.data

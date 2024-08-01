@@ -13,7 +13,7 @@ import { useSyncStore } from "~/stores/syncStore";
 import { createQuery } from "@tanstack/solid-query";
 import { usePreferences } from "~/stores/preferencesStore";
 import PlaylistItem from "~/components/content/playlist/PlaylistItem";
-import { useLocation } from "@solidjs/router";
+import { useLocation, useSearchParams } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
 import EmptyState from "~/components/EmptyState";
 
@@ -24,6 +24,7 @@ export default function Playlist() {
   const id = route.query.list;
   const sync = useSyncStore();
   const [preferences] = usePreferences();
+  const [searchParams] = useSearchParams()
 
   createEffect(() => {
     if (!id) return;
@@ -36,7 +37,7 @@ export default function Playlist() {
     queryKey: ["playlist", preferences.instance.api_url, id],
     queryFn: async (): Promise<PlaylistType> =>
       (await fetch(preferences.instance.api_url + "/playlists/" + id)).json(),
-    enabled: preferences.instance.api_url && !isLocal() && id ? true : false,
+    enabled: preferences.instance.api_url && !isLocal() && id && !searchParams.offline? true : false,
   }));
 
   createEffect(() => {

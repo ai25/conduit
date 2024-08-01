@@ -166,7 +166,8 @@ export default function Watch() {
       preferences.instance?.api_url &&
       route.query.list &&
       !isLocalPlaylist() &&
-      !isWatchLater()
+      !isWatchLater() && 
+      !searchParams.offline
         ? true
         : false,
     refetchOnReconnect: false,

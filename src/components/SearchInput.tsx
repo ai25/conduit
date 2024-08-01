@@ -48,7 +48,7 @@ const SearchInput = () => {
       ).then((res) => res.json());
     },
     enabled:
-      search().length > 1 && preferences.instance?.api_url && showSuggestions()
+      search().length > 1 && preferences.instance?.api_url && showSuggestions() && !searchParams.offline
         ? true
         : false,
     select: (data) => {

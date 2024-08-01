@@ -95,3 +95,52 @@ export const useOnClickOutside = (refs: any[], onOutsideClick: () => void) => {
     document.removeEventListener("click", handleClickOutside, false);
   });
 };
+
+export const useDocumentEvent = <K extends keyof DocumentEventMap>(
+  event: K,
+  callback: (event: DocumentEventMap[K]) => void
+) => {
+  onMount(() => {
+    if (isServer) return;
+    document.addEventListener(event, callback);
+  });
+  onCleanup(() => {
+    if (isServer) return;
+    document.removeEventListener(event, callback);
+  });
+};
+
+export const useWindowEvent = <K extends keyof WindowEventMap>(
+  event: K,
+  callback: (event: WindowEventMap[K]) => void
+) => {
+  onMount(() => {
+    if (isServer) return;
+    window.addEventListener(event, callback);
+  });
+  onCleanup(() => {
+    if (isServer) return;
+    window.removeEventListener(event, callback);
+  });
+};
+
+export const useDisposable = (fn: () => () => any) => {
+  const [unsubscribe, setUnsubscribe] = createSignal(() => {});
+  onMount(() => {
+    setUnsubscribe(fn());
+  });
+  onCleanup(() => {
+    unsubscribe()?.();
+  });
+};
+
+export const useInterval = (handler: TimerHandler, timeout?: number) => {
+  const [intervalId, setIntervalId] = createSignal<number>();
+
+  onMount(() => {
+    setIntervalId(setInterval(handler, timeout));
+  });
+  onCleanup(() => {
+    clearInterval(intervalId());
+  });
+};

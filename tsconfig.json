@@ -11,7 +11,7 @@
 		"allowJs": true,
 		"noEmit": true,
 		"isolatedModules": true,
-    "types": ["vinxi/client", "vite/client", "vidstack/globals", "vite-plugin-pwa/solid", "node"],
+    "types": ["vinxi/client", "vidstack/globals", "vite-plugin-pwa/solid", "node"],
     "baseUrl": "./",
     "paths": {
       "~/*": ["./src/*"]

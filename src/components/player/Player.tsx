@@ -70,6 +70,7 @@ import { FaSolidArrowLeft } from "solid-icons/fa";
 import { Spinner } from "../Spinner";
 import { createQuery } from "@tanstack/solid-query";
 import numeral from "numeral";
+import { useCookie } from "~/utils/hooks";
 export interface SponsorSegment {
   category: string;
   actionType: string;
@@ -792,6 +793,19 @@ export default function Player(props: {
         } else {
           mediaPlayer!.pause();
           showControls();
+        }
+        e.preventDefault();
+        break;
+      case "t":
+        if (e.shiftKey || e.ctrlKey) break;
+        //eslint-disable-next-line no-case-declarations
+        const [, setTheatreCookie] = useCookie("theatreMode", "false");
+        if (preferences.theatreMode) {
+          setPreferences("theatreMode", false);
+          setTheatreCookie("false");
+        } else {
+          setPreferences("theatreMode", true);
+          setTheatreCookie("true");
         }
         e.preventDefault();
         break;

@@ -1,4 +1,5 @@
 import { Title } from "@solidjs/meta";
+import { useSearchParams } from "@solidjs/router";
 import { createQuery } from "@tanstack/solid-query";
 import { ErrorBoundary, For, Show, Suspense, createEffect } from "solid-js";
 import Button from "~/components/Button";
@@ -14,6 +15,8 @@ export default function Subscriptions() {
   const sync = useSyncStore();
   const [preferences] = usePreferences();
   const isEmpty = () => Object.keys(sync.store.subscriptions).length === 0;
+
+  const [searchParams] = useSearchParams()
   const query = createQuery<RelatedStream[]>(() => ({
     queryKey: ["feed", preferences.instance.api_url, sync.store.subscriptions],
     queryFn: async (): Promise<RelatedStream[]> => {
@@ -29,7 +32,7 @@ export default function Subscriptions() {
       }
       return res.json() as Promise<RelatedStream[]>;
     },
-    enabled: preferences.instance?.api_url && !isEmpty() ? true : false,
+    enabled: preferences.instance?.api_url && !isEmpty() &&!searchParams.offline ? true : false,
   }));
 
   return (

@@ -35,6 +35,7 @@ export const VideoContextProvider = (props: { children: any }) => {
       videoId() &&
       preferences.instance.api_url &&
       !appState.player.dismissed
+      && !searchParams.offline
         ? true
         : false,
     refetchOnReconnect: false,

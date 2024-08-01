@@ -21,9 +21,10 @@ const pwaOptions: Partial<VitePWAOptions> = {
     icons: PWA_ICONS,
   },
 };
+
 const config = defineConfig({
   server: {
-    preset: "vercel",
+    preset: process.env.NODE_ENV === "development" ? undefined : "vercel",
   },
   vite: {
     build: {

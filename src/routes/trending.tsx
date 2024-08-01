@@ -15,10 +15,12 @@ import VideoCard, {
 import { Title } from "@solidjs/meta";
 import Select from "~/components/Select";
 import { filterContent } from "~/utils/content-filter";
+import { useSearchParams } from "@solidjs/router";
 
 export default function Trending() {
   const sync = useSyncStore();
   const [preferences, setPreferences] = usePreferences();
+  const [searchParams] = useSearchParams()
   const query = createQuery(() => ({
     queryKey: [
       "trending",
@@ -36,7 +38,7 @@ export default function Trending() {
       }
       return await res.json();
     },
-    enabled: preferences.instance?.api_url && !isServer ? true : false,
+    enabled: preferences.instance?.api_url && !isServer && !searchParams.offline ? true : false,
   }));
 
   return (

@@ -102,25 +102,24 @@ export default function App() {
     isServer
       ? process.env.NODE_ENV === "development"
       : import.meta.env.DEV === true;
+  const swUrl = isDev() ? "/dev-sw.js?dev-sw" : "/sw";
   onMount(() => {
     setAlphaWarningDismissed(
       getStorageValue("alphaWarningDismissed", false, "boolean", "localStorage")
     );
-    console.log(isDev(), "isDev", import.meta.env);
-    if (!isDev()) {
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("/sw", {
-            type: "module",
-            scope: "/",
-          })
-          .then((registration) => {
-            console.log("SW registered: ", registration);
-          })
-          .catch((registrationError) => {
-            console.log("SW registration failed: ", registrationError);
-          });
-      }
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register(swUrl, {
+          type: "module",
+          scope: "/",
+        })
+        .then((registration) => {
+          console.log("SW registered: ", registration);
+          registration.update();
+        })
+        .catch((registrationError) => {
+          console.log("SW registration failed: ", registrationError);
+        });
     }
   });
 
@@ -170,7 +169,6 @@ export default function App() {
                               </div>
                             </Show>
 
-
                             <SolidNProgress
                               color="rgb(var(--colors-primary))"
                               options={{
@@ -190,9 +188,9 @@ export default function App() {
                             </Portal>
                             <main>
                               <Suspense>{props.children}</Suspense>
-                              <Show when={isDev()}>
-                                <ReloadPrompt />
-                              </Show>
+                              {/* <Show when={isDev()}> */}
+                              {/*   <ReloadPrompt /> */}
+                              {/* </Show> */}
                             </main>
                             <div class="h-20 md:h-0" />
                             <Show when={appState.player.small}>

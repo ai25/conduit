@@ -18,7 +18,7 @@ import { useSyncStore } from "~/stores/syncStore";
 import { ErrorComponent } from "~/components/Error";
 import useIntersectionObserver from "~/hooks/useIntersectionObserver";
 import EmptyState from "~/components/EmptyState";
-import { A } from "@solidjs/router";
+import { A, useSearchParams } from "@solidjs/router";
 import { useAppState } from "~/stores/appStateStore";
 import { usePreferences } from "~/stores/preferencesStore";
 import { Tooltip } from "@kobalte/core";
@@ -37,6 +37,7 @@ export default function Feed() {
   const [limit, setLimit] = createSignal(10);
   const [preferences] = usePreferences();
   const sync = useSyncStore();
+  const [searchParams] = useSearchParams()
   const query = createQuery<RelatedStream[]>(() => ({
     queryKey: ["feed", preferences.instance.api_url, sync.store.subscriptions],
     queryFn: async (): Promise<RelatedStream[]> => {
@@ -55,7 +56,7 @@ export default function Feed() {
     enabled:
       preferences.instance?.api_url &&
       !isServer &&
-      Object.keys(sync.store.subscriptions).length
+      Object.keys(sync.store.subscriptions).length && !searchParams.offline
         ? true
         : false,
     refetchOnMount: true,

@@ -76,16 +76,9 @@ export enum ProviderStatus {
 
 export default function Header() {
   const [, setThemeCookie] = useCookie("theme", "monokai");
-  const sync = useSyncStore();
-
-  const links = [
-    { href: "/feed", label: "Feed" },
-    { href: "/trending", label: "Trending" },
-    { href: "/library", label: "Library" },
-    { href: "/preferences", label: "Preferences" },
-  ];
   const [preferences, setPreferences] = usePreferences();
 
+  const [searchParams] = useSearchParams();
   const query = createQuery(() => ({
     queryKey: ["instances"],
     queryFn: async (): Promise<PipedInstance[]> => {
@@ -102,7 +95,7 @@ export default function Header() {
       return data as PipedInstance[];
     },
     retry: (failureCount) => failureCount < 3,
-    enabled: !isServer,
+    enabled: !isServer && !searchParams.offline,
   }));
 
   const randomNames = [
@@ -189,17 +182,20 @@ export default function Header() {
       (instance) => instance.api_url === preferences.instance.api_url
     );
     currentInstanceIndex = currentInstanceIndex > -1 ? currentInstanceIndex : 0;
-    const nextInstanceIndex = (currentInstanceIndex + 1) % instances.length;
-    appState.player.instance?.pause()
-    setPreferences("instance", instances()[nextInstanceIndex]);
-    toast.show(
-      `You are now connected to ${instances()[nextInstanceIndex].name}`
-    );
+    const nextInstanceIndex = (currentInstanceIndex + 1) % instances().length;
+    appState.player.instance?.pause();
+    if (instances()[nextInstanceIndex]?.api_url) {
+      setPreferences("instance", instances()[nextInstanceIndex]);
+      toast.show(
+        `You are now connected to ${instances()[nextInstanceIndex].name}`
+      );
+    } else {
+      toast.error("Could not switch instance.");
+    }
   };
 
   const [lastScrollY, setLastScrollY] = createSignal(0);
   const [scrollDelta, setScrollDelta] = createSignal(0);
-  const [searchParams] = useSearchParams();
   const SCROLL_THRESHOLD = 50;
 
   const controlNavbar = () => {
@@ -570,7 +566,7 @@ export default function Header() {
             onChange={(value) => {
               let instance = instances().find((i) => i.api_url === value);
               if (instance) {
-                appState.player.instance?.pause()
+                appState.player.instance?.pause();
                 setPreferences("instance", instance);
               }
             }}
