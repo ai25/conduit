@@ -1,4 +1,5 @@
 import { Dialog } from "@kobalte/core";
+import { BsX } from "solid-icons/bs";
 import { FaSolidX } from "solid-icons/fa";
 import { createEffect, createSignal, JSX } from "solid-js";
 
@@ -52,17 +53,12 @@ export default function Modal(props: {
     data-[expanded]:ease-out
     "
             >
-              <div
-                class="flex 
-    items-baseline 
-    justify-between 
-    mb-3"
-              >
+              <div class="flex items-center justify-between mb-3">
                 <Dialog.Title class="text-xl font-semibold">
                   {props.title}
                 </Dialog.Title>
-                <Dialog.CloseButton class="">
-                  <FaSolidX fill="currentColor" class="w-4 h-4" />
+                <Dialog.CloseButton class="w-8 h-8 flex justify-center items-center rounded-full outline-none focus-visible:ring-2 ring-primary/80">
+                  <BsX class="w-7 h-7" />
                 </Dialog.CloseButton>
               </div>
               <div

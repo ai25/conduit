@@ -227,11 +227,12 @@ export async function retry<T>(
 export async function fetchSegments(
   instance: string,
   segments: string[],
-  maxRetries: number = 3
+  maxRetries: number = 3,
+  progressCallback?: (progress: number) => void
 ): Promise<Blob[]> {
   const localSegments: Blob[] = [];
 
-  outer: for (let i = 0; i < segments.length; i++) {
+  for (let i = 0; i < segments.length; i++) {
     try {
       const segmentData = await fetchAssetData(
         async (url) =>
@@ -242,11 +243,16 @@ export async function fetchSegments(
         throw new Error("Failed to fetch segment data.");
       }
       localSegments.push(segmentData);
+
+      if (progressCallback) {
+        progressCallback(((i + 1) / segments.length) * 100);
+      }
     } catch (error) {
       console.error(`Error fetching or saving segment ${i}:`, error);
-      break outer;
+      break;
     }
   }
+
   if (localSegments.length !== segments.length) {
     throw new Error("Failed to fetch all segments.");
   }
@@ -291,21 +297,47 @@ export const fetchBlob = async (url: string) => {
  *
  * @throws Will throw an error if downloading the video fails at any stage.
  */
+export interface DownloadProgress {
+  stage: string;
+  stageIndex: number;
+  progress: number;
+  totalStages: number;
+}
 export async function downloadVideo(
   videoId: string,
   apiUrl: string = "https://pipedapi.kavin.rocks",
-  resolution: string = "1080",
-  subtitleCode?: string
+  resolution: number = 1080,
+  subtitleCode?: string,
+  progressCallback?: (progress: DownloadProgress) => void
 ) {
   try {
+    const totalStages = subtitleCode ? 11 : 10;
+    let currentStage = 0;
+    const updateProgress = (stage: string, progress: number = 100) => {
+      console.log("updating progress", stage, currentStage);
+      currentStage++;
+      if (progressCallback) {
+        progressCallback({
+          stage,
+          stageIndex: currentStage,
+          progress,
+          totalStages,
+        });
+      }
+    };
+
     console.log("Fetching video data...");
+    updateProgress("Downloading video data");
 
     const videoData = await fetchVideoData(videoId, apiUrl);
     console.log("Video data fetched.", videoData);
 
     console.log("Getting directory handle...");
     const root = await navigator.storage.getDirectory();
-    const videoDir = await root.getDirectoryHandle(videoId, {
+    const allVideosDir = await root.getDirectoryHandle("__videos", {
+      create: true,
+    });
+    const videoDir = await allVideosDir.getDirectoryHandle(videoId, {
       create: true,
     });
     const streamsHandle = await videoDir.getFileHandle("streams.json", {
@@ -325,6 +357,7 @@ export async function downloadVideo(
     const baseProxyUrl = videoData.hls.split("/api")[0];
 
     console.log("Fetching manifest...");
+    updateProgress("Downloading manifest");
     const initialManifest = await fetchAssetData(
       async (url) => {
         return retry(async () => {
@@ -340,9 +373,9 @@ export async function downloadVideo(
       throw new Error("Failed to fetch manifest.");
     }
 
-    const findBandwithByResolution = (resolution: string, manifest: string) => {
+    const findBandwithByResolution = (resolution: number, manifest: string) => {
       const lines = manifest.split("\n");
-      const line = lines.find((line) => line.includes(resolution));
+      const line = lines.find((line) => line.includes(resolution.toString()));
       if (!line) throw new Error(`Could not find resolution ${resolution}`);
       const bw = line.split("BANDWIDTH=")?.[1]?.match(/([0-9])*/g)?.[0];
       if (!bw)
@@ -388,6 +421,8 @@ export async function downloadVideo(
     }
 
     console.log("Fetching audio manifest...");
+
+    updateProgress("Downloading HLS audio manifest");
     const audioManifestContent = await fetchAssetData(
       async (url) => {
         return retry(async () => {
@@ -401,6 +436,7 @@ export async function downloadVideo(
     console.log("Audio manifest fetched.", audioManifestContent);
 
     console.log("Fetching video manifest...");
+    updateProgress("Downloading HLS video manifest");
     const videoManifestContent = await fetchAssetData(
       async (url) => {
         return retry(async () => {
@@ -443,10 +479,22 @@ export async function downloadVideo(
     console.log("Video manifest saved.");
 
     console.log("Fetching audio segments...");
+
+    updateProgress("Downloading audio segments", 0);
     const audioSegments = await fetchSegments(
       baseProxyUrl,
       modifiedAudioManifest.segments,
-      3
+      3,
+      (segmentProgress) => {
+        if (progressCallback) {
+          progressCallback({
+            stage: "Downloading audio segments",
+            stageIndex: currentStage,
+            progress: segmentProgress,
+            totalStages,
+          });
+        }
+      }
     );
     console.log("Audio segments fetched.", audioSegments);
 
@@ -464,10 +512,21 @@ export async function downloadVideo(
     console.log("Audio segments saved.");
 
     console.log("Fetching video segments...");
+    updateProgress("Downloading video segments", 0);
     const videoSegments = await fetchSegments(
       baseProxyUrl,
       modifiedVideoManifest.segments,
-      3
+      3,
+      (segmentProgress) => {
+        if (progressCallback) {
+          progressCallback({
+            stage: "Downloading video segments",
+            stageIndex: currentStage,
+            progress: segmentProgress,
+            totalStages,
+          });
+        }
+      }
     );
     console.log("Video segments fetched.", videoSegments);
 
@@ -487,6 +546,7 @@ export async function downloadVideo(
     if (subtitleCode) {
       if (videoData.subtitles.length > 0) {
         console.log("Fetching subtitles...");
+        updateProgress("Downloading subtitles");
         const subtitle = videoData.subtitles.find(
           (subtitle) => subtitle.code === subtitleCode
         );
@@ -509,6 +569,7 @@ export async function downloadVideo(
       }
     }
     console.log("Fetching thumbnail...");
+    updateProgress("Downloading thumbnail");
     const thumbnail = await fetchAssetData(
       (url) => {
         return retry(async () => {
@@ -531,6 +592,7 @@ export async function downloadVideo(
     console.log("Thumbnail saved.");
 
     console.log("Fetching channel logo...");
+    updateProgress("Downloading channel picture");
     const channelIcon = await fetchAssetData(
       (url) => {
         return retry(async () => {
@@ -553,6 +615,7 @@ export async function downloadVideo(
     console.log("Channel logo saved.");
 
     console.log("Fetching preview frames...");
+    updateProgress("Downloading preview frames");
     const previewFramesDir = await videoDir.getDirectoryHandle(
       `preview-frames`,
       {
@@ -583,10 +646,9 @@ export async function downloadVideo(
       index++;
       console.log("Preview frame saved.");
     }
-
-    const downloaded = JSON.parse(localStorage.getItem("downloaded") || "[]");
-    downloaded.push(videoId);
-    localStorage.setItem("downloaded", JSON.stringify(downloaded));
+    // Create file to mark as completed
+    await videoDir.getFileHandle("completed", { create: true });
+    updateProgress("Completed");
   } catch (error) {
     console.error("Error downloading the video:", error);
     throw error;
@@ -719,9 +781,8 @@ export const getStreams = async (videoId: string) => {
   const thumbnailUrl = URL.createObjectURL(thumbnailFile);
   console.log("Thumbnail URL:", thumbnailUrl);
 
-  const channelIconFileHandle = await videoDirectory.getFileHandle(
-    "channel-icon"
-  );
+  const channelIconFileHandle =
+    await videoDirectory.getFileHandle("channel-icon");
   console.log("Channel icon file handle:", channelIconFileHandle);
   const channelIconFile = await channelIconFileHandle.getFile();
   const channelIconUrl = URL.createObjectURL(channelIconFile);

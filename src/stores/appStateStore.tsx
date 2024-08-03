@@ -3,6 +3,7 @@ import { createContext, createEffect, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { MediaPlayerElement } from "vidstack/elements";
 import { ProviderStatus } from "~/components/Header";
+import { DownloadProgress } from "~/utils/hls";
 import { useWindowEvent } from "~/utils/hooks";
 
 const store = createStore({
@@ -28,6 +29,7 @@ const store = createStore({
   showNavbar: true,
   smallDevice: false,
   offline: false,
+  downloadProgress: undefined as DownloadProgress | undefined,
 });
 const AppStateContext = createContext(store);
 export const AppStateProvider = (props: { children: any }) => {

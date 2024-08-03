@@ -44,6 +44,7 @@ export default function FileSystemViewer(props: {
           dirObj[entry.name] = fileDetails;
         } else if (entry.kind === "directory") {
           dirObj[entry.name] = {
+            handle: entry,
             name: entry.name,
             kind: "directory",
             contents: {},
@@ -157,7 +158,7 @@ const FileSystemNode = (props: {
               </span>
             </Show>
             <button
-              class="text-red-500 hover:text-red-700"
+              class="p-2 rounded focus-visible:ring-2 ring-red-500/80 outline-none text-red-500 hover:text-red-700"
               onClick={handleDelete}
             >
               <FaSolidTrash class="w-4 h-4" />
