@@ -353,17 +353,6 @@ export const DescriptionFallback = () => {
       <div class="w-full h-12 rounded-full animate-pulse bg-bg2" />
       <div class="w-1/3 h-4 rounded-full animate-pulse bg-bg2" />
       <div class="w-full h-32 rounded-lg animate-pulse bg-bg2" />
-      <For each={Array(5)}>
-        {() => (
-          <div class="flex gap-2 w-full items-center">
-            <div class="w-16 h-16 aspect-square rounded-full animate-pulse bg-bg2" />
-            <div class="flex flex-col w-full gap-2">
-              <div class="w-1/2 h-4 rounded-full animate-pulse bg-bg2" />
-              <div class="w-1/3 h-4 rounded-full animate-pulse bg-bg2" />
-            </div>
-          </div>
-        )}
-      </For>
     </div>
   );
 };

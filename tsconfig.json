@@ -16,7 +16,7 @@
     "paths": {
       "~/*": ["./src/*"]
     },
-    "lib": ["ESNext", "DOM", "DOM.Iterable", "WebWorker"]
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable", "WebWorker"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "build", "dist", ".vinxi"]

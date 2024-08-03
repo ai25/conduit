@@ -615,7 +615,7 @@ export default function Header() {
                     password: password(),
                   })
                 );
-                location.reload();
+                window.location.reload();
               }}
               label="Join"
             />
