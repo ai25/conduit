@@ -1186,7 +1186,10 @@ export default function Player(props: {
         "!absolute top-0 left-0 w-screen h-screen !rounded-none":
           !!searchParams.fullscreen && !appState.player.small,
         "!hidden": !video.data || appState.player.dismissed,
-        "max-h-[85vh]": !!preferences.theatreMode && !appState.player.small,
+        "max-h-[85vh]":
+          !!preferences.theatreMode &&
+          !appState.player.small &&
+          !searchParams.fullscreen,
       }}
       aria-hidden={
         appState.player.dismissed || (appState.player.small && !video.data)
