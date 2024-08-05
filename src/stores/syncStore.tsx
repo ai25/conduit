@@ -16,6 +16,7 @@ import { useAppState } from "./appStateStore";
 import OpfsPersistence from "~/utils/y-opfs";
 import { toast } from "~/components/Toast";
 import { DEFAULT_PREFERENCES, usePreferences } from "./preferencesStore";
+import { useSearchParams } from "@solidjs/router";
 
 enum ProviderStatus {
   DISCONNECTED = "disconnected",
@@ -95,8 +96,11 @@ export const SyncedStoreProvider = (props: { children: any }) => {
     setAppState("sync", "ready", true);
   };
 
+  const [searchParams] = useSearchParams();
   createEffect(async () => {
-    await initWebrtc();
+    if (!searchParams.offline && preferences.sync.enabled) {
+      await initWebrtc();
+    }
     setAppState("sync", "providers", "webrtc", ProviderStatus.DISCONNECTED);
 
     if (!webrtcProvider) return;

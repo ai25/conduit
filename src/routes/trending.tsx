@@ -16,11 +16,12 @@ import { Title } from "@solidjs/meta";
 import Select from "~/components/Select";
 import { filterContent } from "~/utils/content-filter";
 import { useSearchParams } from "@solidjs/router";
+import Button from "~/components/Button";
 
 export default function Trending() {
   const sync = useSyncStore();
   const [preferences, setPreferences] = usePreferences();
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams();
   const query = createQuery(() => ({
     queryKey: [
       "trending",
@@ -38,7 +39,10 @@ export default function Trending() {
       }
       return await res.json();
     },
-    enabled: preferences.instance?.api_url && !isServer && !searchParams.offline ? true : false,
+    enabled:
+      preferences.instance?.api_url && !isServer && !searchParams.offline
+        ? true
+        : false,
   }));
 
   return (
@@ -68,24 +72,37 @@ export default function Trending() {
         <ErrorComponent error={query.data} />
       </Show>
       <div class="flex flex-wrap justify-center">
-        <Show
-          when={query.data}
-          keyed
-          fallback={
-            <For each={Array(20)}>
-              {() => <VideoCardFallback layout="sm:grid" />}
-            </For>
-          }
-        >
-          {(videos) =>
-            videos && (
-              <For
-                each={filterContent(videos, preferences, sync.store.blocklist)}
-              >
-                {(video) => <VideoCard v={video} layout="sm:grid" />}
+        <Show when={!searchParams.offline}>
+          <Show
+            when={query.data}
+            keyed
+            fallback={
+              <For each={Array(20)}>
+                {() => <VideoCardFallback layout="sm:grid" />}
               </For>
-            )
-          }
+            }
+          >
+            <For
+              each={filterContent(
+                query.data!,
+                preferences,
+                sync.store.blocklist
+              )}
+            >
+              {(video) => <VideoCard v={video} layout="sm:grid" />}
+            </For>
+          </Show>
+        </Show>
+        <Show when={searchParams.offline}>
+          <div class="flex flex-col gap-2 justify-center items-center">
+            You are offline.
+            <Button
+              onClick={() => {
+                setSearchParams({ offline: undefined });
+              }}
+              label="Disable offline mode"
+            />
+          </div>
         </Show>
       </div>
     </div>

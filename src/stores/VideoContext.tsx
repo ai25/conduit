@@ -15,6 +15,7 @@ import api from "~/utils/api";
 import { PipedVideo } from "~/types";
 import { useAppState } from "./appStateStore";
 import { isServer } from "solid-js/web";
+import { getHlsManifest, getStreams } from "~/utils/hls";
 
 const VideoContext = createContext<CreateQueryResult<PipedVideo, Error>>();
 export const VideoContextProvider = (props: { children: any }) => {
@@ -27,15 +28,27 @@ export const VideoContextProvider = (props: { children: any }) => {
     if (!searchParams.v) return;
     setVideoId(searchParams.v);
   });
+
+  const getOfflineVideo = async () => {
+    if (!searchParams.v) throw new Error("no video id");
+
+    const downloaded = await getStreams(searchParams.v);
+    if (downloaded) {
+      const manifest = await getHlsManifest(searchParams.v);
+      return { ...downloaded, hls: manifest, relatedStreams: [] };
+    }
+  };
+
   const videoQuery = createQuery(() => ({
     queryKey: ["streams", videoId(), preferences.instance.api_url],
-    queryFn: () => api.fetchVideo(videoId(), preferences.instance.api_url),
+    queryFn: searchParams.offline
+      ? getOfflineVideo
+      : () => api.fetchVideo(videoId(), preferences.instance.api_url),
     enabled:
       !isServer &&
       videoId() &&
-      preferences.instance.api_url &&
-      !appState.player.dismissed
-      && !searchParams.offline
+      !appState.player.dismissed &&
+      (searchParams.offline || preferences.instance.api_url)
         ? true
         : false,
     refetchOnReconnect: false,

@@ -22,8 +22,6 @@ export default function WatchLater() {
     <>
       <Title>Watch Later</Title>
       <div class="max-w-5xl mx-auto">
-        <h1 class="text-2xl font-bold mb-4">Watch Later</h1>
-
         <div class="grid grid-cols-1 gap-4 ">
           <Show when={Object.keys(sync.store.watchLater).length > 0}>
             <For each={Object.values(sync.store.watchLater)}>

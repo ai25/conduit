@@ -1,4 +1,3 @@
-// TODO: Integrate offline playback
 import Description, { DescriptionFallback } from "~/components/Description";
 import {
   Show,
@@ -100,38 +99,11 @@ export default function Watch() {
     });
   });
 
-  async function checkDownloaded() {
-    if (!("getDirectory" in navigator.storage)) {
-      setVideoDownloaded(false);
-      return;
-    }
-    try {
-      const downloaded = await getStreams(route.query.v);
-      if (downloaded) {
-        const manifest = await getHlsManifest(route.query.v);
-        // setVideo({
-        //   value: {
-        //     ...downloaded,
-        //     hls: manifest,
-        //   },
-        // });
-        // console.log(video.value, "previewFrames");
-        return;
-      } else {
-        setVideoDownloaded(false);
-      }
-    } catch (e) {
-      setVideoDownloaded(false);
-      return;
-    }
-  }
-
   function init() {
     setAppState("player", "dismissed", false);
     if (route.pathname === "/watch") {
       setAppState("player", "small", false);
     }
-    checkDownloaded();
   }
 
   createEffect(() => {
@@ -166,7 +138,7 @@ export default function Watch() {
       preferences.instance?.api_url &&
       route.query.list &&
       !isLocalPlaylist() &&
-      !isWatchLater() && 
+      !isWatchLater() &&
       !searchParams.offline
         ? true
         : false,
@@ -494,7 +466,7 @@ export default function Watch() {
                   </Show>
                 </div>
                 <Show when={video.data} fallback={<DescriptionFallback />}>
-                  <Description downloaded={videoDownloaded()} />
+                  <Description />
                 </Show>
                 <div class="mx-4">
                   <Suspense>
@@ -504,36 +476,43 @@ export default function Watch() {
                         <div class="px-1">Comments disabled in settings.</div>
                       }
                     >
-                      <Comments
-                        videoId={getVideoId(video.data)!}
-                        uploader={video.data!.uploader}
-                        uploaderAvatar={video.data!.uploaderAvatar}
-                        display={
-                          windowWidth() >= 768 ? "default" : "bottomsheet"
-                        }
-                      />
+                      <Show when={!searchParams.offline}>
+                        <Comments
+                          videoId={getVideoId(video.data)!}
+                          uploader={video.data!.uploader}
+                          uploaderAvatar={video.data!.uploaderAvatar}
+                          display={
+                            windowWidth() >= 768 ? "default" : "bottomsheet"
+                          }
+                        />
+                      </Show>
                     </Show>
                   </Suspense>
                 </div>
               </div>
-              <div
-                classList={{
-                  "flex-col gap-2 items-center w-full min-w-0 lg:max-w-md":
-                    true,
-                  "hidden sm:flex lg:hidden":
-                    !preferences.theatreMode && !searchParams.fullscreen,
-                  flex: preferences.theatreMode || !!searchParams.fullscreen,
-                }}
-              >
-                <Show
-                  when={!preferences.content.hideRelated}
-                  fallback={<div>Related videos disabled in settings.</div>}
+              <Show when={!searchParams.offline}>
+                <div
+                  classList={{
+                    "flex-col gap-2 items-center w-full min-w-0 lg:max-w-md":
+                      true,
+                    "hidden sm:flex lg:hidden":
+                      !preferences.theatreMode && !searchParams.fullscreen,
+                    flex: preferences.theatreMode || !!searchParams.fullscreen,
+                  }}
                 >
-                  <Show when={video.data} fallback={<RelatedVideosFallback />}>
-                    <RelatedVideos />
+                  <Show
+                    when={!preferences.content.hideRelated}
+                    fallback={<div>Related videos disabled in settings.</div>}
+                  >
+                    <Show
+                      when={video.data}
+                      fallback={<RelatedVideosFallback />}
+                    >
+                      <RelatedVideos />
+                    </Show>
                   </Show>
-                </Show>
-              </div>
+                </div>
+              </Show>
             </div>
           </div>
 
@@ -560,7 +539,9 @@ export default function Watch() {
                 }}
               >
                 <Show when={video.data} fallback={<RelatedVideosFallback />}>
-                  <RelatedVideos />
+                  <Show when={!searchParams.offline}>
+                    <RelatedVideos />
+                  </Show>
                 </Show>
               </div>
             </Show>

@@ -1260,7 +1260,7 @@ export default function Player(props: {
           mediaPlayer.play();
         }
       }}
-      src={video.data?.hls ?? ""}
+      src={{ src: video.data?.hls ?? "", type: "application/x-mpegurl" }}
       loop={preferences.loop}
       on:media-user-loop-change-request={(e) => {
         setPreferences("loop", e.detail);

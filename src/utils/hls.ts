@@ -713,7 +713,8 @@ export async function getHlsManifest(videoId: string) {
 
   console.log("Getting video data...");
   const storageRoot = await navigator.storage.getDirectory();
-  const videoDirectory = await storageRoot.getDirectoryHandle(videoId, {
+  const allVideosDir = await storageRoot.getDirectoryHandle("__videos");
+  const videoDirectory = await allVideosDir.getDirectoryHandle(videoId, {
     create: false,
   });
 
@@ -761,7 +762,8 @@ export const getStreams = async (videoId: string) => {
   console.log("Getting streams...");
   const storageRoot = await navigator.storage.getDirectory();
   console.log("Storage root:", storageRoot);
-  const videoDirectory = await storageRoot.getDirectoryHandle(videoId, {
+  const allVideosDir = await storageRoot.getDirectoryHandle("__videos");
+  const videoDirectory = await allVideosDir.getDirectoryHandle(videoId, {
     create: false,
   });
   console.log("Video directory:", videoDirectory);

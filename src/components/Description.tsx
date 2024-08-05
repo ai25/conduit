@@ -127,10 +127,14 @@ const Description = () => {
     }
   }
   const [downloaded, setDownloaded] = createSignal(false);
+  const [searchParams] = useSearchParams();
 
-  const checkDownloaded = async (video?: PipedVideo) => {
-    if (!video) setDownloaded(false);
-    const id = getVideoId(video)!;
+  const checkDownloaded = async () => {
+    const id = searchParams.v;
+    if (!id) {
+      setDownloaded(false);
+      return;
+    }
     try {
       const rootDir = await navigator.storage.getDirectory();
       const videosDir = await rootDir.getDirectoryHandle("__videos");
@@ -149,7 +153,15 @@ const Description = () => {
     on(
       () => appState.downloadProgress,
       () => {
-        checkDownloaded(video.data);
+        checkDownloaded();
+      }
+    )
+  );
+  createEffect(
+    on(
+      () => searchParams.v,
+      () => {
+        checkDownloaded();
       }
     )
   );
