@@ -25,6 +25,7 @@ import {
   toaster,
 } from "@kobalte/core";
 import {
+  FaBrandsAmazon,
   FaSolidArrowsRotate,
   FaSolidBan,
   FaSolidBrush,
@@ -33,6 +34,7 @@ import {
   FaSolidChevronRight,
   FaSolidClock,
   FaSolidClockRotateLeft,
+  FaSolidDatabase,
   FaSolidDownload,
   FaSolidGlobe,
   FaSolidHeart,
@@ -67,6 +69,7 @@ import {
   RiDeviceWifiOffLine,
 } from "solid-icons/ri";
 import Toggle from "./Toggle";
+import { TbBucket } from "solid-icons/tb";
 
 enum SyncState {
   DISCONNECTED = "disconnected",
@@ -705,9 +708,15 @@ export default function Header() {
                               </Show>
                               <div class="flex flex-col gap-1">
                                 <div class="text-text1">{instance.name}</div>
-                                <div class="flex text-xs gap-1">
+                                <div class="flex text-xs gap-1 items-center">
                                   <Show when={instance.cdn}>
                                     <BiRegularNetworkChart class="w-4 h-4 text-primary" />
+                                  </Show>
+                                  <Show when={instance.s3_enabled}>
+                                    <FaBrandsAmazon class="w-4 h-4 text-primary" />
+                                  </Show>
+                                  <Show when={instance.cache}>
+                                    <FaSolidDatabase class="w-4 h-4 text-primary" />
                                   </Show>
                                   <div>
                                     24h:{" "}
