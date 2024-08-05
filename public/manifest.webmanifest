@@ -6,7 +6,21 @@
   "background_color": "#000000",
   "lang": "en",
   "scope": "/",
-  "theme_color": "rgb(23,23,18)",
+  "theme_color": "#171712",
+  "description": "A custom YouTube frontend",
+  "id": "watch.conduit",
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  },
+  "orientation": "any",
+  "display_override": ["window-controls-overlay"],
+  "handle_links": "preferred",
+  "protocol_handlers": [
+    {
+      "protocol": "web+youtubevideo",
+      "url": "/watch?v=%s"
+    }
+  ],
   "icons": [
     {
       "src": "img/icons/windows11/SmallTile.scale-100.png",
