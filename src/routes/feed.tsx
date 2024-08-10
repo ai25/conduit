@@ -85,8 +85,22 @@ export default function Feed() {
     });
   });
 
+  const [ready, setReady] = createSignal(false);
   createEffect(() => {
-    console.log("query feed", query.error?.message);
+    if (
+      appState.sync.ready &&
+      Object.keys(sync.store.subscriptions).length === 0
+    ) {
+      setTimeout(() => {
+        setReady(true);
+      }, 100);
+    } else {
+      if (appState.sync.ready && !query.isPending) {
+        setTimeout(() => {
+          setReady(true);
+        }, 100);
+      }
+    }
   });
 
   const newComponent = (
@@ -120,7 +134,7 @@ export default function Feed() {
         </Tooltip.Root>
 
         <Show
-          when={appState.sync.ready}
+          when={ready()}
           fallback={
             <For each={Array(20)}>
               {() => <VideoCardFallback layout="sm:grid" />}

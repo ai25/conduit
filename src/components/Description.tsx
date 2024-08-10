@@ -403,7 +403,13 @@ export const DescriptionFallback = () => {
           <div class="w-32 h-4 rounded-full animate-pulse bg-bg2" />
         </div>
       </div>
-      <div class="w-full h-12 rounded-full animate-pulse bg-bg2" />
+      <div class="w-full h-8 flex gap-2">
+        <div class="w-32 h-8 rounded-full animate-pulse bg-bg2" />
+        <div class="w-24 h-8 rounded-full animate-pulse bg-bg2" />
+        <div class="w-24 h-8 rounded-full animate-pulse bg-bg2" />
+        <div class="w-48 h-8 rounded-full animate-pulse bg-bg2" />
+        <div class="w-48 h-8 rounded-full animate-pulse bg-bg2" />
+      </div>
       <div class="w-1/3 h-4 rounded-full animate-pulse bg-bg2" />
       <div class="w-full h-32 rounded-lg animate-pulse bg-bg2" />
     </div>

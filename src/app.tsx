@@ -41,6 +41,7 @@ import Watch, { WatchFallback } from "./components/Watch";
 import { getStorageValue, setStorageValue } from "./utils/storage";
 import { toast } from "./components/Toast";
 import { DialogContextProvider } from "./stores/DialogContext";
+import { useCookie } from "./utils/hooks";
 
 const ReloadPrompt = clientOnly(() => import("./components/ReloadPrompt"));
 NProgress.configure({
@@ -63,6 +64,17 @@ export default function App() {
     const theatreMode = !!JSON.parse(cookie.theatreMode ?? "false");
     setPreferences("theme", theme);
     setPreferences("theatreMode", theatreMode);
+  });
+  createEffect(() => {
+    if (preferences.__init) return;
+    const cookie = parseCookie(document.cookie);
+    if (!cookie.defaultHomePage) {
+      const [, setDefaultHomePageCookie] = useCookie(
+        "defaultHomePage",
+        "Trending"
+      );
+      setDefaultHomePageCookie(preferences.content.defaultHomePage);
+    }
   });
 
   createEffect(() => {

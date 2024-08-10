@@ -93,7 +93,6 @@ export const SyncedStoreProvider = (props: { children: any }) => {
       console.log(webrtcProvider, "webrtc provider");
       webrtcProvider.connect();
     }
-    setAppState("sync", "ready", true);
   };
 
   const [searchParams] = useSearchParams();
@@ -173,9 +172,11 @@ export const SyncedStoreProvider = (props: { children: any }) => {
       await opfsProvider.sync();
       // await opfsProvider.whenSynced()
       setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTED);
+      setAppState("sync", "ready", true);
     } catch (e) {
       console.error("Error syncing with OPFSx", e);
       setAppState("sync", "providers", "opfs", ProviderStatus.DISCONNECTED);
+      setAppState("sync", "ready", true);
       toast.error("Error syncing with OPFS");
     }
   });

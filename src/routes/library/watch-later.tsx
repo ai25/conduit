@@ -30,7 +30,7 @@ export default function WatchLater() {
                   active=""
                   v={video}
                   index={index() + 1}
-                  list="watchLater"
+                  list="WL"
                 />
               )}
             </For>

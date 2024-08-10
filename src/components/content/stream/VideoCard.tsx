@@ -139,7 +139,7 @@ const VideoCard = (props: VideoCardProps) => {
           }}
         >
           <ImageContainer
-            url={`/watch?v=${id()}${searchParams.fullscreen ? `&fullscreen=${searchParams.fullscreen}` : ""}`}
+            url={props.v?.url ?? `/watch?v=${id()}`}
             src={thumbnail() ?? ""}
             duration={props.v!.duration}
             watched={!!historyItem()}
@@ -168,7 +168,7 @@ const VideoCard = (props: VideoCardProps) => {
               openDelay={1000}
               triggerSlot={
                 <Link
-                  href={`/watch?v=${id()}`}
+                  href={props.v?.url ?? `/watch?v=${id()}`}
                   class="rounded text-start two-line-ellipsis min-w-0 pb-1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {title()}
@@ -287,7 +287,7 @@ const ImageContainer = (props: {
   return (
     <Link
       href={props.url}
-      class="relative min-w-00 flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      class="relative min-w-0 flex aspect-video sm:w-full flex-col overflow-hidden rounded sm:min-w-min text-text1 outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <img
         classList={{

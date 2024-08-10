@@ -1,9 +1,17 @@
-import { createContext, createEffect, on, onMount, useContext } from "solid-js";
+import {
+  createContext,
+  createEffect,
+  createRenderEffect,
+  on,
+  onMount,
+  useContext,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import { LANGUAGES, VIDEO_RESOLUTIONS } from "~/config/constants";
 import { getStorageValue, setStorageValue } from "~/utils/storage";
 
 export const DEFAULT_PREFERENCES = {
+  __init: true,
   theme: "monokai",
   pip: false,
   loop: false,
@@ -62,13 +70,25 @@ const preferences = createStore(DEFAULT_PREFERENCES);
 const PreferencesContext = createContext(preferences);
 export const PreferencesProvider = (props: { children: any }) => {
   onMount(() => {
-    preferences[1](
-      getStorageValue("preferences", preferences[0], "json", "localStorage")
-    );
+    const prefs = {
+      ...DEFAULT_PREFERENCES,
+      ...getStorageValue(
+        "preferences",
+        DEFAULT_PREFERENCES,
+        "json",
+        "localStorage"
+      ),
+      __init: false,
+    };
+    preferences[1](prefs);
   });
   createEffect(() => {
     console.log(preferences[0], "preferences changed");
-    setStorageValue("preferences", preferences[0], "localStorage");
+    setStorageValue(
+      "preferences",
+      { ...preferences[0], __init: false },
+      "localStorage"
+    );
   });
 
   return (

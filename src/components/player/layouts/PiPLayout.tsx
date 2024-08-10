@@ -14,7 +14,7 @@ import Button from "~/components/Button";
 import { TbArrowUpLeft, TbCrosshair, TbX } from "solid-icons/tb";
 import { useAppState } from "~/stores/appStateStore";
 import { createQuery, isServer } from "@tanstack/solid-query";
-import { createEffect, createSignal } from "solid-js";
+import { createEffect, createSignal, untrack } from "solid-js";
 import { usePreferences } from "~/stores/preferencesStore";
 import api from "~/utils/api";
 import { useLocation, useNavigate, useSearchParams } from "@solidjs/router";
@@ -48,14 +48,24 @@ export function PiPLayout() {
               onClick={() => {
                 const mediaPlayer = appState.player.instance;
                 mediaPlayer?.pause();
-                if (location.pathname !== "/playlist") {
-                  setSearchParams({ list: undefined });
-                }
-                setSearchParams({
-                  v: undefined,
-                  index: undefined,
-                  local: undefined,
-                });
+                setTimeout(() => {
+                  if (location.pathname !== "/playlist") {
+                    setSearchParams(
+                      { list: undefined },
+                      {
+                        replace: true,
+                      }
+                    );
+                  }
+                }, 100);
+                setSearchParams(
+                  {
+                    v: undefined,
+                    index: undefined,
+                    local: undefined,
+                  },
+                  { replace: true }
+                );
                 setAppState("player", "dismissed", true);
               }}
             />

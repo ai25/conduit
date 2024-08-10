@@ -86,8 +86,8 @@ dependencies:
     specifier: ^5.28.2
     version: 5.28.2
   vidstack:
-    specifier: ^1.11.17
-    version: 1.11.17
+    specifier: ^1.12.5
+    version: 1.12.5
   vinxi:
     specifier: ^0.3.10
     version: 0.3.10(@types/node@20.14.11)
@@ -1890,6 +1890,13 @@ packages:
       '@floating-ui/utils': 0.2.1
     dev: false
 
+  /@floating-ui/dom@1.6.10:
+    resolution: {integrity: sha512-fskgCFv8J8OamCmyun8MfjB1Olfn+uZKjOKZ0vhYF3gRmEUXcGOjxWL8bBr7i4kIuPZ2KD2S3EUIOxnjC8kl2A==}
+    dependencies:
+      '@floating-ui/core': 1.6.0
+      '@floating-ui/utils': 0.2.7
+    dev: false
+
   /@floating-ui/dom@1.6.3:
     resolution: {integrity: sha512-RnDthu3mzPlQ31Ss/BTwQ1zjzIhr3lk1gZB1OC56h/1vEtaXkESrOqL5fQVMfXpwGtRwX+YsZBdyHtJMQnkArw==}
     dependencies:
@@ -1906,6 +1913,10 @@ packages:
 
   /@floating-ui/utils@0.2.1:
     resolution: {integrity: sha512-9TANp6GPoMtYzQdt54kfAyMmz1+osLlXdg2ENroU7zzrtflTLrrC/lgrIfaSe+Wu0b89GKccT7vxXA0MoAIO+Q==}
+    dev: false
+
+  /@floating-ui/utils@0.2.7:
+    resolution: {integrity: sha512-X8R8Oj771YRl/w+c1HqAC1szL8zWQRwFvgDwT129k9ACdBoud/+/rX9V0qiMl6LWUdP9voC2nDVZYPMQQsb6eA==}
     dev: false
 
   /@humanwhocodes/config-array@0.11.14:
@@ -3259,6 +3270,12 @@ packages:
     resolution: {integrity: sha512-Y9rRfJG5jcKOE0CLisYbojUjIrIEE7AGMzA/Sm4BslANhbS+cDMpgBdcPT91oJ7OuJ9hYJBx59RjbhxVnrF8Xg==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  /acorn@8.12.1:
+    resolution: {integrity: sha512-tcpGyI9zbizT9JbV6oYE477V6mTlXvvi0T0G3SNIYE2apm/G5huBa1+K89VGeovbg+jycCrfhl3ADxErOuO6Jg==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+    dev: false
 
   /agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
@@ -5522,6 +5539,12 @@ packages:
       - uWebSockets.js
     dev: false
 
+  /lit-html@2.8.0:
+    resolution: {integrity: sha512-o9t+MQM3P4y7M7yNzqAyjp7z+mQGa4NS4CxiyLqFPyFWyc4O+nodLrkrxSaCTrla6M5YOLaT3RpbbqjszB5g3Q==}
+    dependencies:
+      '@types/trusted-types': 2.0.7
+    dev: false
+
   /local-pkg@0.5.0:
     resolution: {integrity: sha512-ok6z3qlYyCDS4ZEU27HaU6x/xZa9Whf8jD4ptH5UZTQYZVYeb9bnZ3ojVhiJNLiXK1Hfc0GNbLXcmZ5plLDDBg==}
     engines: {node: '>=14'}
@@ -5613,8 +5636,8 @@ packages:
       semver: 6.3.1
     dev: false
 
-  /media-captions@1.0.3:
-    resolution: {integrity: sha512-y2Qi5rqjwgH97zoko1vzu5Q6nnS0KzEQSvd4NOjnFym9JqnFb5VSsUg21RNb5cQ/nhCFJ0wz/XK+2uMwFCr6TQ==}
+  /media-captions@1.0.4:
+    resolution: {integrity: sha512-cyDNmuZvvO4H27rcBq2Eudxo9IZRDCOX/I7VEyqbxsEiD2Ei7UYUhG/Sc5fvMZjmathgz3fEK7iAKqvpY+Ux1w==}
     engines: {node: '>=16'}
     dev: false
 
@@ -7464,6 +7487,16 @@ packages:
       webpack-virtual-modules: 0.6.1
     dev: false
 
+  /unplugin@1.12.1:
+    resolution: {integrity: sha512-aXEH9c5qi3uYZHo0niUtxDlT9ylG/luMW/dZslSCkbtC31wCyFkmM0kyoBBh+Grhn7CL+/kvKLfN61/EdxPxMQ==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      acorn: 8.12.1
+      chokidar: 3.6.0
+      webpack-sources: 3.2.3
+      webpack-virtual-modules: 0.6.2
+    dev: false
+
   /unstorage@1.10.2(ioredis@5.3.2):
     resolution: {integrity: sha512-cULBcwDqrS8UhlIysUJs2Dk0Mmt8h7B0E6mtR+relW9nZvsf/u4SkAYyNliPiPW7XtFNb5u3IUMkxGxFTTRTgQ==}
     peerDependencies:
@@ -7584,12 +7617,14 @@ packages:
     resolution: {integrity: sha512-hGdgQozCsQJMyfK5urgFcWEqsSSrK63Awe0t/IMR0bZ0QMtnuaiHzThW81guu3qx9abLi99NEuiaN6P9gVYsNg==}
     dev: false
 
-  /vidstack@1.11.17:
-    resolution: {integrity: sha512-/6V3ajOZVOXlonTfs0xrBFUUM2aYxsl/+LU5kRaUZaAUBkoSD3hj2fw8NAW5DvdkNtpqNapOEt2RcwYbfotMyA==}
+  /vidstack@1.12.5:
+    resolution: {integrity: sha512-aqQLPYvnu/eIhk+DMcuF0RyUWat4gRTLBjFbJPexyxAMgAqalxfqMknwIZtK39uyfeG6q4To+X8QAgU6f5NQOA==}
     engines: {node: '>=18'}
     dependencies:
-      media-captions: 1.0.3
-      unplugin: 1.10.1
+      '@floating-ui/dom': 1.6.10
+      lit-html: 2.8.0
+      media-captions: 1.0.4
+      unplugin: 1.12.1
     dev: false
 
   /vinxi@0.3.10(@types/node@20.14.11):
@@ -7787,6 +7822,10 @@ packages:
 
   /webpack-virtual-modules@0.6.1:
     resolution: {integrity: sha512-poXpCylU7ExuvZK8z+On3kX+S8o/2dQ/SVYueKA0D4WEMXROXgY8Ez50/bQEUmvoSMMrWcrJqCHuhAbsiwg7Dg==}
+    dev: false
+
+  /webpack-virtual-modules@0.6.2:
+    resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
     dev: false
 
   /whatwg-url@5.0.0:

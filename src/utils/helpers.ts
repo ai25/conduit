@@ -342,3 +342,35 @@ export async function sanitizeText(text: string) {
     .replaceAll(/<a href/gm, '<a class="link" href');
   return t;
 }
+export const getDownloadedOPFSVideos = async () => {
+  const root = await navigator.storage.getDirectory();
+  const allVideosDir = await root.getDirectoryHandle("__videos");
+  let videos: PipedVideo[] = [];
+  console.log(allVideosDir, "allVideosDir");
+  for await (const entry of (allVideosDir as any).values()) {
+    if (entry.kind === "directory") {
+      try {
+        console.log(entry, "allVideosDir");
+        const completed = await entry.getFileHandle("completed");
+        console.log(completed, "completed");
+        if (!completed) continue;
+        const stream = await entry.getFileHandle("streams.json");
+        if (!stream) continue;
+        const file = await stream.getFile();
+        const data = await file.text();
+        const json = JSON.parse(data);
+        const thumbnailFileHandle = await entry.getFileHandle("thumbnail");
+        let thumbnailUrl = "";
+        if (thumbnailFileHandle) {
+          const thumbnailFile = await thumbnailFileHandle.getFile();
+          thumbnailUrl = URL.createObjectURL(thumbnailFile);
+        }
+        videos = [...videos, { ...json, id: entry.name, thumbnailUrl }];
+      } catch (e) {
+        console.error(e);
+        continue;
+      }
+    }
+  }
+  return videos;
+};
