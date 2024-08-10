@@ -67,7 +67,7 @@ export default function Link(props: LinkProps) {
         }
       }}
       href={href()}
-      class={props.class}
+      class={`${props.class} active:brightness-150`}
       classList={props.classList}
       style={props.style}
       activeClass={props.activeClass}

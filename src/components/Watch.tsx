@@ -37,7 +37,7 @@ import {
   FaSolidPlay,
   FaSolidX,
 } from "solid-icons/fa";
-import { BsSkipEndFill, BsSkipStartFill } from "solid-icons/bs";
+import { BsSkipEndFill, BsSkipStartFill, BsX } from "solid-icons/bs";
 import { RiMediaPlayList2Fill } from "solid-icons/ri";
 import { MediaPlayerElement } from "vidstack/elements";
 import Button from "./Button";
@@ -258,9 +258,10 @@ export default function Watch() {
       <div
         classList={{
           "mx-auto w-full flex flex-col": true,
-          "!fixed bottom-0 left-0 sm:bottom-2 sm:left-1 z-[9999] bg-transparent pointer-events-none":
+          "!fixed bottom-0 left-0 z-[9999] bg-transparent pointer-events-none":
             appState.player.small,
-          "sm:items-start": appState.player.small && !appState.smallDevice,
+          "sm:items-start sm:bottom-2 sm:left-1 ":
+            appState.player.small && !appState.smallDevice,
           "items-center": appState.player.small && appState.smallDevice,
           "max-w-screen-2xl":
             !preferences.theatreMode || !!searchParams.offline,
@@ -464,7 +465,7 @@ export default function Watch() {
                     }}
                     class="p-3 outline-none focus-visible:ring-2 ring-primary/80 rounded-lg"
                   >
-                    <FaSolidX class="w-4 h-4" />{" "}
+                    <BsX class="w-6 h-6" />{" "}
                   </button>
                 </div>
               </Show>

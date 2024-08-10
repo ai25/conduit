@@ -121,6 +121,18 @@ registerRoute(
     ],
   })
 );
+registerRoute(
+  ({ request }) => request.destination === "script",
+  new CacheFirst({
+    cacheName: "js-cache",
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 200,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+      }),
+    ],
+  })
+);
 
 // Forward messages (and ports) from client to client.
 self.addEventListener("message", async (event) => {
