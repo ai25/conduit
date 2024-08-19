@@ -76,7 +76,7 @@ import {
 import Toggle from "./Toggle";
 import { TbBucket } from "solid-icons/tb";
 import RoomManagerModal from "./RoomManagerModal";
-import { generateColorFromString } from "~/utils/helpers";
+import { generateColorFromString, testLatency } from "~/utils/helpers";
 
 enum SyncState {
   DISCONNECTED = "disconnected",
@@ -140,12 +140,17 @@ export default function Header() {
       return SyncState.DISCONNECTED;
     }
   }
-  const instances = createMemo(() => {
-    return [
+
+  const [instances, setInstances] = createSignal([
+    ...preferences.customInstances,
+    ...(query.data ?? getStorageValue("instances", [], "json", "localStorage")),
+  ]);
+  createEffect(() => {
+    setInstances([
       ...preferences.customInstances,
       ...(query.data ??
         getStorageValue("instances", [], "json", "localStorage")),
-    ];
+    ]);
   });
 
   const cycleInstances = () => {
@@ -228,7 +233,7 @@ export default function Header() {
 
   const location = useLocation();
   createEffect(() => {
-    console.log(appState, "appState");
+    console.log(instances(), "instances");
   });
   createEffect(
     on(
@@ -647,6 +652,42 @@ export default function Header() {
                   </DropdownMenu.SubTrigger>
                   <DropdownMenu.Portal>
                     <DropdownMenu.SubContent class="bg-bg1 max-h-[55vh] overflow-y-auto scrollbar border border-bg2 shadow p-2 rounded-md z-[999999] animate-in fade-in slide-in-from-right-10 zoom-in-50 duration-300 ">
+                      <Button
+                        label="Test latency"
+                        class="my-2 w-full"
+                        //eslint-disable-next-line solid/reactivity
+                        onClick={() => {
+                          let index = 0;
+                          for (const instance of instances()) {
+                            testLatency(
+                              `${instance.api_url}/streams/dQw4w9WgXcQ/`
+                            )
+                              .then((latency) => {
+                                setInstances((prev) => {
+                                  const newInstances = [...prev];
+                                  newInstances[index] = {
+                                    ...instance,
+                                    latency: latency || -1,
+                                  };
+                                  return newInstances;
+                                });
+                              })
+                              .catch(() => {
+                                setInstances((prev) => {
+                                  const newInstances = [...prev];
+                                  newInstances[index] = {
+                                    ...instance,
+                                    latency: -1,
+                                  };
+                                  return newInstances;
+                                });
+                              })
+                              .finally(() => {
+                                index++;
+                              });
+                          }
+                        }}
+                      />
                       <For each={instances() as PipedInstance[]}>
                         {(instance) => (
                           <DropdownMenu.Item
@@ -671,7 +712,35 @@ export default function Header() {
                                 <FaSolidCheck class="absolute left-1 top-[12px]" />
                               </Show>
                               <div class="flex flex-col gap-1">
-                                <div class="text-text1">{instance.name}</div>
+                                <div class="text-text1 flex gap-1 items-center">
+                                  {instance.name}
+                                  <Show
+                                    when={Number.isFinite(
+                                      (instance as any).latency
+                                    )}
+                                  >
+                                    <span
+                                      classList={{
+                                        "text-xs rounded-lg bg-bg2 px-2 py-1 font-semibold":
+                                          true,
+                                        "text-green-500":
+                                          (instance as any).latency <= 100 &&
+                                          (instance as any).latency !== -1,
+                                        "text-amber-500":
+                                          (instance as any).latency <= 300 &&
+                                          (instance as any).latency > 100 &&
+                                          (instance as any).latency !== -1,
+                                        "text-red-500":
+                                          (instance as any).latency > 300 ||
+                                          (instance as any).latency === -1,
+                                      }}
+                                    >
+                                      {(instance as any).latency === -1
+                                        ? "error"
+                                        : (instance as any).latency + "ms"}
+                                    </span>
+                                  </Show>
+                                </div>
                                 <div class="flex text-xs gap-1 items-center">
                                   <Show when={instance.cdn}>
                                     <BiRegularNetworkChart class="w-4 h-4 text-primary" />

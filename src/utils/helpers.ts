@@ -376,3 +376,34 @@ export function generateColorFromString(input: string): string {
   const index = Math.abs(hash) % colors.length;
   return colors[index];
 }
+
+export async function testLatency(url: string, numTests: number = 1) {
+  let totalTime = 0;
+  let successfulTests = 0;
+
+  for (let i = 0; i < numTests; i++) {
+    const start = performance.now();
+
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        const end = performance.now();
+        totalTime += end - start;
+        successfulTests++;
+      } else {
+        console.warn(
+          `Test ${i + 1} returned non-OK status: ${response.status}`
+        );
+      }
+    } catch (error) {
+      console.error(`Test ${i + 1} failed:`, error);
+    }
+  }
+
+  if (successfulTests === 0) {
+    console.error("No successful tests were conducted.");
+    return null;
+  }
+
+  return totalTime / successfulTests;
+}

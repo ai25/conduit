@@ -96,7 +96,7 @@ export default function Pair() {
   return (
     <div class="w-full h-full flex flex-col justify-center items-center font-semibold">
       <Show when={message().loading}>
-        <Spinner class="w-36 h-36" />
+        <Spinner class="w-20 h-20" />
         Pairing...
       </Show>
       <Show when={message().error}>
