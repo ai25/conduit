@@ -3,11 +3,8 @@ import { createEffect, createSignal, For } from "solid-js";
 import VideoCard from "~/components/content/stream/VideoCard";
 import { usePreferences } from "~/stores/preferencesStore";
 import { PipedVideo } from "~/types";
-import {
-  generateThumbnailUrl,
-  getDownloadedOPFSVideos,
-  getVideoId,
-} from "~/utils/helpers";
+import { generateThumbnailUrl, getVideoId } from "~/utils/helpers";
+import { getDownloadedOPFSVideos } from "~/utils/opfs-helpers";
 
 export default function Downloads() {
   const [videos, setVideos] = createSignal<Array<PipedVideo>>([]);
