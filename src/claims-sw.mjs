@@ -86,6 +86,10 @@ const PRECACHE_ROUTES = [
     url: "/preferences",
     revision: __BUILD_REVISION__,
   },
+  {
+    url: "/pair",
+    revision: __BUILD_REVISION__,
+  },
 ];
 
 // TODO: Change back when VitePWA works with solid start

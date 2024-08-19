@@ -8,6 +8,7 @@ interface FieldProps {
   value?: string;
   onInput?: (value: string) => void;
   class?: string;
+  rootClass?: string;
   placeholder?: string;
   validationState?: "valid" | "invalid" | undefined;
   errorMessage?: string;
@@ -58,6 +59,7 @@ export default function Field(props: FieldProps) {
           validationState={props.validationState}
           readOnly={props.readOnly}
           required={props.required}
+          class={props.rootClass}
         >
           <TextField.Label class="text-text2 text-sm">
             {props.name}

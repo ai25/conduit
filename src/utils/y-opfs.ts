@@ -173,6 +173,27 @@ export default class OpfsPersistence extends ObservableV2<{
   }
   activateCalled = false;
 
+  async readUpdatesFromOPFS(): Promise<Uint8Array[]> {
+    const res = await this._sharedService?.proxy["read"]();
+    const { updates }: { updates: Uint8Array[] } = res;
+    this.log("Received updates from OPFS.", updates.length);
+    this._updateCount = updates.length;
+    return updates;
+  }
+
+  applyUpdatesToYDoc(updates: Uint8Array[]): void {
+    Y.transact(
+      this.ydoc,
+      () => {
+        updates.forEach((update) => {
+          Y.applyUpdate(this.ydoc, update, this);
+        });
+      },
+      this,
+      false
+    );
+  }
+
   /**
    * Synchronizes the Y.js document with the stored updates from the OPFS.
    */
@@ -181,10 +202,6 @@ export default class OpfsPersistence extends ObservableV2<{
       try {
         this.log("Synchronizing Y.Doc with OPFS...");
         console.time("OPFS: getStoredUpdates");
-        // const { updates } = await this.sendMessage({
-        //   action: "read",
-        //   payload: { roomName: this.room },
-        // });
         this._sharedService = new SharedService(this.room, () => {
           return createSharedServicePort({
             read: async () => {
@@ -241,39 +258,23 @@ export default class OpfsPersistence extends ObservableV2<{
 
         this._sharedService
           .activate(async () => {
-            console.log("Destroyed?", this._destroyed, "synced?", this.synced);
             if (this._destroyed || this.synced || this.activateCalled) {
               return;
             }
             this.activateCalled = true;
 
-            const res = await this._sharedService?.proxy["read"]();
-            console.log("res", res);
-            const { updates }: { updates: Uint8Array[] } = res;
+            this.readUpdatesFromOPFS().then((updates) => {
+              this.applyUpdatesToYDoc(updates);
+            });
 
-            console.timeEnd("OPFS: getStoredUpdates");
-            this.log("Received updates from OPFS.", updates.length);
-            this._updateCount = updates.length;
-
-            // Apply each stored update to the Y.js document.
-            Y.transact(
-              this.ydoc,
-              () => {
-                updates.forEach((update) => {
-                  // this.log("Applying stored update to Y.Doc...");
-                  Y.applyUpdate(this.ydoc, update, this);
-                });
-              },
-              this,
-              false
-            );
             if (this._destroyed) {
               return this;
             }
+
             this.emit("synced", []);
             this.synced = true;
-
             console.timeEnd("OPFS");
+            console.log("resolving");
             resolve();
           })
           .then(resolve)

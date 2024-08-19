@@ -60,8 +60,13 @@ import { toast } from "./Toast";
 import Link from "./Link";
 import { THEME_OPTIONS } from "~/config/constants";
 import { useLocation, useSearchParams } from "@solidjs/router";
-import { AiOutlineFire } from "solid-icons/ai";
-import { BiRegularNetworkChart, BiSolidCog } from "solid-icons/bi";
+import { AiFillSetting, AiOutlineFire } from "solid-icons/ai";
+import {
+  BiRegularLogIn,
+  BiRegularLogOut,
+  BiRegularNetworkChart,
+  BiSolidCog,
+} from "solid-icons/bi";
 import {
   RiDeviceWifiFill,
   RiDeviceWifiLine,
@@ -70,6 +75,8 @@ import {
 } from "solid-icons/ri";
 import Toggle from "./Toggle";
 import { TbBucket } from "solid-icons/tb";
+import RoomManagerModal from "./RoomManagerModal";
+import { generateColorFromString } from "~/utils/helpers";
 
 enum SyncState {
   DISCONNECTED = "disconnected",
@@ -107,54 +114,9 @@ export default function Header() {
     enabled: !isServer && !searchParams.offline,
   }));
 
-  const randomNames = [
-    "Alice",
-    "Bob",
-    "Charlie",
-    "Dave",
-    "Eve",
-    "Frank",
-    "Grace",
-    "Heidi",
-    "Ivan",
-    "Judy",
-    "Kevin",
-    "Larry",
-    "Mallory",
-    "Nancy",
-    "Oscar",
-    "Peggy",
-    "Quentin",
-    "Rupert",
-    "Sybil",
-    "Trent",
-    "Ursula",
-    "Victor",
-    "Walter",
-    "Xavier",
-    "Yvonne",
-    "Zelda",
-  ];
   const [appState, setAppState] = useAppState();
   const [modalOpen, setModalOpen] = createSignal(false);
   const [dropdownOpen, setDropdownOpen] = createSignal(false);
-  const [name, setName] = createSignal(
-    randomNames[Math.floor(Math.random() * randomNames.length)]
-  );
-  const [roomId, setRoomId] = createSignal("");
-  const [password, setPassword] = createSignal("");
-
-  createEffect(() => {
-    const room = JSON.parse(localStorage.getItem("room") || "{}");
-    if (room.name) {
-      setName(room.name);
-    }
-    setRoomId(room.id || "");
-    setPassword(room.password || "");
-  });
-
-  const [themeOpen, setThemeOpen] = createSignal(false);
-  const [instanceOpen, setInstanceOpen] = createSignal(false);
   function getSyncStatus(
     idbStatus: "connected" | "connecting" | "disconnected",
     webrtcStatus: "connected" | "connecting" | "disconnected"
@@ -265,6 +227,9 @@ export default function Header() {
   });
 
   const location = useLocation();
+  createEffect(() => {
+    console.log(appState, "appState");
+  });
   createEffect(
     on(
       () => location.pathname,
@@ -450,51 +415,44 @@ export default function Header() {
         <div class="flex items-center gap-2 ">
           <KobaltePopover.Root>
             <KobaltePopover.Trigger class="p-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg">
-              <Switch>
-                <Match when={appState.sync.syncing}>
-                  <FaSolidArrowsRotate class="w-6 h-6 text-yellow-500" />
-                </Match>
-                <Match
-                  when={
-                    getSyncStatus(
-                      appState.sync.providers.opfs,
-                      appState.sync.providers.webrtc
-                    ) === SyncState.ONLINE
-                  }
+              <Show when={appState.sync.room.id}>
+                <div
+                  style={{
+                    "background-color": generateColorFromString(
+                      appState.sync.room.id
+                    ),
+                  }}
+                  class="w-9 h-9 rounded-full text-xl flex items-center justify-center text-black font-semibold relative"
                 >
-                  <BsCloudCheck class="w-7 h-7 text-green-500" />
-                </Match>
-                <Match
-                  when={
-                    getSyncStatus(
-                      appState.sync.providers.opfs,
-                      appState.sync.providers.webrtc
-                    ) === SyncState.DISCONNECTED
-                  }
-                >
-                  <TiTimes class="w-9 h-9 text-red-500" />
-                </Match>
-                <Match
-                  when={
-                    getSyncStatus(
-                      appState.sync.providers.opfs,
-                      appState.sync.providers.webrtc
-                    ) === SyncState.OFFLINE
-                  }
-                >
-                  <BsCloudSlash class="w-7 h-7 text-text1" />
-                </Match>
-                <Match
-                  when={
-                    getSyncStatus(
-                      appState.sync.providers.opfs,
-                      appState.sync.providers.webrtc
-                    ) === SyncState.VOLATILE
-                  }
-                >
-                  <BsDatabaseX class="w-6 h-6 text-text1" />
-                </Match>
-              </Switch>
+                  {appState.sync.room.name[0]}
+                  <div
+                    classList={{
+                      "absolute bottom-0 right-0 w-3 h-3 rounded-full ring-4 ring-bg1 flex items-center justify-center text-text1 p-1":
+                        true,
+                      "bg-primary":
+                        getSyncStatus(
+                          appState.sync.providers.opfs,
+                          appState.sync.providers.webrtc
+                        ) === SyncState.ONLINE,
+                      "bg-neutral-500":
+                        getSyncStatus(
+                          appState.sync.providers.opfs,
+                          appState.sync.providers.webrtc
+                        ) === SyncState.OFFLINE,
+                      "bg-amber-500":
+                        getSyncStatus(
+                          appState.sync.providers.opfs,
+                          appState.sync.providers.webrtc
+                        ) === SyncState.VOLATILE,
+                    }}
+                  />
+                </div>
+              </Show>
+              <Show when={!appState.sync.room.id}>
+                <div class="w-7 h-7 rounded-full text-xl flex items-center justify-center font-semibold relative">
+                  <BiRegularLogIn class="w-full h-full" />
+                </div>
+              </Show>
             </KobaltePopover.Trigger>
             <KobaltePopover.Portal>
               <KobaltePopover.Content
@@ -508,12 +466,15 @@ export default function Header() {
               >
                 <KobaltePopover.Arrow />
                 <KobaltePopover.Description
-                  class={`text-sm p-1 text-left flex flex-col gap-2 items-center ${
-                    roomId() ? "text-green-600" : "text-red-600"
-                  }`}
+                  class={`text-sm p-1 text-left flex flex-col gap-2 items-center`}
                 >
-                  <Show when={roomId()}>
-                    Connected: {roomId()}
+                  <Show when={appState.sync.room.id}>
+                    <div class="flex flex-col gap-1 items-center">
+                      <div class="font-semibold">{appState.sync.room.name}</div>
+                      <div class="text-xs text-text2">
+                        {appState.sync.room.id}
+                      </div>
+                    </div>
                     <div class="flex items-start flex-col gap-2 text-text1">
                       <details class="text-xs">
                         <summary class="link">
@@ -521,30 +482,33 @@ export default function Header() {
                         </summary>
                         <For each={appState.sync.users}>
                           {(user) => (
-                            <div class="flex items-center gap-2">
-                              ID: {user.id}
-                              Name: {user.name}{" "}
-                              {user.name === name() && "(You)"}
+                            <div class="flex flex-col items-center gap-2">
+                              <div>ID: {user.id}</div>
                             </div>
                           )}
                         </For>
                       </details>
-                      <div>
-                        Syncing: {appState.sync.syncing ? "true" : "false"}
-                      </div>
-                      <div>IndexedDB: {appState.sync.providers.idb}</div>
                       <div>WebRTC: {appState.sync.providers.webrtc}</div>
                       <div>OPFS: {appState.sync.providers.opfs}</div>
                     </div>
-                    <Button
-                      label="Leave"
-                      onClick={() => {
-                        localStorage.removeItem("room");
-                        window.location.reload();
-                      }}
-                    />
+                    <div class="flex flex-col gap-2 self-end">
+                      <Button
+                        label="Manage rooms"
+                        icon={<AiFillSetting class="w-6 h-6" />}
+                        onClick={() => setModalOpen(true)}
+                      />
+                      <Button
+                        appearance="danger"
+                        label="Leave room"
+                        icon={<BiRegularLogOut class="w-6 h-6" />}
+                        onClick={() => {
+                          localStorage.removeItem("room");
+                          window.location.reload();
+                        }}
+                      />
+                    </div>
                   </Show>
-                  <Show when={!roomId()}>
+                  <Show when={!appState.sync.room.id}>
                     Disconnected
                     <Button
                       label="Join room"
@@ -739,48 +703,7 @@ export default function Header() {
           </DropdownMenu.Root>
         </div>
       </div>
-      <Modal isOpen={modalOpen()} title="Join Room" setIsOpen={setModalOpen}>
-        <div class="w-full h-full bg-bg1">
-          <div class="p-4 flex flex-col items-center justify-center gap-2">
-            <Field
-              name="name"
-              value={name()}
-              onInput={(e) => setName(e)}
-              placeholder="Name"
-              type="text"
-              class="w-full"
-            />
-            <Field
-              name="room"
-              type="text"
-              placeholder="Room ID"
-              value={roomId()}
-              onInput={(e) => setRoomId(e)}
-            />
-            <Field
-              name="password"
-              type="password"
-              placeholder="Password"
-              value={password()}
-              onInput={(e) => setPassword(e)}
-            />
-            <Button
-              onClick={() => {
-                localStorage.setItem(
-                  "room",
-                  JSON.stringify({
-                    name: name(),
-                    id: roomId(),
-                    password: password(),
-                  })
-                );
-                window.location.reload();
-              }}
-              label="Join"
-            />
-          </div>
-        </div>
-      </Modal>
+      <RoomManagerModal isOpen={modalOpen()} setIsOpen={setModalOpen} />
     </nav>
   );
 }

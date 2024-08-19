@@ -342,35 +342,37 @@ export async function sanitizeText(text: string) {
     .replaceAll(/<a href/gm, '<a class="link" href');
   return t;
 }
-export const getDownloadedOPFSVideos = async () => {
-  const root = await navigator.storage.getDirectory();
-  const allVideosDir = await root.getDirectoryHandle("__videos");
-  let videos: PipedVideo[] = [];
-  console.log(allVideosDir, "allVideosDir");
-  for await (const entry of (allVideosDir as any).values()) {
-    if (entry.kind === "directory") {
-      try {
-        console.log(entry, "allVideosDir");
-        const completed = await entry.getFileHandle("completed");
-        console.log(completed, "completed");
-        if (!completed) continue;
-        const stream = await entry.getFileHandle("streams.json");
-        if (!stream) continue;
-        const file = await stream.getFile();
-        const data = await file.text();
-        const json = JSON.parse(data);
-        const thumbnailFileHandle = await entry.getFileHandle("thumbnail");
-        let thumbnailUrl = "";
-        if (thumbnailFileHandle) {
-          const thumbnailFile = await thumbnailFileHandle.getFile();
-          thumbnailUrl = URL.createObjectURL(thumbnailFile);
-        }
-        videos = [...videos, { ...json, id: entry.name, thumbnailUrl }];
-      } catch (e) {
-        console.error(e);
-        continue;
-      }
-    }
+
+export function generateColorFromString(input: string): string {
+  const colors: string[] = [
+    "#00FFFF",
+    "#52E3E1",
+    "#2196F3",
+    "#03A9F4",
+    "#33A8C7",
+    "#00BCD4",
+    "#A0E426",
+    "#FDF148",
+    "#FFEB3B",
+    "#FFC107",
+    "#FFAB00",
+    "#FF9800",
+    "#F77976",
+    "#FF6B6B",
+    "#FF5722",
+    "#F050AE",
+    "#E91E63",
+    "#D883FF",
+    "#9336FD",
+    "#8BC34A",
+    "#4CAF50",
+  ];
+
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    hash = input.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return videos;
-};
+
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}

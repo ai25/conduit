@@ -13,62 +13,28 @@ import {
 } from "solid-icons/fa";
 import { dialog } from "~/stores/DialogContext";
 import { toast } from "./Toast";
+import { getAllFilesAndDirectories } from "~/utils/opfs-helpers";
 
 export default function FileSystemViewer(props: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }) {
   const [fileSystem, setFileSystem] = createSignal({});
-  async function getAllFilesAndDirectories() {
-    const root = await navigator.storage.getDirectory();
-    const result = {};
-
-    async function getFileDetails(fileHandle: FileSystemFileHandle) {
-      const file = await fileHandle.getFile();
-      return {
-        handle: fileHandle,
-        name: fileHandle.name,
-        kind: "file",
-        type: file.type,
-        size: file.size,
-      };
-    }
-
-    async function traverseDirectory(
-      dirHandle: FileSystemDirectoryHandle,
-      dirObj: Record<string, any>
-    ) {
-      for await (const entry of (dirHandle as any).values()) {
-        if (entry.kind === "file") {
-          const fileDetails = await getFileDetails(entry);
-          dirObj[entry.name] = fileDetails;
-        } else if (entry.kind === "directory") {
-          dirObj[entry.name] = {
-            handle: entry,
-            name: entry.name,
-            kind: "directory",
-            contents: {},
-          };
-          await traverseDirectory(entry, dirObj[entry.name].contents);
-        }
-      }
-    }
-
-    await traverseDirectory(root, result);
-    return result;
-  }
 
   createEffect(() => {
     getAllFilesAndDirectories().then(setFileSystem);
   });
-  const handleDelete = (item: any) => {
+  const handleDelete = async (
+    parentDir: FileSystemDirectoryHandle,
+    itemName: string
+  ) => {
     try {
-      item.handle.remove({ recursive: true });
+      await parentDir.removeEntry(itemName, { recursive: true });
       getAllFilesAndDirectories().then(setFileSystem);
-      toast.success(`Removed ${item.name}.`);
+      toast.success(`Removed ${itemName}.`);
     } catch (e) {
       console.error(e);
-      toast.error(`Could not remove ${item.name}. ${(e as any).message}`);
+      toast.error(`Could not remove ${itemName}. ${(e as any).message}`);
     }
   };
 
@@ -81,7 +47,12 @@ export default function FileSystemViewer(props: {
       <div class="p-2 w-96 max-w-full mx-auto">
         <For each={Object.entries(fileSystem())}>
           {([name, item]) => (
-            <FileSystemNode item={item} onDelete={handleDelete} />
+            <FileSystemNode
+              item={item}
+              onDelete={(itemName) =>
+                handleDelete((item as any).parentDir, itemName)
+              }
+            />
           )}
         </For>
       </div>
@@ -91,7 +62,7 @@ export default function FileSystemViewer(props: {
 
 const FileSystemNode = (props: {
   item: any;
-  onDelete: (item: any) => void;
+  onDelete: (item: string) => void;
 }) => {
   const [isOpen, setIsOpen] = createSignal(false);
 
@@ -117,7 +88,7 @@ const FileSystemNode = (props: {
     dialog.showDelete({
       title: "Delete File",
       message: `Are you sure you want to delete ${props.item.name}? <br> This action cannot be undone.`,
-      onConfirm: () => props.onDelete(props.item),
+      onConfirm: () => props.onDelete(props.item.name),
     });
   };
 

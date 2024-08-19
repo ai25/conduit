@@ -24,7 +24,7 @@ import RelatedVideos, {
   RelatedVideosFallback,
 } from "~/components/RelatedVideos";
 import Comments from "~/components/Comments";
-import { getDownloadedOPFSVideos, getVideoId, isMobile } from "~/utils/helpers";
+import { getVideoId, isMobile } from "~/utils/helpers";
 import PlaylistItem from "~/components/content/playlist/PlaylistItem";
 import { useLocation, useNavigate, useSearchParams } from "@solidjs/router";
 import { useVideoContext } from "~/stores/VideoContext";

@@ -6,7 +6,6 @@ import {
   onCleanup,
   useContext,
 } from "solid-js";
-// import { IndexeddbPersistence } from "y-indexeddb";
 import { WebrtcProvider } from "y-webrtc";
 import { ConduitPlaylist, RelatedStream } from "~/types";
 import * as Y from "yjs";
@@ -17,6 +16,8 @@ import OpfsPersistence from "~/utils/y-opfs";
 import { toast } from "~/components/Toast";
 import { DEFAULT_PREFERENCES, usePreferences } from "./preferencesStore";
 import { useSearchParams } from "@solidjs/router";
+import { getRoomInfo } from "~/utils/opfs-helpers";
+import { parseUserAgent } from "~/utils/helpers";
 
 enum ProviderStatus {
   DISCONNECTED = "disconnected",
@@ -55,130 +56,138 @@ const [initialStore] = createStore<Store>({
 const doc = new Y.Doc({
   guid: "test",
 });
+
+export interface WebrtcUser {
+  id: string;
+}
 const [store, setStore] = createYjsStore<Store>(doc, initialStore, false);
 const [preferences] = usePreferences();
 const SyncContext = createContext({ store, setStore });
 
 export const SyncedStoreProvider = (props: { children: any }) => {
-  const [room, setRoom] = createSignal(
-    "localStorage" in globalThis
-      ? (JSON.parse(localStorage.getItem("room") || "{}") as {
-          id?: string;
-          password?: string;
-          name?: string;
-        })
-      : {}
-  );
+  const [appState, setAppState] = useAppState();
 
   let webrtcProvider: WebrtcProvider | null = null;
-  // let idbProvider: IndexeddbPersistence | null = null;
   let opfsProvider: OpfsPersistence | null = null;
 
-  const initWebrtc = async () => {
-    if (!room().id) {
+  const initWebrtc = async (roomId?: string): Promise<WebrtcProvider> => {
+    if (!roomId) {
       setAppState("sync", "providers", "webrtc", ProviderStatus.DISCONNECTED);
       setAppState("sync", "ready", true);
-      return;
+      throw new Error("No room ID");
+    }
+    const roomInfo = await getRoomInfo(roomId);
+    if (!roomInfo) {
+      setAppState("sync", "providers", "webrtc", ProviderStatus.DISCONNECTED);
+      setAppState("sync", "ready", true);
+      throw new Error("Room not found");
     }
     if (webrtcProvider) {
       console.log("disconnecting");
       webrtcProvider.disconnect();
     }
-    if (preferences.sync.enabled) {
-      setAppState("sync", "providers", "webrtc", ProviderStatus.CONNECTING);
-      webrtcProvider = new WebrtcProvider(room().id!, doc, {
-        signaling: ["wss://signaling.fly.dev"],
-        ...(room()!.password && { password: room().password }),
-      });
-      console.log(webrtcProvider, "webrtc provider");
-      webrtcProvider.connect();
+    setAppState("sync", "providers", "webrtc", ProviderStatus.CONNECTING);
+    webrtcProvider = new WebrtcProvider(roomInfo.id, doc, {
+      signaling: ["wss://signaling.fly.dev"],
+      ...(roomInfo.password && { password: roomInfo.password }),
+    });
+    console.log(webrtcProvider, "webrtc provider");
+    webrtcProvider.connect();
+    return webrtcProvider;
+  };
+  function generateBrowserId() {
+    return `${Math.random().toString(36).substr(2, 9)}_${Date.now()}`;
+  }
+  const getBrowserId = () => {
+    let browserId = localStorage.getItem("browserId");
+    if (!browserId) {
+      browserId = generateBrowserId();
+      localStorage.setItem("browserId", browserId);
     }
+    return browserId;
   };
 
   const [searchParams] = useSearchParams();
-  createEffect(async () => {
+
+  createEffect(() => {
     if (!searchParams.offline && preferences.sync.enabled) {
-      await initWebrtc();
-    }
-    setAppState("sync", "providers", "webrtc", ProviderStatus.DISCONNECTED);
+      setTimeout(() => {
+        initWebrtc(appState.sync.room.id).then((webrtcProvider) => {
+          setAppState(
+            "sync",
+            "providers",
+            "webrtc",
+            webrtcProvider!.connected
+              ? ProviderStatus.CONNECTED
+              : ProviderStatus.DISCONNECTED
+          );
+          webrtcProvider.awareness.setLocalStateField("user", {
+            browserId: getBrowserId(),
+          });
 
-    if (!webrtcProvider) return;
-    // setAppState("sync", "providers", "webrtc", ProviderStatus.CONNECTED);
-    webrtcProvider.awareness.setLocalStateField("user", {
-      name: room().name,
-    });
-    // setAppState("sync", "lastSync", webrtcProvider?.awareness.states.
+          const updateUsers = () => {
+            const uniqueUsers = new Map<string, WebrtcUser>();
+            webrtcProvider!.awareness.states.forEach((state, key) => {
+              console.log("Awareness state", webrtcProvider);
+              if (state.user && state.user.browserId) {
+                uniqueUsers.set(state.user.browserId, {
+                  id: state.user.browserId,
+                });
+              }
+            });
+            const users = Array.from(uniqueUsers.values());
+            setAppState("sync", "users", users);
+          };
 
-    let users = [] as { id: number; name: string }[];
-    webrtcProvider.awareness.states.forEach((state, key) => {
-      console.log(state, key);
-      users.push({ id: key, name: state.user.name });
-    });
-    setAppState("sync", "users", users);
-    webrtcProvider?.awareness.on(
-      "change",
-      ({
-        added,
-        updated,
-        removed,
-      }: {
-        added: number[];
-        updated: number[];
-        removed: number[];
-      }) => {
-        let users = [] as { id: number; name: string }[];
-        webrtcProvider!.awareness.states.forEach((state, key) => {
-          console.log(state, key);
-          users.push({ id: key, name: state.user.name });
+          updateUsers();
+
+          webrtcProvider?.awareness.on(
+            "change",
+            ({
+              added,
+              updated,
+              removed,
+            }: {
+              added: number[];
+              updated: number[];
+              removed: number[];
+            }) => {
+              updateUsers();
+              setAppState(
+                "sync",
+                "providers",
+                "webrtc",
+                webrtcProvider!.connected
+                  ? ProviderStatus.CONNECTED
+                  : ProviderStatus.DISCONNECTED
+              );
+              console.log("Awareness changed", added, updated, removed);
+            }
+          );
         });
-        setAppState("sync", "users", users);
-        setAppState("sync", "lastSync", new Date().getTime());
-        setAppState(
-          "sync",
-          "providers",
-          "webrtc",
-          webrtcProvider!.connected
-            ? ProviderStatus.CONNECTED
-            : ProviderStatus.DISCONNECTED
-        );
-        console.log("Awareness changed", added, updated, removed, users);
-      }
-    );
+      }, 100);
+    }
   });
-  const [, setAppState] = useAppState();
 
-  createEffect(async () => {
-    if (!room().id) {
-      setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
+  createEffect(() => {
+    if (!appState.sync.room.id) {
+      setAppState("sync", "providers", "opfs", ProviderStatus.DISCONNECTED);
       return;
     }
-    setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
-    // idbProvider = new IndexeddbPersistence(room().id!, doc);
-    // idbProvider.whenSynced
-    //   .then(() => {
-    //     console.timeEnd("indexeddb");
-    //     console.log("synced");
-
-    //     setTimeout(() => {
-    //       setAppState("sync", "providers", "idb", ProviderStatus.CONNECTED);
-    //     }, 0);
-    //   })
-    //   .catch(() => {
-    //     setAppState("sync", "providers", "idb", ProviderStatus.DISCONNECTED);
-    //   });
-    opfsProvider = new OpfsPersistence(room().id!, doc, true);
+    opfsProvider = new OpfsPersistence(appState.sync.room.id, doc, true);
     setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTING);
-    try {
-      await opfsProvider.sync();
-      // await opfsProvider.whenSynced()
-      setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTED);
-      setAppState("sync", "ready", true);
-    } catch (e) {
-      console.error("Error syncing with OPFSx", e);
-      setAppState("sync", "providers", "opfs", ProviderStatus.DISCONNECTED);
-      setAppState("sync", "ready", true);
-      toast.error("Error syncing with OPFS");
-    }
+    opfsProvider
+      .sync()
+      .then(() => {
+        setAppState("sync", "providers", "opfs", ProviderStatus.CONNECTED);
+        setAppState("sync", "ready", true);
+      })
+      .catch((e) => {
+        console.error("Error syncing with OPFS", e);
+        setAppState("sync", "providers", "opfs", ProviderStatus.DISCONNECTED);
+        setAppState("sync", "ready", true);
+        toast.error(`Error syncing with OPFS. ${e.message}`);
+      });
   });
   onCleanup(() => {
     webrtcProvider?.disconnect();
